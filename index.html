@@ -16,9 +16,9 @@
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://yourdomain.com">
+    <meta property="og:url" content="https://PacoTheChicken.com">
     <meta property="og:title" content="Paco's Chicken Palace">
-    <meta property="og:description" content="The most clucking awesome restaurant on Abstract!">
+    <meta property="og:description" content="PACO MUY GUAPO!">
     <meta property="og:image" content="Public/PACO-BANNER.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
@@ -105,17 +105,14 @@
                 <div class="stat-number" id="ordersServed">0</div>
                 <div class="stat-label">Orders Served</div>
             </div>
-            <div class="stat-item">
-                <div class="stat-number">🔴</div>
-                <div class="stat-label">Live</div>
-            </div>
+
             <div class="stat-item">
                 <div class="stat-number">24/7</div>
                 <div class="stat-label">Service</div>
             </div>
         </div>
+        <img src="abstract.png" alt="Abstract" class="abstract-logo">
         <div class="restaurant-hours">
-            <img src="abstract.png" alt="Abstract" class="abstract-logo">
             <span class="abstract-text">Powered by Abstract</span>
             <span class="hours-status">🟢 OPEN 24/7</span>
         </div>
@@ -158,11 +155,7 @@
                                     </svg>
                                 </a>
                             </div>
-                            <div class="stats-compact">
-                                <span class="stat-compact">
-                                    <span id="ordersServed">42</span> orders served
-                                </span>
-                            </div>
+
                         </div>
                     </div>
 
@@ -242,7 +235,10 @@
                     <!-- Action Buttons -->
                     <div class="action-buttons">
                         <button class="place-order-btn primary" onclick="downloadPFP()">
-                            📋 DOWNLOAD PACO
+                            📋 DOWNLOAD
+                        </button>
+                        <button class="copy-btn primary" onclick="copyPFPToClipboard()">
+                            📋 COPY
                         </button>
                         <button class="clear-order-btn secondary" onclick="clearOrder()">
                             🗑️ CLEAR
@@ -266,7 +262,7 @@
     </div>
 
     <!-- Scripts -->
-    <script type="module" src="script.js"></script>
+    <script src="script.js"></script>
     
     <!-- Analytics (Placeholder) -->
     <script>

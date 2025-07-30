@@ -1,7 +1,7 @@
 // ===== PACO'S CHICKEN PALACE - RESTAURANT SCRIPT =====
 
 // === SUPABASE INTEGRATION ===
-// Load Supabase client dynamically to prevent module loading errors
+// Load Supabase client dynamically for live order tracking
 let orderTracker = null;
 
 async function loadSupabaseClient() {
@@ -248,8 +248,8 @@ async function updateGlobalStats() {
     try {
         if (!orderTracker) {
             // Update with local stats only
-            const ordersServedElement = document.querySelector('.stat-item .stat-number');
-            if (ordersServedElement && ordersServedElement.parentElement.querySelector('.stat-label').textContent === 'Orders Served') {
+            const ordersServedElement = document.getElementById('ordersServed');
+            if (ordersServedElement) {
                 ordersServedElement.textContent = ordersServed.toLocaleString();
             }
             return;
@@ -259,10 +259,11 @@ async function updateGlobalStats() {
         if (globalCount.success) {
             ordersServed = globalCount.count;
             // Update the orders served stat in navbar
-            const ordersServedElement = document.querySelector('.stat-item .stat-number');
-            if (ordersServedElement && ordersServedElement.parentElement.querySelector('.stat-label').textContent === 'Orders Served') {
+            const ordersServedElement = document.getElementById('ordersServed');
+            if (ordersServedElement) {
                 ordersServedElement.textContent = globalCount.count.toLocaleString();
             }
+            console.log(`📊 Global order count updated: ${globalCount.count}`);
         }
     } catch (error) {
         console.warn('⚠️ Could not update global stats:', error);
@@ -1204,52 +1205,27 @@ document.addEventListener('visibilitychange', function() {
 
 // === PAGE INITIALIZATION ===
 
+// Simple loading screen fix - hide after 3 seconds no matter what
+setTimeout(() => {
+    const loadingScreen = document.getElementById('loadingScreen');
+    if (loadingScreen) {
+        loadingScreen.style.opacity = '0';
+        setTimeout(() => {
+            loadingScreen.style.display = 'none';
+        }, 500);
+    }
+}, 3000);
+
 // Wait for DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 DOM loaded, starting restaurant initialization...');
-    console.log('🔍 Script is running!');
-    
-    // Quick test to see if the script is actually executing
-    alert('Script is running! Press OK to continue...');
     
     try {
-        // Show loading screen
-        console.log('🔍 About to show loading screen...');
-        showLoadingScreen();
-        console.log('🔍 Loading screen should be visible now');
-        
-        // Initialize restaurant with a small delay for loading effect
-        setTimeout(() => {
-            try {
-                initializeRestaurant();
-                console.log('✅ Restaurant initialized successfully');
-            } catch (error) {
-                console.error('❌ Error during restaurant initialization:', error);
-            }
-            
-            // Always hide loading screen after initialization attempt
-            setTimeout(() => {
-                console.log('🔍 About to hide loading screen...');
-                hideLoadingScreen();
-                console.log('🔍 Loading screen should be hidden now');
-                
-                // Welcome message
-                setTimeout(() => {
-                    showNotification('🍗 Welcome to Paco\'s Chicken Palace!', 'success');
-                    try {
-                        playSound('welcome');
-                    } catch (e) {
-                        console.log('Audio not available');
-                    }
-                }, 500);
-            }, 1000);
-        }, 1500);
+        // Initialize restaurant
+        initializeRestaurant();
+        console.log('✅ Restaurant initialized successfully');
     } catch (error) {
-        console.error('❌ Critical error during initialization:', error);
-        // Force hide loading screen if there's an error
-        setTimeout(() => {
-            hideLoadingScreen();
-        }, 2000);
+        console.error('❌ Error during restaurant initialization:', error);
     }
 });
 
@@ -1542,7 +1518,7 @@ function drawFallbackImage(ctx, canvas) {
 // === DOWNLOAD & ORDER FUNCTIONS ===
 
 // Download PFP function (called by place order button)
-function downloadPFP() {
+async function downloadPFP() {
     try {
         console.log('📋 Processing order...');
         
@@ -1562,10 +1538,18 @@ function downloadPFP() {
         link.click();
         document.body.removeChild(link);
         
-        // Update orders served count
+        // Record order in Supabase database for global tracking
+        await recordGlobalOrder({
+            hat: currentOrder.hat,
+            hatName: currentOrder.hatName,
+            item: currentOrder.item,
+            itemName: currentOrder.itemName,
+            total: parseFloat(document.querySelector('.total-amount').textContent.replace('$', ''))
+        });
+        
+        // Update local orders served count
         ordersServed++;
         localStorage.setItem('ordersServed', ordersServed.toString());
-        updateOrdersServed();
         
         // Update order number for next order
         orderNumber++;
@@ -1581,6 +1565,72 @@ function downloadPFP() {
     } catch (error) {
         console.error('Error downloading PFP:', error);
         showNotification('Download failed. Please try again.', 'error');
+    }
+}
+
+// Copy PFP to clipboard function
+async function copyPFPToClipboard() {
+    try {
+        console.log('📋 Copying to clipboard...');
+        
+        const canvas = document.getElementById('pfpCanvas');
+        if (!canvas) {
+            showNotification('Canvas not found!', 'error');
+            return;
+        }
+        
+        // Convert canvas to blob
+        const blob = await new Promise(resolve => {
+            canvas.toBlob(resolve, 'image/png');
+        });
+        
+        if (!blob) {
+            showNotification('Failed to create image', 'error');
+            return;
+        }
+        
+                    // Copy to clipboard using the Clipboard API
+        if (navigator.clipboard && navigator.clipboard.write) {
+            const clipboardItem = new ClipboardItem({ 'image/png': blob });
+            await navigator.clipboard.write([clipboardItem]);
+            
+            // Record order in Supabase database for global tracking
+            await recordGlobalOrder({
+                hat: currentOrder.hat,
+                hatName: currentOrder.hatName,
+                item: currentOrder.item,
+                itemName: currentOrder.itemName,
+                total: parseFloat(document.querySelector('.total-amount').textContent.replace('$', ''))
+            });
+            
+            // Update local orders served count
+            ordersServed++;
+            localStorage.setItem('ordersServed', ordersServed.toString());
+            
+            // Update order number for next order
+            orderNumber++;
+            updateOrderNumber();
+            
+            // Play success sound
+            playSound('success');
+            
+            // Show success message
+            showNotification('📋 Paco copied to clipboard!', 'success');
+            console.log('✅ PFP copied to clipboard successfully');
+        } else {
+            // Fallback: show message to manually copy
+            showNotification('🚫 Clipboard not supported. Use Download instead.', 'error');
+        }
+        
+    } catch (error) {
+        console.error('Error copying PFP to clipboard:', error);
+        
+        // Check if it's a permission error
+        if (error.name === 'NotAllowedError') {
+            showNotification('📋 Clipboard permission denied. Use Download instead.', 'error');
+        } else {
+            showNotification('Copy failed. Use Download instead.', 'error');
+        }
     }
 }
 

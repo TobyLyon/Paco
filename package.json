@@ -5,7 +5,7 @@
     "main": "index.html",
     "scripts": {
         "start": "npx serve --cors -s . -l 3000",
-        "dev": "npx serve --cors -s . -l 3000",
+        "dev": "live-server --port=3000 --cors",
         "build": "node build.js",
         "preview": "npm run build && npx serve -s public -l 4173",
         "optimize": "npm run build",
@@ -29,6 +29,7 @@
     "license": "MIT",
     "devDependencies": {
         "htmlhint": "^1.1.4",
+        "live-server": "^1.2.2",
         "prettier": "^3.0.0"
     },
     "engines": {
@@ -37,5 +38,8 @@
     "repository": {
         "type": "git",
         "url": "https://github.com/TobyLyon/Paco.git"
+    },
+    "dependencies": {
+        "@supabase/supabase-js": "^2.53.0"
     }
 }

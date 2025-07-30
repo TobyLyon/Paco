@@ -1,5 +1,8 @@
 // ===== PACO'S CHICKEN PALACE - RESTAURANT SCRIPT =====
 
+// === SUPABASE INTEGRATION ===
+import orderTracker from './supabase-client.js';
+
 // === GLOBAL VARIABLES ===
 
 // Restaurant state
@@ -204,22 +207,149 @@ function toggleAudio() {
     localStorage.setItem('pacoAudioEnabled', audioEnabled);
 }
 
+// === SUPABASE ORDER TRACKING ===
+
+// Record order globally in Supabase
+async function recordGlobalOrder(orderData) {
+    try {
+        const result = await orderTracker.recordOrder(orderData);
+        if (result.success) {
+            console.log('✅ Global order recorded');
+            // Update global stats after successful recording
+            updateGlobalStats();
+        } else {
+            console.warn('⚠️ Failed to record global order:', result.error);
+        }
+    } catch (error) {
+        console.warn('⚠️ Global order tracking unavailable:', error);
+    }
+}
+
+// Update global statistics in navbar
+async function updateGlobalStats() {
+    try {
+        const globalCount = await orderTracker.getGlobalOrderCount();
+        if (globalCount.success) {
+            // Update the orders served stat in navbar
+            const ordersServedElement = document.querySelector('.stat-item .stat-number');
+            if (ordersServedElement && ordersServedElement.parentElement.querySelector('.stat-label').textContent === 'Orders Served') {
+                ordersServedElement.textContent = globalCount.count.toLocaleString();
+            }
+        }
+    } catch (error) {
+        console.warn('⚠️ Could not update global stats:', error);
+    }
+}
+
+// Initialize global stats on page load
+async function initializeGlobalStats() {
+    try {
+        // Test connection first
+        const connectionTest = await orderTracker.testConnection();
+        if (connectionTest.success) {
+            console.log('✅ Supabase connected successfully');
+            await updateGlobalStats();
+            
+            // Start real-time subscription for live updates
+            setupLiveOrderTracking();
+        } else {
+            console.warn('⚠️ Supabase connection failed, using local stats only');
+        }
+    } catch (error) {
+        console.warn('⚠️ Supabase unavailable, using local stats only:', error);
+    }
+}
+
+// Set up real-time order tracking
+function setupLiveOrderTracking() {
+    try {
+        orderTracker.subscribeToLiveOrders(
+            // When someone else places an order
+            (newOrder) => {
+                handleLiveOrderNotification(newOrder);
+                updateGlobalStats(); // Refresh the navbar count
+            },
+            // When an order is updated (less common)
+            (updatedOrder) => {
+                console.log('🔄 Order updated:', updatedOrder);
+            }
+        );
+    } catch (error) {
+        console.warn('⚠️ Could not set up live order tracking:', error);
+    }
+}
+
+// Handle live order notifications from other users
+function handleLiveOrderNotification(order) {
+    // Don't show notification for our own orders (avoid duplicate notifications)
+    const isOwnOrder = Date.now() - new Date(order.created_at).getTime() < 5000; // Within 5 seconds
+    
+    if (!isOwnOrder) {
+        // Show live order notification
+        const hatName = order.hat_name || 'No Topping';
+        const itemName = order.item_name || 'No Side';
+        
+        showLiveOrderNotification(hatName, itemName);
+        
+        // Add subtle visual effect
+        pulseOrderCounter();
+    }
+}
+
+// Show live order notification for other users' orders
+function showLiveOrderNotification(hatName, itemName) {
+    const messages = [
+        `🔴 LIVE: Someone ordered ${hatName} with ${itemName}!`,
+        `👨‍🍳 Fresh order: ${hatName} + ${itemName}`,
+        `🍗 Another customer chose ${hatName} with ${itemName}`,
+        `🎉 Live order: ${hatName} & ${itemName}`,
+        `👥 Someone else is enjoying ${hatName} + ${itemName}`
+    ];
+    
+    const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+    showNotification(randomMessage, 3000);
+}
+
+// Pulse the order counter when live orders come in
+function pulseOrderCounter() {
+    const orderCountElement = document.querySelector('.stat-item .stat-number');
+    if (orderCountElement) {
+        orderCountElement.style.animation = 'none';
+        setTimeout(() => {
+            orderCountElement.style.animation = 'pulse 0.5s ease-in-out';
+        }, 10);
+    }
+}
+
 // === NOTIFICATION SYSTEM ===
 
-function showNotification(message, duration = 3000) {
+// Global notification timeout variable
+let notificationTimeout = null;
+
+function showNotification(message, duration = 1500) {
     const notification = document.getElementById('notification');
     if (!notification) return;
     
-    if (notification.classList.contains('show')) {
-        setTimeout(() => showNotification(message, duration), 1000);
-        return;
+    // Clear any existing notification timeout to prevent overlapping
+    if (notificationTimeout) {
+        clearTimeout(notificationTimeout);
+        notificationTimeout = null;
     }
     
+    // Immediately update and show the new notification
     notification.textContent = message;
+    notification.classList.remove('show');
+    
+    // Force reflow to ensure CSS transition resets
+    notification.offsetHeight;
+    
+    // Show the new notification
     notification.classList.add('show');
     
-    setTimeout(() => {
+    // Set new timeout to hide this notification
+    notificationTimeout = setTimeout(() => {
         notification.classList.remove('show');
+        notificationTimeout = null;
     }, duration);
 }
 
@@ -542,14 +672,13 @@ function quickOrder(hatId, itemId) {
         item.classList.remove('selected');
     });
     
-    // Apply selections
+    // Update order state immediately
     if (hatItem) {
         const hatElement = document.querySelector(`[data-category="hats"][data-value="${hatId}"]`);
         if (hatElement) {
             hatElement.classList.add('selected');
             currentOrder.hat = hatId;
             currentOrder.hatName = hatItem.name;
-            loadLayer('hat', hatId);
         }
     }
     
@@ -559,9 +688,29 @@ function quickOrder(hatId, itemId) {
             itemElement.classList.add('selected');
             currentOrder.item = itemId;
             currentOrder.itemName = itemItem.name;
-            loadLayer('item', itemId);
         }
     }
+    
+    // Load base layer first, then load traits after base is ready
+    if (!canvas) return;
+    
+    layers.base = new Image();
+    layers.base.onload = () => {
+        // Base loaded, now load the selected traits
+        if (hatItem) {
+            loadLayer('hat', hatId);
+        }
+        if (itemItem) {
+            loadLayer('item', itemId);
+        }
+        drawPFP();
+        console.log('✅ Quick combo loaded with base + traits');
+    };
+    layers.base.onerror = () => {
+        console.error('Failed to load base image for quick combo');
+        showNotification('❌ Error loading base chicken');
+    };
+    layers.base.src = 'Public/ASSETS/base/PACO.png';
     
     updateOrderSummary();
     updateOrderTotal();
@@ -581,14 +730,13 @@ function randomizePFP() {
         item.classList.remove('selected');
     });
     
-    // Apply random selections
+    // Update order state immediately
     if (randomHat) {
         const hatElement = document.querySelector(`[data-category="hats"][data-value="${randomHat.id}"]`);
         if (hatElement) {
             hatElement.classList.add('selected');
             currentOrder.hat = randomHat.id;
             currentOrder.hatName = randomHat.name;
-            loadLayer('hat', randomHat.id);
         }
     } else {
         // Select "No Topping"
@@ -597,7 +745,6 @@ function randomizePFP() {
             noHatElement.classList.add('selected');
             currentOrder.hat = '';
             currentOrder.hatName = '';
-            loadLayer('hat', '');
         }
     }
     
@@ -607,7 +754,6 @@ function randomizePFP() {
             itemElement.classList.add('selected');
             currentOrder.item = randomItem.id;
             currentOrder.itemName = randomItem.name;
-            loadLayer('item', randomItem.id);
         }
     } else {
         // Select "No Side"
@@ -616,9 +762,35 @@ function randomizePFP() {
             noItemElement.classList.add('selected');
             currentOrder.item = '';
             currentOrder.itemName = '';
-            loadLayer('item', '');
         }
     }
+    
+    // Load base layer first, then load traits after base is ready
+    if (!canvas) return;
+    
+    layers.base = new Image();
+    layers.base.onload = () => {
+        // Base loaded, now load the random traits
+        if (randomHat) {
+            loadLayer('hat', randomHat.id);
+        } else {
+            loadLayer('hat', ''); // No hat
+        }
+        
+        if (randomItem) {
+            loadLayer('item', randomItem.id);
+        } else {
+            loadLayer('item', ''); // No item
+        }
+        
+        drawPFP();
+        console.log('✅ Random combo loaded with base + traits');
+    };
+    layers.base.onerror = () => {
+        console.error('Failed to load base image for random combo');
+        showNotification('❌ Error loading base chicken');
+    };
+    layers.base.src = 'Public/ASSETS/base/PACO.png';
     
     updateOrderSummary();
     updateOrderTotal();
@@ -654,7 +826,7 @@ function downloadPFP() {
         // Analytics
         console.log(`Order completed: ${hat} + ${item}`);
         
-        // Track orders
+        // Track orders locally
         const orders = JSON.parse(localStorage.getItem('pacoOrders') || '[]');
         orders.push({
             orderNumber: orderNumber - 1,
@@ -665,6 +837,15 @@ function downloadPFP() {
             timestamp: new Date().toISOString()
         });
         localStorage.setItem('pacoOrders', JSON.stringify(orders));
+        
+        // Track order globally with Supabase
+        recordGlobalOrder({
+            hat: currentOrder.hat,
+            hatName: currentOrder.hatName,
+            item: currentOrder.item,
+            itemName: currentOrder.itemName,
+            total: calculateOrderTotal()
+        });
         
         // Easter eggs
         if (ordersServed === 5) {
@@ -1091,6 +1272,9 @@ function initializeRestaurant() {
             setupKonamiCode();
         }
         
+        // Initialize global stats from Supabase
+        initializeGlobalStats();
+        
         console.log('✅ Restaurant initialized successfully!');
     } catch (error) {
         console.error('❌ Error in initializeRestaurant:', error);
@@ -1140,9 +1324,9 @@ function initializeCanvas() {
             return false;
         }
         
-        // Set canvas properties
-        canvas.width = 160;
-        canvas.height = 160;
+        // Set canvas properties to match asset resolution
+        canvas.width = 1600;
+        canvas.height = 1600;
         
         // Clear canvas with transparent background
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -1194,12 +1378,31 @@ function showNotification(message, type = 'info') {
     }
 }
 
-// Play sound (simple fallback)
+// Play sound - maps to specific restaurant sounds
 function playSound(soundType) {
+    if (!audioEnabled) return;
+    
     try {
-        console.log(`🔊 Playing sound: ${soundType}`);
-        // Simple audio implementation could go here
-        // For now, just log to prevent errors
+        switch(soundType) {
+            case 'select':
+                playChickenSound(); // Trait selection gets chicken sound
+                break;
+            case 'clear':
+                playKitchenSound(); // Clear order gets kitchen sound
+                break;
+            case 'click':
+                playOrderSound(); // Button clicks get order sound
+                break;
+            case 'success':
+                playCompleteOrderSound(); // Success gets cash register sound
+                break;
+            case 'welcome':
+                playCompleteOrderSound(); // Welcome gets cash register sound
+                break;
+            default:
+                playChickenSound(); // Default to chicken sound
+                break;
+        }
     } catch (e) {
         console.log('Audio playback failed:', e);
     }

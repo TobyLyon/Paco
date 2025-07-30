@@ -109,196 +109,135 @@
                 <div class="stat-label">Orders Served</div>
             </div>
             <div class="stat-item">
+                <div class="stat-number">🔴</div>
+                <div class="stat-label">Live</div>
+            </div>
+            <div class="stat-item">
                 <div class="stat-number">24/7</div>
                 <div class="stat-label">Service</div>
             </div>
         </div>
         <div class="restaurant-hours">
-            <div class="abstract-branding">
-                <img src="abstract.png" alt="Abstract" class="abstract-logo">
-                <span class="abstract-text">Powered by Abstract</span>
-            </div>
-            <div class="hours-info">
-                <span class="hours-status">🟢 OPEN 24/7</span>
-                <small>Serving the blockchain since block #1</small>
-            </div>
+            <img src="abstract.png" alt="Abstract" class="abstract-logo">
+            <span class="abstract-text">Powered by Abstract</span>
+            <span class="hours-status">🟢 OPEN 24/7</span>
         </div>
     </header>
 
     <!-- Main Restaurant Container -->
     <div class="restaurant-container" id="main-content">
         
-        <!-- Menu Board -->
-        <section class="menu-board" role="main" aria-labelledby="menu-title">
-            <div class="menu-header">
-                <h2 id="menu-title" class="menu-title">🍗 BUILD YOUR CHICKEN 🍗</h2>
-                <p class="menu-subtitle">Choose from over 100 delicious combinations!</p>
-            </div>
+        <!-- Unified PFP Generator -->
+        <section class="pfp-generator" role="main" aria-labelledby="generator-title">
+            <div class="generator-content">
+                <!-- Compact Menu Section -->
+                <div class="menu-section-compact">
 
-            <!-- All-in-One Menu -->
-            <div class="menu-sections">
-                <!-- Base Chicken Section -->
-                <div class="menu-section">
-                    <h3 class="section-title">
-                        <span class="section-number">1</span>
-                        <span class="section-name">YOUR CHICKEN</span>
-                        <span class="section-price">FREE</span>
-                    </h3>
-                    <div class="base-showcase-compact">
-                        <div class="base-item">
-                            <div class="item-image">🐔</div>
-                            <div class="base-details">
-                                <h4>Original Paco</h4>
-                                <small>Signature crypto chicken, blockchain seasoned</small>
+                    <!-- Toppings -->
+                    <div class="menu-category">
+                        <h3 class="category-title">
+                            <span class="category-icon">🎩</span>
+                            <span>Toppings</span>
+                        </h3>
+                        <div class="menu-grid" id="hatMenuItems">
+                            <!-- Menu items will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Sides -->
+                    <div class="menu-category">
+                        <h3 class="category-title">
+                            <span class="category-icon">🍟</span>
+                            <span>Sides</span>
+                        </h3>
+                        <div class="menu-grid" id="itemMenuItems">
+                            <!-- Menu items will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Quick Combos -->
+                    <div class="menu-category">
+                        <h3 class="category-title">
+                            <span class="category-icon">⚡</span>
+                            <span>Quick Combos</span>
+                        </h3>
+                        <div class="combo-buttons">
+                            <button class="combo-btn-compact" onclick="quickOrder('sheriff', 'revolver')">
+                                🤠 Sheriff
+                            </button>
+                            <button class="combo-btn-compact" onclick="quickOrder('crown', 'cash')">
+                                👑 King
+                            </button>
+                            <button class="combo-btn-compact" onclick="quickOrder('party-hat', 'chicken-sandwich')">
+                                🎉 Party
+                            </button>
+                            <button class="combo-btn-compact special" onclick="randomizePFP()">
+                                🎲 Surprise
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Restaurant Info -->
+                    <div class="menu-category info-category">
+                        <h3 class="category-title">
+                            <span class="category-icon">🏪</span>
+                            <span>Franchise Info</span>
+                        </h3>
+                        <div class="info-content-compact">
+                            <div class="franchise-compact" onclick="copyContract()">
+                                <code>Coming Soon...</code>
+                                <span class="copy-hint">📋</span>
                             </div>
-                            <span class="base-price">$0.00</span>
+                            <div class="social-buttons-compact">
+                                <button class="social-btn-compact" onclick="openTelegram()" title="Telegram">📱</button>
+                                <button class="social-btn-compact" onclick="openTwitter()" title="Twitter">🐦</button>
+                                <button class="social-btn-compact" onclick="buyPaco()" title="Buy $PACO">💱</button>
+                            </div>
+                            <div class="stats-compact">
+                                <span class="stat-compact">
+                                    <span id="ordersServed">42</span> orders served
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>
-
-                <!-- Toppings Section -->
-                <div class="menu-section">
-                    <h3 class="section-title">
-                        <span class="section-number">2</span>
-                        <span class="section-name">ADD TOPPINGS</span>
-                        <span class="section-price">$0.50 each</span>
-                    </h3>
-                    <div class="horizontal-menu compact" id="hatMenuItems">
-                        <!-- Menu items will be populated by JavaScript -->
+                <!-- Large Preview Section -->
+                <div class="preview-section">
+                    <div class="preview-header">
+                        <h2 id="generator-title">🐔 Build Your Paco</h2>
+                        <div class="order-number">#<span id="orderNumber">0001</span></div>
                     </div>
-                </div>
-
-                <!-- Sides Section -->
-                <div class="menu-section">
-                    <h3 class="section-title">
-                        <span class="section-number">3</span>
-                        <span class="section-name">CHOOSE YOUR SIDE</span>
-                        <span class="section-price">$1.00 each</span>
-                    </h3>
-                    <div class="horizontal-menu compact" id="itemMenuItems">
-                        <!-- Menu items will be populated by JavaScript -->
+                    
+                    <div class="canvas-container">
+                        <canvas id="pfpCanvas" 
+                                width="1600" 
+                                height="1600" 
+                                onclick="canvasClicked()"
+                                aria-label="Your custom Paco chicken preview"
+                                role="img">
+                            Your browser doesn't support canvas. Please update to see your chicken!
+                        </canvas>
+                        <div class="canvas-hint">🔄 Click your chicken to interact!</div>
                     </div>
-                </div>
 
-                <!-- Quick Combos Section -->
-                <div class="menu-section">
-                    <h3 class="section-title">
-                        <span class="section-number">⚡</span>
-                        <span class="section-name">QUICK COMBOS</span>
-                        <span class="section-price">$1.50 each</span>
-                    </h3>
-                    <div class="combo-grid compact">
-                        <button class="combo-btn" onclick="quickOrder('sheriff', 'revolver')">
-                            <span class="combo-icon">🤠</span>
-                            <span class="combo-name">The Sheriff</span>
+                    <!-- Order Summary -->
+                    <div class="order-summary-compact">
+                        <div class="order-items">
+                            <!-- Order items will be dynamically generated by JavaScript -->
+                        </div>
+                        <div class="order-total">
+                            <span class="total-amount">$0.01</span>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="action-buttons">
+                        <button class="place-order-btn primary" onclick="downloadPFP()">
+                            📋 DOWNLOAD PACO
                         </button>
-                        <button class="combo-btn" onclick="quickOrder('crown', 'cash')">
-                            <span class="combo-icon">👑</span>
-                            <span class="combo-name">The King</span>
+                        <button class="clear-order-btn secondary" onclick="clearOrder()">
+                            🗑️ CLEAR
                         </button>
-                        <button class="combo-btn" onclick="quickOrder('party-hat', 'chicken-sandwich')">
-                            <span class="combo-icon">🎉</span>
-                            <span class="combo-name">Party Pack</span>
-                        </button>
-                        <button class="combo-btn special" onclick="randomizePFP()">
-                            <span class="combo-icon">🎲</span>
-                            <span class="combo-name">Surprise Me!</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Order Summary & Preview -->
-        <section class="order-summary" role="complementary" aria-labelledby="order-title">
-            <div class="order-header">
-                <h2 id="order-title" class="order-title">YOUR ORDER</h2>
-                <div class="order-number">#<span id="orderNumber">0001</span></div>
-            </div>
-
-            <!-- Visual Preview -->
-            <div class="order-preview">
-                <div class="preview-label">
-                    <h3>Your Custom Paco</h3>
-                    <small>🔄 Click to interact with your chicken!</small>
-                </div>
-                <canvas id="pfpCanvas" 
-                        width="160" 
-                        height="160" 
-                        onclick="canvasClicked()"
-                        aria-label="Your custom Paco chicken preview"
-                        role="img">
-                    Your browser doesn't support canvas. Please update to see your chicken!
-                </canvas>
-            </div>
-
-            <!-- Order Details -->
-            <div class="order-details">
-                <div class="order-items">
-                    <!-- Order items will be dynamically generated by JavaScript -->
-                </div>
-
-                <div class="order-total">
-                    <div class="total-line">
-                        <span>Subtotal:</span>
-                        <span class="subtotal-amount">$0.00</span>
-                    </div>
-                    <div class="total-line">
-                        <span>Blockchain Fee:</span>
-                        <span>$0.01</span>
-                    </div>
-                    <div class="total-line total-final">
-                        <span>TOTAL:</span>
-                        <span class="total-amount">$0.01</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="order-actions">
-                <button class="place-order-btn" onclick="downloadPFP()">
-                    📋 PLACE ORDER
-                </button>
-                <button class="clear-order-btn" onclick="clearOrder()">
-                    🗑️ CLEAR ORDER
-                </button>
-            </div>
-        </section>
-
-        <!-- Restaurant Info Panel -->
-        <section class="restaurant-info" role="complementary" aria-labelledby="info-title">
-            <h2 id="info-title" class="info-title">🏪 RESTAURANT INFO</h2>
-            
-            <div class="info-compact">
-                <div class="info-item">
-                    <h3>🌟 Our Story</h3>
-                    <p>The finest crypto chicken restaurant on Abstract! Family owned, community driven, blockchain powered.</p>
-                </div>
-
-                <div class="info-item">
-                    <h3>💰 Franchise ($PACO)</h3>
-                    <div class="franchise-address" onclick="copyContract()">
-                        <div class="address-value">0x1234...5678</div>
-                        <div class="address-action">📋 Copy</div>
-                    </div>
-                </div>
-
-                <div class="info-item">
-                    <h3>📊 Stats</h3>
-                    <div class="stats-mini">
-                        <span>🐔 100+ Items</span>
-                        <span>⚡ Instant</span>
-                        <span>🔒 Secure</span>
-                        <span>💯 Quality</span>
-                    </div>
-                </div>
-
-                <div class="info-item">
-                    <h3>📱 Follow Us</h3>
-                    <div class="social-mini">
-                        <button class="social-btn telegram" onclick="openTelegram()">📱</button>
-                        <button class="social-btn twitter" onclick="openTwitter()">🐦</button>
-                        <button class="social-btn dex" onclick="openDEX()">💱</button>
                     </div>
                 </div>
             </div>
@@ -318,7 +257,7 @@
     </div>
 
     <!-- Scripts -->
-    <script src="script.js"></script>
+    <script type="module" src="script.js"></script>
     
     <!-- Analytics (Placeholder) -->
     <script>
@@ -326,4 +265,4 @@
         console.log('🍗 Paco\'s Chicken Palace Analytics loaded');
     </script>
 </body>
-</html> 
+</html>

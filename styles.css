@@ -349,11 +349,11 @@ body::before {
 .restaurant-hours {
     text-align: right;
     display: flex;
-    flex-direction: column;
-    gap: var(--space-sm);
-    align-items: flex-end;
+    flex-direction: row;
+    gap: var(--space-md);
+    align-items: center;
     flex-shrink: 0;
-    min-width: 160px;
+    min-width: 200px;
 }
 
 .abstract-branding {
@@ -366,7 +366,6 @@ body::before {
     border: 2px solid var(--restaurant-green);
     transition: all var(--transition-base);
     white-space: nowrap;
-    order: 1;
 }
 
 .abstract-branding:hover {
@@ -392,7 +391,6 @@ body::before {
 }
 
 .hours-info {
-    order: 2;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
@@ -1291,6 +1289,12 @@ body::before {
         min-width: unset;
     }
     
+    .restaurant-hours {
+        flex-direction: column;
+        gap: var(--space-sm);
+        align-items: center;
+    }
+    
     .restaurant-stats {
         order: -1;
         flex: unset;
@@ -1424,7 +1428,7 @@ body::before {
     .menu-board,
     .order-summary,
     .restaurant-info {
-        max-height: 300px;
+        max-height: none;
         padding: var(--space-sm);
     }
     

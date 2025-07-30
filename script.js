@@ -902,18 +902,34 @@ function copyContract() {
 }
 
 function openTelegram() {
-    playTone(500, 0.2);
-    showNotification('📱 Opening Telegram Kitchen...');
+    try {
+        window.open('https://t.me/pacoschickenpalace', '_blank');
+        playSound('click');
+        showNotification('📱 Opening Telegram Kitchen...', 'info');
+    } catch (error) {
+        console.error('Error opening Telegram:', error);
+    }
 }
 
 function openTwitter() {
-    playTone(600, 0.2);
-    showNotification('🐦 Opening Twitter Updates...');
+    try {
+        window.open('https://x.com/PacoTheChicken', '_blank');
+        playSound('click');
+        showNotification('🐦 Opening Twitter Updates...', 'info');
+    } catch (error) {
+        console.error('Error opening Twitter:', error);
+    }
 }
 
 function openDEX() {
-    playCompleteOrderSound();
-    showNotification('💱 Opening franchise opportunities...');
+    try {
+        // Placeholder URL - can be updated with actual DEX link later
+        window.open('https://app.uniswap.org/#/swap', '_blank');
+        playSound('click');
+        showNotification('💱 Opening franchise opportunities...', 'info');
+    } catch (error) {
+        console.error('Error opening DEX:', error);
+    }
 }
 
 // === UTILITY FUNCTIONS ===

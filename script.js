@@ -241,11 +241,17 @@ async function updateGlobalStats() {
     }
 }
 
-// Initialize global stats on page load
+// Initialize global stats on page load (with timeout protection)
 async function initializeGlobalStats() {
     try {
-        // Test connection first
-        const connectionTest = await orderTracker.testConnection();
+        // Test connection with timeout
+        const connectionPromise = orderTracker.testConnection();
+        const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Connection timeout')), 3000)
+        );
+        
+        const connectionTest = await Promise.race([connectionPromise, timeoutPromise]);
+        
         if (connectionTest.success) {
             console.log('✅ Supabase connected successfully');
             await updateGlobalStats();
@@ -1272,8 +1278,10 @@ function initializeRestaurant() {
             setupKonamiCode();
         }
         
-        // Initialize global stats from Supabase
-        initializeGlobalStats();
+        // Initialize global stats from Supabase (non-blocking)
+        initializeGlobalStats().catch(error => {
+            console.warn('⚠️ Supabase initialization failed silently:', error);
+        });
         
         console.log('✅ Restaurant initialized successfully!');
     } catch (error) {

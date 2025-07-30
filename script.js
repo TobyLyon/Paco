@@ -1,7 +1,20 @@
 // ===== PACO'S CHICKEN PALACE - RESTAURANT SCRIPT =====
 
 // === SUPABASE INTEGRATION ===
-import orderTracker from './supabase-client.js';
+// Load Supabase client dynamically to prevent module loading errors
+let orderTracker = null;
+
+async function loadSupabaseClient() {
+    try {
+        const module = await import('./supabase-client.js');
+        orderTracker = module.default;
+        console.log('✅ Supabase client loaded successfully');
+        return true;
+    } catch (error) {
+        console.warn('⚠️ Supabase client not available:', error);
+        return false;
+    }
+}
 
 // === GLOBAL VARIABLES ===
 
@@ -212,6 +225,11 @@ function toggleAudio() {
 // Record order globally in Supabase
 async function recordGlobalOrder(orderData) {
     try {
+        if (!orderTracker) {
+            console.log('📝 Order recorded locally only (Supabase not available)');
+            return;
+        }
+
         const result = await orderTracker.recordOrder(orderData);
         if (result.success) {
             console.log('✅ Global order recorded');
@@ -228,8 +246,18 @@ async function recordGlobalOrder(orderData) {
 // Update global statistics in navbar
 async function updateGlobalStats() {
     try {
+        if (!orderTracker) {
+            // Update with local stats only
+            const ordersServedElement = document.querySelector('.stat-item .stat-number');
+            if (ordersServedElement && ordersServedElement.parentElement.querySelector('.stat-label').textContent === 'Orders Served') {
+                ordersServedElement.textContent = ordersServed.toLocaleString();
+            }
+            return;
+        }
+
         const globalCount = await orderTracker.getGlobalOrderCount();
         if (globalCount.success) {
+            ordersServed = globalCount.count;
             // Update the orders served stat in navbar
             const ordersServedElement = document.querySelector('.stat-item .stat-number');
             if (ordersServedElement && ordersServedElement.parentElement.querySelector('.stat-label').textContent === 'Orders Served') {
@@ -244,6 +272,13 @@ async function updateGlobalStats() {
 // Initialize global stats on page load (with timeout protection)
 async function initializeGlobalStats() {
     try {
+        // First try to load Supabase client
+        const supabaseLoaded = await loadSupabaseClient();
+        if (!supabaseLoaded || !orderTracker) {
+            console.warn('⚠️ Supabase client not available, using local stats only');
+            return;
+        }
+
         // Test connection with timeout
         const connectionPromise = orderTracker.testConnection();
         const timeoutPromise = new Promise((_, reject) => 
@@ -269,6 +304,11 @@ async function initializeGlobalStats() {
 // Set up real-time order tracking
 function setupLiveOrderTracking() {
     try {
+        if (!orderTracker) {
+            console.log('📡 Live order tracking not available (Supabase not loaded)');
+            return;
+        }
+
         orderTracker.subscribeToLiveOrders(
             // When someone else places an order
             (newOrder) => {

@@ -1141,8 +1141,8 @@ function initializeCanvas() {
         }
         
         // Set canvas properties
-        canvas.width = 250;
-        canvas.height = 250;
+        canvas.width = 160;
+        canvas.height = 160;
         
         // Clear canvas with transparent background
         ctx.clearRect(0, 0, canvas.width, canvas.height);

@@ -1207,10 +1207,16 @@ document.addEventListener('visibilitychange', function() {
 // Wait for DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 DOM loaded, starting restaurant initialization...');
+    console.log('🔍 Script is running!');
+    
+    // Quick test to see if the script is actually executing
+    alert('Script is running! Press OK to continue...');
     
     try {
         // Show loading screen
+        console.log('🔍 About to show loading screen...');
         showLoadingScreen();
+        console.log('🔍 Loading screen should be visible now');
         
         // Initialize restaurant with a small delay for loading effect
         setTimeout(() => {
@@ -1223,7 +1229,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Always hide loading screen after initialization attempt
             setTimeout(() => {
+                console.log('🔍 About to hide loading screen...');
                 hideLoadingScreen();
+                console.log('🔍 Loading screen should be hidden now');
                 
                 // Welcome message
                 setTimeout(() => {
@@ -1245,25 +1253,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Show loading screen
-function showLoadingScreen() {
-    const loadingScreen = document.getElementById('loadingScreen');
-    if (loadingScreen) {
-        loadingScreen.style.display = 'flex';
-        loadingScreen.style.opacity = '1';
-    }
-}
 
-// Hide loading screen
-function hideLoadingScreen() {
-    const loadingScreen = document.getElementById('loadingScreen');
-    if (loadingScreen) {
-        loadingScreen.style.opacity = '0';
-        setTimeout(() => {
-            loadingScreen.style.display = 'none';
-        }, 500);
-    }
-}
 
 // === MAIN INITIALIZATION ===
 

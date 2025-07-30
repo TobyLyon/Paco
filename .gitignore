@@ -6,18 +6,22 @@ yarn-error.log*
 
 # Build outputs
 dist/
+public/
 build/
+.output/
 
-# Environment variables
+# Environment files
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
-# Cache
+# Cache directories
 .cache/
 .parcel-cache/
+.next/
+.nuxt/
 
 # OS generated files
 .DS_Store
@@ -28,7 +32,7 @@ build/
 ehthumbs.db
 Thumbs.db
 
-# IDE files
+# Editor directories and files
 .vscode/
 .idea/
 *.swp
@@ -40,5 +44,11 @@ logs
 *.log
 
 # Temporary files
-tmp/
-temp/ 
+*.tmp
+*.temp
+
+# Vercel
+.vercel
+
+# Netlify
+.netlify 

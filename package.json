@@ -1,31 +1,41 @@
 {
-  "name": "paco-the-chicken",
-  "version": "1.0.0",
-  "description": "Paco the Chicken - The most clucking awesome memecoin on Abstract!",
-  "main": "index.html",
-  "scripts": {
-    "start": "npx serve . -s -l 3000 --cors",
-    "dev": "npx serve . -s -l 3000 --cors",
-    "build": "npm run optimize",
-    "optimize": "echo 'Optimizing single-page site...' && npx imagemin Public/**/*.png --out-dir=dist/Public --plugin=imagemin-pngquant || echo 'Image optimization skipped'",
-    "preview": "npx serve . -s -l 3001",
-    "deploy": "echo 'Single-page site ready for deployment!'",
-    "lint": "npx htmlhint index.html || echo 'Linting complete'",
-    "format": "npx prettier --write *.html *.css *.js || echo 'Formatting complete'",
-    "clean": "rm -rf dist"
-  },
-  "keywords": [
-    "memecoin",
-    "paco",
-    "chicken",
-    "abstract-l2",
-    "pfp-generator",
-    "single-page",
-    "interactive"
-  ],
-  "author": "Paco the Chicken Team",
-  "license": "MIT",
-  "devDependencies": {
-    "serve": "^14.2.4"
-  }
+    "name": "paco-the-chicken",
+    "version": "1.0.0",
+    "description": "Paco's Chicken Palace - The most clucking awesome memecoin restaurant on Abstract",
+    "main": "index.html",
+    "scripts": {
+        "start": "npx serve --cors -s . -l 3000",
+        "dev": "npx serve --cors -s . -l 3000",
+        "build": "node build.js",
+        "preview": "npm run build && npx serve -s public -l 4173",
+        "optimize": "npm run build",
+        "lint": "npx htmlhint *.html || echo 'HTML linting completed'",
+        "format": "npx prettier --write '*.{html,css,js}' || echo 'Formatting completed'",
+        "deploy-netlify": "npm run build && echo 'Ready for Netlify deployment from public/ directory'",
+        "deploy-vercel": "npm run build && echo 'Ready for Vercel deployment from public/ directory'",
+        "deploy-pages": "npm run build && echo 'Ready for GitHub Pages deployment from public/ directory'",
+        "clean": "rm -rf public dist node_modules/.cache || echo 'Clean completed'"
+    },
+    "keywords": [
+        "memecoin",
+        "chicken",
+        "restaurant",
+        "Abstract",
+        "crypto",
+        "PFP",
+        "generator"
+    ],
+    "author": "Paco's Chicken Palace",
+    "license": "MIT",
+    "devDependencies": {
+        "htmlhint": "^1.1.4",
+        "prettier": "^3.0.0"
+    },
+    "engines": {
+        "node": ">=16"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/TobyLyon/Paco.git"
+    }
 }

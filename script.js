@@ -1,14 +1,31 @@
 // ===== PACO'S CHICKEN PALACE - RESTAURANT SCRIPT =====
 
 // === GLOBAL VARIABLES ===
-let audioEnabled = true;
-let audioContext;
-let clickCount = 0;
-let konamiCode = [];
+
+// Restaurant state
 let ordersServed = 0;
-let easterEggFound = false;
+let audioEnabled = true;
 let isLoaded = false;
+
+// Current order state
+const currentOrder = {
+    base: 'PACO',
+    hat: '',
+    hatName: 'No Topping',
+    item: '',
+    itemName: 'No Side'
+};
+
+// Konami code state
+let konamiCode = [];
+let clickCount = 0;
 let orderNumber = 1;
+
+// Easter egg state
+let easterEggFound = false;
+
+// Audio context and audio enabled state
+let audioContext;
 
 // Constants
 const konamiSequence = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA'];
@@ -54,39 +71,45 @@ const layers = {
     item: null
 };
 
-// Current order
-const currentOrder = {
-    hat: '',
-    item: '',
-    hatName: '',
-    itemName: ''
-};
-
 // === LOADING SYSTEM ===
 
 function hideLoadingScreen() {
     const loadingScreen = document.getElementById('loadingScreen');
     if (loadingScreen) {
+        loadingScreen.style.opacity = '0';
         setTimeout(() => {
-            loadingScreen.classList.add('hidden');
-            setTimeout(() => {
-                loadingScreen.remove();
-            }, 500);
-        }, 1000);
+            loadingScreen.style.display = 'none';
+        }, 500);
     }
 }
 
+// Update order number dynamically in HTML
 function updateOrderNumber() {
-    const orderNumEl = document.getElementById('orderNumber');
-    if (orderNumEl) {
-        orderNumEl.textContent = String(orderNumber).padStart(4, '0');
+    try {
+        const orderNumberElement = document.querySelector('.order-number');
+        if (orderNumberElement) {
+            orderNumberElement.textContent = `#${String(orderNumber).padStart(4, '0')}`;
+        }
+    } catch (error) {
+        console.error('Error updating order number:', error);
+    }
+}
+
+// Initialize order number on page load
+function initializeOrderNumber() {
+    try {
+        // Generate order number based on orders served
+        orderNumber = ordersServed + 1;
+        updateOrderNumber();
+    } catch (error) {
+        console.error('Error initializing order number:', error);
     }
 }
 
 function updateOrdersServed() {
-    const ordersEl = document.getElementById('ordersServed');
-    if (ordersEl) {
-        ordersEl.textContent = ordersServed;
+    const orderCounter = document.getElementById('ordersServed');
+    if (orderCounter) {
+        orderCounter.textContent = ordersServed.toLocaleString();
     }
 }
 
@@ -207,6 +230,7 @@ function createMenuItem(category, item) {
     menuItem.className = 'menu-item';
     menuItem.setAttribute('data-category', category);
     menuItem.setAttribute('data-value', item.id);
+    menuItem.setAttribute('data-item-id', item.id); // Added data-item-id
     menuItem.setAttribute('role', 'button');
     menuItem.setAttribute('tabindex', '0');
     menuItem.setAttribute('aria-label', `Add ${item.name} to order`);
@@ -216,67 +240,106 @@ function createMenuItem(category, item) {
         <div class="item-name">${item.name}</div>
     `;
     
-    menuItem.onclick = () => selectMenuItem(category, item, menuItem);
+    menuItem.onclick = () => selectMenuItem(category, item.id, menuItem);
     menuItem.onkeydown = (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            selectMenuItem(category, item, menuItem);
+            selectMenuItem(category, item.id, menuItem);
         }
     };
     
     return menuItem;
 }
 
-function initializeMenu() {
+// Create and populate menu items
+function createMenuItems() {
     // Initialize hat menu items
     const hatContainer = document.getElementById('hatMenuItems');
     if (hatContainer) {
+        hatContainer.innerHTML = ''; // Clear existing items
         menuItems.hats.forEach(hat => {
-            hatContainer.appendChild(createMenuItem('hat', hat));
+            hatContainer.appendChild(createMenuItem('hats', hat));
         });
     }
     
     // Initialize item menu items
     const itemContainer = document.getElementById('itemMenuItems');
     if (itemContainer) {
+        itemContainer.innerHTML = ''; // Clear existing items
         menuItems.items.forEach(item => {
-            itemContainer.appendChild(createMenuItem('item', item));
+            itemContainer.appendChild(createMenuItem('items', item));
         });
     }
     
-    console.log('✅ Restaurant menu initialized with emojis');
+    console.log('✅ Menu items created with emojis');
+}
+
+// Initialize menu system
+function initializeMenu() {
+    console.log('🍽️ Setting up menu...');
+    
+    // Create menu items
+    createMenuItems();
+    
+    // Set up menu interactions
+    setupMenuInteractions();
+    
+    console.log('✅ Menu setup complete');
+}
+
+// Set up menu interaction handlers
+function setupMenuInteractions() {
+    // Add keyboard navigation for menu items
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            const focusedElement = document.activeElement;
+            if (focusedElement && focusedElement.classList.contains('menu-item')) {
+                e.preventDefault();
+                focusedElement.click();
+            }
+        }
+    });
 }
 
 // === ORDER MANAGEMENT ===
 
-function selectMenuItem(category, item, element) {
-    playOrderSound();
-    
-    // Remove selected class from all items in this category
-    const categoryContainer = element.parentNode;
-    categoryContainer.querySelectorAll('.menu-item').forEach(menuItem => {
-        menuItem.classList.remove('selected');
-    });
-    
-    // Select this item
-    element.classList.add('selected');
-    
-    // Update current order
-    if (category === 'hat') {
-        currentOrder.hat = item.id;
-        currentOrder.hatName = item.name;
-        loadLayer('hat', item.id);
-    } else if (category === 'item') {
-        currentOrder.item = item.id;
-        currentOrder.itemName = item.name;
-        loadLayer('item', item.id);
+// Select menu item function
+function selectMenuItem(category, itemId, element) {
+    try {
+        console.log(`Selecting ${category}: ${itemId}`);
+        
+        // Remove previous selection in this category
+        document.querySelectorAll(`[data-category="${category}"]`).forEach(item => {
+            item.classList.remove('selected');
+        });
+        
+        // Add selected class to current item
+        element.classList.add('selected');
+        
+        // Update current order
+        if (category === 'hats') {
+            currentOrder.hat = itemId;
+            currentOrder.hatName = getMenuItemName(itemId, category) || 'No Topping';
+        } else if (category === 'items') {
+            currentOrder.item = itemId;
+            currentOrder.itemName = getMenuItemName(itemId, category) || 'No Side';
+        }
+        
+        // Update PFP and order summary
+        loadBaseImage(); // This will reload the base and then load layers
+        updateOrderSummary();
+        
+        // Play selection sound
+        playSound('select');
+        
+        // Show notification
+        const itemName = getMenuItemName(itemId, category) || (category === 'hats' ? 'No Topping' : 'No Side');
+        showNotification(`Selected: ${itemName}`, 'success');
+        
+        console.log(`✅ Selected ${itemName}`);
+    } catch (error) {
+        console.error('Error in selectMenuItem:', error);
     }
-    
-    updateOrderSummary();
-    updateOrderTotal();
-    
-    // Visual feedback
-    showNotification(`✅ Added ${item.name} to your order!`);
 }
 
 function loadLayer(type, value) {
@@ -294,24 +357,104 @@ function loadLayer(type, value) {
     }
 }
 
+// Update the order summary display
 function updateOrderSummary() {
-    // Update hat order item
-    const hatOrderItem = document.getElementById('orderHat');
-    if (currentOrder.hatName) {  // Show if any hat is selected, including "No Topping"
-        hatOrderItem.style.display = 'flex';
-        hatOrderItem.querySelector('.item-name').textContent = currentOrder.hatName;
-    } else {
-        hatOrderItem.style.display = 'none';
+    const orderItemsContainer = document.querySelector('.order-items');
+    const subtotalElement = document.querySelector('.subtotal-amount');
+    const totalElement = document.querySelector('.total-amount');
+    
+    // Clear current items
+    orderItemsContainer.innerHTML = '';
+    
+    let subtotal = 0;
+    
+    // Add base chicken
+    if (currentOrder.base) {
+        const baseItem = document.createElement('div');
+        baseItem.className = 'order-item';
+        baseItem.innerHTML = `
+            <div class="order-item-left">
+                <div class="item-qty">1</div>
+                <div class="item-name">Original Paco</div>
+            </div>
+            <div class="item-price">$0.00</div>
+        `;
+        orderItemsContainer.appendChild(baseItem);
     }
     
-    // Update item order item
-    const itemOrderItem = document.getElementById('orderItem');
-    if (currentOrder.itemName) {  // Show if any item is selected, including "No Side"
-        itemOrderItem.style.display = 'flex';
-        itemOrderItem.querySelector('.item-name').textContent = currentOrder.itemName;
-    } else {
-        itemOrderItem.style.display = 'none';
+    // Add hat/topping
+    if (currentOrder.hat) {
+        const hatName = currentOrder.hatName || getMenuItemName(currentOrder.hat, 'hats');
+        if (hatName && hatName !== 'No Topping') {
+            const hatItem = document.createElement('div');
+            hatItem.className = 'order-item';
+            hatItem.innerHTML = `
+                <div class="order-item-left">
+                    <div class="item-qty">1</div>
+                    <div class="item-name">${hatName}</div>
+                </div>
+                <div class="item-price">$0.50</div>
+            `;
+            orderItemsContainer.appendChild(hatItem);
+            subtotal += 0.50;
+        }
     }
+    
+    // Add item/side
+    if (currentOrder.item) {
+        const itemName = currentOrder.itemName || getMenuItemName(currentOrder.item, 'items');
+        if (itemName && itemName !== 'No Side') {
+            const sideItem = document.createElement('div');
+            sideItem.className = 'order-item';
+            sideItem.innerHTML = `
+                <div class="order-item-left">
+                    <div class="item-qty">1</div>
+                    <div class="item-name">${itemName}</div>
+                </div>
+                <div class="item-price">$0.00</div>
+            `;
+            orderItemsContainer.appendChild(sideItem);
+        }
+    }
+    
+    // Show "No Topping" if no hat selected
+    if (!currentOrder.hat || currentOrder.hatName === 'No Topping') {
+        const noToppingItem = document.createElement('div');
+        noToppingItem.className = 'order-item';
+        noToppingItem.innerHTML = `
+            <div class="order-item-left">
+                <div class="item-qty">1</div>
+                <div class="item-name">No Topping</div>
+            </div>
+            <div class="item-price">$0.50</div>
+        `;
+        orderItemsContainer.appendChild(noToppingItem);
+        subtotal += 0.50;
+    }
+    
+    // Show "No Side" if no item selected
+    if (!currentOrder.item || currentOrder.itemName === 'No Side') {
+        const noSideItem = document.createElement('div');
+        noSideItem.className = 'order-item';
+        noSideItem.innerHTML = `
+            <div class="order-item-left">
+                <div class="item-qty">1</div>
+                <div class="item-name">No Side</div>
+            </div>
+            <div class="item-price">$0.00</div>
+        `;
+        orderItemsContainer.appendChild(noSideItem);
+    }
+    
+    // Update totals
+    const blockchainFee = 0.01;
+    const total = subtotal + blockchainFee;
+    
+    if (subtotalElement) subtotalElement.textContent = `$${subtotal.toFixed(2)}`;
+    if (totalElement) totalElement.textContent = `$${total.toFixed(2)}`;
+    
+    // Update order count
+    updateOrdersServed();
 }
 
 function updateOrderTotal() {
@@ -401,7 +544,7 @@ function quickOrder(hatId, itemId) {
     
     // Apply selections
     if (hatItem) {
-        const hatElement = document.querySelector(`[data-category="hat"][data-value="${hatId}"]`);
+        const hatElement = document.querySelector(`[data-category="hats"][data-value="${hatId}"]`);
         if (hatElement) {
             hatElement.classList.add('selected');
             currentOrder.hat = hatId;
@@ -411,7 +554,7 @@ function quickOrder(hatId, itemId) {
     }
     
     if (itemItem) {
-        const itemElement = document.querySelector(`[data-category="item"][data-value="${itemId}"]`);
+        const itemElement = document.querySelector(`[data-category="items"][data-value="${itemId}"]`);
         if (itemElement) {
             itemElement.classList.add('selected');
             currentOrder.item = itemId;
@@ -440,7 +583,7 @@ function randomizePFP() {
     
     // Apply random selections
     if (randomHat) {
-        const hatElement = document.querySelector(`[data-category="hat"][data-value="${randomHat.id}"]`);
+        const hatElement = document.querySelector(`[data-category="hats"][data-value="${randomHat.id}"]`);
         if (hatElement) {
             hatElement.classList.add('selected');
             currentOrder.hat = randomHat.id;
@@ -449,7 +592,7 @@ function randomizePFP() {
         }
     } else {
         // Select "No Topping"
-        const noHatElement = document.querySelector(`[data-category="hat"][data-value=""]`);
+        const noHatElement = document.querySelector(`[data-category="hats"][data-value=""]`);
         if (noHatElement) {
             noHatElement.classList.add('selected');
             currentOrder.hat = '';
@@ -459,7 +602,7 @@ function randomizePFP() {
     }
     
     if (randomItem) {
-        const itemElement = document.querySelector(`[data-category="item"][data-value="${randomItem.id}"]`);
+        const itemElement = document.querySelector(`[data-category="items"][data-value="${randomItem.id}"]`);
         if (itemElement) {
             itemElement.classList.add('selected');
             currentOrder.item = randomItem.id;
@@ -468,7 +611,7 @@ function randomizePFP() {
         }
     } else {
         // Select "No Side"
-        const noItemElement = document.querySelector(`[data-category="item"][data-value=""]`);
+        const noItemElement = document.querySelector(`[data-category="items"][data-value=""]`);
         if (noItemElement) {
             noItemElement.classList.add('selected');
             currentOrder.item = '';
@@ -541,37 +684,46 @@ function downloadPFP() {
     }
 }
 
+// Clear order function
 function clearOrder() {
-    playTone(300, 0.2);
+    console.log('🗑️ Clearing order...');
     
-    // Clear selections
+    // Reset selections
     document.querySelectorAll('.menu-item.selected').forEach(item => {
         item.classList.remove('selected');
     });
     
-    // Select "none" options
-    const noHatElement = document.querySelector(`[data-category="hat"][data-value=""]`);
-    const noItemElement = document.querySelector(`[data-category="item"][data-value=""]`);
-    
-    if (noHatElement) noHatElement.classList.add('selected');
-    if (noItemElement) noItemElement.classList.add('selected');
-    
-    // Reset order to "none" options
-    const noHatItem = menuItems.hats.find(h => h.id === '');
-    const noItemItem = menuItems.items.find(i => i.id === '');
-    
+    // Reset current order to defaults
+    currentOrder.base = 'PACO';
     currentOrder.hat = '';
+    currentOrder.hatName = 'No Topping';
     currentOrder.item = '';
-    currentOrder.hatName = noHatItem ? noHatItem.name : '';
-    currentOrder.itemName = noItemItem ? noItemItem.name : '';
+    currentOrder.itemName = 'No Side';
     
-    // Reset display
-    loadLayer('hat', '');
-    loadLayer('item', '');
-    updateOrderSummary();
-    updateOrderTotal();
+    // Select default "none" options
+    setTimeout(() => {
+        const noToppingElement = document.querySelector('[data-item-id=""][data-category="hats"]');
+        if (noToppingElement) {
+            noToppingElement.classList.add('selected');
+        }
+        
+        const noSideElement = document.querySelector('[data-item-id=""][data-category="items"]');
+        if (noSideElement) {
+            noSideElement.classList.add('selected');
+        }
+        
+        // Update PFP and order summary
+        loadBaseImage();
+        updateOrderSummary();
+    }, 50);
     
-    showNotification('🗑️ Order cleared - start fresh!');
+    // Play clear sound
+    playSound('clear');
+    
+    // Show notification
+    showNotification('Order cleared! Back to basics 🐔', 'info');
+    
+    console.log('✅ Order cleared successfully');
 }
 
 // === INTERACTIVE ELEMENTS ===
@@ -807,74 +959,132 @@ document.addEventListener('visibilitychange', function() {
     }
 });
 
-// === INITIALIZATION ===
+// === PAGE INITIALIZATION ===
+
+// Wait for DOM to be fully loaded
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 DOM loaded, starting restaurant initialization...');
+    
+    try {
+        // Show loading screen
+        showLoadingScreen();
+        
+        // Initialize restaurant with a small delay for loading effect
+        setTimeout(() => {
+            try {
+                initializeRestaurant();
+                console.log('✅ Restaurant initialized successfully');
+            } catch (error) {
+                console.error('❌ Error during restaurant initialization:', error);
+            }
+            
+            // Always hide loading screen after initialization attempt
+            setTimeout(() => {
+                hideLoadingScreen();
+                
+                // Welcome message
+                setTimeout(() => {
+                    showNotification('🍗 Welcome to Paco\'s Chicken Palace!', 'success');
+                    try {
+                        playSound('welcome');
+                    } catch (e) {
+                        console.log('Audio not available');
+                    }
+                }, 500);
+            }, 1000);
+        }, 1500);
+    } catch (error) {
+        console.error('❌ Critical error during initialization:', error);
+        // Force hide loading screen if there's an error
+        setTimeout(() => {
+            hideLoadingScreen();
+        }, 2000);
+    }
+});
+
+// Show loading screen
+function showLoadingScreen() {
+    const loadingScreen = document.getElementById('loadingScreen');
+    if (loadingScreen) {
+        loadingScreen.style.display = 'flex';
+        loadingScreen.style.opacity = '1';
+    }
+}
+
+// Hide loading screen
+function hideLoadingScreen() {
+    const loadingScreen = document.getElementById('loadingScreen');
+    if (loadingScreen) {
+        loadingScreen.style.opacity = '0';
+        setTimeout(() => {
+            loadingScreen.style.display = 'none';
+        }, 500);
+    }
+}
+
+// === MAIN INITIALIZATION ===
 
 function initializeRestaurant() {
-    console.log('🍗 Opening Paco\'s Chicken Palace...');
+    console.log('🏪 Initializing Paco\'s Chicken Palace...');
     
-    // Load preferences first
-    loadPreferences();
-    
-    // Initialize canvas
-    if (!canvas || !ctx) {
-        console.error('Canvas not found');
-        return;
-    }
-    
-    // Set up audio toggle
-    const toggle = document.querySelector('.audio-toggle');
-    if (toggle) {
-        toggle.textContent = audioEnabled ? '🔊' : '🔇';
-        toggle.title = audioEnabled ? 'Turn restaurant sounds off' : 'Turn restaurant sounds on';
-    }
-    
-    // Initialize restaurant systems
-    loadBaseImage();
-    initializeMenu();
-    setupKonamiCode();
-    
-    // Set initial selections to "none" options after menu is created
-    setTimeout(() => {
-        const noHatElement = document.querySelector(`[data-category="hat"][data-value=""]`);
-        const noItemElement = document.querySelector(`[data-category="item"][data-value=""]`);
+    try {
+        // Set initial base selection
+        currentOrder.base = 'PACO';
         
-        if (noHatElement) {
-            noHatElement.classList.add('selected');
-            // Set up the initial order with "No Topping"
-            const noHatItem = menuItems.hats.find(h => h.id === '');
-            if (noHatItem) {
-                currentOrder.hat = '';
-                currentOrder.hatName = noHatItem.name;
+        // Initialize menu sections
+        createMenuItems();
+        
+        // Initialize order number
+        initializeOrderNumber();
+        
+        // Set default selections to "none" options after menu items are created
+        setTimeout(() => {
+            try {
+                // Find and select the "No Topping" option
+                const noToppingElement = document.querySelector('[data-item-id=""][data-category="hats"]');
+                if (noToppingElement) {
+                    noToppingElement.classList.add('selected');
+                    currentOrder.hat = '';
+                    currentOrder.hatName = 'No Topping';
+                }
+                
+                // Find and select the "No Side" option  
+                const noSideElement = document.querySelector('[data-item-id=""][data-category="items"]');
+                if (noSideElement) {
+                    noSideElement.classList.add('selected');
+                    currentOrder.item = '';
+                    currentOrder.itemName = 'No Side';
+                }
+                
+                // Initial PFP generation and order summary update
+                loadBaseImage();
+                updateOrderSummary();
+            } catch (error) {
+                console.error('Error setting default selections:', error);
             }
+        }, 100);
+        
+        // Initialize canvas
+        initializeCanvas();
+        
+        // Load saved preferences
+        loadPreferences();
+        
+        // Setup Konami code if function exists
+        if (typeof setupKonamiCode === 'function') {
+            setupKonamiCode();
         }
         
-        if (noItemElement) {
-            noItemElement.classList.add('selected');
-            // Set up the initial order with "No Side"
-            const noItemItem = menuItems.items.find(i => i.id === '');
-            if (noItemItem) {
-                currentOrder.item = '';
-                currentOrder.itemName = noItemItem.name;
-            }
+        console.log('✅ Restaurant initialized successfully!');
+    } catch (error) {
+        console.error('❌ Error in initializeRestaurant:', error);
+        // Ensure we still update the order summary even if other things fail
+        try {
+            updateOrderSummary();
+        } catch (e) {
+            console.error('❌ Error updating order summary:', e);
         }
-        
-        updateOrderSummary();
-        updateOrderTotal();
-    }, 100); // Small delay to ensure menu is created
-    
-    // Start particle system
-    setInterval(createParticle, 4000);
-    
-    // Hide loading screen
-    hideLoadingScreen();
-    
-    // Welcome message
-    setTimeout(() => {
-        showNotification('🍗 Welcome to Paco\'s Chicken Palace!');
-        isLoaded = true;
-    }, 1500);
-    
-    console.log('🎉 Restaurant is now open for business!');
+    }
 }
 
 // Save preferences before page unload
@@ -885,4 +1095,249 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeRestaurant);
 } else {
     initializeRestaurant();
+} 
+
+// === ESSENTIAL MISSING FUNCTIONS ===
+
+// Show notification (simple fallback if advanced version doesn't exist)
+function showNotification(message, type = 'info') {
+    console.log(`📢 ${type.toUpperCase()}: ${message}`);
+    
+    // Try to show visual notification if container exists
+    try {
+        // Create simple notification
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--restaurant-red);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            z-index: 1000;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        `;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        // Remove after 3 seconds
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 3000);
+    } catch (e) {
+        // Notification failed, just log
+        console.log('Visual notification failed:', e);
+    }
+}
+
+// Play sound (simple fallback)
+function playSound(soundType) {
+    try {
+        console.log(`🔊 Playing sound: ${soundType}`);
+        // Simple audio implementation could go here
+        // For now, just log to prevent errors
+    } catch (e) {
+        console.log('Audio playback failed:', e);
+    }
+}
+
+// Load base image for canvas
+function loadBaseImage() {
+    try {
+        const canvas = document.getElementById('pfpCanvas');
+        if (!canvas) {
+            console.log('Canvas not found');
+            return;
+        }
+        
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+            console.log('Canvas context not available');
+            return;
+        }
+        
+        // Clear canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Load base image
+        const baseImg = new Image();
+        baseImg.crossOrigin = 'anonymous';
+        baseImg.onload = function() {
+            try {
+                ctx.drawImage(baseImg, 0, 0, canvas.width, canvas.height);
+                console.log('✅ Base image loaded');
+                
+                // Load additional layers if needed
+                loadSelectedLayers();
+            } catch (error) {
+                console.error('Error drawing base image:', error);
+            }
+        };
+        baseImg.onerror = function() {
+            console.error('Failed to load base image');
+            // Draw fallback
+            drawFallbackImage(ctx, canvas);
+        };
+        baseImg.src = 'Public/ASSETS/base/PACO.png';
+    } catch (error) {
+        console.error('Error in loadBaseImage:', error);
+    }
+}
+
+// Load selected hat and item layers
+function loadSelectedLayers() {
+    try {
+        const canvas = document.getElementById('pfpCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Load hat layer if selected
+        if (currentOrder.hat && currentOrder.hat !== '') {
+            const hatImg = new Image();
+            hatImg.crossOrigin = 'anonymous';
+            hatImg.onload = function() {
+                ctx.drawImage(hatImg, 0, 0, canvas.width, canvas.height);
+            };
+            hatImg.src = `Public/ASSETS/hat/${currentOrder.hat}.png`;
+        }
+        
+        // Load item layer if selected
+        if (currentOrder.item && currentOrder.item !== '') {
+            const itemImg = new Image();
+            itemImg.crossOrigin = 'anonymous';
+            itemImg.onload = function() {
+                ctx.drawImage(itemImg, 0, 0, canvas.width, canvas.height);
+            };
+            itemImg.src = `Public/ASSETS/item/${currentOrder.item}.png`;
+        }
+    } catch (error) {
+        console.error('Error loading layers:', error);
+    }
+}
+
+// Draw fallback image if base image fails to load
+function drawFallbackImage(ctx, canvas) {
+    try {
+        // Draw a simple fallback
+        ctx.fillStyle = '#fbbf24';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw chicken emoji as text
+        ctx.fillStyle = '#000';
+        ctx.font = '100px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🐔', canvas.width / 2, canvas.height / 2);
+        
+        console.log('✅ Fallback image drawn');
+    } catch (error) {
+        console.error('Error drawing fallback:', error);
+    }
+} 
+
+// === DOWNLOAD & ORDER FUNCTIONS ===
+
+// Download PFP function (called by place order button)
+function downloadPFP() {
+    try {
+        console.log('📋 Processing order...');
+        
+        const canvas = document.getElementById('pfpCanvas');
+        if (!canvas) {
+            showNotification('Canvas not found!', 'error');
+            return;
+        }
+        
+        // Create download link
+        const link = document.createElement('a');
+        link.download = `paco-chicken-${Date.now()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        
+        // Trigger download
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Update orders served count
+        ordersServed++;
+        localStorage.setItem('ordersServed', ordersServed.toString());
+        updateOrdersServed();
+        
+        // Update order number for next order
+        orderNumber++;
+        updateOrderNumber();
+        
+        // Play success sound
+        playSound('success');
+        
+        // Show success message
+        showNotification('🎉 Order complete! Your Paco has been downloaded!', 'success');
+        
+        console.log('✅ Order processed successfully');
+    } catch (error) {
+        console.error('Error downloading PFP:', error);
+        showNotification('Download failed. Please try again.', 'error');
+    }
+}
+
+// === CANVAS INTERACTION FUNCTIONS ===
+
+// Canvas clicked function
+function canvasClicked() {
+    try {
+        console.log('🖱️ Canvas clicked');
+        playSound('click');
+        showNotification('🐔 Paco says hello!', 'info');
+    } catch (error) {
+        console.error('Error in canvasClicked:', error);
+    }
+}
+
+// Logo clicked function  
+function logoClicked() {
+    try {
+        console.log('🖱️ Logo clicked');
+        playSound('click');
+        showNotification('🏪 Welcome to Paco\'s Palace!', 'info');
+    } catch (error) {
+        console.error('Error in logoClicked:', error);
+    }
+}
+
+// === UTILITY FUNCTIONS ===
+
+// Copy contract address function
+function copyContract() {
+    try {
+        const contractAddress = '0x1234...5678'; // Placeholder
+        navigator.clipboard.writeText(contractAddress).then(() => {
+            showNotification('📋 Contract address copied!', 'success');
+        }).catch(() => {
+            showNotification('Copy failed. Please copy manually.', 'error');
+        });
+    } catch (error) {
+        console.error('Error copying contract:', error);
+    }
+}
+
+// Toggle audio function
+function toggleAudio() {
+    try {
+        audioEnabled = !audioEnabled;
+        localStorage.setItem('audioEnabled', audioEnabled.toString());
+        
+        const toggle = document.querySelector('.audio-toggle');
+        if (toggle) {
+            toggle.textContent = audioEnabled ? '🔊' : '🔇';
+            toggle.title = audioEnabled ? 'Turn restaurant sounds off' : 'Turn restaurant sounds on';
+        }
+        
+        showNotification(audioEnabled ? '🔊 Audio enabled' : '🔇 Audio disabled', 'info');
+        console.log(`Audio ${audioEnabled ? 'enabled' : 'disabled'}`);
+    } catch (error) {
+        console.error('Error toggling audio:', error);
+    }
 } 

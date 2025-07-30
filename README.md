@@ -1,213 +1,131 @@
-# 🍗 Paco's Chicken Palace - Interactive Restaurant Experience
+# 🍗 Paco's Chicken Palace
 
-Welcome to **Paco's Chicken Palace** - the most clucking awesome crypto chicken restaurant on Abstract! Order your custom Paco chicken with unique toppings and sides in this fully interactive, restaurant-themed memecoin experience.
+> The most clucking awesome memecoin restaurant on Abstract! 
 
-## 🎯 **Restaurant Concept**
+Welcome to **Paco's Chicken Palace** - where crypto meets crispy! This is a fun, interactive single-page restaurant experience that doubles as a PFP (Profile Picture) generator for the $PACO memecoin community.
 
-Transform your typical PFP generator into a **KFC/Chick-fil-A style ordering experience** where users "order" their custom Paco chicken just like at a real fast-food restaurant! 
+## 🎮 Features
 
-### 🍽️ **The Complete Restaurant Experience**
+- **🍗 Interactive Restaurant Menu** - Order your custom chicken like you're at KFC!
+- **🎨 PFP Generator** - Create unique chicken avatars with layered assets
+- **🔊 Restaurant Sounds** - Full audio experience with ordering sounds
+- **📱 Fully Responsive** - Works perfectly on mobile, tablet, and desktop
+- **🎯 No Scroll Design** - Everything fits in one viewport
+- **🎪 Easter Eggs** - Hidden interactions and fun surprises
+- **💾 Persistent Orders** - Your preferences are saved locally
 
-- **📋 Digital Menu Board** - Browse our extensive chicken customization options
-- **👨‍🍳 Interactive Kitchen** - Watch your chicken being prepared in real-time
-- **🧾 Order Receipt** - Professional order summary with pricing
-- **🏪 Restaurant Info** - Learn about franchise opportunities ($PACO token)
+## 🚀 Quick Deploy
 
-## ✨ **Restaurant Features**
+### Vercel (Recommended)
+1. Fork this repository
+2. Connect to Vercel
+3. Deploy automatically - no configuration needed!
 
-### 🍗 **Custom Chicken Ordering**
-- **Original Paco Base** - Our signature crypto chicken (FREE)
-- **10 Gourmet Toppings** - From Sheriff Special to Heavenly Herb ($0.50 each)
-- **10 Premium Sides** - Six-Shooter Sauce to Crypto Coins ($1.00 each)
-- **100+ Combinations** - Infinite delicious possibilities!
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/TobyLyon/Paco)
 
-### ⚡ **Quick Order Menu**
-- **🤠 The Sheriff** - Sheriff Special with Six-Shooter Sauce
-- **👑 The King** - Royal Roast with Money Munchies  
-- **🎉 Party Pack** - Celebration Crunch with Mini-Me Sandwich
-- **🎲 Surprise Me!** - Chef's random special combination
+### Netlify
+1. Fork this repository
+2. Connect to Netlify
+3. Build command: `npm run build`
+4. Publish directory: `public`
 
-### 🎵 **Restaurant Audio Experience**
-- **Order Sounds** - Satisfying beeps when adding items
-- **Kitchen Sounds** - Sizzling effects for quick orders
-- **Cash Register** - Classic "cha-ching" when completing orders
-- **Chicken Sounds** - Interactive chicken responses
+### GitHub Pages
+1. Enable GitHub Pages in repository settings
+2. Run `npm run deploy-pages`
+3. Set source to `public` branch
 
-### 🎪 **Restaurant Easter Eggs**
-- **Secret Menu Code** - Konami Code (↑↑↓↓←→←→BA) activates party mode
-- **Loyalty Program** - Special rewards after 5 and 10 orders
-- **Interactive Chicken** - Click your chicken for surprises
-- **Flying Chickens** - Animated celebrations during party mode
+## 🛠️ Local Development
 
-## 🚀 **Quick Start**
-
-### **Visit Our Restaurant**
 ```bash
-# Clone the restaurant
-git clone <your-repo-url>
-cd paco-chicken-palace
-
-# Open for business
+# Install dependencies (optional - for linting/formatting)
 npm install
+
+# Start development server
 npm start
+# or
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview built site
+npm run preview
 ```
 
-Your restaurant opens at `http://localhost:3000` - **Welcome to Paco's! 🍗**
+## 📁 Project Structure
 
-### **Operating the Restaurant**
-```bash
-npm run build     # Prepare for franchise expansion
-npm run deploy    # Ready for grand opening
-npm run clean     # Clean the kitchen
+```
+PACOTHECHICKEN/
+├── index.html          # Main restaurant page
+├── styles.css          # All styling and animations  
+├── script.js          # Interactive functionality
+├── abstract.png       # Abstract blockchain logo
+├── Public/            # All brand assets
+│   ├── ASSETS/        # PFP generator layers
+│   │   ├── base/      # Base chicken images
+│   │   ├── hat/       # Hat/topping overlays
+│   │   └── item/      # Item/side overlays
+│   └── *.png          # Brand logos and banners
+├── package.json       # Build scripts and metadata
+├── vercel.json        # Vercel deployment config
+├── build.js           # Build script for deployment
+└── README.md          # This file
 ```
 
-## 🍽️ **How to Order**
+## 🎨 Customization
 
-### **Step 1: Choose Your Base** 
-- Start with our signature **Original Paco** chicken (always free!)
+### Adding New Menu Items
+1. Add images to `Public/ASSETS/hat/` or `Public/ASSETS/item/`
+2. Update the `menuItems` object in `script.js`
+3. Add corresponding emoji and pricing
 
-### **Step 2: Add Toppings**
-- Browse our gourmet toppings menu
-- Each topping adds **$0.50** to your order
-- Click any topping to add it to your chicken
+### Styling Changes
+- All styles are in `styles.css` with CSS custom properties
+- Color scheme uses `--restaurant-*` variables
+- Responsive breakpoints at 1200px and 768px
 
-### **Step 3: Pick Your Side**
-- Select from our premium sides collection  
-- Each side costs **$1.00**
-- Mix and match for the perfect meal
+### Brand Assets
+- Replace logos in the `Public/` directory
+- Update meta tags and titles in `index.html`
+- Modify the contract address in `script.js`
 
-### **Step 4: Place Your Order**
-- Review your order summary in the receipt
-- Click **"📋 PLACE ORDER"** to download your chicken
-- Your custom Paco NFT is ready to enjoy!
+## 🔧 Build Process
 
-## 🏪 **Restaurant Sections**
+The build process:
+1. Creates a `public/` directory
+2. Copies all necessary files
+3. Preserves the `Public/ASSETS/` structure for the PFP generator
+4. Optimizes for static hosting
 
-### **📋 Menu Board** (Left Panel)
-- **Dark kitchen theme** with glowing yellow accents
-- **Numbered sections** for easy ordering (1. Chicken, 2. Toppings, 3. Sides)
-- **Quick order buttons** for popular combinations
-- **Real menu descriptions** like "Smoky BBQ flavor with a badge of honor"
+## 🌐 Deployment Troubleshooting
 
-### **🧾 Order Receipt** (Center Panel)  
-- **Professional receipt styling** with blue header
-- **Live order preview** shows your chicken as you build it
-- **Smart pricing calculator** adds up your total automatically
-- **Order statistics** track how many customers we've served
+### Vercel Issues
+- Ensure `vercel.json` is present
+- Check that build command outputs to `public/` directory
+- Verify all assets are properly copied
 
-### **🏪 Restaurant Info** (Right Panel)
-- **About our restaurant** - Family owned, community driven
-- **Franchise opportunities** with $PACO token information
-- **Restaurant stats** - Menu items, speed, quality ratings
-- **Social media links** to follow our kitchen updates
+### Asset Loading Issues
+- Check that `Public/ASSETS/` directory structure is preserved
+- Ensure image paths are relative, not absolute
+- Verify CORS settings for cross-origin requests
 
-## 🎨 **Menu Customization**
+### Canvas/PFP Generator Issues
+- Ensure all image files are in the correct directories
+- Check browser console for loading errors
+- Verify canvas dimensions and image sizing
 
-### **Adding New Toppings**
-Edit the menu in `script.js`:
-```javascript
-const menuItems = {
-    hats: [
-        { 
-            id: 'your-new-hat', 
-            name: 'Special Sauce', 
-            description: 'Your custom description', 
-            price: 0.50, 
-            emoji: '🔥' 
-        }
-    ]
-};
-```
+## 🤝 Contributing
 
-### **Creating Quick Orders**
-Add preset combinations:
-```javascript
-function quickOrder(hatId, itemId) {
-    // Automatically selects hat + item combination
-}
-```
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test the build process: `npm run build && npm run preview`
+5. Submit a pull request
 
-### **Restaurant Theme Colors**
-Customize in `styles.css`:
-```css
-:root {
-    --restaurant-red: #dc2626;     /* KFC Red */
-    --restaurant-yellow: #fbbf24;  /* McDonald's Yellow */  
-    --restaurant-orange: #f97316;  /* Accent Color */
-    --menu-board-dark: #1f2937;    /* Menu Background */
-}
-```
+## 📄 License
 
-## 🍗 **Restaurant Technologies**
-
-- **HTML5 Canvas** - Real-time chicken rendering
-- **CSS Grid** - Responsive restaurant layout  
-- **Vanilla JavaScript** - No framework dependencies
-- **Web Audio API** - Restaurant sound effects
-- **Local Storage** - Order history and preferences
-- **Modern CSS** - Glass-morphism and animations
-
-## 🎯 **Restaurant Analytics**
-
-Track your restaurant's performance:
-- **Orders Served** - Total customer count
-- **Popular Combinations** - Most ordered items
-- **Customer Loyalty** - Repeat order tracking
-- **Order History** - Complete order log with timestamps
-
-## 🚀 **Franchise Deployment**
-
-Ready to expand your restaurant empire? See [DEPLOYMENT.md](DEPLOYMENT.md) for:
-- **Netlify** - Perfect for restaurant chains
-- **Vercel** - Lightning-fast service
-- **Traditional Hosting** - Classic restaurant hosting
-- **Custom Domains** - Brand your restaurant
-- **Analytics Setup** - Track customer behavior
-
-## 🤝 **Join Our Restaurant Team**
-
-Want to contribute to Paco's Chicken Palace?
-1. Fork the restaurant repository
-2. Create your specialty menu branch
-3. Add your signature dishes
-4. Test with hungry customers  
-5. Submit your recipe pull request
-
-## 🏆 **Restaurant Achievements**
-
-- ✅ **100+ chicken combinations** available
-- ✅ **Professional restaurant interface** with authentic fast-food feel
-- ✅ **Real-time order preview** and pricing
-- ✅ **Complete audio experience** with restaurant sounds
-- ✅ **Multiple easter eggs** and loyalty rewards
-- ✅ **Mobile-responsive** for ordering on any device
-- ✅ **Accessibility compliant** - everyone can order
-- ✅ **Production ready** - franchise opportunities available
-
-## 🍗 **About Paco's Chicken Palace**
-
-Paco the Chicken has opened the finest crypto chicken restaurant on Abstract! This isn't just a memecoin site - it's a **complete restaurant experience** that combines the fun of customization with the authenticity of ordering at your favorite chicken spot.
-
-**Family owned, community driven, blockchain powered.** 
+MIT License - feel free to fork and customize for your own memecoin project!
 
 ---
 
-### 🎯 **Order Online**
-
-- [🍗 Visit Our Restaurant](https://your-domain.com) (Update with your URL)
-- [📱 Telegram Kitchen](https://t.me/your-channel) 
-- [🐦 Twitter Updates](https://twitter.com/your-handle)
-- [💰 Franchise Info](https://your-explorer-link.com)
-
-### 🏆 **Restaurant Highlights**
-
-- 🍗 **Authentic restaurant experience** with menu boards and receipts
-- 👨‍🍳 **Interactive kitchen** with real-time chicken preparation  
-- 🧾 **Professional ordering system** with smart pricing
-- 🎵 **Complete audio experience** with restaurant sound effects
-- 🎪 **Hidden easter eggs** and loyalty program rewards
-- 📱 **Mobile-optimized** for ordering anywhere
-- ♿ **Fully accessible** with keyboard navigation
-- 🚀 **Ready for franchise expansion**
-
-**Come hungry, leave happy! Experience the most delicious memecoin restaurant ever built!** 🍗👨‍🍳 
+**Built with ❤️ for the $PACO community on Abstract** 🐔✨ 

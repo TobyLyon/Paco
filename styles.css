@@ -231,13 +231,13 @@ body::before {
 .restaurant-header {
     background: var(--surface-darker);
     color: var(--text-primary);
-    padding: var(--space-md) var(--space-xl);
+    padding: var(--space-sm) var(--space-lg);
     display: flex;
     justify-content: space-between;
     align-items: center;
     box-shadow: var(--shadow-glow);
     position: relative;
-    height: 70px;
+    height: 60px;
     border-bottom: 3px solid var(--restaurant-yellow);
     flex-shrink: 0;
 }
@@ -437,6 +437,7 @@ body::before {
     display: flex;
     flex-direction: column;
     max-height: 100%;
+    min-height: 500px;
 }
 
 .order-summary::before {
@@ -487,11 +488,11 @@ body::before {
 }
 
 .order-preview {
-    padding: var(--space-md);
+    padding: var(--space-sm);
     text-align: center;
     background: var(--surface-light);
     border-bottom: 2px dashed var(--restaurant-yellow);
-    margin-bottom: var(--space-lg);
+    margin-bottom: var(--space-md);
     border-radius: var(--border-radius-md);
 }
 
@@ -1026,15 +1027,239 @@ body::before {
     transform: translateX(0);
 }
 
+/* ===== MENU STYLES ===== */
+.menu-board {
+    background: var(--surface-dark);
+    color: var(--text-primary);
+    border-radius: var(--border-radius-md);
+    padding: var(--space-md);
+    box-shadow: var(--shadow-glow);
+    border: 2px solid var(--restaurant-yellow);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    max-height: 100%;
+}
+
+.menu-header {
+    text-align: center;
+    margin-bottom: var(--space-md);
+    flex-shrink: 0;
+}
+
+.menu-title {
+    font-family: var(--font-display);
+    font-size: var(--font-size-2xl);
+    color: var(--restaurant-yellow);
+    margin-bottom: var(--space-sm);
+    text-shadow: 2px 2px 0px var(--restaurant-red);
+    font-weight: 700;
+}
+
+.menu-subtitle {
+    color: var(--text-muted);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+}
+
+.menu-sections {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    flex: 1;
+    min-height: 0;
+}
+
+.menu-section {
+    background: var(--surface-accent);
+    border-radius: var(--border-radius-md);
+    padding: var(--space-md);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.section-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-md);
+    padding-bottom: var(--space-sm);
+    border-bottom: 2px solid var(--restaurant-orange);
+}
+
+.section-number {
+    background: var(--restaurant-red);
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.section-name {
+    font-family: var(--font-display);
+    font-size: var(--font-size-lg);
+    color: var(--restaurant-yellow);
+    font-weight: 700;
+    text-shadow: 1px 1px 0px var(--restaurant-red);
+    flex: 1;
+    margin-left: var(--space-sm);
+}
+
+.section-price {
+    font-size: var(--font-size-sm);
+    color: var(--restaurant-green);
+    font-weight: 600;
+    background: rgba(16, 185, 129, 0.1);
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--border-radius-sm);
+    border: 1px solid var(--restaurant-green);
+}
+
+.horizontal-menu {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: var(--space-xs);
+}
+
+.menu-item {
+    background: var(--surface-light);
+    color: var(--text-dark);
+    border: 2px solid transparent;
+    border-radius: var(--border-radius-md);
+    padding: var(--space-sm);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-xs);
+    min-height: 80px;
+    justify-content: center;
+}
+
+.menu-item:hover {
+    border-color: var(--restaurant-yellow);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-glow);
+}
+
+.menu-item.selected {
+    border-color: var(--restaurant-red);
+    background: var(--restaurant-yellow);
+    color: var(--text-dark);
+    box-shadow: var(--shadow-red);
+}
+
+.item-image {
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.item-name {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    text-align: center;
+    line-height: 1.2;
+}
+
+.base-showcase-compact {
+    display: flex;
+    justify-content: center;
+}
+
+.base-item {
+    background: var(--surface-light);
+    color: var(--text-dark);
+    border: 2px solid var(--restaurant-green);
+    border-radius: var(--border-radius-md);
+    padding: var(--space-lg);
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    max-width: 300px;
+}
+
+.base-details h4 {
+    font-family: var(--font-display);
+    font-size: var(--font-size-base);
+    color: var(--restaurant-red);
+    margin-bottom: var(--space-xs);
+    font-weight: 700;
+}
+
+.base-details small {
+    color: var(--text-dark);
+    font-size: var(--font-size-xs);
+    opacity: 0.8;
+}
+
+.base-price {
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    color: var(--restaurant-green);
+    margin-left: auto;
+}
+
+.combo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: var(--space-xs);
+}
+
+.combo-btn {
+    background: linear-gradient(135deg, var(--restaurant-orange), var(--restaurant-red));
+    color: white;
+    border: none;
+    border-radius: var(--border-radius-md);
+    padding: var(--space-sm);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-xs);
+    min-height: 70px;
+    font-family: var(--font-display);
+    font-weight: 600;
+    border: 2px solid transparent;
+}
+
+.combo-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-red);
+    border-color: var(--restaurant-yellow);
+}
+
+.combo-btn.special {
+    background: linear-gradient(135deg, var(--restaurant-yellow), var(--restaurant-orange));
+    color: var(--text-dark);
+}
+
+.combo-icon {
+    font-size: 1.5rem;
+}
+
+.combo-name {
+    font-size: var(--font-size-sm);
+    line-height: 1.2;
+}
+
 /* ===== MAIN LAYOUT CONTAINER ===== */
 .restaurant-container {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-columns: 1.5fr 1fr 0.8fr;
     grid-template-rows: auto;
-    gap: var(--space-lg);
-    padding: var(--space-xl);
-    min-height: calc(100vh - 70px);
-    max-width: 1600px;
+    gap: var(--space-md);
+    padding: var(--space-lg);
+    min-height: calc(100vh - 60px);
+    max-width: 1400px;
     margin: 0 auto;
     overflow-y: auto;
 }
@@ -1315,6 +1540,8 @@ button:focus,
     box-shadow: var(--shadow-glow);
     transition: all var(--transition-base);
     cursor: pointer;
+    width: 200px;
+    height: 200px;
 }
 
 #pfpCanvas:hover {

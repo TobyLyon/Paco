@@ -60,9 +60,9 @@ const menuItems = {
     ]
 };
 
-// Canvas and layer management
-const canvas = document.getElementById('pfpCanvas');
-const ctx = canvas?.getContext('2d');
+// Canvas and layer management - initialized after DOM load
+let canvas = null;
+let ctx = null;
 
 // Layer images storage
 const layers = {
@@ -1090,14 +1090,58 @@ function initializeRestaurant() {
 // Save preferences before page unload
 window.addEventListener('beforeunload', savePreferences);
 
-// Initialize when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeRestaurant);
-} else {
-    initializeRestaurant();
-} 
+// Note: Main initialization is handled by the DOMContentLoaded event listener above
+// This redundant initialization block has been removed to prevent conflicts 
 
 // === ESSENTIAL MISSING FUNCTIONS ===
+
+// Get menu item name by ID and category
+function getMenuItemName(itemId, category) {
+    try {
+        if (!itemId) return null;
+        
+        const items = category === 'hats' ? menuItems.hats : menuItems.items;
+        const item = items.find(item => item.id === itemId);
+        return item ? item.name : null;
+    } catch (error) {
+        console.error('Error getting menu item name:', error);
+        return null;
+    }
+}
+
+// Initialize canvas for PFP generation
+function initializeCanvas() {
+    try {
+        canvas = document.getElementById('pfpCanvas');
+        if (!canvas) {
+            console.error('Canvas element not found');
+            return false;
+        }
+        
+        ctx = canvas.getContext('2d');
+        if (!ctx) {
+            console.error('Canvas context not available');
+            return false;
+        }
+        
+        // Set canvas properties
+        canvas.width = 250;
+        canvas.height = 250;
+        
+        // Clear canvas with transparent background
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Enable image smoothing for better quality
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        
+        console.log('✅ Canvas initialized successfully');
+        return true;
+    } catch (error) {
+        console.error('Error initializing canvas:', error);
+        return false;
+    }
+}
 
 // Show notification (simple fallback if advanced version doesn't exist)
 function showNotification(message, type = 'info') {
@@ -1283,61 +1327,4 @@ function downloadPFP() {
     }
 }
 
-// === CANVAS INTERACTION FUNCTIONS ===
-
-// Canvas clicked function
-function canvasClicked() {
-    try {
-        console.log('🖱️ Canvas clicked');
-        playSound('click');
-        showNotification('🐔 Paco says hello!', 'info');
-    } catch (error) {
-        console.error('Error in canvasClicked:', error);
-    }
-}
-
-// Logo clicked function  
-function logoClicked() {
-    try {
-        console.log('🖱️ Logo clicked');
-        playSound('click');
-        showNotification('🏪 Welcome to Paco\'s Palace!', 'info');
-    } catch (error) {
-        console.error('Error in logoClicked:', error);
-    }
-}
-
-// === UTILITY FUNCTIONS ===
-
-// Copy contract address function
-function copyContract() {
-    try {
-        const contractAddress = '0x1234...5678'; // Placeholder
-        navigator.clipboard.writeText(contractAddress).then(() => {
-            showNotification('📋 Contract address copied!', 'success');
-        }).catch(() => {
-            showNotification('Copy failed. Please copy manually.', 'error');
-        });
-    } catch (error) {
-        console.error('Error copying contract:', error);
-    }
-}
-
-// Toggle audio function
-function toggleAudio() {
-    try {
-        audioEnabled = !audioEnabled;
-        localStorage.setItem('audioEnabled', audioEnabled.toString());
-        
-        const toggle = document.querySelector('.audio-toggle');
-        if (toggle) {
-            toggle.textContent = audioEnabled ? '🔊' : '🔇';
-            toggle.title = audioEnabled ? 'Turn restaurant sounds off' : 'Turn restaurant sounds on';
-        }
-        
-        showNotification(audioEnabled ? '🔊 Audio enabled' : '🔇 Audio disabled', 'info');
-        console.log(`Audio ${audioEnabled ? 'enabled' : 'disabled'}`);
-    } catch (error) {
-        console.error('Error toggling audio:', error);
-    }
-} 
+// Note: Duplicate functions have been removed - original implementations are above 

@@ -19,6 +19,7 @@
     --shadow-glow: 0 4px 20px rgba(251, 191, 36, 0.2);
     --shadow-red: 0 4px 20px rgba(220, 38, 38, 0.3);
     --shadow-green: 0 4px 20px rgba(16, 185, 129, 0.2);
+    --shadow-yellow: 0 4px 20px rgba(251, 191, 36, 0.4);
     
     /* Text Colors */
     --text-primary: #ffffff;
@@ -1125,9 +1126,9 @@ body::before {
 }
 
 .menu-item {
-    background: var(--surface-light);
-    color: var(--text-dark);
-    border: 2px solid transparent;
+    background: var(--surface-accent);
+    color: var(--text-primary);
+    border: 2px solid rgba(255, 255, 255, 0.2);
     border-radius: var(--border-radius-md);
     padding: var(--space-sm);
     cursor: pointer;
@@ -1143,15 +1144,16 @@ body::before {
 
 .menu-item:hover {
     border-color: var(--restaurant-yellow);
+    background: var(--surface-dark);
     transform: translateY(-2px);
     box-shadow: var(--shadow-glow);
 }
 
 .menu-item.selected {
-    border-color: var(--restaurant-red);
-    background: var(--restaurant-yellow);
-    color: var(--text-dark);
-    box-shadow: var(--shadow-red);
+    border-color: var(--restaurant-yellow);
+    background: var(--restaurant-red);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-yellow);
 }
 
 .item-image {
@@ -1172,8 +1174,8 @@ body::before {
 }
 
 .base-item {
-    background: var(--surface-light);
-    color: var(--text-dark);
+    background: var(--surface-accent);
+    color: var(--text-primary);
     border: 2px solid var(--restaurant-green);
     border-radius: var(--border-radius-md);
     padding: var(--space-lg);
@@ -1186,15 +1188,15 @@ body::before {
 .base-details h4 {
     font-family: var(--font-display);
     font-size: var(--font-size-base);
-    color: var(--restaurant-red);
+    color: var(--restaurant-yellow);
     margin-bottom: var(--space-xs);
     font-weight: 700;
 }
 
 .base-details small {
-    color: var(--text-dark);
+    color: var(--text-secondary);
     font-size: var(--font-size-xs);
-    opacity: 0.8;
+    opacity: 0.9;
 }
 
 .base-price {

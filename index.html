@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Basic Meta Tags -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    
+    <!-- Title and Description -->
+    <title>Paco's Chicken Palace | $PACO - Order Your Custom Chicken on Abstract</title>
+    <meta name="description" content="Welcome to Paco's Chicken Palace! The most clucking awesome memecoin restaurant on Abstract!">
+    <meta name="keywords" content="Paco, chicken, restaurant, memecoin, Abstract, cryptocurrency, PFP generator, custom chicken, fast food">
+    <meta name="author" content="Paco's Chicken Palace">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="English">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://yourdomain.com">
+    <meta property="og:title" content="Paco's Chicken Palace">
+    <meta property="og:description" content="The most clucking awesome restaurant on Abstract!">
+    <meta property="og:image" content="Public/PACO-BANNER.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:site_name" content="Paco's Chicken Palace">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://yourdomain.com">
+    <meta name="twitter:title" content="Paco's Chicken Palace">
+    <meta name="twitter:description" content="Welcome to Paco's Chicken Palace! The most clucking awesome restaurant on Abstract!">
+    <meta name="twitter:image" content="Public/PACO-BANNER.png">
+    <meta name="twitter:creator" content="@PacoChickenPalace">
+    <meta name="twitter:site" content="@PacoChickenPalace">
+    
+    <!-- Favicon and Icons -->
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iI0ZGNkI2QiIvPgo8dGV4dCB4PSI1IiB5PSIyNCIgZm9udC1zaXplPSIyMCIgZm9udC1mYW1pbHk9IkFyaWFsIj7wn5CUPC90ZXh0Pgo8L3N2Zz4K">
+    <link rel="apple-touch-icon" sizes="180x180" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgdmlld0JveD0iMCAwIDE4MCAxODAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxODAiIGhlaWdodD0iMTgwIiByeD0iMjAiIGZpbGw9IiNGRjZCNkIiLz4KPHR5eHQgeD0iNTAiIHk9IjEyMCIgZm9udC1zaXplPSI4MCIgZm9udC1mYW1pbHk9IkFyaWFsIj7wn5CUPC90ZXh0Pgo8L3N2Zz4K">
+    
+    <!-- Preconnect for Performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600;700&family=Bungee:wght@400&display=swap" rel="stylesheet">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Restaurant",
+        "name": "Paco's Chicken Palace",
+        "alternateName": "$PACO Restaurant",
+        "description": "The most clucking awesome chicken restaurant on Abstract",
+        "url": "https://yourdomain.com",
+        "logo": "https://yourdomain.com/Public/PACO-THE-CHICKEN.png",
+        "servesCuisine": "Custom Crypto Chicken",
+        "priceRange": "$",
+        "sameAs": [
+            "https://twitter.com/PacoChickenPalace",
+            "https://t.me/pacoschickenpalace"
+        ]
+    }
+    </script>
+    
+    <!-- Theme Color -->
+    <meta name="theme-color" content="#dc2626">
+    <meta name="msapplication-TileColor" content="#dc2626">
+    
+    <!-- Preload Critical Assets -->
+    <link rel="preload" href="Public/PACO-THE-CHICKEN.png" as="image" type="image/png">
+    <link rel="preload" href="Public/ASSETS/base/PACO.png" as="image" type="image/png">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-chicken">🍗</div>
+            <div class="loading-text">Preparing Your Kitchen...</div>
+            <div class="loading-bar">
+                <div class="loading-progress"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio Toggle -->
+    <button class="audio-toggle" onclick="toggleAudio()" title="Toggle Restaurant Sounds" aria-label="Toggle sound effects">
+        🔊
+    </button>
+
+    <!-- Skip to Content (Accessibility) -->
+    <a href="#main-content" class="skip-link">Skip to menu</a>
+
+    <!-- Restaurant Header -->
+    <header class="restaurant-header">
+        <div class="restaurant-logo">
+            <img src="Public/PACO-THE-CHICKEN.png" alt="Paco's Chicken Palace Logo" class="header-logo" onclick="logoClicked()">
+            <div class="restaurant-name">
+                <h1 class="palace-title">PACO'S CHICKEN PALACE</h1>
+                <p class="palace-tagline">Est. 2025 • Abstract's Finest</p>
+            </div>
+        </div>
+        <div class="restaurant-stats">
+            <div class="stat-item">
+                <div class="stat-number" id="ordersServed">0</div>
+                <div class="stat-label">Orders Served</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">24/7</div>
+                <div class="stat-label">Service</div>
+            </div>
+        </div>
+        <div class="restaurant-hours">
+            <div class="abstract-branding">
+                <img src="abstract.png" alt="Abstract" class="abstract-logo">
+                <span class="abstract-text">Powered by Abstract</span>
+            </div>
+            <div class="hours-info">
+                <span class="hours-status">🟢 OPEN 24/7</span>
+                <small>Serving the blockchain since block #1</small>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Restaurant Container -->
+    <div class="restaurant-container" id="main-content">
+        
+        <!-- Menu Board -->
+        <section class="menu-board" role="main" aria-labelledby="menu-title">
+            <div class="menu-header">
+                <h2 id="menu-title" class="menu-title">🍗 BUILD YOUR CHICKEN 🍗</h2>
+                <p class="menu-subtitle">Choose from over 100 delicious combinations!</p>
+            </div>
+
+            <!-- All-in-One Menu -->
+            <div class="menu-sections">
+                <!-- Base Chicken Section -->
+                <div class="menu-section">
+                    <h3 class="section-title">
+                        <span class="section-number">1</span>
+                        <span class="section-name">YOUR CHICKEN</span>
+                        <span class="section-price">FREE</span>
+                    </h3>
+                    <div class="base-showcase-compact">
+                        <div class="base-item">
+                            <div class="item-image">🐔</div>
+                            <div class="base-details">
+                                <h4>Original Paco</h4>
+                                <small>Signature crypto chicken, blockchain seasoned</small>
+                            </div>
+                            <span class="base-price">$0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Toppings Section -->
+                <div class="menu-section">
+                    <h3 class="section-title">
+                        <span class="section-number">2</span>
+                        <span class="section-name">ADD TOPPINGS</span>
+                        <span class="section-price">$0.50 each</span>
+                    </h3>
+                    <div class="horizontal-menu compact" id="hatMenuItems">
+                        <!-- Menu items will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Sides Section -->
+                <div class="menu-section">
+                    <h3 class="section-title">
+                        <span class="section-number">3</span>
+                        <span class="section-name">CHOOSE YOUR SIDE</span>
+                        <span class="section-price">$1.00 each</span>
+                    </h3>
+                    <div class="horizontal-menu compact" id="itemMenuItems">
+                        <!-- Menu items will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Quick Combos Section -->
+                <div class="menu-section">
+                    <h3 class="section-title">
+                        <span class="section-number">⚡</span>
+                        <span class="section-name">QUICK COMBOS</span>
+                        <span class="section-price">$1.50 each</span>
+                    </h3>
+                    <div class="combo-grid compact">
+                        <button class="combo-btn" onclick="quickOrder('sheriff', 'revolver')">
+                            <span class="combo-icon">🤠</span>
+                            <span class="combo-name">The Sheriff</span>
+                        </button>
+                        <button class="combo-btn" onclick="quickOrder('crown', 'cash')">
+                            <span class="combo-icon">👑</span>
+                            <span class="combo-name">The King</span>
+                        </button>
+                        <button class="combo-btn" onclick="quickOrder('party-hat', 'chicken-sandwich')">
+                            <span class="combo-icon">🎉</span>
+                            <span class="combo-name">Party Pack</span>
+                        </button>
+                        <button class="combo-btn special" onclick="randomizePFP()">
+                            <span class="combo-icon">🎲</span>
+                            <span class="combo-name">Surprise Me!</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Order Summary & Preview -->
+        <section class="order-summary" role="complementary" aria-labelledby="order-title">
+            <div class="order-header">
+                <h2 id="order-title" class="order-title">YOUR ORDER</h2>
+                <div class="order-number">#<span id="orderNumber">0001</span></div>
+            </div>
+
+            <!-- Visual Preview -->
+            <div class="order-preview">
+                <canvas id="pfpCanvas" 
+                        width="250" 
+                        height="250" 
+                        onclick="canvasClicked()"
+                        aria-label="Your custom Paco chicken preview"
+                        role="img">
+                    Your browser doesn't support canvas. Please update to see your chicken!
+                </canvas>
+                <div class="preview-label">
+                    <small>🔄 Click to interact with your chicken!</small>
+                </div>
+            </div>
+
+            <!-- Order Details -->
+            <div class="order-details">
+                <div class="order-items">
+                    <div class="order-item">
+                        <span class="item-qty">1x</span>
+                        <span class="item-name" id="orderBase">Original Paco</span>
+                        <span class="item-price">$0.00</span>
+                    </div>
+                    <div class="order-item" id="orderHat" style="display: none;">
+                        <span class="item-qty">1x</span>
+                        <span class="item-name"></span>
+                        <span class="item-price">$0.50</span>
+                    </div>
+                    <div class="order-item" id="orderItem" style="display: none;">
+                        <span class="item-qty">1x</span>
+                        <span class="item-name"></span>
+                        <span class="item-price">$1.00</span>
+                    </div>
+                </div>
+
+                <div class="order-total">
+                    <div class="total-line">
+                        <span>Subtotal:</span>
+                        <span id="subtotal">$0.00</span>
+                    </div>
+                    <div class="total-line">
+                        <span>Blockchain Fee:</span>
+                        <span>$0.01</span>
+                    </div>
+                    <div class="total-line total-final">
+                        <span>TOTAL:</span>
+                        <span id="finalTotal">$0.01</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="order-actions">
+                <button class="place-order-btn" onclick="downloadPFP()">
+                    📋 PLACE ORDER
+                </button>
+                <button class="modify-order-btn" onclick="clearOrder()">
+                    🗑️ CLEAR ORDER
+                </button>
+            </div>
+        </section>
+
+        <!-- Restaurant Info Panel -->
+        <section class="restaurant-info" role="complementary" aria-labelledby="info-title">
+            <h2 id="info-title" class="info-title">🏪 RESTAURANT INFO</h2>
+            
+            <div class="info-compact">
+                <div class="info-item">
+                    <h3>🌟 Our Story</h3>
+                    <p>The finest crypto chicken restaurant on Abstract! Family owned, community driven, blockchain powered.</p>
+                </div>
+
+                <div class="info-item">
+                    <h3>💰 Franchise ($PACO)</h3>
+                    <div class="franchise-address" onclick="copyContract()">
+                        <div class="address-value">0x1234...5678</div>
+                        <div class="address-action">📋 Copy</div>
+                    </div>
+                </div>
+
+                <div class="info-item">
+                    <h3>📊 Stats</h3>
+                    <div class="stats-mini">
+                        <span>🐔 100+ Items</span>
+                        <span>⚡ Instant</span>
+                        <span>🔒 Secure</span>
+                        <span>💯 Quality</span>
+                    </div>
+                </div>
+
+                <div class="info-item">
+                    <h3>📱 Follow Us</h3>
+                    <div class="social-mini">
+                        <button class="social-btn telegram" onclick="openTelegram()">📱</button>
+                        <button class="social-btn twitter" onclick="openTwitter()">🐦</button>
+                        <button class="social-btn dex" onclick="openDEX()">💱</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Notification System -->
+    <div id="notification" class="notification" role="alert" aria-live="polite"></div>
+
+    <!-- Hidden Screen Reader Content -->
+    <div class="sr-only">
+        <p>
+            Welcome to Paco's Chicken Palace, an interactive restaurant where you can customize 
+            and order your own crypto chicken NFT. Use Tab to navigate the menu and Enter to select items.
+        </p>
+    </div>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+    
+    <!-- Analytics (Placeholder) -->
+    <script>
+        // Restaurant analytics
+        console.log('🍗 Paco\'s Chicken Palace Analytics loaded');
+    </script>
+</body>
+</html> 

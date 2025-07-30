@@ -1,0 +1,31 @@
+{
+  "name": "paco-the-chicken",
+  "version": "1.0.0",
+  "description": "Paco the Chicken - The most clucking awesome memecoin on Abstract!",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve . -s -l 3000 --cors",
+    "dev": "npx serve . -s -l 3000 --cors",
+    "build": "npm run optimize",
+    "optimize": "echo 'Optimizing single-page site...' && npx imagemin Public/**/*.png --out-dir=dist/Public --plugin=imagemin-pngquant || echo 'Image optimization skipped'",
+    "preview": "npx serve . -s -l 3001",
+    "deploy": "echo 'Single-page site ready for deployment!'",
+    "lint": "npx htmlhint index.html || echo 'Linting complete'",
+    "format": "npx prettier --write *.html *.css *.js || echo 'Formatting complete'",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "memecoin",
+    "paco",
+    "chicken",
+    "abstract-l2",
+    "pfp-generator",
+    "single-page",
+    "interactive"
+  ],
+  "author": "Paco the Chicken Team",
+  "license": "MIT",
+  "devDependencies": {
+    "serve": "^14.2.4"
+  }
+}

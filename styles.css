@@ -70,7 +70,7 @@ body {
     background-color: #1a1a1a;
     background: 
         linear-gradient(135deg, rgba(220, 38, 38, 0.1), rgba(249, 115, 22, 0.1), rgba(251, 191, 36, 0.1), rgba(16, 185, 129, 0.1)),
-        url('public/bg 2048.png');
+        url('Public/bg 2048.png');
     background-size: 400% 400%, cover;
     background-position: center center, center center;
     background-repeat: no-repeat, no-repeat;

@@ -65,7 +65,7 @@ const menuItems = {
         { id: '', name: 'No Side', description: 'Keep it simple, chicken only', price: 0.00, emoji: '🚫' },
         { id: 'revolver', name: 'Six-Shooter Sauce', description: 'Hot sauce that packs a punch', price: 1.00, emoji: '🌶️' },
         { id: 'blunt', name: 'Rolled Wrap', description: 'Tightly wrapped with secret herbs', price: 1.00, emoji: '🌿' },
-        { id: 'crack-pipe', name: 'Crispy Chips', description: 'Addictively crunchy side snack', price: 1.00, emoji: '🍟' },
+        { id: 'crack-pipe', name: 'Crack Cola', description: 'Addictively refreshing drink', price: 1.00, emoji: '🥤' },
         { id: 'cash', name: 'Money Munchies', description: 'Green bills made of lettuce', price: 1.00, emoji: '💰' },
         { id: 'abs-coin', name: 'Crypto Coins', description: 'Golden onion rings, digital delicious', price: 1.00, emoji: '🪙' },
         { id: 'joint', name: 'Joint Ventures', description: 'Twisted breadsticks, business style', price: 1.00, emoji: '🥖' },

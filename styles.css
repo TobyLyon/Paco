@@ -67,9 +67,10 @@
 
 body {
     font-family: var(--font-body);
+    background-color: #1a1a1a;
     background: 
         linear-gradient(135deg, rgba(220, 38, 38, 0.1), rgba(249, 115, 22, 0.1), rgba(251, 191, 36, 0.1), rgba(16, 185, 129, 0.1)),
-        url('Public/bg 2048.png');
+        url(Public/bg%202048.png);
     background-size: 400% 400%, cover;
     background-position: center center, center center;
     background-repeat: no-repeat, no-repeat;
@@ -2293,14 +2294,24 @@ body {
         border-radius: var(--border-radius-md);
     }
     
+    /* ===== MOBILE PREVIEW BOX CENTERING & COMPRESSION ===== */
     .preview-section {
-        padding: var(--space-sm);
+        padding: var(--space-xs);
         min-width: unset;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
     }
     
     .canvas-container {
-        padding: var(--space-sm);
-        margin-bottom: var(--space-xs);
+        padding: var(--space-xs);
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        max-width: 300px;
     }
     
     #pfpCanvas {
@@ -2308,17 +2319,36 @@ body {
         height: 280px;
         max-width: 280px;
         max-height: 280px;
+        margin: 0 auto;
+        display: block;
+    }
+    
+    .preview-header {
+        text-align: center;
+        margin-bottom: var(--space-xs);
     }
     
     .preview-header h2 {
         font-size: var(--font-size-lg);
+        margin: 0;
     }
     
     .action-buttons {
-        flex-direction: column;
+        flex-direction: row;
         gap: var(--space-xs);
+        justify-content: center;
+        width: 100%;
+        max-width: 280px;
     }
     
+    .action-buttons button {
+        flex: 1;
+        min-height: 40px;
+        font-size: 11px;
+        padding: var(--space-xs);
+    }
+    
+    /* ===== MOBILE TRAIT BOXES COMPRESSION ===== */
     .menu-section-compact {
         padding: var(--space-xs);
         gap: var(--space-xs);
@@ -2327,15 +2357,39 @@ body {
     
     .menu-category {
         padding: var(--space-xs);
+        margin-bottom: var(--space-xs);
     }
     
     .category-title {
-        font-size: var(--font-size-sm);
+        font-size: 12px;
+        margin-bottom: var(--space-xs);
+        padding: var(--space-xs);
     }
     
     .menu-grid {
-        grid-template-columns: repeat(auto-fit, minmax(40px, 1fr));
-        gap: 2px;
+        grid-template-columns: repeat(auto-fit, minmax(35px, 1fr));
+        gap: 1px;
+    }
+    
+    /* ===== COMPRESSED TRAIT ITEMS FOR MOBILE ===== */
+    .menu-item {
+        min-height: 60px !important;
+        padding: 2px !important;
+        border-radius: var(--border-radius-sm);
+    }
+    
+    .item-image {
+        font-size: 1.2rem !important;
+        margin-bottom: 1px;
+    }
+    
+    .item-name {
+        font-size: 8px !important;
+        line-height: 1.1;
+        padding: 0 1px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
     
     .combo-buttons {
@@ -2346,6 +2400,17 @@ body {
     .combo-btn-compact {
         padding: var(--space-xs);
         font-size: 10px;
+        min-height: 35px;
+    }
+    
+    /* ===== MOBILE ORDER SUMMARY COMPRESSION ===== */
+    .order-summary-compact {
+        padding: var(--space-xs);
+    }
+    
+    .order-summary-compact h3 {
+        font-size: var(--font-size-sm);
+        margin-bottom: var(--space-xs);
     }
 }
 
@@ -2425,4 +2490,58 @@ button:focus,
     backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.2);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+/* ===== ADDITIONAL MOBILE OPTIMIZATIONS ===== */
+@media (max-width: 480px) {
+    /* Extra small mobile devices */
+    .restaurant-header {
+        height: 48px;
+        padding: 0 var(--space-xs);
+    }
+    
+    .palace-title {
+        font-size: 14px;
+    }
+    
+    #pfpCanvas {
+        width: 240px;
+        height: 240px;
+        max-width: 240px;
+        max-height: 240px;
+    }
+    
+    .action-buttons .place-order-btn,
+    .action-buttons .copy-btn {
+        padding: var(--space-sm);
+        font-size: 12px;
+    }
+    
+    .order-summary-compact {
+        padding: var(--space-xs);
+    }
+    
+    .menu-grid {
+        grid-template-columns: repeat(auto-fit, minmax(35px, 1fr));
+    }
+}
+
+/* Touch-friendly improvements */
+@media (hover: none) and (pointer: coarse) {
+    .menu-item {
+        min-height: 44px; /* Minimum touch target size */
+    }
+    
+    .combo-btn-compact {
+        min-height: 44px;
+    }
+    
+    .social-icon {
+        min-width: 44px;
+        min-height: 44px;
+    }
+    
+    .action-buttons button {
+        min-height: 48px;
+    }
 } 

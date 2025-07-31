@@ -1129,13 +1129,13 @@ function copyContract() {
     }
 }
 
-function openTelegram() {
+function openDiscord() {
     try {
-        window.open('https://t.me/pacoschickenpalace', '_blank');
+        window.open('https://discord.gg/MT9Qva8r8t', '_blank');
         playSound('click');
-        showNotification('📱 Opening Telegram Kitchen...', 'info');
+        showNotification('💬 Opening Discord Kitchen...', 'info');
     } catch (error) {
-        console.error('Error opening Telegram:', error);
+        console.error('Error opening Discord:', error);
     }
 }
 

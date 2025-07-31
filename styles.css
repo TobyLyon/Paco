@@ -1585,6 +1585,13 @@ body {
     max-height: 480px;
 }
 
+/* Firefox fallback - simple border for canvas container */
+@supports not (mask-composite: xor) {
+    .canvas-container {
+        border: 3px solid var(--restaurant-yellow);
+    }
+}
+
 .canvas-container::before {
     content: '';
     position: absolute;
@@ -1596,10 +1603,9 @@ body {
     mask-composite: xor;
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
-    /* Fallback for Firefox - use border instead of mask */
+    /* Firefox fallback - hide the ::before element if mask doesn't work */
     @supports not (mask-composite: xor) {
-        border: 3px solid;
-        border-image: linear-gradient(135deg, var(--restaurant-red), var(--restaurant-yellow), var(--restaurant-orange), var(--restaurant-green)) 1;
+        display: none;
     }
 }
 
@@ -1710,10 +1716,9 @@ body {
     mask-composite: xor;
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
-    /* Fallback for Firefox - use border instead of mask */
+    /* Firefox fallback - hide the ::before element if mask doesn't work */
     @supports not (mask-composite: xor) {
-        border: 3px solid;
-        border-image: linear-gradient(135deg, var(--restaurant-red), var(--restaurant-yellow), var(--restaurant-orange), var(--restaurant-green)) 1;
+        display: none;
     }
 }
 
@@ -1972,10 +1977,9 @@ body {
     mask-composite: xor;
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
-    /* Fallback for Firefox - use border instead of mask */
+    /* Firefox fallback - hide the ::before element if mask doesn't work */
     @supports not (mask-composite: xor) {
-        border: 3px solid;
-        border-image: linear-gradient(135deg, var(--restaurant-red), var(--restaurant-yellow), var(--restaurant-orange), var(--restaurant-green)) 1;
+        display: none;
     }
 }
 

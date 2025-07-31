@@ -52,7 +52,10 @@ async function build() {
         console.log('✅  Root files copied.');
 
         // 4. Recursively copy everything from the source 'Public' directory (for general assets).
-        if (await fs.pathExists(sourcePublicDir)) {
+        const normalizedSourcePublic = path.resolve(sourcePublicDir).toLowerCase();
+        const normalizedOutput = path.resolve(outputDir).toLowerCase();
+        
+        if (await fs.pathExists(sourcePublicDir) && normalizedSourcePublic !== normalizedOutput) {
             console.log(`🏞️  Copying assets from ${sourcePublicDir} to ${outputDir}...`);
             await fs.copy(sourcePublicDir, outputDir, {
                 overwrite: true,
@@ -61,7 +64,7 @@ async function build() {
             });
             console.log('✅  Assets from Public directory copied.');
         } else {
-            console.log(`⚠️  Source 'Public' directory not found, skipping.`);
+            console.log(`⚠️  Source 'Public' directory not found or same as destination, skipping.`);
         }
         
         // 5. Recursively copy the generator assets.

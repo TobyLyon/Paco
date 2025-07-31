@@ -1131,6 +1131,16 @@ function openTwitter() {
     }
 }
 
+function openDexScreener() {
+    try {
+        window.open('https://dexscreener.com/abstract/0x98dc57db2a2db5bfa58370fc063a2d50a20b2528', '_blank');
+        playKitchenSound();
+        showNotification('📊 Opening DexScreener Chart...', 'info');
+    } catch (error) {
+        console.error('Error opening DexScreener:', error);
+    }
+}
+
 function openDEX() {
     try {
         // Placeholder URL - can be updated with actual DEX link later

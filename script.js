@@ -512,7 +512,7 @@ function loadLayer(type, value) {
             console.error(`Failed to load ${type} image:`, value);
             showNotification(`❌ Error loading ${type}`);
         };
-        layers[type].src = `Public/ASSETS/${type}/${value}.png`;
+        layers[type].src = `ASSETS/${type}/${value}.png`;
     }
 }
 
@@ -656,7 +656,7 @@ function loadBaseImage() {
         console.error('Failed to load base image');
         showNotification('❌ Error loading base chicken');
     };
-    layers.base.src = 'Public/ASSETS/base/PACO.png';
+    layers.base.src = 'ASSETS/base/PACO.png';
 }
 
 function drawPFP() {
@@ -739,7 +739,7 @@ function quickOrder(hatId, itemId) {
         console.error('Failed to load base image for quick combo');
         showNotification('❌ Error loading base chicken');
     };
-    layers.base.src = 'Public/ASSETS/base/PACO.png';
+    layers.base.src = 'ASSETS/base/PACO.png';
     
     updateOrderSummary();
     updateOrderTotal();
@@ -819,7 +819,7 @@ function randomizePFP() {
         console.error('Failed to load base image for random combo');
         showNotification('❌ Error loading base chicken');
     };
-    layers.base.src = 'Public/ASSETS/base/PACO.png';
+    layers.base.src = 'ASSETS/base/PACO.png';
     
     updateOrderSummary();
     updateOrderTotal();
@@ -1449,7 +1449,7 @@ function loadBaseImage() {
             // Draw fallback
             drawFallbackImage(ctx, canvas);
         };
-        baseImg.src = 'Public/ASSETS/base/PACO.png';
+        baseImg.src = 'ASSETS/base/PACO.png';
     } catch (error) {
         console.error('Error in loadBaseImage:', error);
     }
@@ -1468,7 +1468,7 @@ function loadSelectedLayers() {
             hatImg.onload = function() {
                 ctx.drawImage(hatImg, 0, 0, canvas.width, canvas.height);
             };
-            hatImg.src = `Public/ASSETS/hat/${currentOrder.hat}.png`;
+            hatImg.src = `ASSETS/hat/${currentOrder.hat}.png`;
         }
         
         // Load item layer if selected
@@ -1478,7 +1478,7 @@ function loadSelectedLayers() {
             itemImg.onload = function() {
                 ctx.drawImage(itemImg, 0, 0, canvas.width, canvas.height);
             };
-            itemImg.src = `Public/ASSETS/item/${currentOrder.item}.png`;
+            itemImg.src = `ASSETS/item/${currentOrder.item}.png`;
         }
     } catch (error) {
         console.error('Error loading layers:', error);

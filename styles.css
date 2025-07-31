@@ -2211,25 +2211,26 @@ body {
 @media (max-width: 768px) {
     /* ===== RESPONSIVE HEADER FIX (NO STACKING) ===== */
     .restaurant-header {
-        padding: 0 var(--space-sm); /* smaller padding */
-        gap: var(--space-sm); /* smaller gap between main items */
+        padding: 0 4px; /* ultra minimal padding */
+        gap: 2px; /* tiny gap between main items */
         flex-wrap: nowrap; /* Explicitly prevent wrapping */
-        height: 54px; /* a bit smaller */
+        height: 48px; /* smaller */
     }
 
     .restaurant-logo {
-        gap: var(--space-sm); /* smaller gap */
+        gap: 2px; /* tiny gap */
         min-width: 0; /* allow shrinking */
         flex-shrink: 1; /* allow shrinking */
     }
 
     .header-logo {
-        width: 40px; /* smaller logo */
-        height: 40px;
+        width: 32px; /* smaller logo */
+        height: 32px;
     }
 
     .palace-title {
-        font-size: var(--font-size-base); /* smaller title */
+        font-size: 12px; /* smaller title */
+        white-space: nowrap;
     }
 
     .palace-tagline {
@@ -2237,46 +2238,49 @@ body {
     }
 
     .restaurant-stats {
-        gap: var(--space-xs);
+        gap: 1px;
         flex-shrink: 0; /* Don't shrink the stats container itself */
         flex-grow: 1;
         justify-content: center;
     }
 
     .stat-item {
-        padding: 2px 4px;
+        padding: 1px 2px;
         border-width: 1px;
-        min-width: 40px;
-    }
-
-    .stat-number {
-        font-size: 10px;
-    }
-
-    .stat-label {
+        min-width: 32px;
         font-size: 7px;
     }
 
+    .stat-number {
+        font-size: 8px;
+    }
+
+    .stat-label {
+        font-size: 6px;
+    }
+
     .restaurant-hours {
-        gap: var(--space-sm);
+        gap: 2px;
         min-width: 0;
         justify-content: flex-end;
         flex-shrink: 1;
     }
     
     .abstract-logo {
-        width: 20px;
-        height: 20px;
-        padding: 1px;
+        width: 16px;
+        height: 16px;
+        padding: 0px;
     }
 
     .abstract-text {
-        font-size: 9px;
+        font-size: 7px;
+        white-space: nowrap;
     }
 
     .hours-status {
-        font-size: 9px;
-        padding: 2px 6px;
+        font-size: 7px;
+        padding: 1px 3px;
+        white-space: nowrap;
     }
 
     body {
@@ -2434,21 +2438,26 @@ body {
     .order-items {
         min-height: auto !important;
         max-height: none !important;
-        padding: 2px !important;
+        padding: 0 !important;
         margin: 0 !important;
+        background: none !important;
+        border: none !important;
     }
     
     .order-item {
-        padding: 1px 2px !important;
-        margin-bottom: 1px !important;
-        font-size: 9px !important;
-        line-height: 1.1 !important;
+        padding: 0px 1px !important;
+        margin-bottom: 0px !important;
+        font-size: 8px !important;
+        line-height: 1 !important;
+        background: none !important;
+        border: none !important;
     }
     
     .order-total {
-        padding: 2px !important;
-        margin: 2px 0 !important;
-        font-size: 10px !important;
+        padding: 1px !important;
+        margin: 1px 0 !important;
+        font-size: 9px !important;
+        line-height: 1 !important;
     }
     
     .place-order-btn {

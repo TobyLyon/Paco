@@ -1141,6 +1141,16 @@ function openDexScreener() {
     }
 }
 
+function openTelegram() {
+    try {
+        window.open('https://t.me/+WH78IRYSeBhiMGIx', '_blank');
+        playKitchenSound();
+        showNotification('📱 Opening Telegram Channel...', 'info');
+    } catch (error) {
+        console.error('Error opening Telegram:', error);
+    }
+}
+
 function openDEX() {
     try {
         // Placeholder URL - can be updated with actual DEX link later

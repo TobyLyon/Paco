@@ -2311,13 +2311,13 @@ body {
     
     /* ===== MOBILE PREVIEW BOX CENTERING & COMPRESSION ===== */
     .preview-section {
-        padding: 2px;
+        padding: 4px;
         min-width: unset;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: flex-start;
-        gap: 2px;
+        gap: 4px;
     }
     
     .canvas-container {
@@ -2344,30 +2344,30 @@ body {
     
     .preview-header {
         text-align: center;
-        margin-bottom: 2px;
+        margin-bottom: 4px;
     }
     
     .preview-header h2 {
         font-size: var(--font-size-base);
         margin: 0;
-        padding: 2px 0;
+        padding: 4px 0;
     }
     
     .action-buttons {
         flex-direction: column;
-        gap: 2px;
+        gap: 3px;
         justify-content: center;
         width: 100%;
         max-width: 260px;
-        margin-top: 2px;
+        margin: 4px 0;
     }
     
     .action-buttons button {
         width: 100%;
-        min-height: 40px;
-        font-size: 12px;
-        padding: 8px 4px;
-        font-weight: 600;
+        min-height: 36px;
+        font-size: 10px;
+        padding: 6px 4px;
+        border-radius: 6px;
     }
     
     /* ===== MOBILE TRAIT BOXES COMPRESSION ===== */
@@ -2440,8 +2440,8 @@ body {
     
     /* ===== MOBILE ORDER SUMMARY COMPRESSION ===== */
     .order-summary-compact {
-        padding: 2px;
-        margin: 2px 0 0 0;
+        padding: 4px;
+        margin: 4px 0;
         min-height: auto !important;
         height: auto !important;
         max-height: none !important;
@@ -2451,6 +2451,7 @@ body {
         width: 95% !important;
         max-width: 260px !important;
         align-self: center !important;
+        border-radius: 8px !important;
     }
     
     .order-summary-compact h3 {

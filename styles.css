@@ -303,6 +303,8 @@ body {
     background-clip: padding-box;
     flex-shrink: 0;
     backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    -moz-backdrop-filter: blur(20px);
     z-index: 2;
 }
 
@@ -1205,6 +1207,8 @@ body {
 .menu-item {
     background: rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    -moz-backdrop-filter: blur(12px);
     color: var(--text-primary);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 10px;
@@ -1240,6 +1244,8 @@ body {
     border-color: rgba(251, 191, 36, 0.6);
     background: rgba(251, 191, 36, 0.12);
     backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    -moz-backdrop-filter: blur(16px);
     transform: translateY(-2px) scale(1.03);
     box-shadow: 
         0 8px 32px rgba(0, 0, 0, 0.15),
@@ -1255,6 +1261,8 @@ body {
     border-color: var(--restaurant-yellow);
     background: rgba(220, 38, 38, 0.25);
     backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    -moz-backdrop-filter: blur(16px);
     color: var(--text-primary);
     box-shadow: 
         0 8px 32px rgba(220, 38, 38, 0.3),
@@ -1442,7 +1450,13 @@ body {
     border-radius: 24px;
     mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     mask-composite: xor;
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
+    /* Fallback for Firefox - use border instead of mask */
+    @supports not (mask-composite: xor) {
+        border: 3px solid;
+        border-image: linear-gradient(135deg, var(--restaurant-red), var(--restaurant-yellow), var(--restaurant-orange), var(--restaurant-green)) 1;
+    }
     animation: borderGlow 4s ease-in-out infinite alternate;
 }
 
@@ -1524,6 +1538,10 @@ body {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    /* Fallback for browsers that don't support background-clip: text */
+    @supports not (-webkit-background-clip: text) {
+        color: var(--restaurant-yellow);
+    }
     text-shadow: none;
     letter-spacing: -0.02em;
     position: relative;
@@ -1570,7 +1588,13 @@ body {
     border-radius: 24px;
     mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     mask-composite: xor;
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
+    /* Fallback for Firefox - use border instead of mask */
+    @supports not (mask-composite: xor) {
+        border: 3px solid;
+        border-image: linear-gradient(135deg, var(--restaurant-red), var(--restaurant-yellow), var(--restaurant-orange), var(--restaurant-green)) 1;
+    }
 }
 
 .canvas-container::after {
@@ -1636,6 +1660,8 @@ body {
     border-radius: 12px;
     border: 1px solid rgba(251, 191, 36, 0.2);
     backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    -moz-backdrop-filter: blur(8px);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     letter-spacing: 0.01em;
 }
@@ -1676,7 +1702,13 @@ body {
     border-radius: 16px;
     mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     mask-composite: xor;
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
+    /* Fallback for Firefox - use border instead of mask */
+    @supports not (mask-composite: xor) {
+        border: 3px solid;
+        border-image: linear-gradient(135deg, var(--restaurant-red), var(--restaurant-yellow), var(--restaurant-orange), var(--restaurant-green)) 1;
+    }
 }
 
 .order-summary-compact .order-items {
@@ -1693,6 +1725,10 @@ body {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    /* Fallback for browsers that don't support background-clip: text */
+    @supports not (-webkit-background-clip: text) {
+        color: var(--restaurant-yellow);
+    }
     text-shadow: none;
     letter-spacing: -0.01em;
     margin: var(--space-sm) 0;
@@ -1700,6 +1736,8 @@ body {
     border-radius: 8px;
     background-color: rgba(251, 191, 36, 0.1);
     backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    -moz-backdrop-filter: blur(4px);
 }
 
 .action-buttons {
@@ -1863,6 +1901,7 @@ body {
 }
 
 /* Enhanced Scrollbar Styling */
+/* Webkit browsers (Chrome, Safari) */
 .menu-section-compact::-webkit-scrollbar,
 .horizontal-menu::-webkit-scrollbar,
 .menu-grid::-webkit-scrollbar {
@@ -1891,9 +1930,19 @@ body {
     background: linear-gradient(180deg, var(--restaurant-orange), var(--restaurant-red));
 }
 
+/* Firefox scrollbar styling */
+.menu-section-compact,
+.horizontal-menu,
+.menu-grid {
+    scrollbar-width: thin;
+    scrollbar-color: var(--restaurant-yellow) rgba(255, 255, 255, 0.08);
+}
+
 .menu-category {
     background: rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    -moz-backdrop-filter: blur(20px);
     border-radius: 14px;
     border: 1px solid rgba(255, 255, 255, 0.15);
     padding: var(--space-md);
@@ -1915,7 +1964,13 @@ body {
     border-radius: 16px;
     mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     mask-composite: xor;
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
+    /* Fallback for Firefox - use border instead of mask */
+    @supports not (mask-composite: xor) {
+        border: 3px solid;
+        border-image: linear-gradient(135deg, var(--restaurant-red), var(--restaurant-yellow), var(--restaurant-orange), var(--restaurant-green)) 1;
+    }
 }
 
 .menu-category:hover {
@@ -1956,6 +2011,10 @@ body {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    /* Fallback for browsers that don't support background-clip: text */
+    @supports not (-webkit-background-clip: text) {
+        color: var(--restaurant-yellow);
+    }
 }
 
 .category-icon {
@@ -1983,6 +2042,8 @@ body {
     border-radius: 10px;
     background: rgba(0, 0, 0, 0.2);
     backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    -moz-backdrop-filter: blur(8px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
 }
@@ -1996,6 +2057,8 @@ body {
 .combo-btn-compact {
     background: rgba(220, 38, 38, 0.8);
     backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    -moz-backdrop-filter: blur(12px);
     color: white;
     border: 1px solid rgba(251, 191, 36, 0.4);
     border-radius: 10px;
@@ -2064,6 +2127,8 @@ body {
     border-color: rgba(16, 185, 129, 0.4);
     background: rgba(16, 185, 129, 0.05);
     backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    -moz-backdrop-filter: blur(16px);
 }
 
 .info-content-compact {
@@ -2075,6 +2140,8 @@ body {
 .franchise-compact {
     background: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    -moz-backdrop-filter: blur(16px);
     border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.2);
     padding: var(--space-md);
@@ -2091,6 +2158,8 @@ body {
 .franchise-compact:hover {
     background: rgba(251, 191, 36, 0.15);
     backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    -moz-backdrop-filter: blur(20px);
     border-color: rgba(251, 191, 36, 0.4);
     transform: translateY(-1px);
     box-shadow: 
@@ -2121,6 +2190,8 @@ body {
     padding: 2px 6px;
     border-radius: 4px;
     backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    -moz-backdrop-filter: blur(8px);
 }
 
 .social-buttons-compact {
@@ -2139,6 +2210,8 @@ body {
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    -moz-backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
     color: rgba(255, 255, 255, 0.9);
     cursor: pointer;
@@ -2207,6 +2280,8 @@ body {
     font-weight: 600;
     background: rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    -moz-backdrop-filter: blur(8px);
     padding: var(--space-sm);
     border-radius: 8px;
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -2624,6 +2699,8 @@ button:focus,
 .glass-morphism {
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    -moz-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.2);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }

@@ -1578,7 +1578,7 @@ async function copyPFPToClipboard() {
             return;
         }
         
-                    // Copy to clipboard using the Clipboard API
+        // Copy to clipboard using the Clipboard API
         if (navigator.clipboard && navigator.clipboard.write) {
             const clipboardItem = new ClipboardItem({ 'image/png': blob });
             await navigator.clipboard.write([clipboardItem]);
@@ -1595,6 +1595,7 @@ async function copyPFPToClipboard() {
             // Update local orders served count
             ordersServed++;
             localStorage.setItem('ordersServed', ordersServed.toString());
+            updateOrdersServed();
             
             // Update order number for next order
             orderNumber++;

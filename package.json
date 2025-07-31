@@ -28,6 +28,7 @@
     "author": "Paco's Chicken Palace",
     "license": "MIT",
     "devDependencies": {
+        "fs-extra": "^11.3.0",
         "htmlhint": "^1.1.4",
         "live-server": "^1.2.2",
         "prettier": "^3.0.0"

@@ -1113,7 +1113,7 @@ function copyContract() {
 
 function openDiscord() {
     try {
-        window.open('https://discord.gg/MT9Qva8r8t', '_blank');
+        window.open('https://discord.gg/zFq3xPHb6a', '_blank');
         playKitchenSound();
         showNotification('💬 Opening Discord Kitchen...', 'info');
     } catch (error) {

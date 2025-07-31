@@ -512,7 +512,7 @@ function loadLayer(type, value) {
             console.error(`Failed to load ${type} image:`, value);
             showNotification(`❌ Error loading ${type}`);
         };
-        layers[type].src = `ASSETS/${type}/${value}.png`;
+        layers[type].src = `${type}/${value}.png`;
     }
 }
 

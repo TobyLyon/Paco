@@ -15,7 +15,8 @@ const filesToCopy = [
     'index.html',
     'styles.css', 
     'script.js',
-    'abstract.png'
+    'abstract.png',
+    'favicon.png'
 ];
 
 // Copy main files

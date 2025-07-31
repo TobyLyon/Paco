@@ -2317,14 +2317,11 @@ body {
     .pfp-generator {
         flex-direction: column;
         border-radius: var(--border-radius-md);
-        gap: 0;
-        padding: 4px;
-        overflow: visible;
     }
     
     /* ===== MOBILE PREVIEW SECTION - PROFESSIONAL LAYOUT ===== */
     .preview-section {
-        padding: 6px;
+        padding: 8px;
         min-width: unset;
         display: flex;
         flex-direction: column;
@@ -2333,19 +2330,21 @@ body {
         gap: 0;
         background: rgba(0, 0, 0, 0.02);
         border-radius: 12px;
-        margin: 2px;
+        margin: 4px;
         position: relative;
         z-index: 1;
-        order: 1;
+        overflow: hidden;
     }
     
     .preview-header {
         text-align: center;
-        margin: 0 0 6px 0;
-        padding: 4px 0;
+        margin: 0 0 8px 0;
+        padding: 8px 12px;
         background: var(--restaurant-red);
         border-radius: 8px 8px 0 0;
-        margin: -6px -6px 6px -6px;
+        margin: -8px -8px 8px -8px;
+        position: relative;
+        z-index: 2;
     }
     
     .preview-header h2 {
@@ -2358,7 +2357,7 @@ body {
     }
     
     .canvas-container {
-        padding: 0;
+        padding: 12px;
         margin: 0 auto 12px auto;
         display: flex;
         flex-direction: column;
@@ -2368,14 +2367,16 @@ body {
         background: rgba(255, 255, 255, 0.95);
         border-radius: 8px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        position: relative;
     }
     
     #pfpCanvas {
-        width: 240px;
-        height: 240px;
-        max-width: 240px;
-        max-height: 240px;
-        margin: 8px auto;
+        width: 200px;
+        height: 200px;
+        max-width: 200px;
+        max-height: 200px;
+        margin: 0 auto;
         display: block;
         object-fit: contain;
         object-position: center;
@@ -2413,10 +2414,6 @@ body {
         padding: 2px;
         gap: 1px;
         max-height: none;
-        order: 2;
-        margin-top: 4px;
-        position: relative;
-        z-index: 2;
     }
     
     .menu-category {

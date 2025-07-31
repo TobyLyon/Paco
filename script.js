@@ -1080,7 +1080,7 @@ function buyPaco() {
 }
 
 function copyContract() {
-    const contractAddress = '0x1234567890abcdef1234567890abcdef12345678';
+    const contractAddress = '0x98DC57db2a2dB5bfa58370fc063A2d50A20B2528';
     
     if (navigator.clipboard) {
         navigator.clipboard.writeText(contractAddress).then(() => {

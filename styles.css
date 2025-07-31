@@ -2305,91 +2305,103 @@ body {
     }
     
     .canvas-container {
-        padding: var(--space-xs);
+        padding: 2px;
         margin: 0 auto;
         display: flex;
         flex-direction: column;
         align-items: center;
         width: 100%;
-        max-width: 300px;
+        max-width: 290px;
     }
     
     #pfpCanvas {
-        width: 280px;
-        height: 280px;
-        max-width: 280px;
-        max-height: 280px;
+        width: 260px;
+        height: 260px;
+        max-width: 260px;
+        max-height: 260px;
         margin: 0 auto;
         display: block;
     }
     
     .preview-header {
         text-align: center;
-        margin-bottom: var(--space-xs);
+        margin-bottom: 2px;
     }
     
     .preview-header h2 {
-        font-size: var(--font-size-lg);
+        font-size: var(--font-size-base);
         margin: 0;
+        padding: 2px 0;
     }
     
     .action-buttons {
         flex-direction: row;
-        gap: var(--space-xs);
+        gap: 2px;
         justify-content: center;
         width: 100%;
-        max-width: 280px;
+        max-width: 260px;
+        margin-top: 2px;
     }
     
     .action-buttons button {
         flex: 1;
-        min-height: 40px;
-        font-size: 11px;
-        padding: var(--space-xs);
+        min-height: 36px;
+        font-size: 10px;
+        padding: 4px 2px;
     }
     
     /* ===== MOBILE TRAIT BOXES COMPRESSION ===== */
     .menu-section-compact {
-        padding: var(--space-xs);
-        gap: var(--space-xs);
+        padding: 4px;
+        gap: 2px;
         max-height: none;
     }
     
     .menu-category {
-        padding: var(--space-xs);
-        margin-bottom: var(--space-xs);
+        padding: 2px;
+        margin-bottom: 2px;
     }
     
     .category-title {
-        font-size: 12px;
-        margin-bottom: var(--space-xs);
-        padding: var(--space-xs);
+        font-size: 11px;
+        margin-bottom: 2px;
+        padding: 4px var(--space-xs);
     }
     
     .menu-grid {
-        grid-template-columns: repeat(auto-fit, minmax(35px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(38px, 1fr));
         gap: 1px;
     }
     
     /* ===== COMPRESSED TRAIT ITEMS FOR MOBILE ===== */
     .menu-item {
-        min-height: 60px !important;
-        padding: 2px !important;
+        min-height: 50px !important;
+        padding: 1px !important;
         border-radius: var(--border-radius-sm);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
     }
     
     .item-image {
-        font-size: 1.2rem !important;
-        margin-bottom: 1px;
+        font-size: 1.1rem !important;
+        margin-bottom: 0px;
+        line-height: 1;
     }
     
     .item-name {
-        font-size: 8px !important;
-        line-height: 1.1;
-        padding: 0 1px;
+        font-size: 7px !important;
+        line-height: 1;
+        padding: 0;
+        text-align: center;
+        width: 100%;
         overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        word-break: break-word;
+        hyphens: auto;
     }
     
     .combo-buttons {

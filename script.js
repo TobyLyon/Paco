@@ -59,7 +59,8 @@ const menuItems = {
         { id: 'rasta', name: 'Island Jerk', description: 'Caribbean spiced with reggae vibes', price: 0.50, emoji: '🌴' },
         { id: 'halo', name: 'Heavenly Herb', description: 'Angel-blessed with divine seasoning', price: 0.50, emoji: '😇' },
         { id: 'demon', name: 'Devil\'s Dare', description: 'Dangerously spicy, handle with care', price: 0.50, emoji: '😈' },
-        { id: 'party-hat', name: 'Celebration Crunch', description: 'Party-time flavor with confetti crumbs', price: 0.50, emoji: '🎉' }
+        { id: 'party-hat', name: 'Celebration Crunch', description: 'Party-time flavor with confetti crumbs', price: 0.50, emoji: '🎉' },
+        { id: 'habibi', name: 'Habibi Heat', description: 'Middle Eastern spiced with desert fire', price: 0.50, emoji: '🔥' }
     ],
     items: [
         { id: '', name: 'No Side', description: 'Keep it simple, chicken only', price: 0.00, emoji: '🚫' },

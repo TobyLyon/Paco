@@ -3,80 +3,43 @@ const path = require('path');
 
 console.log('🏗️ Building Paco\'s Chicken Palace for deployment...');
 
-// Create public directory
+// The public directory is the OUTPUT - we should not touch it if it already exists correctly
 const publicDir = path.join(__dirname, 'public');
-if (!fs.existsSync(publicDir)) {
-    fs.mkdirSync(publicDir, { recursive: true });
-    console.log('✅ Created public directory');
-}
 
-// Files to copy to public directory
-const filesToCopy = [
-    'index.html',
-    'styles.css', 
-    'script.js',
-    'abstract.png',
-    'favicon-32x32.png',
-    'favicon-16x16.png',
-    'apple-touch-icon.png',
-    'favicon.ico'
-];
-
-// Copy main files
-filesToCopy.forEach(file => {
+// Since you've already set up the public directory correctly, let's just verify it exists
+if (fs.existsSync(publicDir)) {
+    console.log('✅ Public directory exists and contains your files');
+    
+    // Let's just list what's in there for verification
+    console.log('📁 Current public directory contents:');
     try {
-        if (fs.existsSync(file)) {
-            fs.copyFileSync(file, path.join(publicDir, file));
-            console.log(`✅ Copied ${file}`);
-        } else {
-            console.log(`⚠️ ${file} not found, skipping`);
-        }
-    } catch (error) {
-        console.error(`❌ Error copying ${file}:`, error.message);
-    }
-});
-
-// Copy Public directory recursively
-function copyDirectory(src, dest) {
-    try {
-        if (!fs.existsSync(src)) {
-            console.log(`⚠️ ${src} directory not found, skipping`);
-            return;
-        }
-
-        if (!fs.existsSync(dest)) {
-            fs.mkdirSync(dest, { recursive: true });
-        }
-
-        const items = fs.readdirSync(src);
-        
-        items.forEach(item => {
-            const srcPath = path.join(src, item);
-            const destPath = path.join(dest, item);
+        const files = fs.readdirSync(publicDir);
+        files.forEach(file => {
+            const filePath = path.join(publicDir, file);
+            const isDir = fs.statSync(filePath).isDirectory();
+            console.log(`   ${isDir ? '📁' : '📄'} ${file}`);
             
-            if (fs.statSync(srcPath).isDirectory()) {
-                copyDirectory(srcPath, destPath);
-            } else {
-                fs.copyFileSync(srcPath, destPath);
+            if (isDir && file === 'assets') {
+                try {
+                    const assetFiles = fs.readdirSync(filePath);
+                    assetFiles.forEach(asset => {
+                        console.log(`      📄 ${asset}`);
+                    });
+                } catch (error) {
+                    console.log(`      (Could not read assets directory: ${error.message})`);
+                }
             }
         });
-        
-        console.log(`✅ Copied ${src} directory`);
     } catch (error) {
-        console.error(`❌ Error copying directory ${src}:`, error.message);
+        console.log('Could not list public directory contents');
     }
+    
+    console.log('🎉 Build verification complete! Your public directory is ready for deployment.');
+} else {
+    console.log('❌ Public directory not found. Please ensure your files are in the public/ directory.');
 }
 
-// Copy the Public assets directory
-copyDirectory('Public', path.join(publicDir, 'Public'));
-
-console.log('🎉 Build complete! Files ready in public/ directory');
-console.log('📁 Output directory structure:');
-try {
-    const files = fs.readdirSync(publicDir);
-    files.forEach(file => {
-        console.log(`   - ${file}`);
-    });
-} catch (error) {
-    console.log('Could not list output files');
-} 
+console.log('\n📋 For deployment:');
+console.log('   - Vercel: Point to the public/ directory');
+console.log('   - Netlify: Set publish directory to public/');
+console.log('   - GitHub Pages: Deploy from public/ directory');

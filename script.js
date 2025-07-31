@@ -153,7 +153,7 @@ function playTone(frequency, duration, type = 'sine', volume = 0.1) {
         oscillator.connect(gainNode);
         gainNode.connect(audioContext.destination);
         
-        oscillator.frequency.value = frequency;
+        oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
         oscillator.type = type;
         
         gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
@@ -169,55 +169,37 @@ function playTone(frequency, duration, type = 'sine', volume = 0.1) {
 // Restaurant-themed sound effects
 function playChickenSound() {
     if (!audioEnabled) return;
-    playTone(800, 0.1, 'square');
-    setTimeout(() => playTone(600, 0.1, 'triangle'), 150);
-    setTimeout(() => playTone(900, 0.2, 'sine'), 300);
+    playTone(400, 0.15);
+    setTimeout(() => playTone(450, 0.1), 150);
+    setTimeout(() => playTone(380, 0.1), 300);
 }
 
 function playOrderSound() {
     if (!audioEnabled) return;
-    playTone(600, 0.15);
-    setTimeout(() => playTone(700, 0.15), 100);
+    playTone(523, 0.2);
+    setTimeout(() => playTone(659, 0.3), 200);
 }
 
 function playCompleteOrderSound() {
     if (!audioEnabled) return;
     // Cash register sound
     playTone(800, 0.1);
-    setTimeout(() => playTone(1000, 0.1), 100);
-    setTimeout(() => playTone(1200, 0.2), 200);
+    setTimeout(() => playTone(600, 0.1), 100);
+    setTimeout(() => playTone(400, 0.2), 200);
 }
 
 function playKitchenSound() {
     if (!audioEnabled) return;
     // Sizzling sound
-    playTone(400, 0.3, 'sawtooth', 0.05);
+    playTone(300, 0.3, 'sawtooth', 0.05);
 }
 
 function playPartySound() {
     if (!audioEnabled) return;
-    const notes = [262, 294, 330, 349, 392, 440, 494, 523];
-    notes.forEach((note, i) => {
-        setTimeout(() => playTone(note, 0.1, 'triangle'), i * 100);
-    });
-}
-
-function toggleAudio() {
-    audioEnabled = !audioEnabled;
-    const toggle = document.querySelector('.audio-toggle');
-    if (toggle) {
-        toggle.textContent = audioEnabled ? '🔊' : '🔇';
-        toggle.title = audioEnabled ? 'Turn restaurant sounds off' : 'Turn restaurant sounds on';
-    }
-    
-    if (audioEnabled) {
-        playCompleteOrderSound();
-        showNotification('🔊 Restaurant sounds enabled!');
-    } else {
-        showNotification('🔇 Restaurant sounds disabled');
-    }
-    
-    localStorage.setItem('pacoAudioEnabled', audioEnabled);
+    playTone(523, 0.2);
+    setTimeout(() => playTone(659, 0.2), 100);
+    setTimeout(() => playTone(784, 0.2), 200);
+    setTimeout(() => playTone(1047, 0.3), 300);
 }
 
 // === SUPABASE ORDER TRACKING ===
@@ -708,7 +690,7 @@ function drawPFP() {
 // === QUICK ORDERS ===
 
 function quickOrder(hatId, itemId) {
-    playKitchenSound();
+    playChickenSound();
     
     // Find the menu items
     const hatItem = menuItems.hats.find(h => h.id === hatId);
@@ -851,7 +833,8 @@ function downloadPFP() {
     if (!canvas) return;
     
     try {
-        playCompleteOrderSound();
+        // Play success sound
+        playSound('success');
         
         const link = document.createElement('a');
         const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
@@ -945,8 +928,7 @@ function clearOrder() {
         updateOrderSummary();
     }, 50);
     
-    // Play clear sound
-    playSound('clear');
+            playKitchenSound();
     
     // Show notification
     showNotification('Order cleared! Back to basics 🐔', 'info');
@@ -957,7 +939,7 @@ function clearOrder() {
 // === INTERACTIVE ELEMENTS ===
 
 function canvasClicked() {
-    playChickenSound();
+    playKitchenSound();
     if (canvas) {
         canvas.style.transform = 'scale(1.05) rotate(5deg)';
         setTimeout(() => {
@@ -978,7 +960,7 @@ function canvasClicked() {
 }
 
 function logoClicked() {
-    playChickenSound();
+    playKitchenSound();
     const logo = document.querySelector('.header-logo');
     if (logo) {
         logo.style.transform = 'scale(1.2) rotate(360deg)';
@@ -1090,7 +1072,7 @@ function setupKonamiCode() {
 // === BUTTON FUNCTIONS ===
 
 function buyPaco() {
-    playCompleteOrderSound();
+    playKitchenSound();
     showNotification('🚀 Redirecting to franchise opportunities...');
     setTimeout(() => {
         showNotification('💡 Add your DEX link in the buyPaco() function');
@@ -1102,7 +1084,7 @@ function copyContract() {
     
     if (navigator.clipboard) {
         navigator.clipboard.writeText(contractAddress).then(() => {
-            playCompleteOrderSound();
+            playKitchenSound();
             showNotification('📋 Franchise contract copied!');
         }).catch(() => {
             showNotification('❌ Failed to copy contract');
@@ -1119,7 +1101,7 @@ function copyContract() {
         
         try {
             document.execCommand('copy');
-            playCompleteOrderSound();
+            playKitchenSound();
             showNotification('📋 Franchise contract copied!');
         } catch (err) {
             showNotification('❌ Failed to copy contract');
@@ -1132,7 +1114,7 @@ function copyContract() {
 function openDiscord() {
     try {
         window.open('https://discord.gg/MT9Qva8r8t', '_blank');
-        playSound('click');
+        playKitchenSound();
         showNotification('💬 Opening Discord Kitchen...', 'info');
     } catch (error) {
         console.error('Error opening Discord:', error);
@@ -1142,7 +1124,7 @@ function openDiscord() {
 function openTwitter() {
     try {
         window.open('https://x.com/PacoTheChicken', '_blank');
-        playSound('click');
+        playKitchenSound();
         showNotification('🐦 Opening Twitter Updates...', 'info');
     } catch (error) {
         console.error('Error opening Twitter:', error);
@@ -1153,7 +1135,7 @@ function openDEX() {
     try {
         // Placeholder URL - can be updated with actual DEX link later
         window.open('https://app.uniswap.org/#/swap', '_blank');
-        playSound('click');
+        playKitchenSound();
         showNotification('💱 Opening franchise opportunities...', 'info');
     } catch (error) {
         console.error('Error opening DEX:', error);
@@ -1164,7 +1146,7 @@ function openDEX() {
 
 function savePreferences() {
     const prefs = {
-        audioEnabled,
+
         ordersServed,
         easterEggFound,
         orderNumber,
@@ -1178,7 +1160,7 @@ function loadPreferences() {
         const saved = localStorage.getItem('pacoRestaurantPrefs');
         if (saved) {
             const prefs = JSON.parse(saved);
-            audioEnabled = prefs.audioEnabled !== false;
+        
             ordersServed = prefs.ordersServed || 0;
             easterEggFound = prefs.easterEggFound || false;
             orderNumber = prefs.orderNumber || 1;
@@ -1290,6 +1272,12 @@ function initializeRestaurant() {
         });
         
         console.log('✅ Restaurant initialized successfully!');
+        
+        // Hide loading screen after successful initialization
+        setTimeout(() => {
+            hideLoadingScreen();
+        }, 500);
+        
     } catch (error) {
         console.error('❌ Error in initializeRestaurant:', error);
         // Ensure we still update the order summary even if other things fail
@@ -1298,6 +1286,11 @@ function initializeRestaurant() {
         } catch (e) {
             console.error('❌ Error updating order summary:', e);
         }
+        
+        // Hide loading screen even if initialization fails
+        setTimeout(() => {
+            hideLoadingScreen();
+        }, 1000);
     }
 }
 
@@ -1365,26 +1358,23 @@ function showNotification(message, type = 'info') {
     try {
         // Create simple notification
         const notification = document.createElement('div');
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: var(--restaurant-red);
-            color: white;
-            padding: 12px 20px;
-            border-radius: 8px;
-            z-index: 1000;
-            font-weight: 600;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        `;
+        notification.className = 'notification';
         notification.textContent = message;
         document.body.appendChild(notification);
         
+        // Trigger show animation
+        setTimeout(() => {
+            notification.classList.add('show');
+        }, 100);
+        
         // Remove after 3 seconds
         setTimeout(() => {
-            if (notification.parentNode) {
-                notification.parentNode.removeChild(notification);
-            }
+            notification.classList.remove('show');
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
         }, 3000);
     } catch (e) {
         // Notification failed, just log
@@ -1555,8 +1545,7 @@ async function downloadPFP() {
         orderNumber++;
         updateOrderNumber();
         
-        // Play success sound
-        playSound('success');
+        playKitchenSound();
         
         // Show success message
         showNotification('🎉 Order complete! Your Paco has been downloaded!', 'success');

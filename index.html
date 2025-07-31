@@ -25,7 +25,7 @@
     <meta property="og:url" content="https://PacoTheChicken.com">
     <meta property="og:title" content="Paco's Chicken Palace">
     <meta property="og:description" content="PACO MUY GUAPO!">
-    <meta property="og:image" content="Public/PACO-BANNER.png">
+    <meta property="og:image" content="PACO-BANNER.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:site_name" content="Paco's Chicken Palace">
@@ -35,7 +35,7 @@
     <meta name="twitter:url" content="https://yourdomain.com">
     <meta name="twitter:title" content="Paco's Chicken Palace">
     <meta name="twitter:description" content="Welcome to Paco's Chicken Palace! The most clucking awesome restaurant on Abstract!">
-    <meta name="twitter:image" content="Public/PACO-BANNER.png">
+    <meta name="twitter:image" content="PACO-BANNER.png">
     <meta name="twitter:creator" content="@PacoTheChicken">
     <meta name="twitter:site" content="@PacoTheChicken">
     
@@ -62,7 +62,7 @@
         "alternateName": "$PACO Restaurant",
         "description": "The most clucking awesome chicken restaurant on Abstract",
         "url": "https://yourdomain.com",
-        "logo": "https://yourdomain.com/Public/PACO-THE-CHICKEN.png",
+        "logo": "https://yourdomain.com/PACO-THE-CHICKEN.png",
         "servesCuisine": "Custom Crypto Chicken",
         "priceRange": "$",
         "sameAs": [
@@ -77,22 +77,24 @@
     <meta name="msapplication-TileColor" content="#dc2626">
     
     <!-- Preload Critical Assets -->
-    <link rel="preload" href="Public/PACO-THE-CHICKEN.png" as="image" type="image/png">
-    <link rel="preload" href="Public/ASSETS/base/PACO.png" as="image" type="image/png">
+    <link rel="preload" href="public/PACO-THE-CHICKEN.png" as="image" type="image/png">
 </head>
 <body>
     <!-- Loading Screen -->
     <div id="loadingScreen" class="loading-screen">
         <div class="loading-content">
-            <img src="Public/PACO-THE-CHICKEN.png" alt="Paco Loading" class="loading-chicken">
-            <div class="loading-text">Preparing Your Kitchen...</div>
+            <div class="loading-logo-container">
+                <img src="public/PACO-THE-CHICKEN.png" alt="Paco Loading" class="loading-chicken">
+                <div class="loading-rings">
+                    <div class="loading-ring loading-ring-1"></div>
+                    <div class="loading-ring loading-ring-2"></div>
+                    <div class="loading-ring loading-ring-3"></div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Audio Toggle -->
-    <button class="audio-toggle" onclick="toggleAudio()" title="Toggle Restaurant Sounds" aria-label="Toggle sound effects">
-        🔊
-    </button>
+    
 
     <!-- Skip to Content (Accessibility) -->
     <a href="#main-content" class="skip-link">Skip to menu</a>
@@ -100,7 +102,7 @@
     <!-- Restaurant Header -->
     <header class="restaurant-header">
         <div class="restaurant-logo">
-            <img src="Public/PACO-THE-CHICKEN.png" alt="Paco's Chicken Palace Logo" class="header-logo" onclick="logoClicked()">
+            <img src="public/PACO-THE-CHICKEN.png" alt="Paco's Chicken Palace Logo" class="header-logo" onclick="logoClicked()">
             <div class="restaurant-name">
                 <h1 class="palace-title">PACO'S CHICKEN PALACE</h1>
                 <p class="palace-tagline">Est. 2025 • Abstract's Finest</p>
@@ -117,10 +119,9 @@
                 <div class="stat-label">Service</div>
             </div>
         </div>
-        <img src="abstract.png" alt="Abstract" class="abstract-logo">
         <div class="restaurant-hours">
+            <img src="public/abstract.png" alt="Abstract" class="abstract-logo">
             <span class="abstract-text">Powered by Abstract</span>
-            <span class="hours-status">🟢 OPEN 24/7</span>
         </div>
     </header>
 
@@ -213,7 +214,6 @@
                 <div class="preview-section">
                     <div class="preview-header">
                         <h2 id="generator-title">🐔 Build Your Paco</h2>
-                        <div class="order-number">#<span id="orderNumber">0001</span></div>
                     </div>
                     
                     <div class="canvas-container">

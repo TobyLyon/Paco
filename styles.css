@@ -1617,6 +1617,16 @@ body {
     flex-direction: column;
 }
 
+/* Mobile override for order summary base */
+@media (max-width: 768px) {
+    .order-summary-compact {
+        flex: 0 0 auto !important;
+        min-height: auto !important;
+        height: auto !important;
+        max-height: none !important;
+    }
+}
+
 .order-summary-compact::before {
     content: '';
     position: absolute;
@@ -2309,11 +2319,12 @@ body {
     }
     
     .canvas-container {
-        padding: 2px;
+        padding: 2px 0;
         margin: 0 auto;
         display: flex;
         flex-direction: column;
         align-items: center;
+        justify-content: center;
         width: 100%;
         max-width: 290px;
     }
@@ -2325,6 +2336,8 @@ body {
         max-height: 260px;
         margin: 0 auto;
         display: block;
+        object-fit: contain;
+        object-position: center;
     }
     
     .preview-header {
@@ -2426,6 +2439,12 @@ body {
     .order-summary-compact {
         padding: 2px;
         margin: 1px 0;
+        min-height: auto !important;
+        height: auto !important;
+        max-height: none !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: flex-start !important;
     }
     
     .order-summary-compact h3 {
@@ -2466,6 +2485,21 @@ body {
         margin-top: 1px !important;
         min-height: 28px !important;
         line-height: 1 !important;
+        flex-shrink: 0 !important;
+    }
+    
+    /* Force remove any inherited spacing in order summary */
+    .order-summary-compact * {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    .order-summary-compact .order-summary-compact h3,
+    .order-summary-compact .order-items,
+    .order-summary-compact .order-total,
+    .order-summary-compact .place-order-btn {
+        margin: 1px 0 !important;
+        padding: 1px !important;
     }
 }
 

@@ -2221,8 +2221,8 @@ body {
 @media (max-width: 768px) {
     /* ===== MOBILE NAVBAR - SELECTIVE CONTENT ===== */
     .restaurant-header {
-        padding: 0 8px;
-        gap: 8px;
+        padding: 0 6px;
+        gap: 4px;
         flex-wrap: nowrap;
         height: 50px;
         justify-content: space-between;
@@ -2249,9 +2249,33 @@ body {
         display: none; /* Hide for space */
     }
 
-    /* HIDE STATS ON MOBILE - TOO CLUTTERED */
+    /* SHOW ONLY ORDERS SERVED STAT ON MOBILE */
     .restaurant-stats {
+        gap: 0px;
+        flex-shrink: 0;
+        flex-grow: 0;
+        justify-content: center;
+    }
+    
+    /* Hide all stats except orders served */
+    .stat-item:not(:first-child) {
         display: none !important;
+    }
+    
+    .stat-item:first-child {
+        padding: 2px 4px;
+        border-width: 1px;
+        min-width: auto;
+        font-size: 8px;
+    }
+    
+    .stat-item:first-child .stat-number {
+        font-size: 9px;
+        font-weight: 600;
+    }
+    
+    .stat-item:first-child .stat-label {
+        font-size: 6px;
     }
 
     /* SIMPLIFY RIGHT SIDE - ONLY SHOW OPEN STATUS */

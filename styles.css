@@ -2327,26 +2327,22 @@ body {
         display: none;
     }
     
-    .generator-content {
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-    }
-    
-    /* ===== MOBILE PREVIEW SECTION - TOP PRIORITY LAYOUT ===== */
+    /* ===== MOBILE PREVIEW SECTION - PROFESSIONAL LAYOUT ===== */
     .preview-section {
-        order: -1; /* Force to top */
-        padding: 16px;
-        width: 100%;
-        box-sizing: border-box;
+        padding: 12px;
+        min-width: unset;
         display: flex;
         flex-direction: column;
         align-items: center;
-        background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
-        border-radius: 16px;
-        margin-bottom: 16px;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-        border: 2px solid var(--restaurant-yellow);
+        justify-content: flex-start;
+        gap: 0;
+        background: rgba(0, 0, 0, 0.02);
+        border-radius: 12px;
+        margin: 8px;
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        box-sizing: border-box;
     }
     
     .preview-header {
@@ -2363,14 +2359,14 @@ body {
     }
     
     .canvas-container {
-        padding: 16px;
+        padding: 12px;
         margin: 0 auto 16px auto;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         width: 100%;
-        max-width: 280px;
+        max-width: 220px;
         background: rgba(255, 255, 255, 0.95);
         border-radius: 8px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -2380,10 +2376,10 @@ body {
     }
     
     #pfpCanvas {
-        width: 220px;
-        height: 220px;
-        max-width: 220px;
-        max-height: 220px;
+        width: 180px;
+        height: 180px;
+        max-width: 180px;
+        max-height: 180px;
         margin: 0 auto;
         display: block;
         object-fit: contain;
@@ -2397,7 +2393,7 @@ body {
         grid-template-rows: auto auto;
         gap: 6px;
         width: 100%;
-        max-width: 280px;
+        max-width: 220px;
         margin: 0 auto 12px auto;
     }
     
@@ -2418,43 +2414,34 @@ body {
         border-radius: 6px;
     }
     
-    /* ===== MOBILE MENU SECTION - BELOW PREVIEW ===== */
+    /* ===== MOBILE TRAIT BOXES COMPRESSION ===== */
     .menu-section-compact {
-        order: 1; /* Ensure it comes after preview */
-        padding: 12px;
-        gap: 8px;
+        padding: 2px;
+        gap: 1px;
         max-height: none;
-        border-right: none;
-        background: rgba(0, 0, 0, 0.02);
-        border-radius: 12px;
-        margin-bottom: 16px;
     }
     
     .menu-category {
-        padding: 8px;
-        margin-bottom: 8px;
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(10px);
-        border-radius: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 1px;
+        margin-bottom: 1px;
     }
     
     .category-title {
-        font-size: 12px;
-        margin-bottom: 8px;
-        padding: 4px 0;
-        line-height: 1.2;
+        font-size: 10px;
+        margin-bottom: 1px;
+        padding: 2px 4px;
+        line-height: 1;
     }
     
     .menu-grid {
-        grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
-        gap: 4px;
+        grid-template-columns: repeat(auto-fit, minmax(38px, 1fr));
+        gap: 1px;
     }
     
-    /* ===== READABLE TRAIT ITEMS FOR MOBILE ===== */
+    /* ===== COMPRESSED TRAIT ITEMS FOR MOBILE ===== */
     .menu-item {
-        min-height: 60px !important;
-        padding: 6px !important;
+        min-height: 50px !important;
+        padding: 1px !important;
         border-radius: var(--border-radius-sm);
         display: flex;
         flex-direction: column;
@@ -2463,14 +2450,14 @@ body {
     }
     
     .item-image {
-        font-size: 1.4rem !important;
-        margin-bottom: 4px;
+        font-size: 1.1rem !important;
+        margin-bottom: 0px;
         line-height: 1;
     }
     
     .item-name {
-        font-size: 8px !important;
-        line-height: 1.1;
+        font-size: 6px !important;
+        line-height: 0.9;
         padding: 0;
         text-align: center;
         width: 100%;
@@ -2480,69 +2467,91 @@ body {
         -webkit-box-orient: vertical;
         word-break: break-word;
         hyphens: auto;
-        max-height: 16px;
+        max-height: 12px;
     }
     
     .combo-buttons {
         grid-template-columns: 1fr 1fr;
-        gap: 6px;
+        gap: 2px;
     }
     
     .combo-btn-compact {
-        padding: 8px 6px;
-        font-size: 10px;
-        min-height: 36px;
-        line-height: 1.2;
-        border-radius: 8px;
+        padding: 4px 2px;
+        font-size: 8px;
+        min-height: 28px;
+        line-height: 1;
     }
     
-    /* ===== MOBILE ORDER SUMMARY - READABLE & ACCESSIBLE ===== */
+    /* ===== MOBILE ORDER SUMMARY - PROFESSIONAL COMPACT ===== */
     .order-summary-compact {
-        order: 2; /* Place after menu section */
-        padding: 16px;
-        margin: 0;
-        width: 100%;
-        box-sizing: border-box;
+        padding: 8px;
+        margin: 0 8px 8px 8px;
         min-height: auto !important;
         height: auto !important;
         max-height: none !important;
-        border-radius: 12px;
-        background: linear-gradient(145deg, var(--surface-darker) 0%, #1a202c 100%);
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-        border: 2px solid var(--restaurant-yellow);
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: flex-start !important;
+        width: auto !important;
+        max-width: none !important;
+        align-self: stretch !important;
+        border-radius: 8px !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
     }
     
     .order-summary-compact h3 {
-        font-size: 14px;
-        margin-bottom: 12px;
-        text-align: center;
-        line-height: 1.2;
+        font-size: 10px;
+        margin: 0 0 1px 0;
+        padding: 1px 0;
+        line-height: 1;
     }
     
     .order-items {
-        margin-bottom: 12px;
+        min-height: auto !important;
+        max-height: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        background: none !important;
+        border: none !important;
     }
     
     .order-item {
-        padding: 6px 0;
-        margin-bottom: 4px;
-        font-size: 11px;
-        line-height: 1.3;
+        padding: 0px 1px !important;
+        margin-bottom: 0px !important;
+        font-size: 8px !important;
+        line-height: 1 !important;
+        background: none !important;
+        border: none !important;
     }
     
     .order-total {
-        padding: 12px 0;
-        margin: 12px 0;
-        font-size: 16px;
-        text-align: center;
-        line-height: 1.2;
+        padding: 1px !important;
+        margin: 1px 0 !important;
+        font-size: 9px !important;
+        line-height: 1 !important;
     }
     
     .place-order-btn {
-        padding: 12px !important;
-        font-size: 14px !important;
-        min-height: 48px !important;
-        border-radius: 8px !important;
+        padding: 4px !important;
+        font-size: 10px !important;
+        margin-top: 1px !important;
+        min-height: 28px !important;
+        line-height: 1 !important;
+        flex-shrink: 0 !important;
+    }
+    
+    /* Force remove any inherited spacing in order summary */
+    .order-summary-compact * {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    .order-summary-compact .order-summary-compact h3,
+    .order-summary-compact .order-items,
+    .order-summary-compact .order-total,
+    .order-summary-compact .place-order-btn {
+        margin: 1px 0 !important;
+        padding: 1px !important;
     }
 }
 

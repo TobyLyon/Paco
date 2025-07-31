@@ -16,7 +16,10 @@ const filesToCopy = [
     'styles.css', 
     'script.js',
     'abstract.png',
-    'favicon.png'
+    'favicon-32x32.png',
+    'favicon-16x16.png',
+    'apple-touch-icon.png',
+    'favicon.ico'
 ];
 
 // Copy main files

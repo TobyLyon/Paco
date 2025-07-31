@@ -2317,11 +2317,14 @@ body {
     .pfp-generator {
         flex-direction: column;
         border-radius: var(--border-radius-md);
+        gap: 0;
+        padding: 4px;
+        overflow: visible;
     }
     
     /* ===== MOBILE PREVIEW SECTION - PROFESSIONAL LAYOUT ===== */
     .preview-section {
-        padding: 8px;
+        padding: 6px;
         min-width: unset;
         display: flex;
         flex-direction: column;
@@ -2330,20 +2333,28 @@ body {
         gap: 0;
         background: rgba(0, 0, 0, 0.02);
         border-radius: 12px;
-        margin: 4px;
+        margin: 2px;
+        position: relative;
+        z-index: 1;
+        order: 1;
     }
     
     .preview-header {
         text-align: center;
-        margin: 0 0 8px 0;
-        padding: 0;
+        margin: 0 0 6px 0;
+        padding: 4px 0;
+        background: var(--restaurant-red);
+        border-radius: 8px 8px 0 0;
+        margin: -6px -6px 6px -6px;
     }
     
     .preview-header h2 {
-        font-size: 16px;
+        font-size: 14px;
         margin: 0;
         padding: 0;
         font-weight: 700;
+        color: white;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
     }
     
     .canvas-container {
@@ -2402,6 +2413,10 @@ body {
         padding: 2px;
         gap: 1px;
         max-height: none;
+        order: 2;
+        margin-top: 4px;
+        position: relative;
+        z-index: 2;
     }
     
     .menu-category {

@@ -55,12 +55,21 @@ const menuItems = {
         { id: 'crown', name: 'Royal Roast', description: 'Fit for crypto royalty, golden and tender', price: 0.50, emoji: '👑' },
         { id: 'sombrero', name: 'Fiesta Fiery', description: 'Spicy Mexican-style with jalapeño kick', price: 0.50, emoji: '🌶️' },
         { id: 'bucket-hat', name: 'Bucket o\' Bites', description: 'Classic comfort food, family sized', price: 0.50, emoji: '🪣' },
-        { id: 'durag', name: 'Smooth & Savory', description: 'Silky smooth with urban flavor', price: 0.50, emoji: '🌟' },
+        { id: 'durag-black', name: 'Smooth & Savory', description: 'Silky smooth with urban flavor', price: 0.50, emoji: '🌟' },
+        { id: 'durag-red', name: 'Spicy Silk', description: 'Red hot flavor with smooth finish', price: 0.50, emoji: '🌶️' },
         { id: 'rasta', name: 'Island Jerk', description: 'Caribbean spiced with reggae vibes', price: 0.50, emoji: '🌴' },
         { id: 'halo', name: 'Heavenly Herb', description: 'Angel-blessed with divine seasoning', price: 0.50, emoji: '😇' },
         { id: 'demon', name: 'Devil\'s Dare', description: 'Dangerously spicy, handle with care', price: 0.50, emoji: '😈' },
         { id: 'party-hat', name: 'Celebration Crunch', description: 'Party-time flavor with confetti crumbs', price: 0.50, emoji: '🎉' },
-        { id: 'habibi', name: 'Habibi Heat', description: 'Middle Eastern spiced with desert fire', price: 0.50, emoji: '🔥' }
+        { id: 'habibi', name: 'Habibi Heat', description: 'Middle Eastern spiced with desert fire', price: 0.50, emoji: '🔥' },
+        { id: 'blonde-wig', name: 'Golden Crispy', description: 'Blonde and bold, crispy perfection', price: 0.50, emoji: '💛' },
+        { id: 'rice-hat', name: 'Asian Fusion', description: 'Traditional flavors with modern twist', price: 0.50, emoji: '🍚' },
+        { id: 'pudgy-shades', name: 'Cool Cat Combo', description: 'Laid-back flavor with attitude', price: 0.50, emoji: '😎' },
+        { id: 'nerd', name: 'Brain Food Special', description: 'Smart choice for intellectual taste', price: 0.50, emoji: '🤓' },
+        { id: 'ski-mask', name: 'Mystery Meat', description: 'Secret recipe, unknown ingredients', price: 0.50, emoji: '🎿' },
+        { id: 'pwease', name: 'Pretty Please', description: 'Cute and sweet, impossible to resist', price: 0.50, emoji: '🥺' },
+        { id: 'adventure-time', name: 'Adventure Bite', description: 'Mathematical flavor for brave eaters', price: 0.50, emoji: '⚔️' },
+        { id: 'viking', name: 'Norse Warrior', description: 'Savage flavor from the frozen north', price: 0.50, emoji: '⚔️' }
     ],
     items: [
         { id: '', name: 'No Side', description: 'Keep it simple, chicken only', price: 0.00, emoji: '🚫' },
@@ -73,7 +82,14 @@ const menuItems = {
         { id: 'wand', name: 'Magic Sticks', description: 'Enchanted drumsticks with special powers', price: 1.00, emoji: '✨' },
         { id: 'chicken-sandwich', name: 'Mini-Me Sandwich', description: 'Chicken sandwich for your chicken', price: 1.00, emoji: '🥪' },
         { id: 'knife', name: 'Cutting Edge Cutlery', description: 'Premium dining utensils', price: 1.00, emoji: '🍴' },
-        { id: 'fork', name: 'Fine Dining Fork', description: 'Elegant eating experience', price: 1.00, emoji: '🍽️' }
+        { id: 'fork', name: 'Fine Dining Fork', description: 'Elegant eating experience', price: 1.00, emoji: '🍽️' },
+        { id: 'taco', name: 'Taco Tuesday', description: 'Mexican street food, chicken style', price: 1.00, emoji: '🌮' },
+        { id: 'boba-tea', name: 'Bubble Tea Bliss', description: 'Chewy pearls in sweet chicken broth', price: 1.00, emoji: '🧋' },
+        { id: 'flower', name: 'Garden Fresh', description: 'Organic blooms with herbal essence', price: 1.00, emoji: '🌸' },
+        { id: 'pyn', name: 'Payne Train', description: 'High-speed flavor express', price: 1.00, emoji: '🚂' },
+        { id: 'psp', name: 'Portable Gaming', description: 'Retro gaming fuel for chicken champions', price: 1.00, emoji: '🎮' },
+        { id: '40-oz', name: 'Forty Ounce', description: 'Big bottle, bigger flavor', price: 1.00, emoji: '🍺' },
+        { id: 'purse', name: 'Designer Bag', description: 'Stylish storage for leftover nuggets', price: 1.00, emoji: '👜' }
     ]
 };
 
@@ -513,7 +529,7 @@ function loadLayer(type, value) {
             console.error(`Failed to load ${type} image:`, value);
             showNotification(`❌ Error loading ${type}`);
         };
-        layers[type].src = `ASSETS/${type}/${value}.png`;
+        layers[type].src = `assets/images/ASSETS/${type}/${value}.png`;
     }
 }
 
@@ -657,7 +673,7 @@ function loadBaseImage() {
         console.error('Failed to load base image');
         showNotification('❌ Error loading base chicken');
     };
-    layers.base.src = 'ASSETS/base/PACO.png';
+    layers.base.src = 'assets/images/ASSETS/base/PACO.png';
 }
 
 function drawPFP() {
@@ -740,7 +756,7 @@ function quickOrder(hatId, itemId) {
         console.error('Failed to load base image for quick combo');
         showNotification('❌ Error loading base chicken');
     };
-    layers.base.src = 'ASSETS/base/PACO.png';
+    layers.base.src = 'assets/images/ASSETS/base/PACO.png';
     
     updateOrderSummary();
     updateOrderTotal();
@@ -820,7 +836,7 @@ function randomizePFP() {
         console.error('Failed to load base image for random combo');
         showNotification('❌ Error loading base chicken');
     };
-    layers.base.src = 'ASSETS/base/PACO.png';
+    layers.base.src = 'assets/images/ASSETS/base/PACO.png';
     
     updateOrderSummary();
     updateOrderTotal();
@@ -1470,7 +1486,7 @@ function loadBaseImage() {
             // Draw fallback
             drawFallbackImage(ctx, canvas);
         };
-        baseImg.src = 'ASSETS/base/PACO.png';
+        baseImg.src = 'assets/images/ASSETS/base/PACO.png';
     } catch (error) {
         console.error('Error in loadBaseImage:', error);
     }
@@ -1489,7 +1505,7 @@ function loadSelectedLayers() {
             hatImg.onload = function() {
                 ctx.drawImage(hatImg, 0, 0, canvas.width, canvas.height);
             };
-            hatImg.src = `ASSETS/hat/${currentOrder.hat}.png`;
+            hatImg.src = `assets/images/ASSETS/hat/${currentOrder.hat}.png`;
         }
         
         // Load item layer if selected
@@ -1499,7 +1515,7 @@ function loadSelectedLayers() {
             itemImg.onload = function() {
                 ctx.drawImage(itemImg, 0, 0, canvas.width, canvas.height);
             };
-            itemImg.src = `ASSETS/item/${currentOrder.item}.png`;
+            itemImg.src = `assets/images/ASSETS/item/${currentOrder.item}.png`;
         }
     } catch (error) {
         console.error('Error loading layers:', error);

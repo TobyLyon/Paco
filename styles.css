@@ -1394,11 +1394,12 @@ body {
     display: flex;
     justify-content: center;
     align-items: stretch;
-    height: calc(100vh - 60px);
+    min-height: calc(100vh - 60px);
     padding: var(--space-lg);
     max-width: 100%;
     margin: 0 auto;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     position: relative;
     z-index: 1;
 }
@@ -1487,7 +1488,7 @@ body {
     padding: var(--space-md);
     min-width: 420px;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     justify-content: flex-start;
 }
 
@@ -1581,8 +1582,8 @@ body {
     padding: var(--space-lg);
     margin-bottom: var(--space-md);
     position: relative;
-    overflow: hidden;
-    max-height: 480px;
+    overflow: visible;
+    max-height: none;
 }
 
 /* Firefox fallback - simple border for canvas container */

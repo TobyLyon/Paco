@@ -15,7 +15,7 @@ class TwitterAuth {
         
         // Twitter API configuration
         this.config = {
-            clientId: 'VjRpTXFrdkxhbnhUSWROOWlOQkE6MTpjaQ', // Your actual Twitter Client ID goes here
+            clientId: 'gGN2fFQjkrxagbw2KVGIGufQt', // Your actual Twitter Client ID from .env
             redirectUri: window.location.origin + '/auth/callback',
             scopes: ['tweet.read', 'users.read', 'tweet.write', 'offline.access'],
             authUrl: 'https://twitter.com/i/oauth2/authorize'

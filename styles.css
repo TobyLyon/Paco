@@ -1423,20 +1423,33 @@ body {
     margin-right: auto;
 }
 
+/* Tab icon styles */
+.tab-icon {
+    width: 32px;
+    height: 32px;
+    margin-right: 10px;
+    vertical-align: middle;
+    object-fit: contain;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+}
+
 /* Jump animation for Paco Jump tab icon */
 .jump-animation {
-    animation: quickJump 2s ease-in-out infinite;
+    animation: quickJump 1.2s ease-out infinite;
     transform-origin: center bottom;
 }
 
 @keyframes quickJump {
-    0%, 90%, 100% {
+    0%, 85%, 100% {
         transform: translateY(0) scale(1);
     }
-    5% {
-        transform: translateY(-8px) scale(1.1);
+    8% {
+        transform: translateY(-12px) scale(1.05);
     }
-    10% {
+    15% {
         transform: translateY(0) scale(1);
     }
 }

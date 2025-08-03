@@ -1,0 +1,5 @@
+[33m84dcbd9[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m  Fix Twitter OAuth - use correct Client ID from .env
+[33m3c8844e[m  Add proper tab icons with animations
+[33ma2ff0be[m  Fix broken Paco Jump tab - removed duplicate walk.gif from PFP Generator tab
+[33m8da8f8b[m  Contest Ready: Twitter Integration + Trophy System + Performance Optimizations
+[33mf7cbf0c[m Fix action buttons clipping issue - ensure copy/download buttons always visible

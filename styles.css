@@ -1423,6 +1423,24 @@ body {
     margin-right: auto;
 }
 
+/* Jump animation for Paco Jump tab icon */
+.jump-animation {
+    animation: quickJump 2s ease-in-out infinite;
+    transform-origin: center bottom;
+}
+
+@keyframes quickJump {
+    0%, 90%, 100% {
+        transform: translateY(0) scale(1);
+    }
+    5% {
+        transform: translateY(-8px) scale(1.1);
+    }
+    10% {
+        transform: translateY(0) scale(1);
+    }
+}
+
 .tab-button {
     background: rgba(255, 255, 255, 0.1);
     color: var(--text-secondary);

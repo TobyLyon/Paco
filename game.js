@@ -1671,174 +1671,43 @@ class PacoJumpGame {
         }
         
         const content = `
-            <div style="text-align: center; max-width: 280px; margin: 0 auto;">
-                <h2 style="
-                    color: #ef4444; 
-                    font-family: var(--font-display); 
-                    font-size: 1.5rem; 
-                    font-weight: 800; 
-                    margin: 0 0 12px 0;
-                    text-transform: uppercase;
-                    letter-spacing: 0.05em;
-                    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-                ">OH NOOO U DIEDDDDD</h2>
+            <div class="game-over-screen">
+                <h2 class="game-over-title">OH NOOO U DIEDDDDD</h2>
                 
-                <div style="
-                    background: rgba(255,255,255,0.05); 
-                    border-radius: 12px; 
-                    padding: 16px; 
-                    margin: 16px 0;
-                    border: 1px solid rgba(255,255,255,0.1);
-                ">
-                    <div style="color: #fbbf24; font-size: 1.25rem; font-weight: bold; margin-bottom: 4px;">
-                        ${scoreText}
-                    </div>
+                <div class="game-over-scores">
+                    <div class="game-over-final-score">${scoreText}</div>
                     ${bestScoreDisplay}
                     ${submissionStatus}
                 </div>
                 
-                <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-                    <button onclick="game.startGame()" style="
-                        background: linear-gradient(135deg, var(--restaurant-orange) 0%, var(--restaurant-red) 100%);
-                        color: white;
-                        border: none;
-                        border-radius: 10px;
-                        padding: 12px 24px;
-                        font-family: var(--font-display);
-                        font-weight: 800;
-                        font-size: 0.95rem;
-                        cursor: pointer;
-                        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                        text-transform: uppercase;
-                        letter-spacing: 0.05em;
-                        box-shadow: 0 6px 20px rgba(220, 38, 38, 0.3);
-                        min-width: 100px;
-                        position: relative;
-                        overflow: hidden;
-                    " onmouseover="
-                        this.style.transform='translateY(-3px) scale(1.02)'; 
-                        this.style.boxShadow='0 8px 25px rgba(220, 38, 38, 0.5)';
-                        this.style.filter='brightness(1.1)';
-                    " onmouseout="
-                        this.style.transform='translateY(0) scale(1)'; 
-                        this.style.boxShadow='0 6px 20px rgba(220, 38, 38, 0.3)';
-                        this.style.filter='brightness(1)';
-                    ">
+                <div class="game-over-buttons">
+                    <button onclick="game.startGame()" class="game-btn primary">
                         🎮 Play Again
                     </button>
-                    
-                    <button onclick="showLeaderboard()" style="
-                        background: rgba(255,255,255,0.08);
-                        color: var(--text-secondary);
-                        border: 2px solid rgba(255,255,255,0.15);
-                        border-radius: 10px;
-                        padding: 10px 22px;
-                        font-family: var(--font-display);
-                        font-weight: 700;
-                        font-size: 0.9rem;
-                        cursor: pointer;
-                        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                        text-transform: uppercase;
-                        letter-spacing: 0.03em;
-                        backdrop-filter: blur(12px);
-                        min-width: 100px;
-                        position: relative;
-                        overflow: hidden;
-                    " onmouseover="
-                        this.style.background='rgba(251, 191, 36, 0.12)'; 
-                        this.style.borderColor='rgba(251, 191, 36, 0.4)'; 
-                        this.style.color='var(--restaurant-yellow)';
-                        this.style.transform='translateY(-2px)';
-                        this.style.boxShadow='0 4px 15px rgba(251, 191, 36, 0.2)';
-                    " onmouseout="
-                        this.style.background='rgba(255,255,255,0.08)'; 
-                        this.style.borderColor='rgba(255,255,255,0.15)'; 
-                        this.style.color='var(--text-secondary)';
-                        this.style.transform='translateY(0)';
-                        this.style.boxShadow='none';
-                    ">
+                    <button onclick="showLeaderboard()" class="game-btn secondary">
                         🏆 Leaderboard
                     </button>
                 </div>
                 
-                <!-- Sharing Section (show for good scores) -->
                 ${this.score >= 500 ? `
-                    <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.2);">
-                        <p style="color: var(--restaurant-yellow); font-size: 0.9rem; margin-bottom: 12px; font-weight: 600;">
-                            🏆 Share Your Achievement!
-                        </p>
-                        
-                        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                    <div class="share-section">
+                        <p class="share-title">🏆 Share Your Achievement!</p>
+                        <div class="share-buttons">
                             ${twitterAuth.authenticated ? `
-                                <button onclick="game.shareOnTwitter()" style="
-                                    background: linear-gradient(135deg, #1d9bf0 0%, #1a91da 100%);
-                                    color: white;
-                                    border: none;
-                                    border-radius: 8px;
-                                    padding: 8px 16px;
-                                    font-family: var(--font-display);
-                                    font-weight: 600;
-                                    font-size: 0.8rem;
-                                    cursor: pointer;
-                                    transition: all 0.3s ease;
-                                    flex: 1;
-                                " onmouseover="
-                                    this.style.transform='translateY(-1px)';
-                                    this.style.filter='brightness(1.1)';
-                                " onmouseout="
-                                    this.style.transform='translateY(0)';
-                                    this.style.filter='brightness(1)';
-                                ">
-                                    🐦 Share Score
+                                <button onclick="game.shareOnTwitter()" class="game-btn twitter">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path></svg>
+                                    Share Score
                                 </button>
                             ` : ''}
-                            
-                            <button onclick="game.generateTrophyImage()" style="
-                                background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-                                color: #1f2937;
-                                border: none;
-                                border-radius: 8px;
-                                padding: 8px 16px;
-                                font-family: var(--font-display);
-                                font-weight: 600;
-                                font-size: 0.8rem;
-                                cursor: pointer;
-                                transition: all 0.3s ease;
-                                flex: 1;
-                            " onmouseover="
-                                this.style.transform='translateY(-1px)';
-                                this.style.filter='brightness(1.1)';
-                            " onmouseout="
-                                this.style.transform='translateY(0)';
-                                this.style.filter='brightness(1)';
-                            ">
+                            <button onclick="game.generateTrophyImage()" class="game-btn secondary">
                                 📸 Trophy Image
                             </button>
+                            ${twitterAuth.authenticated ? `
+                                <button onclick="game.generateAndShareTrophy()" class="game-btn primary">
+                                    🚀 Trophy + Tweet
+                                </button>
+                            ` : ''}
                         </div>
-                        
-                        ${twitterAuth.authenticated ? `
-                            <button onclick="game.generateAndShareTrophy()" style="
-                                background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
-                                color: white;
-                                border: none;
-                                border-radius: 8px;
-                                padding: 8px 16px;
-                                font-family: var(--font-display);
-                                font-weight: 600;
-                                font-size: 0.8rem;
-                                cursor: pointer;
-                                transition: all 0.3s ease;
-                                width: 100%;
-                            " onmouseover="
-                                this.style.transform='translateY(-1px)';
-                                this.style.filter='brightness(1.1)';
-                            " onmouseout="
-                                this.style.transform='translateY(0)';
-                                this.style.filter='brightness(1)';
-                            ">
-                                🚀 Trophy + Tweet
-                            </button>
-                        ` : ''}
                     </div>
                 ` : ''}
             </div>

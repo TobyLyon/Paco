@@ -156,7 +156,7 @@ class GameAssets {
                 width: 32,
                 height: 32,
                             jumpForce: 22, // RESTORED - proper jump height
-            maxSpeed: 7.5, // RESTORED - fast and responsive movement
+            maxSpeed: 6.0, // Tuned for better control
                 gravity: 0.5
             },
             

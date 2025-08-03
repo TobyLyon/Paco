@@ -12,8 +12,8 @@ class PacoJumpGame {
         this.ctx = null;
         this.gameState = 'waiting'; // waiting, playing, paused, gameOver
         this.lastFrameTime = 0;
-        // Adaptive frame rate for mobile optimization
-        this.targetFPS = this.detectMobileDevice() ? 50 : 60;
+        // Consistent 60fps for smooth gameplay
+        this.targetFPS = 60; // Always 60fps for best performance
         this.frameInterval = 1000 / this.targetFPS;
         
         // Game objects
@@ -728,9 +728,9 @@ class PacoJumpGame {
             moveDirection += 1;
         }
         
-        // Apply movement with mobile optimization
+        // Apply movement with responsive acceleration
         if (moveDirection !== 0) {
-            const acceleration = this.detectMobileDevice() ? 0.7 : 0.6; // Slightly faster on mobile
+            const acceleration = 1.4; // RESTORED - fast, responsive movement
             this.player.velocityX += moveDirection * acceleration * deltaTime;
             
             // Clamp to max speed for consistent control

@@ -155,8 +155,8 @@ class GameAssets {
             player: {
                 width: 32,
                 height: 32,
-                jumpForce: 15,
-                maxSpeed: 2.2, // Further reduced for more responsive feel
+                            jumpForce: 22, // RESTORED - proper jump height
+            maxSpeed: 7.5, // RESTORED - fast and responsive movement
                 gravity: 0.5
             },
             

@@ -47,12 +47,12 @@ class GamePhysics {
         // Apply air resistance with stability check
         player.velocityX *= Math.pow(this.airResistance, deltaTime / 16.67);
         
-        // Clamp velocities for stability
+        // Clamp velocities for stability - LOOSENED for better gameplay
         player.velocityY = Math.min(player.velocityY, this.terminalVelocity);
-        player.velocityX = Math.max(-15, Math.min(15, player.velocityX)); // Prevent extreme speeds
+        player.velocityX = Math.max(-20, Math.min(20, player.velocityX)); // Allow faster movement
         
-        // Update position with clamped movement
-        const maxMovement = 20; // Prevent teleporting
+        // Update position with less restrictive movement
+        const maxMovement = 30; // INCREASED - allow faster movement
         const deltaX = Math.max(-maxMovement, Math.min(maxMovement, player.velocityX * deltaTime));
         const deltaY = Math.max(-maxMovement, Math.min(maxMovement, player.velocityY * deltaTime));
         

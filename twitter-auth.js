@@ -344,14 +344,9 @@ class TwitterAuth {
         }
     }
 
-    // Share achievement on Twitter
+    // Share achievement on Twitter - SIMPLE VERSION (NO AUTH NEEDED!)
     async shareAchievement(score, rank = null) {
         try {
-            if (!this.authenticated) {
-                console.warn('Cannot share - user not authenticated');
-                return false;
-            }
-
             // Create engaging tweet text
             let tweetText = `🐔 Just scored ${score.toLocaleString()} points in PACO JUMP! 🎮`;
             
@@ -375,7 +370,7 @@ class TwitterAuth {
                 tweetText += `\n\nPlay now: ${gameUrl}`;
             }
 
-            // Use Twitter Web Intent for sharing (more reliable than API)
+            // Use Twitter Web Intent for sharing - NO AUTH REQUIRED!
             const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
             
             // Open in new window

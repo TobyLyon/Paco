@@ -1430,10 +1430,6 @@ body {
     margin-right: 10px;
     vertical-align: middle;
     object-fit: contain;
-    image-rendering: -webkit-optimize-contrast;
-    image-rendering: -moz-crisp-edges;
-    image-rendering: crisp-edges;
-    image-rendering: pixelated;
 }
 
 /* Jump animation for Paco Jump tab icon */

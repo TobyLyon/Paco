@@ -398,10 +398,7 @@ class TwitterAuth {
     // Share trophy image with achievement
     async shareTrophyAchievement(score, rank = null, imageUrl = null) {
         try {
-            if (!this.authenticated) {
-                console.warn('Cannot share trophy - user not authenticated');
-                return false;
-            }
+            // NO AUTH NEEDED FOR SIMPLE SHARING!
 
             let tweetText = `🏆 ACHIEVEMENT UNLOCKED! 🏆\n\n🐔 Scored ${score.toLocaleString()} points in PACO JUMP!`;
             

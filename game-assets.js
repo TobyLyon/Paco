@@ -156,7 +156,7 @@ class GameAssets {
                 width: 32,
                 height: 32,
                             jumpForce: 14, // Tuned for Doodle Jump feel (floatier)
-            maxSpeed: 7.0, // Tuned for less aggressive side-to-side speed
+            maxSpeed: 5.5, // Further tuned for smoother control
                 gravity: 0.5
             },
             

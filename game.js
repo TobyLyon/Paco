@@ -730,7 +730,7 @@ class PacoJumpGame {
         
         // Apply movement with responsive acceleration
         if (moveDirection !== 0) {
-            const acceleration = 1.3; // Tuned for less aggressive acceleration
+            const acceleration = 1.1; // Further tuned for smoother control
             this.player.velocityX += moveDirection * acceleration * deltaTime;
             
             // Clamp to max speed for consistent control

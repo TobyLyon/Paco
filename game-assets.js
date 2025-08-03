@@ -34,18 +34,25 @@ class GameAssets {
         
         // Power-up types using existing assets
         this.powerUpTypes = {
+            corn: {
+                name: 'Fly Boost',
+                description: 'Super jump power!',
+                duration: 5000, // 5 seconds
+                asset: 'corn', // Use corn sprite
+                rarity: 0.4 // Good chance for fly boost
+            },
             shield: {
                 name: 'Shield Power', 
                 description: 'Invincibility protection!',
                 duration: 4000, // 4 seconds
-                asset: null, // Use emoji fallback instead of evilFlocko sprite
+                asset: 'evilFlocko', // Use evil flocko sprite
                 rarity: 0.25 // Medium chance for shield
             },
             magnet: {
                 name: 'Taco Magnet',
                 description: 'Auto-collect nearby tacos!',
                 duration: 6000, // 6 seconds
-                asset: 'taco',
+                asset: 'taco', // Use taco sprite
                 rarity: 0.35 // Good chance for magnet
             }
         };

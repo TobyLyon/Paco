@@ -1,0 +1,564 @@
+// ===== PACO JUMP - LEADERBOARD MODULE =====
+
+/**
+ * Leaderboard Management System
+ * Handles score submission, daily rankings, and leaderboard display
+ * Integrates with Supabase for persistent storage and real-time updates
+ */
+
+class Leaderboard {
+    constructor() {
+        this.tableName = 'game_scores';
+        this.currentLeaderboard = [];
+        this.userBestScore = 0;
+        this.dailyResetTime = this.getTodayResetTime();
+        this.realtimeChannel = null;
+        
+        console.log('🏆 Leaderboard system initialized');
+    }
+
+    // Get today's reset time (UTC midnight)
+    getTodayResetTime() {
+        const now = new Date();
+        const resetTime = new Date(now);
+        resetTime.setUTCHours(0, 0, 0, 0);
+        
+        // If it's past midnight, set for next day
+        if (now.getTime() >= resetTime.getTime()) {
+            resetTime.setUTCDate(resetTime.getUTCDate() + 1);
+        }
+        
+        return resetTime;
+    }
+
+    // Check if leaderboard needs reset
+    needsReset() {
+        return Date.now() >= this.dailyResetTime.getTime();
+    }
+
+    // Submit score to leaderboard
+    async submitScore(score) {
+        try {
+            // Check if user is authenticated
+            if (!twitterAuth.authenticated) {
+                throw new Error('Twitter authentication required for leaderboard');
+            }
+
+            const user = twitterAuth.currentUser;
+            const scoreData = {
+                user_id: user.id,
+                username: user.username,
+                display_name: user.name,
+                profile_image: user.profileImage,
+                score: score,
+                created_at: new Date().toISOString(),
+                game_date: this.getCurrentGameDate()
+            };
+
+            // Submit to Supabase
+            if (orderTracker && typeof orderTracker.recordGameScore === 'function') {
+                const result = await orderTracker.recordGameScore(scoreData);
+                
+                if (result.success) {
+                    console.log('✅ Score submitted successfully');
+                    
+                    // Update local best score
+                    this.userBestScore = Math.max(this.userBestScore, score);
+                    this.saveBestScore();
+                    
+                    // Refresh leaderboard
+                    await this.fetchTodayLeaderboard();
+                    
+                    return result;
+                } else {
+                    throw new Error(result.error);
+                }
+            } else {
+                // Fallback: store locally only
+                console.warn('⚠️ Supabase not available, storing score locally');
+                this.storeScoreLocally(scoreData);
+                return { success: true, local: true };
+            }
+            
+        } catch (error) {
+            console.error('Score submission failed:', error);
+            throw error;
+        }
+    }
+
+    // Fetch today's leaderboard
+    async fetchTodayLeaderboard() {
+        try {
+            if (orderTracker && typeof orderTracker.getTodayLeaderboard === 'function') {
+                const result = await orderTracker.getTodayLeaderboard();
+                
+                if (result.success) {
+                    this.currentLeaderboard = result.data;
+                    console.log(`📊 Loaded ${this.currentLeaderboard.length} leaderboard entries`);
+                    return this.currentLeaderboard;
+                } else {
+                    throw new Error(result.error);
+                }
+            } else {
+                // Fallback: use local scores
+                console.warn('⚠️ Supabase not available, using local scores');
+                this.currentLeaderboard = this.getLocalLeaderboard();
+                return this.currentLeaderboard;
+            }
+            
+        } catch (error) {
+            console.error('Leaderboard fetch failed:', error);
+            return [];
+        }
+    }
+
+    // Get current game date (for daily reset tracking)
+    getCurrentGameDate() {
+        const now = new Date();
+        const gameDate = new Date(now);
+        gameDate.setUTCHours(0, 0, 0, 0);
+        return gameDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+    }
+
+    // Store score locally as fallback
+    storeScoreLocally(scoreData) {
+        try {
+            const localScores = JSON.parse(localStorage.getItem('paco_game_scores') || '[]');
+            localScores.push(scoreData);
+            
+            // Keep only today's scores for local storage
+            const today = this.getCurrentGameDate();
+            const todayScores = localScores.filter(score => 
+                score.game_date === today
+            );
+            
+            localStorage.setItem('paco_game_scores', JSON.stringify(todayScores));
+            
+            // Update local best score
+            this.userBestScore = Math.max(this.userBestScore, scoreData.score);
+            this.saveBestScore();
+            
+        } catch (error) {
+            console.error('Local score storage failed:', error);
+        }
+    }
+
+    // Get local leaderboard as fallback
+    getLocalLeaderboard() {
+        try {
+            const localScores = JSON.parse(localStorage.getItem('paco_game_scores') || '[]');
+            const today = this.getCurrentGameDate();
+            
+            // Filter today's scores and sort by score (highest first)
+            return localScores
+                .filter(score => score.game_date === today)
+                .sort((a, b) => b.score - a.score)
+                .slice(0, 10); // Top 10
+                
+        } catch (error) {
+            console.error('Local leaderboard fetch failed:', error);
+            return [];
+        }
+    }
+
+    // Get user's rank in current leaderboard
+    getUserRank(userId) {
+        const userEntry = this.currentLeaderboard.find(entry => entry.user_id === userId);
+        if (userEntry) {
+            return this.currentLeaderboard.indexOf(userEntry) + 1;
+        }
+        return null;
+    }
+
+    // Get user's best score for today
+    getUserBestScore(userId) {
+        const userScores = this.currentLeaderboard.filter(entry => entry.user_id === userId);
+        if (userScores.length > 0) {
+            return Math.max(...userScores.map(entry => entry.score));
+        }
+        return 0;
+    }
+
+    // Display leaderboard in UI
+    showLeaderboard() {
+        const overlay = document.getElementById('gameOverlay');
+        const overlayContent = document.getElementById('overlayContent');
+        
+        if (!overlay || !overlayContent) {
+            console.error('Leaderboard UI elements not found');
+            return;
+        }
+
+        // Build leaderboard HTML with enhanced styling
+        let leaderboardHTML = '<div class="leaderboard-container">';
+        leaderboardHTML += '<h3>🏆 Daily Contest Leaderboard</h3>';
+        
+        if (this.currentLeaderboard.length === 0) {
+            leaderboardHTML += `
+                <div style="text-align: center; padding: 20px; color: var(--text-secondary);">
+                    <div style="font-size: 2rem; margin-bottom: 8px;">🐔</div>
+                    <p>No scores yet today!</p>
+                    <p style="font-size: 0.9rem; color: var(--restaurant-yellow);">Be the first Paco champion!</p>
+                </div>
+            `;
+        } else {
+            leaderboardHTML += '<div class="leaderboard-list">';
+            
+            this.currentLeaderboard.slice(0, 15).forEach((entry, index) => {
+                // Validate entry data
+                if (!entry || typeof entry.score !== 'number' || !entry.username) {
+                    console.warn('Invalid leaderboard entry:', entry);
+                    return;
+                }
+                
+                const rank = index + 1;
+                const isCurrentUser = twitterAuth.authenticated && 
+                                    entry.user_id === twitterAuth.currentUser?.id;
+                
+                const rankEmoji = this.getRankEmoji(rank);
+                const userClass = isCurrentUser ? 'current-user' : '';
+                
+                // Add live indicator for recent scores (with null check)
+                let isRecentScore = false;
+                if (entry.created_at) {
+                    try {
+                        isRecentScore = Date.now() - new Date(entry.created_at).getTime() < 300000; // 5 minutes
+                    } catch (e) {
+                        // Invalid date format, ignore
+                    }
+                }
+                const liveIndicator = isRecentScore ? ' 🔴' : '';
+                
+                leaderboardHTML += `
+                    <div class="leaderboard-entry ${userClass}">
+                        <span class="rank">${rankEmoji} ${rank}</span>
+                        <span class="username">@${entry.username}${liveIndicator}</span>
+                        <span class="score">${entry.score.toLocaleString()}</span>
+                    </div>
+                `;
+            });
+            
+            leaderboardHTML += '</div>';
+            
+            // Enhanced reset timer with contest theme
+            const timeUntilReset = this.getTimeUntilReset();
+            leaderboardHTML += `
+                <div style="text-align: center; margin: 12px 0; padding: 8px; background: rgba(251, 191, 36, 0.1); border-radius: 6px; border: 1px solid rgba(251, 191, 36, 0.3);">
+                    <p class="reset-timer">🎯 Contest resets in: <strong>${timeUntilReset}</strong></p>
+                </div>
+            `;
+        }
+        
+        // Add trophy generation for current user if they're in top 10
+        if (twitterAuth.authenticated) {
+            const userEntry = this.currentLeaderboard.find(entry => 
+                entry.user_id === twitterAuth.currentUser.id
+            );
+            if (userEntry) {
+                const userRank = this.currentLeaderboard.indexOf(userEntry) + 1;
+                if (userRank <= 10) {
+                    leaderboardHTML += `
+                        <div style="margin: 12px 0; padding: 12px; background: rgba(251, 191, 36, 0.1); border-radius: 8px; border: 1px solid rgba(251, 191, 36, 0.3);">
+                            <p style="color: var(--restaurant-yellow); font-size: 0.85rem; margin-bottom: 8px; text-align: center;">
+                                🏆 You're in the Top ${userRank <= 3 ? '3' : '10'}! Share your achievement:
+                            </p>
+                            <div style="display: flex; gap: 6px; margin-bottom: 6px;">
+                                <button onclick="shareLeaderboardAchievement(${userEntry.score}, ${userRank})" style="
+                                    background: linear-gradient(135deg, #1d9bf0 0%, #1a91da 100%);
+                                    color: white;
+                                    border: none;
+                                    border-radius: 6px;
+                                    padding: 6px 12px;
+                                    font-family: var(--font-display);
+                                    font-weight: 600;
+                                    font-size: 0.75rem;
+                                    cursor: pointer;
+                                    transition: all 0.3s ease;
+                                    flex: 1;
+                                " onmouseover="
+                                    this.style.transform='translateY(-1px)';
+                                    this.style.filter='brightness(1.1)';
+                                " onmouseout="
+                                    this.style.transform='translateY(0)';
+                                    this.style.filter='brightness(1)';
+                                ">
+                                    🐦 Share Rank
+                                </button>
+                                
+                                <button onclick="generateLeaderboardTrophy(${userEntry.score}, '${userEntry.username}', ${userRank})" style="
+                                    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+                                    color: #1f2937;
+                                    border: none;
+                                    border-radius: 6px;
+                                    padding: 6px 12px;
+                                    font-family: var(--font-display);
+                                    font-weight: 600;
+                                    font-size: 0.75rem;
+                                    cursor: pointer;
+                                    transition: all 0.3s ease;
+                                    flex: 1;
+                                " onmouseover="
+                                    this.style.transform='translateY(-1px)';
+                                    this.style.filter='brightness(1.1)';
+                                " onmouseout="
+                                    this.style.transform='translateY(0)';
+                                    this.style.filter='brightness(1)';
+                                ">
+                                    📸 Trophy
+                                </button>
+                            </div>
+                            
+                            <button onclick="generateAndShareLeaderboardTrophy(${userEntry.score}, '${userEntry.username}', ${userRank})" style="
+                                background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+                                color: white;
+                                border: none;
+                                border-radius: 6px;
+                                padding: 6px 12px;
+                                font-family: var(--font-display);
+                                font-weight: 600;
+                                font-size: 0.75rem;
+                                cursor: pointer;
+                                transition: all 0.3s ease;
+                                width: 100%;
+                            " onmouseover="
+                                this.style.transform='translateY(-1px)';
+                                this.style.filter='brightness(1.1)';
+                            " onmouseout="
+                                this.style.transform='translateY(0)';
+                                this.style.filter='brightness(1)';
+                            ">
+                                🚀 Trophy + Tweet
+                            </button>
+                        </div>
+                    `;
+                }
+            }
+        }
+        
+        leaderboardHTML += '<button onclick="hideLeaderboard()" class="close-btn">Close</button>';
+        leaderboardHTML += '</div>';
+        
+        overlayContent.innerHTML = leaderboardHTML;
+        overlay.classList.add('show');
+    }
+
+    // Hide leaderboard
+    hideLeaderboard() {
+        const overlay = document.getElementById('gameOverlay');
+        if (overlay) {
+            overlay.classList.remove('show');
+        }
+    }
+
+    // Get emoji for rank
+    getRankEmoji(rank) {
+        switch(rank) {
+            case 1: return '🥇';
+            case 2: return '🥈';
+            case 3: return '🥉';
+            default: return '🏅';
+        }
+    }
+
+    // Get time until daily reset
+    getTimeUntilReset() {
+        const now = Date.now();
+        const resetTime = this.dailyResetTime.getTime();
+        const diff = resetTime - now;
+        
+        if (diff <= 0) {
+            return 'Soon';
+        }
+        
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        
+        return `${hours}h ${minutes}m`;
+    }
+
+    // Save user's best score locally
+    saveBestScore() {
+        if (twitterAuth.authenticated) {
+            const key = `paco_best_score_${twitterAuth.currentUser.id}`;
+            localStorage.setItem(key, this.userBestScore.toString());
+        }
+    }
+
+    // Load user's best score locally
+    loadBestScore() {
+        if (twitterAuth.authenticated) {
+            const key = `paco_best_score_${twitterAuth.currentUser.id}`;
+            const stored = localStorage.getItem(key);
+            this.userBestScore = stored ? parseInt(stored, 10) : 0;
+        }
+        return this.userBestScore;
+    }
+
+    // Set up real-time leaderboard updates
+    setupRealTimeUpdates() {
+        if (orderTracker && typeof orderTracker.subscribeToGameScores === 'function') {
+            try {
+                orderTracker.subscribeToGameScores((newScore) => {
+                    console.log('🔴 LIVE: New score submitted!', newScore);
+                    
+                    // Add to current leaderboard if it's for today
+                    if (newScore.game_date === this.getCurrentGameDate()) {
+                        this.currentLeaderboard.push(newScore);
+                        
+                        // Re-sort leaderboard
+                        this.currentLeaderboard.sort((a, b) => b.score - a.score);
+                        
+                        // Keep only top 50 for performance
+                        this.currentLeaderboard = this.currentLeaderboard.slice(0, 50);
+                        
+                        // Update UI if leaderboard is currently shown
+                        const overlay = document.getElementById('gameOverlay');
+                        if (overlay && overlay.classList.contains('show')) {
+                            this.showLeaderboard(); // Refresh display
+                        }
+                    }
+                });
+                
+                console.log('✅ Real-time leaderboard updates enabled');
+            } catch (error) {
+                console.warn('⚠️ Real-time updates not available:', error);
+            }
+        }
+    }
+
+    // Initialize leaderboard system
+    async initialize() {
+        try {
+            // Load user's best score
+            this.loadBestScore();
+            
+            // Fetch today's leaderboard
+            await this.fetchTodayLeaderboard();
+            
+            // Set up real-time updates
+            this.setupRealTimeUpdates();
+            
+            console.log('✅ Leaderboard system ready');
+            
+        } catch (error) {
+            console.error('Leaderboard initialization failed:', error);
+        }
+    }
+}
+
+// Global functions for UI interaction
+function showLeaderboard() {
+    if (leaderboard) {
+        leaderboard.showLeaderboard();
+    }
+}
+
+function hideLeaderboard() {
+    if (leaderboard) {
+        leaderboard.hideLeaderboard();
+    }
+}
+
+// Share leaderboard achievement on Twitter
+async function shareLeaderboardAchievement(score, rank) {
+    try {
+        if (!twitterAuth.authenticated) {
+            alert('❌ Please connect Twitter first');
+            return;
+        }
+
+        console.log('🐦 Sharing leaderboard achievement...');
+        const success = await twitterAuth.shareAchievement(score, rank);
+        
+        if (success) {
+            alert('🐦 Twitter share window opened!');
+        } else {
+            alert('❌ Failed to open Twitter share');
+        }
+
+    } catch (error) {
+        console.error('Leaderboard Twitter sharing error:', error);
+        alert('❌ Twitter sharing failed');
+    }
+}
+
+// Generate trophy from leaderboard
+async function generateLeaderboardTrophy(score, username, rank) {
+    try {
+        console.log('🏆 Generating leaderboard trophy for:', username, 'rank:', rank);
+        
+        const playerData = {
+            score: score,
+            username: username,
+            rank: rank,
+            gameMode: 'Daily Contest',
+            date: new Date().toLocaleDateString()
+        };
+        
+        if (typeof trophyGenerator === 'undefined') {
+            console.error('Trophy generator not available');
+            alert('❌ Trophy generator not available');
+            return;
+        }
+        
+        // Wait for trophy image to load if needed
+        if (!trophyGenerator.isLoaded) {
+            console.log('⏳ Loading trophy image...');
+            await trophyGenerator.loadTrophyImage();
+        }
+        
+        const result = await trophyGenerator.generateAndShare(playerData, {
+            download: true,
+            copyToClipboard: true
+        });
+        
+        if (result.success) {
+            let message = '🏆 Trophy image generated!';
+            if (result.downloaded) message += '\n📥 Downloaded to your device';
+            if (result.copied) message += '\n📋 Copied to clipboard';
+            alert(message);
+            console.log('✅ Leaderboard trophy generation successful');
+        } else {
+            alert('❌ Failed to generate trophy: ' + result.error);
+            console.error('Trophy generation failed:', result.error);
+        }
+        
+    } catch (error) {
+        console.error('Leaderboard trophy generation error:', error);
+        alert('❌ Trophy generation failed');
+    }
+}
+
+// Generate trophy and share on Twitter from leaderboard
+async function generateAndShareLeaderboardTrophy(score, username, rank) {
+    try {
+        if (!twitterAuth.authenticated) {
+            alert('❌ Please connect Twitter first');
+            return;
+        }
+
+        console.log('🏆 Generating trophy and preparing Twitter share...');
+        
+        // First generate the trophy image
+        await generateLeaderboardTrophy(score, username, rank);
+
+        // Then share achievement on Twitter
+        console.log('🐦 Opening Twitter share for leaderboard trophy...');
+        const shareSuccess = await twitterAuth.shareTrophyAchievement(score, rank);
+        
+        if (shareSuccess) {
+            alert('🏆 Trophy generated! Twitter share opened!');
+        } else {
+            alert('🏆 Trophy generated! Twitter share failed.');
+        }
+
+    } catch (error) {
+        console.error('Leaderboard trophy share error:', error);
+        alert('❌ Trophy sharing failed');
+    }
+}
+
+// Export singleton instance
+const leaderboard = new Leaderboard();
+
+console.log('📊 Leaderboard module loaded');

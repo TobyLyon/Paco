@@ -6,7 +6,7 @@ console.log("🏗️ Starting the definitive build for Paco's Chicken Palace..."
 const rootDir = __dirname;
 const outputDir = path.join(rootDir, 'public');
 const sourcePublicDir = path.join(rootDir, 'Public');
-const generatorAssetsDir = path.join(rootDir, 'assets', 'images', 'ASSETS');
+// Removed old complex asset path - now using direct assets folder
 
 async function build() {
     try {
@@ -67,17 +67,21 @@ async function build() {
             console.log(`⚠️  Source 'Public' directory not found or same as destination, skipping.`);
         }
         
-        // 5. Recursively copy the generator assets.
-        if (await fs.pathExists(generatorAssetsDir)) {
-            console.log(`🎨  Copying generator assets from ${generatorAssetsDir} to ${path.join(outputDir, 'ASSETS')}...`);
-            await fs.copy(generatorAssetsDir, path.join(outputDir, 'ASSETS'), {
+        // 5. Copy organized assets directory for deployment
+        const assetsSourceDir = path.join(rootDir, 'assets');
+        const assetsDestDir = path.join(outputDir, 'assets');
+        
+        if (await fs.pathExists(assetsSourceDir)) {
+            console.log(`🎨  Copying organized assets from ${assetsSourceDir} to ${assetsDestDir}...`);
+            // Copy the entire organized folder structure
+            await fs.copy(assetsSourceDir, assetsDestDir, {
                 overwrite: true,
                 errorOnExist: false,
                 recursive: true
             });
-            console.log('✅  Generator assets copied.');
+            console.log('✅  Organized assets copied for production deployment.');
         } else {
-            console.log(`⚠️  Generator assets directory not found at ${generatorAssetsDir}, skipping.`);
+            console.log(`⚠️  Assets directory not found at ${assetsSourceDir}, skipping.`);
         }
 
         console.log("\n🎉 BUILD SUCCESS! 🎉");

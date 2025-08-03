@@ -1,0 +1,9 @@
+# Copy this content to a new file called ".env" in your project root
+# Get your Twitter credentials from https://developer.twitter.com/en/portal/dashboard
+
+TWITTER_CLIENT_ID=your_twitter_client_id_here
+TWITTER_CLIENT_SECRET=your_twitter_client_secret_here
+TWITTER_REDIRECT_URI=http://localhost:3000/auth/callback
+
+NODE_ENV=development
+PORT=3000

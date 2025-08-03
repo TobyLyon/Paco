@@ -228,6 +228,180 @@ class OrderTracker {
             return { success: false, data: [], error: error.message };
         }
     }
+
+    // === GAME LEADERBOARD FUNCTIONS ===
+
+    // Record game score
+    async recordGameScore(scoreData) {
+        try {
+            const scoreRecord = {
+                user_id: scoreData.user_id,
+                username: scoreData.username,
+                display_name: scoreData.display_name,
+                profile_image: scoreData.profile_image,
+                score: scoreData.score,
+                game_date: scoreData.game_date,
+                created_at: scoreData.created_at || new Date().toISOString()
+            };
+
+            const { data, error } = await supabase
+                .from('game_scores')
+                .insert([scoreRecord])
+                .select();
+
+            if (error) {
+                console.error('Error recording game score:', error);
+                return { success: false, error };
+            }
+
+            console.log('✅ Game score recorded successfully:', data);
+            return { success: true, data };
+        } catch (error) {
+            console.error('Exception recording game score:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Get today's leaderboard
+    async getTodayLeaderboard() {
+        try {
+            const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+
+            const { data, error } = await supabase
+                .from('game_scores')
+                .select('*')
+                .eq('game_date', today)
+                .order('score', { ascending: false })
+                .limit(50);
+
+            if (error) {
+                console.error('Error getting today leaderboard:', error);
+                return { success: false, data: [], error };
+            }
+
+            return { success: true, data: data || [] };
+        } catch (error) {
+            console.error('Exception getting today leaderboard:', error);
+            return { success: false, data: [], error: error.message };
+        }
+    }
+
+    // Get user's best score for today
+    async getUserBestScore(userId) {
+        try {
+            const today = new Date().toISOString().split('T')[0];
+
+            const { data, error } = await supabase
+                .from('game_scores')
+                .select('score')
+                .eq('user_id', userId)
+                .eq('game_date', today)
+                .order('score', { ascending: false })
+                .limit(1);
+
+            if (error) {
+                console.error('Error getting user best score:', error);
+                return { success: false, score: 0, error };
+            }
+
+            const bestScore = data && data.length > 0 ? data[0].score : 0;
+            return { success: true, score: bestScore };
+        } catch (error) {
+            console.error('Exception getting user best score:', error);
+            return { success: false, score: 0, error: error.message };
+        }
+    }
+
+    // Get leaderboard stats
+    async getLeaderboardStats() {
+        try {
+            const today = new Date().toISOString().split('T')[0];
+
+            const { data, error } = await supabase
+                .from('game_scores')
+                .select('score')
+                .eq('game_date', today);
+
+            if (error) {
+                console.error('Error getting leaderboard stats:', error);
+                return { success: false, stats: {}, error };
+            }
+
+            const scores = data.map(item => item.score);
+            const stats = {
+                totalPlayers: scores.length,
+                averageScore: scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0,
+                topScore: scores.length > 0 ? Math.max(...scores) : 0,
+                gameDate: today
+            };
+
+            return { success: true, stats };
+        } catch (error) {
+            console.error('Exception getting leaderboard stats:', error);
+            return { success: false, stats: {}, error: error.message };
+        }
+    }
+
+    // Subscribe to live game scores
+    subscribeToGameScores(onNewScore, onScoreUpdate) {
+        try {
+            // Unsubscribe from existing channel if any
+            this.unsubscribeFromGameScores();
+
+            // Create new real-time channel for game scores
+            this.gameScoreChannel = supabase
+                .channel('game_scores_channel')
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'INSERT',
+                        schema: 'public',
+                        table: 'game_scores'
+                    },
+                    (payload) => {
+                        console.log('🔴 LIVE: New game score!', payload);
+                        if (onNewScore) {
+                            onNewScore(payload.new);
+                        }
+                    }
+                )
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'UPDATE',
+                        schema: 'public',
+                        table: 'game_scores'
+                    },
+                    (payload) => {
+                        console.log('🔄 LIVE: Game score updated!', payload);
+                        if (onScoreUpdate) {
+                            onScoreUpdate(payload.new);
+                        }
+                    }
+                )
+                .subscribe((status) => {
+                    if (status === 'SUBSCRIBED') {
+                        console.log('✅ Live game score tracking activated!');
+                    } else if (status === 'CHANNEL_ERROR') {
+                        console.error('❌ Game score subscription failed');
+                    }
+                });
+
+            return { success: true, channel: this.gameScoreChannel };
+        } catch (error) {
+            console.error('Error setting up game score subscription:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Stop game score subscription
+    unsubscribeFromGameScores() {
+        if (this.gameScoreChannel) {
+            supabase.removeChannel(this.gameScoreChannel);
+            this.gameScoreChannel = null;
+            console.log('🔌 Game score subscription stopped');
+        }
+    }
 }
 
 // Export singleton instance

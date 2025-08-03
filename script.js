@@ -529,7 +529,7 @@ function loadLayer(type, value) {
             console.error(`Failed to load ${type} image:`, value);
             showNotification(`❌ Error loading ${type}`);
         };
-        layers[type].src = `ASSETS/${type}/${value}.png`;
+        layers[type].src = `assets/${type}/${value}.png`;
     }
 }
 
@@ -673,7 +673,7 @@ function loadBaseImage() {
         console.error('Failed to load base image');
         showNotification('❌ Error loading base chicken');
     };
-    layers.base.src = 'ASSETS/base/PACO.png';
+    layers.base.src = 'assets/base/PACO.png';
 }
 
 function drawPFP() {
@@ -756,7 +756,7 @@ function quickOrder(hatId, itemId) {
         console.error('Failed to load base image for quick combo');
         showNotification('❌ Error loading base chicken');
     };
-    layers.base.src = 'ASSETS/base/PACO.png';
+    layers.base.src = 'assets/base/PACO.png';
     
     updateOrderSummary();
     updateOrderTotal();
@@ -836,7 +836,7 @@ function randomizePFP() {
         console.error('Failed to load base image for random combo');
         showNotification('❌ Error loading base chicken');
     };
-    layers.base.src = 'ASSETS/base/PACO.png';
+    layers.base.src = 'assets/base/PACO.png';
     
     updateOrderSummary();
     updateOrderTotal();
@@ -1303,6 +1303,12 @@ function initializeRestaurant() {
             setupKonamiCode();
         }
         
+        // Initialize tab system
+        initializeTabSystem();
+        
+        // Initialize mobile-specific UI adjustments
+        initializeMobileUI();
+        
         // Initialize global stats from Supabase (non-blocking)
         initializeGlobalStats().catch(error => {
             console.warn('⚠️ Supabase initialization failed silently:', error);
@@ -1333,6 +1339,92 @@ function initializeRestaurant() {
 
 // Save preferences before page unload
 window.addEventListener('beforeunload', savePreferences);
+
+// === TAB SYSTEM MANAGEMENT ===
+
+// Initialize tab system
+function initializeTabSystem() {
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabPanels = document.querySelectorAll('.tab-panel');
+    
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const targetTab = button.getAttribute('data-tab');
+            switchTab(targetTab);
+            
+            // Play navigation sound
+            playKitchenSound();
+        });
+        
+        // Keyboard support
+        button.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                button.click();
+            }
+        });
+    });
+    
+    console.log('✅ Tab system initialized');
+}
+
+// Initialize mobile-specific UI adjustments
+function initializeMobileUI() {
+    if (isMobileDevice()) {
+        console.log('📱 Mobile device detected, adjusting UI...');
+        
+        // Update copy button for mobile users
+        const copyBtn = document.querySelector('.copy-btn');
+        if (copyBtn) {
+            // Add mobile indicator to copy button
+            const originalText = copyBtn.textContent;
+            copyBtn.innerHTML = '📋 COPY <small style="opacity: 0.8; font-size: 0.7em; display: block; margin-top: 2px;">May not work on all mobile browsers</small>';
+            
+            // Add mobile-specific styling
+            copyBtn.style.fontSize = '0.85em';
+            copyBtn.style.padding = '8px 12px';
+            copyBtn.style.lineHeight = '1.2';
+        }
+        
+        // Emphasize download button for mobile
+        const downloadBtn = document.querySelector('.place-order-btn');
+        if (downloadBtn) {
+            downloadBtn.innerHTML = '📥 DOWNLOAD <small style="opacity: 0.9; font-size: 0.8em; display: block; margin-top: 1px;">Recommended for mobile</small>';
+        }
+        
+        console.log('✅ Mobile UI adjustments applied');
+    }
+}
+
+function switchTab(targetTab) {
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabPanels = document.querySelectorAll('.tab-panel');
+    
+    // Update button states
+    tabButtons.forEach(button => {
+        const isActive = button.getAttribute('data-tab') === targetTab;
+        button.classList.toggle('active', isActive);
+        button.setAttribute('aria-selected', isActive.toString());
+    });
+    
+    // Update panel visibility
+    tabPanels.forEach(panel => {
+        const isActive = panel.id === `${targetTab}-panel`;
+        panel.classList.toggle('active', isActive);
+    });
+    
+    // Handle game-specific initialization
+    if (targetTab === 'game') {
+        // Initialize game when switching to game tab
+        setTimeout(() => {
+            if (typeof initializeGame === 'function') {
+                initializeGame();
+            }
+        }, 100);
+    }
+    
+    console.log(`🔄 Switched to ${targetTab} tab`);
+}
 
 // Note: Main initialization is handled by the DOMContentLoaded event listener above
 // This redundant initialization block has been removed to prevent conflicts 
@@ -1486,7 +1578,7 @@ function loadBaseImage() {
             // Draw fallback
             drawFallbackImage(ctx, canvas);
         };
-        baseImg.src = 'ASSETS/base/PACO.png';
+        baseImg.src = 'assets/base/PACO.png';
     } catch (error) {
         console.error('Error in loadBaseImage:', error);
     }
@@ -1505,7 +1597,7 @@ function loadSelectedLayers() {
             hatImg.onload = function() {
                 ctx.drawImage(hatImg, 0, 0, canvas.width, canvas.height);
             };
-            hatImg.src = `ASSETS/hat/${currentOrder.hat}.png`;
+            hatImg.src = `assets/hat/${currentOrder.hat}.png`;
         }
         
         // Load item layer if selected
@@ -1515,7 +1607,7 @@ function loadSelectedLayers() {
             itemImg.onload = function() {
                 ctx.drawImage(itemImg, 0, 0, canvas.width, canvas.height);
             };
-            itemImg.src = `ASSETS/item/${currentOrder.item}.png`;
+            itemImg.src = `assets/item/${currentOrder.item}.png`;
         }
     } catch (error) {
         console.error('Error loading layers:', error);
@@ -1594,6 +1686,39 @@ async function downloadPFP() {
     }
 }
 
+// Detect if device is mobile
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
+        || (navigator.maxTouchPoints && navigator.maxTouchPoints > 1);
+}
+
+// Check if clipboard image support is available
+async function hasClipboardImageSupport() {
+    try {
+        // Check basic clipboard support
+        if (!navigator.clipboard || !navigator.clipboard.write) {
+            return false;
+        }
+        
+        // Test if ClipboardItem is available and works
+        if (typeof ClipboardItem === 'undefined') {
+            return false;
+        }
+        
+        // Additional check for mobile browsers
+        if (isMobileDevice()) {
+            // Many mobile browsers have limited ClipboardItem support
+            // We'll attempt the operation but with better error handling
+            return 'limited';
+        }
+        
+        return true;
+    } catch (error) {
+        console.warn('Clipboard image support check failed:', error);
+        return false;
+    }
+}
+
 // Copy PFP to clipboard function
 async function copyPFPToClipboard() {
     try {
@@ -1602,6 +1727,14 @@ async function copyPFPToClipboard() {
         const canvas = document.getElementById('pfpCanvas');
         if (!canvas) {
             showNotification('Canvas not found!', 'error');
+            return;
+        }
+        
+        // Check clipboard support first
+        const clipboardSupport = await hasClipboardImageSupport();
+        
+        if (clipboardSupport === false) {
+            showNotification('📋 Clipboard images not supported on this device. Use Download instead.', 'error');
             return;
         }
         
@@ -1615,38 +1748,30 @@ async function copyPFPToClipboard() {
             return;
         }
         
-        // Copy to clipboard using the Clipboard API
-        if (navigator.clipboard && navigator.clipboard.write) {
+        // Try to copy to clipboard
+        try {
             const clipboardItem = new ClipboardItem({ 'image/png': blob });
             await navigator.clipboard.write([clipboardItem]);
             
-            // Record order in Supabase database for global tracking
-            await recordGlobalOrder({
-                hat: currentOrder.hat,
-                hatName: currentOrder.hatName,
-                item: currentOrder.item,
-                itemName: currentOrder.itemName,
-                total: parseFloat(document.querySelector('.total-amount').textContent.replace('$', ''))
-            });
-            
-            // Update local orders served count
-            ordersServed++;
-            localStorage.setItem('ordersServed', ordersServed.toString());
-            updateOrdersServed();
-            
-            // Update order number for next order
-            orderNumber++;
-            updateOrderNumber();
-            
-            // Play success sound
-            playSound('success');
+            // Success! Record the order and update UI
+            await recordOrderAndUpdateUI();
             
             // Show success message
-            showNotification('📋 Paco copied to clipboard!', 'success');
+            const message = clipboardSupport === 'limited' 
+                ? '📋 Paco copied! (Note: Some mobile browsers may not paste images correctly)'
+                : '📋 Paco copied to clipboard!';
+            showNotification(message, 'success');
             console.log('✅ PFP copied to clipboard successfully');
-        } else {
-            // Fallback: show message to manually copy
-            showNotification('🚫 Clipboard not supported. Use Download instead.', 'error');
+            
+        } catch (clipboardError) {
+            console.warn('Clipboard write failed:', clipboardError);
+            
+            // On mobile, offer alternative
+            if (isMobileDevice()) {
+                showNotification('📋 Mobile clipboard limitations detected. Use Download or try again.', 'warning');
+            } else {
+                throw clipboardError; // Re-throw for desktop error handling
+            }
         }
         
     } catch (error) {
@@ -1655,10 +1780,39 @@ async function copyPFPToClipboard() {
         // Check if it's a permission error
         if (error.name === 'NotAllowedError') {
             showNotification('📋 Clipboard permission denied. Use Download instead.', 'error');
+        } else if (error.name === 'NotSupportedError') {
+            showNotification('📋 Clipboard images not supported. Use Download instead.', 'error');
         } else {
-            showNotification('Copy failed. Use Download instead.', 'error');
+            const message = isMobileDevice() 
+                ? '📋 Mobile copy failed. Use Download instead.'
+                : 'Copy failed. Use Download instead.';
+            showNotification(message, 'error');
         }
     }
+}
+
+// Helper function to record order and update UI
+async function recordOrderAndUpdateUI() {
+    // Record order in Supabase database for global tracking
+    await recordGlobalOrder({
+        hat: currentOrder.hat,
+        hatName: currentOrder.hatName,
+        item: currentOrder.item,
+        itemName: currentOrder.itemName,
+        total: parseFloat(document.querySelector('.total-amount').textContent.replace('$', ''))
+    });
+    
+    // Update local orders served count
+    ordersServed++;
+    localStorage.setItem('ordersServed', ordersServed.toString());
+    updateOrdersServed();
+    
+    // Update order number for next order
+    orderNumber++;
+    updateOrderNumber();
+    
+    // Play success sound
+    playSound('success');
 }
 
 // Note: Duplicate functions have been removed - original implementations are above 

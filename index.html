@@ -125,8 +125,19 @@
     <!-- Main Restaurant Container -->
     <div class="restaurant-container" id="main-content">
         
-        <!-- Unified PFP Generator -->
-        <section class="pfp-generator" role="main" aria-labelledby="generator-title">
+        <!-- Tab Navigation -->
+        <nav class="tab-navigation" role="tablist">
+            <button class="tab-button active" data-tab="generator" role="tab" aria-selected="true" aria-controls="generator-panel">
+                <img src="game/walk.gif" alt="Paco Walking" style="width: 40px; height: 40px; vertical-align: middle; margin-right: 5px;"> PFP Generator
+            </button>
+            <button class="tab-button" data-tab="game" role="tab" aria-selected="false" aria-controls="game-panel">
+                <img src="game/jump.png" alt="Paco Jumping" class="jump-animation" style="width: 40px; height: 40px; vertical-align: middle; margin-right: 5px;"> Paco Jump
+            </button>
+        </nav>
+
+        <!-- PFP Generator Tab Panel -->
+        <section class="tab-panel active" id="generator-panel" role="tabpanel" aria-labelledby="generator-tab">
+            <div class="pfp-generator" role="main" aria-labelledby="generator-title">
             <div class="generator-content">
                 <!-- Compact Menu Section -->
                 <div class="menu-section-compact">
@@ -252,6 +263,58 @@
                     </div>
                 </div>
             </div>
+            </div>
+        </section>
+
+        <!-- Game Tab Panel -->
+        <section class="tab-panel" id="game-panel" role="tabpanel" aria-labelledby="game-tab">
+            <div class="game-container">
+                <!-- Game Header -->
+                <div class="game-header">
+                    <div class="game-title-section">
+                        <h2 id="game-title">🚀 Paco Jump</h2>
+                        <p class="game-subtitle">Help Paco reach new heights!</p>
+                    </div>
+                    <div class="game-stats">
+                        <div class="stat-box">
+                            <span class="stat-value" id="currentScore">0</span>
+                            <span class="stat-label">Score</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-value" id="bestScore">0</span>
+                            <span class="stat-label">Best</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Game Canvas Container -->
+                <div class="game-canvas-container">
+                    <canvas id="gameCanvas" width="320" height="480" aria-label="Paco Jump Game"></canvas>
+                    <div class="game-overlay" id="gameOverlay">
+                        <div class="overlay-content" id="overlayContent">
+                            <!-- Dynamic content inserted by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Game Controls -->
+                <div class="game-controls">
+                    <button id="playButton" class="game-btn primary">
+                        🎮 Start Game
+                    </button>
+                    <button id="leaderboardButton" class="game-btn secondary">
+                        🏆 Leaderboard
+                    </button>
+                    <button id="twitterAuthButton" class="game-btn twitter" style="display: none;">
+                        🐦 Connect Twitter
+                    </button>
+                </div>
+
+                <!-- Mobile Instructions -->
+                <div class="mobile-instructions">
+                    <p>📱 Tap left/right to move • 🚀 Jump higher to score more!</p>
+                </div>
+            </div>
         </section>
 
     </div>
@@ -269,6 +332,13 @@
 
     <!-- Scripts -->
     <script src="script.js"></script>
+    <!-- Game Modules -->
+    <script src="game-assets.js"></script>
+    <script src="game-physics.js"></script>
+    <script src="twitter-auth.js"></script>
+    <script src="leaderboard.js"></script>
+    <script src="trophy-generator.js"></script>
+    <script src="game.js"></script>
     
     <!-- Analytics (Placeholder) -->
     <script>

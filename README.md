@@ -75,9 +75,12 @@ PACOTHECHICKEN/
 ## 🎨 Customization
 
 ### Adding New Menu Items
-1. Add images to `Public/ASSETS/hat/` or `Public/ASSETS/item/`
+1. Add PNG files to appropriate subfolder:
+   - Hats/Toppings: `assets/hat/yourhat.png`
+   - Items/Sides: `assets/item/youritem.png`
 2. Update the `menuItems` object in `script.js`
 3. Add corresponding emoji and pricing
+4. Refresh browser - changes appear immediately! (No build needed)
 
 ### Styling Changes
 - All styles are in `styles.css` with CSS custom properties
@@ -89,13 +92,21 @@ PACOTHECHICKEN/
 - Update meta tags and titles in `index.html`
 - Modify the contract address in `script.js`
 
-## 🔧 Build Process
+## 🔧 Development & Build
 
-The build process:
-1. Creates a `public/` directory
-2. Copies all necessary files
-3. Preserves the `Public/ASSETS/` structure for the PFP generator
-4. Optimizes for static hosting
+### Development (Dynamic Assets)
+```bash
+npm start    # Serves assets directly from source - instant updates!
+npm run dev  # Same as npm start
+```
+
+### Production Build
+```bash
+npm run build    # Creates optimized build in public/ directory
+npm run preview  # Preview production build locally
+```
+
+**Key Benefit**: During development, assets load directly from organized `assets/` subfolders - add files to correct category and refresh! No build steps needed!
 
 ## 🌐 Deployment Troubleshooting
 
@@ -105,8 +116,9 @@ The build process:
 - Verify all assets are properly copied
 
 ### Asset Loading Issues
-- Check that `Public/ASSETS/` directory structure is preserved
-- Ensure image paths are relative, not absolute
+- For development: Ensure assets are in correct subfolders (`assets/hat/`, `assets/item/`, `assets/base/`)
+- For production: Run `npm run build` to copy organized assets to `public/`
+- Check browser console for 404 errors if images don't load
 - Verify CORS settings for cross-origin requests
 
 ### Canvas/PFP Generator Issues

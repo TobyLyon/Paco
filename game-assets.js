@@ -45,7 +45,7 @@ class GameAssets {
                 name: 'Shield Power', 
                 description: 'Invincibility protection!',
                 duration: 4000, // 4 seconds
-                asset: 'evilFlocko', // Use evil flocko sprite
+                asset: null, // Use emoji fallback - no custom sprite
                 rarity: 0.25 // Medium chance for shield
             },
             magnet: {

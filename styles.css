@@ -1706,6 +1706,71 @@ body {
     visibility: visible;
 }
 
+/* ===== Game Over Screen ===== */
+.game-over-screen {
+    text-align: center;
+    max-width: 90%;
+    width: 320px;
+    padding: 20px;
+    background: rgba(30, 30, 40, 0.85);
+    border-radius: 16px;
+    border: 1px solid rgba(251, 191, 36, 0.3);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    transform: scale(0.95);
+    animation: fadeInScale 0.4s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.game-over-title {
+    color: #ef4444;
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    font-weight: 800;
+    margin: 0 0 15px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-shadow: 2px 2px 6px rgba(0,0,0,0.7);
+}
+
+.game-over-scores {
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 16px;
+    margin: 20px 0;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.game-over-final-score {
+    color: #fbbf24;
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.game-over-best-score {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.game-over-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+
 .overlay-content {
     text-align: center;
     color: white;

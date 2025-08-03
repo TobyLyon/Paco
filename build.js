@@ -30,6 +30,7 @@ async function build() {
                 file.endsWith('.css') ||
                 file.endsWith('.js') ||
                 file.endsWith('.png') ||
+                file.endsWith('.gif') ||
                 file.endsWith('.ico') ||
                 file.endsWith('.svg') ||
                 file.endsWith('.jpg') ||

@@ -730,7 +730,7 @@ class PacoJumpGame {
         
         // Apply movement with responsive acceleration
         if (moveDirection !== 0) {
-            const acceleration = 1.2; // Tuned for better control
+            const acceleration = 1.5; // Tuned for Doodle Jump feel (very responsive)
             this.player.velocityX += moveDirection * acceleration * deltaTime;
             
             // Clamp to max speed for consistent control

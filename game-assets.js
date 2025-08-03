@@ -155,8 +155,8 @@ class GameAssets {
             player: {
                 width: 32,
                 height: 32,
-                            jumpForce: 22, // RESTORED - proper jump height
-            maxSpeed: 6.0, // Tuned for better control
+                            jumpForce: 14, // Tuned for Doodle Jump feel (floatier)
+            maxSpeed: 8.0, // Tuned for Doodle Jump feel (faster, more air control)
                 gravity: 0.5
             },
             

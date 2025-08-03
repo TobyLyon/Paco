@@ -8,9 +8,9 @@
 
 class GamePhysics {
     constructor() {
-        this.gravity = 0.5;
+        this.gravity = 0.4; // Tuned for Doodle Jump feel (less heavy)
         this.friction = 0.8;
-        this.airResistance = 0.98; // Slightly more resistance for better control
+        this.airResistance = 0.96; // Tuned for Doodle Jump feel (more air control, less slide)
         this.terminalVelocity = 20;
         
         // Platform collision settings
@@ -137,16 +137,9 @@ class GamePhysics {
         
         switch(platform.type) {
             case 'spring':
-                // Spring platforms now give FLYING POWER! 🌽✈️
-                jumpForce *= 1.3; // Reduced initial boost (was 1.8)
-                // Enable flying mode for 3 seconds
-                if (!player.isFlying) {
-                    player.flyingJustActivated = true; // Flag for sound playing
-                }
-                player.isFlying = true;
-                player.flyingTimeLeft = 3000; // 3 seconds in milliseconds
-                player.flyingPower = 0.15; // Reduced upward force (was 0.3)
-                console.log('🌽✈️ FLYING MODE ACTIVATED!');
+                // Springs give a single, powerful super-bounce, like Doodle Jump
+                jumpForce *= 2.5; // 250% jump height!
+                this.createJumpParticles(player.x + player.width / 2, player.y, 'spark', 40); // Extra particles
                 break;
             case 'cloud':
                 jumpForce *= 0.8; // Cloud platforms are softer

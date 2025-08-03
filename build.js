@@ -85,6 +85,20 @@ async function build() {
             console.log(`⚠️  Assets directory not found at ${assetsSourceDir}, skipping.`);
         }
 
+        // --- CORRECT FIX: Copy all game assets for deployment ---
+        const gameSourceDir = path.join(rootDir, 'game');
+        if (await fs.pathExists(gameSourceDir)) {
+            console.log(`🎮  Copying all game assets from ${gameSourceDir} to ${outputDir}...`);
+            await fs.copy(gameSourceDir, outputDir, {
+                overwrite: true,
+                errorOnExist: false,
+                recursive: true
+            });
+            console.log('✅  Game assets copied successfully.');
+        } else {
+            console.log(`⚠️  Game assets directory not found at ${gameSourceDir}, skipping.`);
+        }
+
         console.log("\n🎉 BUILD SUCCESS! 🎉");
         console.log(`🚀 Your site is ready for deployment in the '${path.basename(outputDir)}' directory.`);
 

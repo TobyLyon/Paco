@@ -183,14 +183,7 @@ class TrophyGenerator {
         
         const scoreY = this.canvas.height * 0.72;
         
-        // Score background with better proportions
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        this.ctx.fillRect(this.canvas.width * 0.15, scoreY - 45, this.canvas.width * 0.7, 90);
-        
-        // Score border with rounded corners effect
-        this.ctx.strokeStyle = '#fbbf24';
-        this.ctx.lineWidth = 4;
-        this.ctx.strokeRect(this.canvas.width * 0.15, scoreY - 45, this.canvas.width * 0.7, 90);
+        // Score display (background containers removed for cleaner look)
         
         // Score text with enhanced shadow
         this.ctx.font = 'bold 48px "Fredoka", sans-serif';
@@ -221,9 +214,7 @@ class TrophyGenerator {
         
         const infoY = this.canvas.height * 0.86;
         
-        // Player info background with better spacing
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-        this.ctx.fillRect(40, infoY - 30, this.canvas.width - 80, 60);
+        // Player info display (background container removed for cleaner look)
         
         // Username with better sizing
         this.ctx.font = 'bold 26px "Fredoka", sans-serif';

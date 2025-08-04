@@ -69,7 +69,8 @@ const menuItems = {
         { id: 'ski-mask', name: 'Mystery Meat', description: 'Secret recipe, unknown ingredients', price: 0.50, emoji: '🎿' },
         { id: 'pwease', name: 'Pretty Please', description: 'Cute and sweet, impossible to resist', price: 0.50, emoji: '🥺' },
         { id: 'adventure-time', name: 'Adventure Bite', description: 'Mathematical flavor for brave eaters', price: 0.50, emoji: '⚔️' },
-        { id: 'viking', name: 'Norse Warrior', description: 'Savage flavor from the frozen north', price: 0.50, emoji: '⚔️' }
+        { id: 'viking', name: 'Norse Warrior', description: 'Savage flavor from the frozen north', price: 0.50, emoji: '⚔️' },
+        { id: 'space-helmet', name: 'Galaxy Gourmet', description: 'Out-of-this-world flavor from the cosmos', price: 0.50, emoji: '🚀' }
     ],
     items: [
         { id: '', name: 'No Side', description: 'Keep it simple, chicken only', price: 0.00, emoji: '🚫' },
@@ -86,7 +87,7 @@ const menuItems = {
         { id: 'taco', name: 'Taco Tuesday', description: 'Mexican street food, chicken style', price: 1.00, emoji: '🌮' },
         { id: 'boba-tea', name: 'Bubble Tea Bliss', description: 'Chewy pearls in sweet chicken broth', price: 1.00, emoji: '🧋' },
         { id: 'flower', name: 'Garden Fresh', description: 'Organic blooms with herbal essence', price: 1.00, emoji: '🌸' },
-        { id: 'pyn', name: 'Payne Train', description: 'High-speed flavor express', price: 1.00, emoji: '🚂' },
+        { id: 'pyn', name: 'Paco Zyns', description: 'High-speed flavor express', price: 1.00, emoji: '🚂' },
         { id: 'psp', name: 'Portable Gaming', description: 'Retro gaming fuel for chicken champions', price: 1.00, emoji: '🎮' },
         { id: '40-oz', name: 'Forty Ounce', description: 'Big bottle, bigger flavor', price: 1.00, emoji: '🍺' },
         { id: 'purse', name: 'Designer Bag', description: 'Stylish storage for leftover nuggets', price: 1.00, emoji: '👜' }

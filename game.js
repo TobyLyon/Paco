@@ -1393,9 +1393,8 @@ class PacoJumpGame {
     setupInputHandlers() {
         // Keyboard events
         document.addEventListener('keydown', (e) => {
-            // Start game on first key interaction
-            if ((this.gameState === 'waiting' || this.gameState === 'gameOver') && 
-                ['ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) {
+            // Only allow deliberate actions to start a new game (no movement keys!)
+            if (e.code === 'Space' && (this.gameState === 'waiting' || this.gameState === 'gameOver')) {
                 e.preventDefault();
                 this.startGame();
                 return;
@@ -1407,12 +1406,6 @@ class PacoJumpGame {
             if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
                 e.preventDefault();
             }
-            
-            // Spacebar can now be used for starting game
-            if (e.code === 'Space' && (this.gameState === 'waiting' || this.gameState === 'gameOver')) {
-                e.preventDefault();
-                this.startGame();
-            }
         });
         
         document.addEventListener('keyup', (e) => {
@@ -1421,7 +1414,7 @@ class PacoJumpGame {
         
         // Mouse events
         this.canvas.addEventListener('mousedown', (e) => {
-            // Start game on first mouse interaction
+            // Start game on first mouse interaction (keep this for intentional clicks)
             if (this.gameState === 'waiting' || this.gameState === 'gameOver') {
                 this.startGame();
                 return;

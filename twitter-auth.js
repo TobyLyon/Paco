@@ -42,7 +42,7 @@ class TwitterAuth {
         
         // Check if we're running on localhost
         if (hostname === 'localhost' || hostname === '127.0.0.1') {
-            const localPort = port || '3001'; // Default to 3001 if no port specified
+            const localPort = port || '3000'; // Default to 3000 if no port specified
             return `http://localhost:${localPort}/auth/callback`;
         }
         

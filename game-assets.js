@@ -16,10 +16,10 @@ class GameAssets {
         this.sounds = this.getSoundEffects();
         this.config = this.getGameConfig();
         
-        // Asset paths - FIXED FOR GAME SUBDIRECTORY
+        // Asset paths - ALL ASSETS IN GAME SUBDIRECTORY FOR CONSISTENCY
         this.assetPaths = {
             // Player sprites
-            jump: 'jump.png',
+            jump: 'game/jump.png',
             leftJump: 'game/left_jump.png',
             rightJump: 'game/right_jump.png', 
             walk: 'game/walk.gif',
@@ -831,8 +831,8 @@ class GameAssets {
         
         // Use taco sprite if available
         if (this.images.taco && this.loaded) {
-            // Base size for taco (3x bigger and more collectible)
-            const tacoSize = 96; // 3x bigger for better visibility!
+            // Standard uniform size for all collectibles
+            const tacoSize = 40; // Uniform size for consistency
             const aspectRatio = this.images.taco.naturalWidth / this.images.taco.naturalHeight;
             const tacoWidth = tacoSize * aspectRatio;
             const tacoHeight = tacoSize;
@@ -844,18 +844,17 @@ class GameAssets {
                 tacoHeight
             );
         } else {
-            // Fallback: Draw procedural taco (also bigger)
-            const fallbackScale = 1.5;
-            const fallbackWidth = taco.width * fallbackScale;
-            const fallbackHeight = taco.height * fallbackScale;
+            // Fallback: Draw procedural taco with uniform size
+            const fallbackWidth = 40; // Standard uniform size
+            const fallbackHeight = 40;
             ctx.fillStyle = '#D2691E';
             ctx.fillRect(-fallbackWidth/2, -fallbackHeight/2, fallbackWidth, fallbackHeight);
             
             // Add some taco details
             ctx.fillStyle = '#228B22';
-            ctx.fillRect(-fallbackWidth/2 + 2, -fallbackHeight/2 + 2, fallbackWidth - 4, 4);
+            ctx.fillRect(-18, -18, 36, 4); // Green lettuce stripe
             ctx.fillStyle = '#FF6347';
-            ctx.fillRect(-fallbackWidth/2 + 2, -fallbackHeight/2 + 8, fallbackWidth - 4, 3);
+            ctx.fillRect(-18, -10, 36, 3); // Red tomato stripe
         }
         
         // No sparkle effect - clean taco drawing
@@ -895,8 +894,8 @@ class GameAssets {
         
         // Use appropriate sprite if available
         if (assetKey && this.images[assetKey] && this.loaded) {
-            // Base size for power-ups (bigger and more noticeable)
-            const powerupSize = 28; // Bigger for visibility
+            // Standard uniform size for all collectibles
+            const powerupSize = 40; // Uniform size matching tacos
             const aspectRatio = this.images[assetKey].naturalWidth / this.images[assetKey].naturalHeight;
             const powerupWidth = powerupSize * aspectRatio;
             const powerupHeight = powerupSize;
@@ -911,12 +910,12 @@ class GameAssets {
             // Fallback: Draw procedural power-up based on type
             ctx.fillStyle = this.colors.powerups[powerup.type] || '#ffffff';
         ctx.beginPath();
-            ctx.arc(0, 0, powerup.width/2, 0, Math.PI * 2);
+            ctx.arc(0, 0, 20, 0, Math.PI * 2); // Standard 40px diameter (20px radius)
         ctx.fill();
             
             // Add type indicator
             ctx.fillStyle = '#ffffff';
-            ctx.font = `${powerup.width * 0.6}px Arial`;
+            ctx.font = `24px Arial`; // Standard size for uniform appearance
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             const symbols = { corn: '🌽', shield: '🛡️', magnet: '🧲' };

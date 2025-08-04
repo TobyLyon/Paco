@@ -10,7 +10,7 @@ const crypto = require('crypto');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 3001; // Changed default to 3001 to avoid conflicts
+const PORT = process.env.PORT || 3000; // Standard development port
 
 console.log('🚀 Starting dynamic development server...');
 
@@ -55,7 +55,7 @@ app.use(express.urlencoded({ extended: true }));
 let TWITTER_CONFIG = {
     clientId: process.env.TWITTER_CLIENT_ID || 'YOUR_TWITTER_CLIENT_ID',
     clientSecret: process.env.TWITTER_CLIENT_SECRET || 'YOUR_TWITTER_CLIENT_SECRET',
-    redirectUri: process.env.TWITTER_REDIRECT_URI || 'http://localhost:3001/auth/callback', // Default to 3001
+    redirectUri: process.env.TWITTER_REDIRECT_URI || 'http://localhost:3000/auth/callback', // Default to 3000
     tokenUrl: 'https://api.twitter.com/2/oauth2/token',
     userUrl: 'https://api.twitter.com/2/users/me'
 };

@@ -1214,7 +1214,7 @@ class PacoJumpGame {
             case 'corn':
                 // Super flight mode (enhanced flying)
                 this.player.isFlying = true;
-                this.player.flyingTimeLeft = config.duration;
+                this.player.flyingTimeLeft = config.duration; // Sync with power-up timer
                 this.player.flyingPower = 0.25; // Stronger than normal corn platforms
                 console.log('🌽✈️ SUPER FLIGHT ACTIVATED!');
                 break;
@@ -1269,8 +1269,8 @@ class PacoJumpGame {
         const toRemove = [];
         
         for (let [type, data] of this.activePowerups) {
-            // Countdown timer
-            data.timeLeft -= deltaTime * 16.67; // Convert to milliseconds
+            // Countdown timer (timeLeft and deltaTime both in milliseconds)
+            data.timeLeft -= deltaTime;
             
             // === POWER-UP LOW TIME WARNING ===
             // Play warning sound when power-up is running low (last 2 seconds)
@@ -1285,9 +1285,12 @@ class PacoJumpGame {
                 continue;
             }
             
-            // Apply continuous effects
+            // Apply continuous effects and sync timers
             if (type === 'magnet' && this.player.hasMagnet) {
                 this.applyMagnetEffect();
+            } else if (type === 'corn' && this.player.isFlying) {
+                // Keep flying timer in sync with power-up timer
+                this.player.flyingTimeLeft = data.timeLeft;
             }
         }
         
@@ -1961,7 +1964,7 @@ class PacoJumpGame {
                     justify-content: center;
                     margin-bottom: 12px;
                 ">
-                    <img src="jump.png" alt="Paco Jumping" class="tab-icon jump-animation" style="
+                    <img src="game/jump.png" alt="Paco Jumping" class="tab-icon jump-animation" style="
                         width: 36px; 
                         height: 36px; 
                         margin-right: 8px;

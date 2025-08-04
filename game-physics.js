@@ -23,7 +23,7 @@ class GamePhysics {
     updatePlayer(player, deltaTime, canvasWidth) {
         // FLYING MODE (corn power-up)
         if (player.isFlying && player.flyingTimeLeft > 0) {
-            player.flyingTimeLeft -= deltaTime * 16.67;
+            player.flyingTimeLeft -= deltaTime;
             
             // Reduced gravity + upward force when flying
             player.velocityY += this.gravity * 0.3;  // Much less gravity

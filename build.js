@@ -140,16 +140,17 @@ async function build() {
             console.log(`ℹ️  No media directory found at ${mediaSourceDir}, skipping.`);
         }
 
-        // 7. Copy all game assets for deployment
+        // 7. Copy all game assets for deployment (preserve game/ subdirectory)
         const gameSourceDir = path.join(rootDir, 'game');
+        const gameOutputDir = path.join(outputDir, 'game');
         if (await fs.pathExists(gameSourceDir)) {
-            console.log(`🎮  Copying all game assets from ${gameSourceDir} to ${outputDir}...`);
-            await fs.copy(gameSourceDir, outputDir, {
+            console.log(`🎮  Copying all game assets from ${gameSourceDir} to ${gameOutputDir}...`);
+            await fs.copy(gameSourceDir, gameOutputDir, {
                 overwrite: true,
                 errorOnExist: false,
                 recursive: true
             });
-            console.log('✅  Game assets copied successfully.');
+            console.log('✅  Game assets copied successfully to game/ subdirectory.');
         } else {
             console.log(`⚠️  Game assets directory not found at ${gameSourceDir}, skipping.`);
         }

@@ -343,8 +343,9 @@ class GamePhysics {
             const gapFromLast = platforms.length > 0 ? Math.abs(currentY - platforms[platforms.length - 1].y) : 0;
             const horizontalDistanceFromLast = platforms.length > 0 ? Math.abs(x - platforms[platforms.length - 1].x) : 0;
             
-            // Calculate if this gap is approaching maximum reachability
-            const maxReachableGap = (this.jumpForce * this.jumpForce) / this.gravity; // Physics-based max height
+            // Calculate if this gap is approaching maximum reachability  
+            const actualJumpForce = gameAssets.config.player.jumpForce; // Use actual player jump force, not physics engine value
+            const maxReachableGap = (actualJumpForce * actualJumpForce) / this.gravity; // Physics-based max height
             const isLargeGap = gapFromLast > maxReachableGap * 0.7; // 70% of max reach
             const isVeryLargeGap = gapFromLast > maxReachableGap * 0.85; // 85% of max reach
             const isHorizontallyDifficult = horizontalDistanceFromLast > 120;
@@ -355,19 +356,21 @@ class GamePhysics {
                 if (platforms[i].type.includes('spring')) recentSprings++;
             }
             
-            // STRATEGIC PLACEMENT LOGIC - Improved for high scores
+            // STRATEGIC PLACEMENT LOGIC - SAFETY FIRST, THEN DIFFICULTY
+            // Always prioritize reachability over difficulty level
             if (isVeryLargeGap && recentSprings === 0) {
-                // Emergency super spring for very difficult sections
+                // Emergency super spring for very difficult sections (ANY height)
                 type = 'superspring';
             } else if (isLargeGap && recentSprings < 2) {
-                // Regular spring for challenging sections
+                // Regular spring for challenging sections (ANY height)
                 type = 'spring';
-            } else if (height > 5000 && gapFromLast > maxReachableGap * 0.6 && recentSprings < 1) {
-                // Extra safety net for high score areas - place helpful platforms more often
-                type = Math.random() < 0.7 ? 'spring' : 'minispring';
+            } else if (gapFromLast > maxReachableGap * 0.6 && recentSprings < 1) {
+                // Safety net for medium-large gaps at ANY height
+                type = Math.random() < 0.8 ? 'spring' : 'minispring';
             } else if (height < 400) {
-                // Early game - mostly normal with helpful mini springs
-                if (rand < 0.15) type = 'minispring';
+                // Early game - mostly normal with frequent helpful springs
+                if (gapFromLast > maxReachableGap * 0.4) type = 'minispring'; // Extra safety for early game
+                else if (rand < 0.25) type = 'minispring'; // More frequent mini springs
             } else if (height < 800) {
                 // Early-mid game - introduce springs strategically
                 if (rand < 0.08) type = 'spring';

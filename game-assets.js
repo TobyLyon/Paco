@@ -206,17 +206,17 @@ class GameAssets {
                 gravity: 0.5
             },
             
-            // Platform settings - BALANCED FOR ALWAYS BEATABLE
+            // Platform settings - CONSERVATIVE FOR GUARANTEED REACHABILITY
             platform: {
                 width: 60,
                 height: 12,
                 spacing: 80,
-                minGap: 25,        // Easier start
-                maxGap: 70,        // Reduced max gap for better reachability
-                easyMinGap: 20,    // Very easy gaps for beginners  
-                easyMaxGap: 40,    // Easy max gap
-                hardMinGap: 40,    // Moderate gaps at high altitudes
-                hardMaxGap: 75     // Challenging but always beatable gap (reduced from 85)
+                minGap: 20,        // Safer start gaps
+                maxGap: 50,        // Much more conservative max gap
+                easyMinGap: 15,    // Very easy gaps for beginners  
+                easyMaxGap: 30,    // Conservative easy max gap
+                hardMinGap: 30,    // Conservative gaps at high altitudes
+                hardMaxGap: 60     // Safe but challenging gap (well below max reachable)
             },
             
             // Scoring - optimized for competition

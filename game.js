@@ -85,29 +85,110 @@ class PacoJumpGame {
             this.backgroundMusic.volume = this.musicVolume;
             this.backgroundMusic.preload = 'auto';
             console.log('🎵 Background music loaded:', audioUrl);
+            
+            // If loading fails, create a simple fallback tune
+            this.backgroundMusic.onerror = () => {
+                console.log('🎵 Audio file not found, creating simple background tune...');
+                this.createSimpleBackgroundMusic();
+            };
         } catch (error) {
             console.warn('Failed to load background music:', error);
+            this.createSimpleBackgroundMusic();
         }
     }
 
+    // Create a simple procedural background music using Web Audio API
+    createSimpleBackgroundMusic() {
+        try {
+            if (!window.AudioContext && !window.webkitAudioContext) return;
+            
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            this.isPlayingProcedural = false;
+            
+            // Simple 8-bit style melody
+            this.melodyNotes = [
+                { freq: 523, duration: 0.3 }, // C5
+                { freq: 659, duration: 0.3 }, // E5  
+                { freq: 784, duration: 0.3 }, // G5
+                { freq: 659, duration: 0.3 }, // E5
+                { freq: 523, duration: 0.6 }, // C5 (longer)
+                { freq: 587, duration: 0.3 }, // D5
+                { freq: 659, duration: 0.3 }, // E5
+                { freq: 523, duration: 0.6 }  // C5 (longer)
+            ];
+            
+            console.log('🎵 Simple background tune created');
+        } catch (error) {
+            console.warn('Could not create procedural music:', error);
+        }
+    }
+
+    // Play the simple procedural background music
+    playProceduralMusic() {
+        if (!this.audioContext || this.isPlayingProcedural) return;
+        
+        this.isPlayingProcedural = true;
+        let noteIndex = 0;
+        
+        const playNote = () => {
+            if (!this.isPlayingProcedural || this.gameState !== 'playing') {
+                this.isPlayingProcedural = false;
+                return;
+            }
+            
+            const note = this.melodyNotes[noteIndex];
+            const oscillator = this.audioContext.createOscillator();
+            const gainNode = this.audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(this.audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(note.freq, this.audioContext.currentTime);
+            oscillator.type = 'square'; // 8-bit style
+            
+            gainNode.gain.setValueAtTime(0.05, this.audioContext.currentTime); // Very soft
+            gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + note.duration);
+            
+            oscillator.start(this.audioContext.currentTime);
+            oscillator.stop(this.audioContext.currentTime + note.duration);
+            
+            noteIndex = (noteIndex + 1) % this.melodyNotes.length;
+            
+            setTimeout(playNote, note.duration * 1000);
+        };
+        
+        playNote();
+    }
+
     startBackgroundMusic() {
-        if (!this.musicEnabled || !this.backgroundMusic) return;
+        if (!this.musicEnabled) return;
         
         try {
-            // Reset to beginning and play
-            this.backgroundMusic.currentTime = 0;
-            this.backgroundMusic.play().catch(e => {
-                console.log('🎵 Background music autoplay blocked - will start on first user interaction');
-            });
+            if (this.backgroundMusic) {
+                // Use audio file if available
+                this.backgroundMusic.currentTime = 0;
+                this.backgroundMusic.play().catch(e => {
+                    console.log('🎵 Background music autoplay blocked - will start on first user interaction');
+                });
+            } else if (this.audioContext) {
+                // Use procedural music as fallback
+                this.playProceduralMusic();
+            }
         } catch (error) {
             console.warn('Failed to start background music:', error);
         }
     }
 
     stopBackgroundMusic() {
+        // Stop audio file
         if (this.backgroundMusic) {
             this.backgroundMusic.pause();
             this.backgroundMusic.currentTime = 0;
+        }
+        
+        // Stop procedural music
+        if (this.isPlayingProcedural) {
+            this.isPlayingProcedural = false;
         }
     }
 
@@ -415,12 +496,21 @@ class PacoJumpGame {
         // Play enhanced start sound
         this.playSound('gameStart');
         
-        // Start background music
-        if (!this.backgroundMusic) {
-            // Load the background music (you'll need to add this file)
+        // Start background music (with fallback)
+        if (!this.backgroundMusic && !this.audioContext) {
+            // Try to load background music - will create fallback if file doesn't exist
             this.loadBackgroundMusic('assets/audio/background-music.mp3');
+            
+            // Give it a moment to load, then create fallback if needed
+            setTimeout(() => {
+                if (!this.backgroundMusic && !this.audioContext) {
+                    this.createSimpleBackgroundMusic();
+                }
+                this.startBackgroundMusic();
+            }, 100);
+        } else {
+            this.startBackgroundMusic();
         }
-        this.startBackgroundMusic();
         
         // Show brief message about custom assets if loaded
         if (gameAssets.isReady() && gameAssets.images.jump) {

@@ -37,9 +37,9 @@ class GameAssets {
             corn: {
                 name: 'Fly Boost',
                 description: 'Super jump power!',
-                duration: 5000, // 5 seconds
+                duration: 3000, // 3 seconds (reduced from 5)
                 asset: 'corn', // Use corn sprite
-                rarity: 0.4 // Good chance for fly boost
+                rarity: 0.25 // Reduced spawn rate (was 0.4)
             },
             shield: {
                 name: 'Shield Power', 

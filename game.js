@@ -1292,57 +1292,97 @@ class PacoJumpGame {
 
     // Timing indicator removed - hidden skill mechanic
 
-    // Draw power-up indicators in the UI
+    // Draw sleek power-up indicators with circular countdown timers
     drawPowerupIndicators() {
         if (this.activePowerups.size === 0) return;
         
         this.ctx.save();
         
-        const indicatorY = 40;
-        const indicatorSpacing = 120;
-        const centerX = this.canvas.width / 2;
+        // Position indicators in top-right corner
+        const startX = this.canvas.width - 45;
+        const startY = 45;
+        const spacing = 50;
         let index = 0;
         
         for (let [type, data] of this.activePowerups) {
             const config = gameAssets.powerUpTypes[type];
             if (!config) continue;
             
-            const timeLeft = Math.ceil(data.timeLeft / 1000);
-            const indicatorX = centerX + (index - (this.activePowerups.size - 1) / 2) * indicatorSpacing;
+            const timeLeft = data.timeLeft / 1000; // Keep as decimal for smooth animation
+            const totalDuration = config.duration / 1000;
+            const progress = timeLeft / totalDuration; // 1.0 = full, 0.0 = empty
             
-            // Background
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-            this.ctx.fillRect(indicatorX - 55, indicatorY - 15, 110, 30);
+            const centerX = startX;
+            const centerY = startY + (index * spacing);
+            const radius = 18;
             
-            // Border with power-up color
-            const borderColor = gameAssets.colors.powerups[type] || '#ffffff';
-            this.ctx.strokeStyle = borderColor;
-            this.ctx.lineWidth = 2;
-            this.ctx.strokeRect(indicatorX - 55, indicatorY - 15, 110, 30);
-            
-            // Pulsing effect for low time
-            const pulseAlpha = timeLeft <= 2 ? 0.5 + Math.sin(Date.now() * 0.02) * 0.5 : 1;
-            
-            // Power-up icon/symbol
-            this.ctx.font = 'bold 16px "Fredoka", cursive';
-            this.ctx.textAlign = 'center';
-            this.ctx.fillStyle = `rgba(255, 255, 255, ${pulseAlpha})`;
-            
-            const symbols = { 
-                corn: '🌽 SUPER FLIGHT', 
-                shield: '👹 EVIL SHIELD', 
-                magnet: '🧲 TACO MAGNET' 
+            // Get power-up specific colors and icon
+            const colors = {
+                corn: { bg: '#22c55e', icon: '🌽', glow: '#34d399' },
+                shield: { bg: '#ef4444', icon: '🛡️', glow: '#f87171' },
+                magnet: { bg: '#fbbf24', icon: '🧲', glow: '#fcd34d' }
             };
             
-            // Title
-            this.ctx.font = 'bold 12px "Fredoka", cursive';
-            this.ctx.fillText(symbols[type] || config.name, indicatorX, indicatorY - 2);
+            const powerupColors = colors[type] || { bg: '#6b7280', icon: '⚡', glow: '#9ca3af' };
             
-            // Timer
-            this.ctx.font = 'bold 14px "Fredoka", cursive';
-            this.ctx.fillStyle = timeLeft <= 2 ? `rgba(255, 100, 100, ${pulseAlpha})` : `rgba(255, 215, 0, ${pulseAlpha})`;
-            this.ctx.fillText(`${timeLeft}s`, indicatorX, indicatorY + 12);
+            // Pulsing effect for low time (under 2 seconds)
+            const isLowTime = timeLeft <= 2;
+            const pulseIntensity = isLowTime ? 0.6 + Math.sin(Date.now() * 0.015) * 0.4 : 1;
             
+            // Draw background circle with subtle shadow
+            this.ctx.save();
+            this.ctx.globalAlpha = 0.2;
+            this.ctx.fillStyle = '#000000';
+            this.ctx.beginPath();
+            this.ctx.arc(centerX + 2, centerY + 2, radius, 0, Math.PI * 2);
+            this.ctx.fill();
+            this.ctx.restore();
+            
+            // Draw main background circle
+            this.ctx.fillStyle = `rgba(0, 0, 0, 0.7)`;
+            this.ctx.beginPath();
+            this.ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            this.ctx.fill();
+            
+            // Draw countdown progress ring
+            this.ctx.strokeStyle = powerupColors.bg;
+            this.ctx.lineWidth = 3;
+            this.ctx.lineCap = 'round';
+            this.ctx.globalAlpha = pulseIntensity;
+            this.ctx.beginPath();
+            this.ctx.arc(centerX, centerY, radius - 2, -Math.PI/2, -Math.PI/2 + (progress * Math.PI * 2));
+            this.ctx.stroke();
+            
+            // Add glow effect for low time
+            if (isLowTime) {
+                this.ctx.save();
+                this.ctx.shadowColor = powerupColors.glow;
+                this.ctx.shadowBlur = 8 * pulseIntensity;
+                this.ctx.strokeStyle = powerupColors.glow;
+                this.ctx.lineWidth = 2;
+                this.ctx.beginPath();
+                this.ctx.arc(centerX, centerY, radius - 2, -Math.PI/2, -Math.PI/2 + (progress * Math.PI * 2));
+                this.ctx.stroke();
+                this.ctx.restore();
+            }
+            
+            // Draw power-up icon
+            this.ctx.globalAlpha = pulseIntensity;
+            this.ctx.font = 'bold 20px "Fredoka", sans-serif';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.fillText(powerupColors.icon, centerX, centerY);
+            
+            // Draw small time number for precision (only if < 10 seconds)
+            if (timeLeft < 10) {
+                this.ctx.font = 'bold 8px "Fredoka", sans-serif';
+                this.ctx.fillStyle = isLowTime ? '#ff6b6b' : '#ffffff';
+                this.ctx.globalAlpha = 0.8;
+                this.ctx.fillText(Math.ceil(timeLeft).toString(), centerX, centerY + radius + 8);
+            }
+            
+            this.ctx.globalAlpha = 1;
             index++;
         }
         

@@ -171,8 +171,8 @@ class GameAssets {
                 maxGap: 70,        // Reduced max gap for better reachability
                 easyMinGap: 20,    // Very easy gaps for beginners  
                 easyMaxGap: 40,    // Easy max gap
-                hardMinGap: 45,    // Moderate gaps at high altitudes
-                hardMaxGap: 85     // Challenging but always beatable gap
+                hardMinGap: 40,    // Moderate gaps at high altitudes
+                hardMaxGap: 75     // Challenging but always beatable gap (reduced from 85)
             },
             
             // Scoring - optimized for competition

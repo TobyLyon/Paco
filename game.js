@@ -517,7 +517,7 @@ class PacoJumpGame {
             if (gamePhysics.checkPlatformCollision(this.player, platform)) {
                 // Special handling for evil platforms
                 if (platform.type === 'evil') {
-                    if (this.player.isFlying && this.activePowerups.has('corn')) {
+                    if (this.activePowerups.has('corn')) {
                         // Player has corn power-up - can defeat evil flocko!
                         this.defeatEvilFlocko(platform, i);
                         continue;

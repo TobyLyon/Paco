@@ -46,7 +46,7 @@ class Game {
                 
                 // Special handling for evil platforms
                 if (platform.type === 'evil') {
-                    if (this.player.isFlying && this.activePowerups.has('corn')) {
+                    if (this.activePowerups.has('corn')) {
                         // Player defeated evil flocko!
                         this.defeatEvilFlocko(platform, i);
                         

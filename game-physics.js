@@ -287,15 +287,15 @@ class GamePhysics {
                 const factor = (height - 1000) / 1500; // 0 to 1
                 minGap = platformConfig.minGap * (0.9 + factor * 0.1);
                 maxGap = platformConfig.maxGap * (0.9 + factor * 0.1);
-            } else if (height < 5000) {
-                // Advanced - challenging but fair
-                const factor = Math.min(1, (height - 2500) / 2500); // 0 to 1
-                minGap = platformConfig.minGap + factor * (platformConfig.hardMinGap - platformConfig.minGap) * 0.8;
-                maxGap = platformConfig.maxGap + factor * (platformConfig.hardMaxGap - platformConfig.maxGap) * 0.8;
+            } else if (height < 7500) {
+                // Advanced - challenging but fair with gradual increase
+                const factor = Math.min(1, (height - 2500) / 5000); // 0 to 1 over 5000 pixels
+                minGap = platformConfig.minGap + factor * (platformConfig.hardMinGap - platformConfig.minGap) * 0.85;
+                maxGap = platformConfig.maxGap + factor * (platformConfig.hardMaxGap - platformConfig.maxGap) * 0.75; // Cap at 75% of max hard gap
             } else {
-                // Expert level - maximum challenge for competition
-                minGap = platformConfig.hardMinGap;
-                maxGap = platformConfig.hardMaxGap;
+                // Expert level - maximum challenge but still beatable
+                minGap = platformConfig.minGap + (platformConfig.hardMinGap - platformConfig.minGap) * 0.85;
+                maxGap = platformConfig.maxGap + (platformConfig.hardMaxGap - platformConfig.maxGap) * 0.75; // Never go full hard mode
             }
             
             // Calculate next platform position with progressive difficulty
@@ -355,13 +355,16 @@ class GamePhysics {
                 if (platforms[i].type.includes('spring')) recentSprings++;
             }
             
-            // STRATEGIC PLACEMENT LOGIC
+            // STRATEGIC PLACEMENT LOGIC - Improved for high scores
             if (isVeryLargeGap && recentSprings === 0) {
                 // Emergency super spring for very difficult sections
                 type = 'superspring';
             } else if (isLargeGap && recentSprings < 2) {
                 // Regular spring for challenging sections
                 type = 'spring';
+            } else if (height > 5000 && gapFromLast > maxReachableGap * 0.6 && recentSprings < 1) {
+                // Extra safety net for high score areas - place helpful platforms more often
+                type = Math.random() < 0.7 ? 'spring' : 'minispring';
             } else if (height < 400) {
                 // Early game - mostly normal with helpful mini springs
                 if (rand < 0.15) type = 'minispring';
@@ -388,16 +391,16 @@ class GamePhysics {
                 else if (rand < 0.50) type = 'breaking';
                 else if (rand < 0.53) type = 'evil';
             } else {
-                // Expert level - maximum strategic placement
-                if (isVeryLargeGap && rand < 0.6) type = 'superspring'; // High chance of mega help
-                else if (isLargeGap && rand < 0.4) type = 'spring';
-                else if (isHorizontallyDifficult && rand < 0.5) type = 'spring';
-                else if (rand < 0.12) type = 'spring';
-                else if (rand < 0.22) type = 'minispring';
-                else if (rand < 0.34) type = 'moving';
-                else if (rand < 0.44) type = 'cloud';
+                // Expert level - maximum strategic placement with guaranteed help
+                if (isVeryLargeGap && rand < 0.8) type = 'superspring'; // Very high chance of mega help
+                else if (isLargeGap && rand < 0.6) type = 'spring'; // Higher chance of spring help
+                else if (isHorizontallyDifficult && rand < 0.7) type = 'spring'; // Much higher chance for horizontal challenges
+                else if (rand < 0.15) type = 'spring'; // More springs in general
+                else if (rand < 0.28) type = 'minispring'; // More mini springs
+                else if (rand < 0.38) type = 'moving';
+                else if (rand < 0.46) type = 'cloud';
                 else if (rand < 0.54) type = 'breaking';
-                else if (rand < 0.57) type = 'evil';
+                else if (rand < 0.56) type = 'evil'; // Reduce evil platforms at expert level
             }
             
             platforms.push({

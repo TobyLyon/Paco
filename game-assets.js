@@ -69,10 +69,12 @@ class GameAssets {
             skyMiddle: '#E0F6FF', 
             skyBottom: '#87CEEB',
             
-            // Platform colors
+            // Platform colors - STRATEGIC BOUNCE SYSTEM
             platform: {
                 normal: '#8B4513',
-                spring: '#22c55e',
+                spring: '#22c55e',        // Green - Standard spring (1.7x bounce)
+                superspring: '#ffd700',   // Bright Gold - MEGA spring (2.1x bounce)  
+                minispring: '#87ceeb',    // Light Blue - Mini spring (1.35x bounce)
                 moving: '#f97316',
                 breaking: '#ef4444',
                 cloud: '#ffffff',
@@ -155,22 +157,22 @@ class GameAssets {
             player: {
                 width: 32,
                 height: 32,
-                            jumpForce: 14, // Tuned for Doodle Jump feel (floatier)
+                jumpForce: 16, // Increased from 14 to compensate for removed timing bounce (14 * 1.15 ≈ 16)
             maxSpeed: 5.5, // Further tuned for smoother control
                 gravity: 0.5
             },
             
-            // Platform settings
+            // Platform settings - BALANCED FOR ALWAYS BEATABLE
             platform: {
                 width: 60,
                 height: 12,
                 spacing: 80,
-                minGap: 30,        // Start easier
-                maxGap: 80,        // Reduce max gap for better reachability
-                easyMinGap: 25,    // Very easy gaps for beginners
-                easyMaxGap: 45,    // Easy max gap
-                hardMinGap: 50,    // Harder gaps at high altitudes
-                hardMaxGap: 100    // Maximum challenge gap
+                minGap: 25,        // Easier start
+                maxGap: 70,        // Reduced max gap for better reachability
+                easyMinGap: 20,    // Very easy gaps for beginners  
+                easyMaxGap: 40,    // Easy max gap
+                hardMinGap: 45,    // Moderate gaps at high altitudes
+                hardMaxGap: 85     // Challenging but always beatable gap
             },
             
             // Scoring - optimized for competition
@@ -291,10 +293,35 @@ class GameAssets {
         ctx.fillStyle = color;
         ctx.fillRect(x, y, width, height);
         
-        // Add platform details based on type
+        // Add platform details based on type - STRATEGIC SPRING SYSTEM
         switch(type) {
+            case 'superspring':
+                // MEGA SPRING - Bright gold with large visual indicator
+                ctx.fillStyle = '#FFD700'; // Bright gold
+                ctx.fillRect(x, y - 4, width, height + 8); // Thicker platform
+                
+                // Draw large spring coils with golden glow
+                ctx.strokeStyle = '#FFB000';
+                ctx.lineWidth = 3;
+                ctx.shadowColor = '#FFD700';
+                ctx.shadowBlur = 8;
+                ctx.beginPath();
+                for(let i = 0; i < 4; i++) {
+                    const coilX = x + 8 + (i * 11);
+                    ctx.moveTo(coilX, y - 2);
+                    ctx.quadraticCurveTo(coilX + 6, y - 8, coilX + 12, y - 2);
+                }
+                ctx.stroke();
+                ctx.shadowBlur = 0; // Reset shadow
+                
+                // Add sparkle effect
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(x + width/4, y - 6, 2, 2);
+                ctx.fillRect(x + 3*width/4, y - 6, 2, 2);
+                break;
+                
             case 'spring':
-                // Use corn sprite if available, otherwise draw spring coils
+                // STANDARD SPRING - Green with corn sprite or coils
                 if (this.images.corn && this.loaded) {
                     // Base size for corn (bigger and more visible)
                     const cornSize = 48; // Bigger for visibility
@@ -320,6 +347,29 @@ class GameAssets {
                     }
                     ctx.stroke();
                 }
+                break;
+                
+            case 'minispring':
+                // MINI SPRING - Light blue with small bouncy indicator
+                ctx.fillStyle = '#87CEEB'; // Light blue
+                ctx.fillRect(x, y, width, height);
+                
+                // Draw small spring coils
+                ctx.strokeStyle = '#4682B4';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                for(let i = 0; i < 2; i++) {
+                    const coilX = x + 15 + (i * 15);
+                    ctx.moveTo(coilX, y + 2);
+                    ctx.quadraticCurveTo(coilX + 3, y - 2, coilX + 6, y + 2);
+                }
+                ctx.stroke();
+                
+                // Add small bounce indicator
+                ctx.fillStyle = '#FFFFFF';
+                ctx.beginPath();
+                ctx.arc(x + width/2, y - 3, 2, 0, Math.PI * 2);
+                ctx.fill();
                 break;
                 
             case 'moving':
@@ -544,34 +594,140 @@ class GameAssets {
         ctx.restore();
     }
 
-    // Draw background with optimized parallax effect
-    drawBackground(ctx, canvasWidth, canvasHeight, scrollY) {
-        // Create gradient only once per frame (cache optimization)
-        if (!this._backgroundGradient || this._lastHeight !== canvasHeight) {
-            this._backgroundGradient = ctx.createLinearGradient(0, 0, 0, canvasHeight);
-            this._backgroundGradient.addColorStop(0, this.colors.skyTop);
-            this._backgroundGradient.addColorStop(0.3, this.colors.skyMiddle);
-            this._backgroundGradient.addColorStop(1, this.colors.skyBottom);
-            this._lastHeight = canvasHeight;
-        }
+    // Draw progressive background - Earth's atmosphere to deep space!
+    drawBackground(ctx, canvasWidth, canvasHeight, scrollY, playerScore = 0) {
+        // Calculate altitude progression (0 = ground, 1 = deep space)
+        const maxAltitude = 5000; // Score at which we reach deep space
+        const altitudeProgress = Math.min(playerScore / maxAltitude, 1);
         
-        ctx.fillStyle = this._backgroundGradient;
+        // Define our atmospheric layers with smooth transitions
+        const atmosphericLayers = [
+            // Layer 0: Earth's surface (bright sky blue)
+            { top: '#87CEEB', middle: '#B0E0E6', bottom: '#E0F6FF', clouds: 0.6, stars: 0 },
+            // Layer 1: Lower atmosphere (deeper blue)
+            { top: '#4682B4', middle: '#6495ED', bottom: '#87CEEB', clouds: 0.4, stars: 0 },
+            // Layer 2: Upper atmosphere (purple-blue)
+            { top: '#191970', middle: '#4169E1', bottom: '#6495ED', clouds: 0.2, stars: 0.1 },
+            // Layer 3: Edge of space (dark purple)
+            { top: '#0B0B2F', middle: '#1E1E3F', bottom: '#2F2F4F', clouds: 0.05, stars: 0.3 },
+            // Layer 4: Deep space (black with stars)
+            { top: '#000000', middle: '#0A0A0A', bottom: '#1A1A1A', clouds: 0, stars: 1 }
+        ];
+        
+        // Calculate which layers to blend between
+        const layerIndex = altitudeProgress * (atmosphericLayers.length - 1);
+        const lowerLayerIndex = Math.floor(layerIndex);
+        const upperLayerIndex = Math.min(lowerLayerIndex + 1, atmosphericLayers.length - 1);
+        const blendFactor = layerIndex - lowerLayerIndex;
+        
+        const lowerLayer = atmosphericLayers[lowerLayerIndex];
+        const upperLayer = atmosphericLayers[upperLayerIndex];
+        
+        // Blend between the two layers
+        const blendedLayer = {
+            top: this.blendColors(lowerLayer.top, upperLayer.top, blendFactor),
+            middle: this.blendColors(lowerLayer.middle, upperLayer.middle, blendFactor),
+            bottom: this.blendColors(lowerLayer.bottom, upperLayer.bottom, blendFactor),
+            clouds: lowerLayer.clouds + (upperLayer.clouds - lowerLayer.clouds) * blendFactor,
+            stars: lowerLayer.stars + (upperLayer.stars - lowerLayer.stars) * blendFactor
+        };
+        
+        // Create the atmospheric gradient
+        const gradient = ctx.createLinearGradient(0, 0, 0, canvasHeight);
+        gradient.addColorStop(0, blendedLayer.top);
+        gradient.addColorStop(0.3, blendedLayer.middle);
+        gradient.addColorStop(1, blendedLayer.bottom);
+        
+        ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, canvasWidth, canvasHeight);
         
-        // Optimized cloud rendering with reduced frequency
-        if (Math.floor(scrollY / 10) !== this._lastCloudFrame) {
-            this._lastCloudFrame = Math.floor(scrollY / 10);
+        // Draw stars in space (higher altitude = more stars)
+        if (blendedLayer.stars > 0) {
+            this.drawStars(ctx, canvasWidth, canvasHeight, scrollY, blendedLayer.stars);
+        }
+        
+        // Draw clouds (fewer as we go higher)
+        if (blendedLayer.clouds > 0) {
+            this.drawClouds(ctx, canvasWidth, canvasHeight, scrollY, blendedLayer.clouds);
+        }
+    }
+    
+    // Helper function to blend two hex colors
+    blendColors(color1, color2, factor) {
+        // Convert hex to RGB
+        const hex1 = color1.replace('#', '');
+        const hex2 = color2.replace('#', '');
+        
+        const r1 = parseInt(hex1.substr(0, 2), 16);
+        const g1 = parseInt(hex1.substr(2, 2), 16);
+        const b1 = parseInt(hex1.substr(4, 2), 16);
+        
+        const r2 = parseInt(hex2.substr(0, 2), 16);
+        const g2 = parseInt(hex2.substr(2, 2), 16);
+        const b2 = parseInt(hex2.substr(4, 2), 16);
+        
+        // Blend the colors
+        const r = Math.round(r1 + (r2 - r1) * factor);
+        const g = Math.round(g1 + (g2 - g1) * factor);
+        const b = Math.round(b1 + (b2 - b1) * factor);
+        
+        // Convert back to hex
+        return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+    }
+    
+    // Draw stars for space sections
+    drawStars(ctx, canvasWidth, canvasHeight, scrollY, opacity) {
+        ctx.save();
+        ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+        
+        // Create a deterministic star field based on scroll position (ensure positive seed)
+        const starSeed = Math.abs(Math.floor(scrollY / 100));
+        const starCount = Math.floor(50 * opacity);
+        
+        for (let i = 0; i < starCount; i++) {
+            // Use pseudo-random positioning based on seed (ensure positive values)
+            const x = Math.abs((starSeed + i * 37) % 97) * (canvasWidth / 97);
+            const y = Math.abs(((starSeed + i * 73) % 113) * (canvasHeight / 113) + (scrollY * 0.02)) % canvasHeight;
+            const size = Math.max(1, Math.abs((starSeed + i * 17) % 3) + 1); // Ensure size is always positive and at least 1
             
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-            const cloudOffset = (scrollY * 0.08) % 600; // Slightly slower for smoothness
-            
-            for(let i = 0; i < 4; i++) { // Reduced cloud count for performance
+            // Safety check to prevent negative radius
+            if (size > 0) {
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Add twinkling effect for larger stars
+                if (size > 2) {
+                    ctx.fillStyle = `rgba(255, 255, 255, ${opacity * 0.5})`;
+                    ctx.beginPath();
+                    ctx.arc(x, y, size + 1, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+                }
+            }
+        }
+        
+        ctx.restore();
+    }
+    
+    // Draw clouds for atmospheric sections
+    drawClouds(ctx, canvasWidth, canvasHeight, scrollY, opacity) {
+        if (opacity <= 0) return;
+        
+        ctx.save();
+        ctx.fillStyle = `rgba(255, 255, 255, ${opacity * 0.4})`;
+        
+        const cloudOffset = (scrollY * 0.08) % 600;
+        const cloudCount = Math.floor(4 * opacity);
+        
+        for(let i = 0; i < cloudCount; i++) {
                 const cloudY = (i * 150) - cloudOffset;
                 if(cloudY > -60 && cloudY < canvasHeight + 60) {
                     this.drawCloud(ctx, 60 + (i * 90) % (canvasWidth - 120), cloudY, 35, 18);
                 }
             }
-        }
+        
+        ctx.restore();
     }
 
     // Draw cloud helper function

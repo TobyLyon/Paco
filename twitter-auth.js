@@ -13,10 +13,10 @@ class TwitterAuth {
         this.token = null;
         this.authWindow = null;
         
-        // Twitter API configuration
+        // Twitter API configuration - Get client ID from build-time configuration
         this.config = {
-            clientId: 'gGN2fFQjkrxagbw2KVGIGufQt', // Your actual Twitter Client ID from .env
-            redirectUri: window.location.origin + '/auth/callback',
+            clientId: window.TWITTER_CLIENT_ID || this.getClientIdFromMeta(), // Get from build configuration
+            redirectUri: 'https://pacothechicken.xyz/auth/callback',
             scopes: ['tweet.read', 'users.read', 'tweet.write', 'offline.access'],
             authUrl: 'https://twitter.com/i/oauth2/authorize'
         };
@@ -25,6 +25,12 @@ class TwitterAuth {
         this.loadAuthState();
         
         console.log('🐦 Twitter auth module initialized');
+    }
+
+    // Get client ID from meta tag (set during build)
+    getClientIdFromMeta() {
+        const metaTag = document.querySelector('meta[name="twitter-client-id"]');
+        return metaTag ? metaTag.getAttribute('content') : null;
     }
 
     // Check if user is authenticated

@@ -30,11 +30,12 @@ class TrophyGenerator {
                 };
                 
                 this.trophyImage.onerror = (error) => {
-                    console.error('❌ Failed to load trophy image:', error);
-                    reject(error);
+                    console.warn('⚠️ Trophy image failed to load, will use fallback:', error);
+                    this.isLoaded = false;
+                    resolve(); // Don't reject, just use fallback
                 };
                 
-                this.trophyImage.src = 'public/PACO-TROPHY-WINNER.png';
+                this.trophyImage.src = 'PACO-TROPHY-WINNER.png';
             });
             
         } catch (error) {
@@ -82,19 +83,24 @@ class TrophyGenerator {
         // Add subtle pattern overlay
         this.addPatternOverlay();
 
-        // Calculate trophy image dimensions (centered, taking up about 40% of width)
-        const trophySize = Math.min(socialWidth * 0.4, socialHeight * 0.6);
+        // Calculate trophy image dimensions (better proportioned and positioned)
+        const trophySize = Math.min(socialWidth * 0.35, socialHeight * 0.45);
         const trophyX = (socialWidth - trophySize) / 2;
-        const trophyY = socialHeight * 0.15;
+        const trophyY = socialHeight * 0.22;
 
-        // Draw trophy image
-        this.ctx.drawImage(
-            this.trophyImage,
-            trophyX,
-            trophyY,
-            trophySize,
-            trophySize
-        );
+        // Draw trophy image or fallback
+        if (this.isLoaded && this.trophyImage) {
+            this.ctx.drawImage(
+                this.trophyImage,
+                trophyX,
+                trophyY,
+                trophySize,
+                trophySize
+            );
+        } else {
+            // Fallback: Draw a custom trophy shape
+            this.drawFallbackTrophy(trophyX, trophyY, trophySize);
+        }
 
         // Add game title at top
         this.drawGameTitle();
@@ -154,18 +160,18 @@ class TrophyGenerator {
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
         
-        // Main title with shadow
-        this.ctx.font = 'bold 48px "Fredoka", sans-serif';
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-        this.ctx.fillText('PACO JUMP', this.canvas.width / 2 + 3, 63);
+        // Main title with enhanced shadow
+        this.ctx.font = 'bold 52px "Fredoka", sans-serif';
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+        this.ctx.fillText('PACO JUMP', this.canvas.width / 2 + 3, 48);
         
         this.ctx.fillStyle = '#ffffff';
-        this.ctx.fillText('PACO JUMP', this.canvas.width / 2, 60);
+        this.ctx.fillText('PACO JUMP', this.canvas.width / 2, 45);
         
-        // Subtitle
-        this.ctx.font = 'bold 24px "Fredoka", sans-serif';
-        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-        this.ctx.fillText('🐔 CHAMPION ACHIEVED! 🐔', this.canvas.width / 2, 100);
+        // Subtitle with better spacing
+        this.ctx.font = 'bold 22px "Fredoka", sans-serif';
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+        this.ctx.fillText('🐔 CHAMPION ACHIEVEMENT 🐔', this.canvas.width / 2, 80);
         
         this.ctx.restore();
     }
@@ -175,34 +181,34 @@ class TrophyGenerator {
         this.ctx.save();
         this.ctx.textAlign = 'center';
         
-        const scoreY = this.canvas.height * 0.75;
+        const scoreY = this.canvas.height * 0.72;
         
-        // Score background
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-        this.ctx.fillRect(this.canvas.width * 0.2, scoreY - 40, this.canvas.width * 0.6, 80);
+        // Score background with better proportions
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        this.ctx.fillRect(this.canvas.width * 0.15, scoreY - 45, this.canvas.width * 0.7, 90);
         
-        // Score border
+        // Score border with rounded corners effect
         this.ctx.strokeStyle = '#fbbf24';
-        this.ctx.lineWidth = 3;
-        this.ctx.strokeRect(this.canvas.width * 0.2, scoreY - 40, this.canvas.width * 0.6, 80);
+        this.ctx.lineWidth = 4;
+        this.ctx.strokeRect(this.canvas.width * 0.15, scoreY - 45, this.canvas.width * 0.7, 90);
         
-        // Score text with shadow
-        this.ctx.font = 'bold 42px "Fredoka", sans-serif';
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-        this.ctx.fillText(score.toLocaleString(), this.canvas.width / 2 + 2, scoreY + 2);
+        // Score text with enhanced shadow
+        this.ctx.font = 'bold 48px "Fredoka", sans-serif';
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+        this.ctx.fillText(score.toLocaleString(), this.canvas.width / 2 + 3, scoreY + 3);
         
         this.ctx.fillStyle = '#fbbf24';
         this.ctx.fillText(score.toLocaleString(), this.canvas.width / 2, scoreY);
         
-        // Rank display if provided
+        // Rank display if provided with better spacing
         if (rank) {
-            this.ctx.font = 'bold 24px "Fredoka", sans-serif';
-            this.ctx.fillStyle = '#ffffff';
+            this.ctx.font = 'bold 22px "Fredoka", sans-serif';
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
             const rankText = rank === 1 ? '🥇 #1 CHAMPION' : 
                            rank === 2 ? '🥈 #2 RUNNER-UP' : 
                            rank === 3 ? '🥉 #3 BRONZE' : 
                            `🏅 RANK #${rank}`;
-            this.ctx.fillText(rankText, this.canvas.width / 2, scoreY + 35);
+            this.ctx.fillText(rankText, this.canvas.width / 2, scoreY + 40);
         }
         
         this.ctx.restore();
@@ -213,52 +219,60 @@ class TrophyGenerator {
         this.ctx.save();
         this.ctx.textAlign = 'center';
         
-        const infoY = this.canvas.height * 0.88;
+        const infoY = this.canvas.height * 0.86;
         
-        // Player info background
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-        this.ctx.fillRect(50, infoY - 25, this.canvas.width - 100, 50);
+        // Player info background with better spacing
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+        this.ctx.fillRect(40, infoY - 30, this.canvas.width - 80, 60);
         
-        // Username
-        this.ctx.font = 'bold 28px "Fredoka", sans-serif';
+        // Username with better sizing
+        this.ctx.font = 'bold 26px "Fredoka", sans-serif';
         this.ctx.fillStyle = '#ffffff';
         const displayText = username ? `@${username}` : 'Anonymous Champion';
-        this.ctx.fillText(displayText, this.canvas.width / 2, infoY - 5);
+        this.ctx.fillText(displayText, this.canvas.width / 2, infoY - 8);
         
-        // Game mode and date
-        this.ctx.font = '20px "Fredoka", sans-serif';
-        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-        this.ctx.fillText(`${gameMode} • ${date}`, this.canvas.width / 2, infoY + 18);
+        // Game mode and date with improved spacing
+        this.ctx.font = '18px "Fredoka", sans-serif';
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+        this.ctx.fillText(`${gameMode} • ${date}`, this.canvas.width / 2, infoY + 16);
         
         this.ctx.restore();
     }
 
-    // Draw call to action
+    // Draw call to action with website URL
     drawCallToAction() {
         this.ctx.save();
         this.ctx.textAlign = 'center';
         
-        const ctaY = this.canvas.height - 30;
+        const ctaY = this.canvas.height - 45;
         
-        this.ctx.font = 'bold 20px "Fredoka", sans-serif';
-        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        // Main call to action with better spacing
+        this.ctx.font = 'bold 19px "Fredoka", sans-serif';
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
         this.ctx.fillText('🎮 Play PACO JUMP and beat this score! 🎮', this.canvas.width / 2, ctaY);
+        
+        // Website URL below with proper spacing
+        this.ctx.font = 'bold 16px "Fredoka", sans-serif';
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        this.ctx.fillText('🌐 PacoTheChicken.xyz', this.canvas.width / 2, ctaY + 25);
         
         this.ctx.restore();
     }
 
-    // Add decorative star elements
+    // Add decorative star elements with better positioning
     addDecorativeElements() {
         this.ctx.save();
         
-        // Draw stars around the trophy area
+        // Draw stars around the trophy area with updated positions
         const stars = [
-            { x: 150, y: 200, size: 8 },
-            { x: this.canvas.width - 150, y: 200, size: 8 },
-            { x: 100, y: 350, size: 6 },
-            { x: this.canvas.width - 100, y: 350, size: 6 },
-            { x: 200, y: 450, size: 10 },
-            { x: this.canvas.width - 200, y: 450, size: 10 }
+            { x: 120, y: 120, size: 8 },
+            { x: this.canvas.width - 120, y: 120, size: 8 },
+            { x: 80, y: 280, size: 6 },
+            { x: this.canvas.width - 80, y: 280, size: 6 },
+            { x: 160, y: 420, size: 10 },
+            { x: this.canvas.width - 160, y: 420, size: 10 },
+            { x: 220, y: 180, size: 5 },
+            { x: this.canvas.width - 220, y: 180, size: 5 }
         ];
         
         stars.forEach(star => {
@@ -333,10 +347,26 @@ class TrophyGenerator {
         }
     }
 
-    // Generate and share trophy (main public method)
+    // Generate and show preview (new primary method)
+    async generateAndPreview(playerData) {
+        try {
+            const canvas = await this.generateTrophyGraphic(playerData);
+            if (!canvas) return { success: false, error: 'Failed to generate trophy' };
+
+            // Show the preview modal
+            this.showTrophyPreview(canvas, playerData);
+            return { success: true, canvas };
+            
+        } catch (error) {
+            console.error('Trophy generation failed:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Generate and share trophy (now used by preview actions)
     async generateAndShare(playerData, options = {}) {
         const {
-            download = true,
+            download = false, // Changed default to false since preview handles this
             copyToClipboard = false,
             filename = null
         } = options;
@@ -363,6 +393,218 @@ class TrophyGenerator {
             console.error('Trophy generation failed:', error);
             return { success: false, error: error.message };
         }
+    }
+
+    // Draw fallback trophy when image fails to load
+    drawFallbackTrophy(x, y, size) {
+        const ctx = this.ctx;
+        
+        // Save context
+        ctx.save();
+        
+        // Draw trophy cup
+        const cupWidth = size * 0.6;
+        const cupHeight = size * 0.4;
+        const cupX = x + (size - cupWidth) / 2;
+        const cupY = y + size * 0.1;
+        
+        // Trophy cup body (golden gradient)
+        const cupGradient = ctx.createLinearGradient(cupX, cupY, cupX, cupY + cupHeight);
+        cupGradient.addColorStop(0, '#FFD700');
+        cupGradient.addColorStop(0.5, '#FFA500');
+        cupGradient.addColorStop(1, '#FF8C00');
+        
+        ctx.fillStyle = cupGradient;
+        ctx.fillRect(cupX, cupY, cupWidth, cupHeight);
+        
+        // Trophy handles
+        const handleSize = cupWidth * 0.15;
+        const handleY = cupY + cupHeight * 0.2;
+        
+        // Left handle
+        ctx.beginPath();
+        ctx.arc(cupX - handleSize/2, handleY, handleSize, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Right handle
+        ctx.beginPath();
+        ctx.arc(cupX + cupWidth + handleSize/2, handleY, handleSize, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Trophy base
+        const baseWidth = cupWidth * 1.2;
+        const baseHeight = size * 0.15;
+        const baseX = x + (size - baseWidth) / 2;
+        const baseY = cupY + cupHeight;
+        
+        ctx.fillStyle = '#8B4513';
+        ctx.fillRect(baseX, baseY, baseWidth, baseHeight);
+        
+        // Add "PACO" text in the center
+        ctx.fillStyle = '#000000';
+        ctx.font = `bold ${size * 0.08}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.fillText('PACO', x + size/2, cupY + cupHeight/2);
+        
+        // Add trophy emoji at the top
+        ctx.font = `${size * 0.15}px Arial`;
+        ctx.fillText('🏆', x + size/2, cupY - size * 0.05);
+        
+        // Restore context
+        ctx.restore();
+    }
+
+    // Show trophy preview modal
+    showTrophyPreview(canvas, playerData) {
+        // Remove existing preview if any
+        const existingPreview = document.getElementById('trophy-preview-modal');
+        if (existingPreview) {
+            existingPreview.remove();
+        }
+
+        // Create modal overlay
+        const modal = document.createElement('div');
+        modal.id = 'trophy-preview-modal';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            backdrop-filter: blur(5px);
+        `;
+
+        // Create modal content
+        const modalContent = document.createElement('div');
+        modalContent.style.cssText = `
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border-radius: 20px;
+            padding: 24px;
+            max-width: 90%;
+            max-height: 90%;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            border: 2px solid #475569;
+            position: relative;
+        `;
+
+        // Create preview image
+        const previewImg = document.createElement('img');
+        previewImg.src = canvas.toDataURL('image/png');
+        previewImg.style.cssText = `
+            max-width: 500px;
+            max-height: 300px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+        `;
+
+        // Create title
+        const title = document.createElement('h2');
+        title.textContent = '🏆 Your Trophy is Ready!';
+        title.style.cssText = `
+            color: #fbbf24;
+            text-align: center;
+            margin: 0 0 16px 0;
+            font-size: 1.5rem;
+            font-weight: bold;
+        `;
+
+        // Create buttons container
+        const buttonsContainer = document.createElement('div');
+        buttonsContainer.style.cssText = `
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 20px;
+        `;
+
+        // Download button
+        const downloadBtn = document.createElement('button');
+        downloadBtn.innerHTML = '📥 Download';
+        downloadBtn.style.cssText = `
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 12px 20px;
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+        `;
+        downloadBtn.onmouseover = () => downloadBtn.style.transform = 'translateY(-2px)';
+        downloadBtn.onmouseout = () => downloadBtn.style.transform = 'translateY(0)';
+        downloadBtn.onclick = () => {
+            this.downloadTrophyImage(canvas, `paco-champion-${playerData.username || 'anonymous'}-${playerData.score}.png`);
+            modal.remove();
+        };
+
+        // Twitter share button
+        const twitterBtn = document.createElement('button');
+        twitterBtn.innerHTML = '🐦 Share on Twitter';
+        twitterBtn.style.cssText = `
+            background: linear-gradient(135deg, #1d9bf0 0%, #1a8cd8 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 12px 20px;
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(29, 155, 240, 0.3);
+        `;
+        twitterBtn.onmouseover = () => twitterBtn.style.transform = 'translateY(-2px)';
+        twitterBtn.onmouseout = () => twitterBtn.style.transform = 'translateY(0)';
+        twitterBtn.onclick = async () => {
+            modal.remove();
+            // Trigger Twitter sharing through the game
+            if (typeof game !== 'undefined' && game.shareOnTwitter) {
+                await game.shareOnTwitter();
+            } else {
+                console.error('Game Twitter sharing not available');
+            }
+        };
+
+        // Close button
+        const closeBtn = document.createElement('button');
+        closeBtn.innerHTML = '❌';
+        closeBtn.style.cssText = `
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        `;
+        closeBtn.onclick = () => modal.remove();
+
+        // Assemble modal
+        modalContent.appendChild(closeBtn);
+        modalContent.appendChild(title);
+        modalContent.appendChild(previewImg);
+        modalContent.appendChild(buttonsContainer);
+        buttonsContainer.appendChild(downloadBtn);
+        buttonsContainer.appendChild(twitterBtn);
+        
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+
+        // Close on outside click
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        };
     }
 }
 

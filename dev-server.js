@@ -10,7 +10,7 @@ const crypto = require('crypto');
 require('dotenv').config();
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3001; // Changed default to 3001 to avoid conflicts
 
 console.log('🚀 Starting dynamic development server...');
 
@@ -194,10 +194,24 @@ app.get('/auth/callback', (req, res) => {
     res.status(400).send('Invalid callback');
 });
 
-// Start server
-app.listen(PORT, () => {
-    console.log(`✅ Development server running at http://localhost:${PORT}`);
-    console.log(`📁 Assets served dynamically from: ./assets/`);
-    console.log(`🎨 Add new assets to ./assets/hat/ or ./assets/item/ - no build needed!`);
-    console.log(`🔄 Changes are reflected immediately!`);
-});
+// Start server with automatic port fallback
+function startServer(port = PORT) {
+    const server = app.listen(port, () => {
+        console.log(`✅ Development server running at http://localhost:${port}`);
+        console.log(`📁 Assets served dynamically from: ./assets/`);
+        console.log(`🎨 Add new assets to ./assets/hat/ or ./assets/item/ - no build needed!`);
+        console.log(`🔄 Changes are reflected immediately!`);
+        console.log(`💡 To use a different port: PORT=3002 npm run dev`);
+    });
+
+    server.on('error', (err) => {
+        if (err.code === 'EADDRINUSE') {
+            console.log(`⚠️  Port ${port} is busy, trying port ${port + 1}...`);
+            startServer(port + 1);
+        } else {
+            console.error('❌ Server error:', err);
+        }
+    });
+}
+
+startServer();

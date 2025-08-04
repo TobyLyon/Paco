@@ -119,15 +119,27 @@ class GamePhysics {
         return false;
     }
 
-    // Handle platform jump - CLASSIC DOODLE JUMP AUTO-BOUNCE!
+    // Handle platform jump - STRATEGIC BOUNCE SYSTEM!
     handlePlatformJump(player, platform) {
-        // PLATFORM-SPECIFIC JUMP FORCES (like original!)
+        // STRATEGIC JUMP FORCES WITH COLOR CODING
         let jumpForce = this.jumpForce;
+        let particleColor = 'feather';
         
         switch(platform.type) {
+            case 'superspring':
+                jumpForce = this.jumpForce * 2.1; // MEGA BOOST for very difficult sections!
+                particleColor = 'gold';
+                this.createJumpParticles(player.x + player.width / 2, player.y, 'spark', 35);
+                break;
             case 'spring':
-                jumpForce = this.jumpForce * 1.6; // Spring boost!
+                jumpForce = this.jumpForce * 1.7; // Strong spring boost
+                particleColor = 'green';
                 this.createJumpParticles(player.x + player.width / 2, player.y, 'spark', 25);
+                break;
+            case 'minispring':
+                jumpForce = this.jumpForce * 1.35; // Small helpful boost
+                particleColor = 'blue';
+                this.createJumpParticles(player.x + player.width / 2, player.y, 'spark', 15);
                 break;
             case 'cloud':
                 jumpForce = this.jumpForce * 0.8; // Softer cloud bounce
@@ -323,37 +335,69 @@ class GamePhysics {
                 }
             }
             
-            // Determine platform type based on height/difficulty
+            // STRATEGIC PLATFORM TYPE DETERMINATION
             let type = 'normal';
             const rand = Math.random();
             
-            if (height < 400) {
-                // Very easy start - mostly normal with occasional help
-                if (rand < 0.05) type = 'spring';
-            } else if (height < 1000) {
-                // Early game - introduce variety gradually
-                if (rand < 0.1) type = 'spring';
-                else if (rand < 0.15) type = 'moving';
-            } else if (height < 1800) {
-                // Mid game - balanced mix for skill building
-                if (rand < 0.12) type = 'spring';
-                else if (rand < 0.22) type = 'moving';
-                else if (rand < 0.28) type = 'cloud';
-                else if (rand < 0.32) type = 'breaking';
-            } else if (height < 3500) {
-                // Advanced - introduce evil flockos earlier for contest excitement!
-                if (rand < 0.14) type = 'spring';
-                else if (rand < 0.26) type = 'moving';
-                else if (rand < 0.34) type = 'cloud';
+            // Check if we need a strategic bounce platform
+            const gapFromLast = platforms.length > 0 ? Math.abs(currentY - platforms[platforms.length - 1].y) : 0;
+            const horizontalDistanceFromLast = platforms.length > 0 ? Math.abs(x - platforms[platforms.length - 1].x) : 0;
+            
+            // Calculate if this gap is approaching maximum reachability
+            const maxReachableGap = (this.jumpForce * this.jumpForce) / this.gravity; // Physics-based max height
+            const isLargeGap = gapFromLast > maxReachableGap * 0.7; // 70% of max reach
+            const isVeryLargeGap = gapFromLast > maxReachableGap * 0.85; // 85% of max reach
+            const isHorizontallyDifficult = horizontalDistanceFromLast > 120;
+            
+            // Count recent spring platforms to avoid clustering
+            let recentSprings = 0;
+            for (let i = Math.max(0, platforms.length - 3); i < platforms.length; i++) {
+                if (platforms[i].type.includes('spring')) recentSprings++;
+            }
+            
+            // STRATEGIC PLACEMENT LOGIC
+            if (isVeryLargeGap && recentSprings === 0) {
+                // Emergency super spring for very difficult sections
+                type = 'superspring';
+            } else if (isLargeGap && recentSprings < 2) {
+                // Regular spring for challenging sections
+                type = 'spring';
+            } else if (height < 400) {
+                // Early game - mostly normal with helpful mini springs
+                if (rand < 0.15) type = 'minispring';
+            } else if (height < 800) {
+                // Early-mid game - introduce springs strategically
+                if (rand < 0.08) type = 'spring';
+                else if (rand < 0.18) type = 'minispring';
+                else if (rand < 0.25) type = 'moving';
+            } else if (height < 1500) {
+                // Mid game - balanced challenge with strategic recovery
+                if (isHorizontallyDifficult && rand < 0.3) type = 'spring'; // Help with horizontal challenges
+                else if (rand < 0.05) type = 'spring';
+                else if (rand < 0.15) type = 'minispring';
+                else if (rand < 0.25) type = 'moving';
+                else if (rand < 0.35) type = 'cloud';
                 else if (rand < 0.42) type = 'breaking';
-                else if (rand < 0.46) type = 'evil'; // Appear at 1800+ height
+            } else if (height < 3000) {
+                // Advanced game - more challenge but strategic recovery
+                if (isHorizontallyDifficult && rand < 0.4) type = 'spring'; // More help for horizontal challenges
+                else if (rand < 0.08) type = 'spring';
+                else if (rand < 0.18) type = 'minispring';
+                else if (rand < 0.30) type = 'moving';
+                else if (rand < 0.40) type = 'cloud';
+                else if (rand < 0.50) type = 'breaking';
+                else if (rand < 0.53) type = 'evil';
             } else {
-                // Expert level - maximum challenge for competition
-                if (rand < 0.16) type = 'spring'; // Slightly more springs for high-level recovery
-                else if (rand < 0.28) type = 'moving';
-                else if (rand < 0.38) type = 'cloud';
-                else if (rand < 0.48) type = 'breaking';
-                else if (rand < 0.52) type = 'evil';
+                // Expert level - maximum strategic placement
+                if (isVeryLargeGap && rand < 0.6) type = 'superspring'; // High chance of mega help
+                else if (isLargeGap && rand < 0.4) type = 'spring';
+                else if (isHorizontallyDifficult && rand < 0.5) type = 'spring';
+                else if (rand < 0.12) type = 'spring';
+                else if (rand < 0.22) type = 'minispring';
+                else if (rand < 0.34) type = 'moving';
+                else if (rand < 0.44) type = 'cloud';
+                else if (rand < 0.54) type = 'breaking';
+                else if (rand < 0.57) type = 'evil';
             }
             
             platforms.push({

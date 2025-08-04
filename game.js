@@ -193,12 +193,7 @@ class PacoJumpGame {
             isFlying: false,
             flyingTimeLeft: 0,
             flyingPower: 0.15,
-            flyingJustActivated: false,
-            // Timing bounce mechanics
-            timingWindow: false,
-            timingWindowStart: 0,
-            perfectBounceReady: false,
-            lastSpacebarTime: 0
+            flyingJustActivated: false
         };
         
         // Reset game state
@@ -747,7 +742,7 @@ class PacoJumpGame {
         const viewBottom = this.camera.y + this.canvas.height + 50;
         
         // Draw background
-        gameAssets.drawBackground(this.ctx, this.canvas.width, this.canvas.height, this.camera.y);
+        gameAssets.drawBackground(this.ctx, this.canvas.width, this.canvas.height, this.camera.y, this.score);
         
         // Draw platforms (with optimized culling)
         for (let i = 0; i < this.platforms.length; i++) {
@@ -942,86 +937,7 @@ class PacoJumpGame {
         }
     }
 
-    // Check if player is in timing window for perfect bounce
-    checkTimingBounce() {
-        // Must be falling towards a platform
-        if (this.player.velocityY <= 0) return false;
-        
-        // Check if close to any platform
-        const timingDistance = 60; // Distance from platform to start timing window
-        
-        for (let platform of this.platforms) {
-            // Skip broken platforms
-            if (platform.broken) continue;
-            
-            // Check if player is above platform and close enough
-            const playerBottom = this.player.y + this.player.height;
-            const playerCenterX = this.player.x + this.player.width / 2;
-            
-            if (playerCenterX >= platform.x && 
-                playerCenterX <= platform.x + platform.width &&
-                playerBottom >= platform.y - timingDistance &&
-                playerBottom <= platform.y + 20) {
-                
-                // Perfect timing window is smaller (last 20 pixels)
-                const perfectDistance = 20;
-                return playerBottom >= platform.y - perfectDistance;
-            }
-        }
-        
-        return false;
-    }
 
-    // Activate perfect timing bounce
-    activateTimingBounce() {
-        const currentTime = Date.now();
-        
-        // Prevent spam (cooldown of 100ms)
-        if (currentTime - this.player.lastSpacebarTime < 100) return;
-        
-        this.player.lastSpacebarTime = currentTime;
-        
-        // Apply extra bounce force (subtle 1.15x boost)
-        const extraJumpForce = gameAssets.config.player.jumpForce * 1.15; // 15% more jump force
-        this.player.velocityY = -extraJumpForce;
-        
-        // Award bonus points (reduced since boost is more subtle)
-        const bonusPoints = 25;
-        this.score += bonusPoints;
-        this.updateScoreDisplay();
-        
-        // Play special sound
-        this.playSound('perfectBounce');
-        
-        // Create special visual effect
-        this.createPerfectBounceEffect();
-        
-        console.log(`⚡ Timing boost +${bonusPoints}`);
-    }
-
-    // Create subtle visual effect for timing bounce
-    createPerfectBounceEffect() {
-        const particleCount = 6; // Reduced for subtlety
-        const centerX = this.player.x + this.player.width / 2;
-        const centerY = this.player.y + this.player.height;
-        
-        for (let i = 0; i < particleCount; i++) {
-            const angle = (i / particleCount) * Math.PI * 2;
-            const speed = 4 + Math.random() * 3;
-            
-            this.particles.push({
-                x: centerX,
-                y: centerY,
-                velocityX: Math.cos(angle) * speed,
-                velocityY: Math.sin(angle) * speed - 2, // Slight upward bias
-                size: 2 + Math.random() * 2, // Smaller, more subtle particles
-                type: 'perfectBounce',
-                color: '#00ff88', // Bright green for perfect timing
-                life: 1.0,
-                decay: 0.02
-            });
-        }
-    }
 
     // Create visual effect when collecting taco
     createTacoCollectionEffect(taco) {
@@ -1452,15 +1368,10 @@ class PacoJumpGame {
                 e.preventDefault();
             }
             
-            // Handle spacebar for timing bounce only
-            if (e.code === 'Space' && this.gameState === 'playing') {
+            // Spacebar can now be used for starting game
+            if (e.code === 'Space' && (this.gameState === 'waiting' || this.gameState === 'gameOver')) {
                 e.preventDefault();
-                
-                // Only activate timing bounce - no pause fallback
-                if (this.checkTimingBounce()) {
-                    this.activateTimingBounce();
-                }
-                // Spacebar does nothing if not in timing window
+                this.startGame();
             }
         });
         
@@ -1618,14 +1529,28 @@ class PacoJumpGame {
         }
     }
 
-    // Show overlay
-    showOverlay(content) {
+    // Show overlay with optional persistence for game over screen
+    showOverlay(content, persistent = false) {
         const overlay = document.getElementById('gameOverlay');
         const overlayContent = document.getElementById('overlayContent');
         
         if (overlay && overlayContent) {
             overlayContent.innerHTML = content;
             overlay.classList.add('show');
+            
+            // Remove existing click handlers
+            overlay.removeEventListener('click', this.overlayClickHandler);
+            
+            // Add click handler only if not persistent (game over screen should be persistent)
+            if (!persistent) {
+                this.overlayClickHandler = (e) => {
+                    // Only close if clicking the overlay background, not the content
+                    if (e.target === overlay) {
+                        this.hideOverlay();
+                    }
+                };
+                overlay.addEventListener('click', this.overlayClickHandler);
+            }
         }
     }
 
@@ -1634,6 +1559,11 @@ class PacoJumpGame {
         const overlay = document.getElementById('gameOverlay');
         if (overlay) {
             overlay.classList.remove('show');
+            // Clean up click handler
+            if (this.overlayClickHandler) {
+                overlay.removeEventListener('click', this.overlayClickHandler);
+                this.overlayClickHandler = null;
+            }
         }
     }
 
@@ -1678,6 +1608,25 @@ class PacoJumpGame {
                     inset 0 1px 0 rgba(255, 255, 255, 0.1);
                 position: relative;
             ">
+                <!-- Close Button -->
+                <button onclick="game.hideOverlay()" style="
+                    position: absolute;
+                    top: 8px;
+                    right: 8px;
+                    background: rgba(255, 255, 255, 0.1);
+                    border: none;
+                    border-radius: 50%;
+                    width: 24px;
+                    height: 24px;
+                    color: rgba(255, 255, 255, 0.7);
+                    cursor: pointer;
+                    font-size: 14px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: all 0.2s ease;
+                " onmouseover="this.style.background='rgba(255, 255, 255, 0.2)'; this.style.color='white'" onmouseout="this.style.background='rgba(255, 255, 255, 0.1)'; this.style.color='rgba(255, 255, 255, 0.7)'">✕</button>
+                
                 <!-- Game Over Title -->
                 <h2 style="
                     color: #ef4444;
@@ -1709,7 +1658,7 @@ class PacoJumpGame {
                 ">
                     <button onclick="game.startGame()" style="
                         flex: 1;
-                        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+                        background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
                         border: none;
                         border-radius: 10px;
                         padding: 10px;
@@ -1718,14 +1667,14 @@ class PacoJumpGame {
                         font-size: 0.85rem;
                         cursor: pointer;
                         text-transform: uppercase;
-                        box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+                        box-shadow: 0 4px 12px rgba(249, 115, 22, 0.4);
                         transition: all 0.2s ease;
-                    " onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
+                    " onmouseover="this.style.transform='translateY(-1px)'; this.style.background='linear-gradient(135deg, #fb923c 0%, #f97316 100%)'" onmouseout="this.style.transform='translateY(0)'; this.style.background='linear-gradient(135deg, #f97316 0%, #ea580c 100%)'">
                         🎮 Again
                     </button>
                     <button onclick="showLeaderboard()" style="
                         flex: 1;
-                        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+                        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
                         border: none;
                         border-radius: 10px;
                         padding: 10px;
@@ -1734,9 +1683,9 @@ class PacoJumpGame {
                         font-size: 0.85rem;
                         cursor: pointer;
                         text-transform: uppercase;
-                        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+                        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
                         transition: all 0.2s ease;
-                    " onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
+                    " onmouseover="this.style.transform='translateY(-1px)'; this.style.background='linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'" onmouseout="this.style.transform='translateY(0)'; this.style.background='linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)'">
                         🏆 Board
                     </button>
                 </div>
@@ -1758,32 +1707,37 @@ class PacoJumpGame {
                             ${twitterAuth.authenticated ? `
                                 <button onclick="game.shareOnTwitter()" style="
                                     flex: 1;
-                                    background: #1DA1F2;
+                                    background: linear-gradient(135deg, #1DA1F2 0%, #1a91da 100%);
                                     border: none;
                                     border-radius: 8px;
                                     padding: 6px;
                                     color: white;
                                     font-size: 0.7rem;
                                     cursor: pointer;
-                                ">🐦 Share</button>
+                                    transition: all 0.2s ease;
+                                    box-shadow: 0 2px 6px rgba(29, 161, 242, 0.3);
+                                " onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">🐦 Share</button>
                             ` : ''}
                             <button onclick="game.generateTrophyImage()" style="
                                 flex: 1;
-                                background: #6b7280;
+                                background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
                                 border: none;
                                 border-radius: 8px;
                                 padding: 6px;
                                 color: white;
                                 font-size: 0.7rem;
                                 cursor: pointer;
-                            ">📸 Trophy</button>
+                                transition: all 0.2s ease;
+                                box-shadow: 0 2px 6px rgba(251, 191, 36, 0.3);
+                                text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+                            " onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">📸 Trophy</button>
                         </div>
                     </div>
                 ` : ''}
             </div>
         `;
         
-        this.showOverlay(content);
+        this.showOverlay(content, true); // Make game over screen persistent
     }
 
     // Update score display
@@ -1863,10 +1817,10 @@ class PacoJumpGame {
                         margin-right: 8px;
                         filter: drop-shadow(0 2px 6px rgba(251, 191, 36, 0.4));
                     ">
-                    <h1 style="
-                        color: #fbbf24;
+                <h1 style="
+                    color: #fbbf24;
                         font-size: 1.8rem;
-                        font-weight: 900;
+                    font-weight: 900;
                         margin: 0;
                         text-shadow: 
                             0 2px 0 #d97706,
@@ -1885,7 +1839,7 @@ class PacoJumpGame {
                     <div style="margin-bottom: 4px;">📱 <strong>Tap sides</strong> • ⌨️ <strong>Arrow keys</strong></div>
                     <div style="color: rgba(203, 213, 225, 0.8); font-size: 0.7rem;">
                         Jump on platforms • Avoid 👹 • Collect 🌽
-                    </div>
+                </div>
                 </div>
                 
                 <!-- Start Button -->
@@ -1943,10 +1897,10 @@ class PacoJumpGame {
         }
     }
 
-    // Generate trophy image for sharing
+    // Generate trophy image for sharing (now shows preview)
     async generateTrophyImage() {
         try {
-            console.log('🏆 Generating trophy image...');
+            console.log('🏆 Generating trophy preview...');
             
             // Get player information
             const username = twitterAuth.authenticated ? twitterAuth.currentUser.username : null;
@@ -1984,19 +1938,11 @@ class PacoJumpGame {
                 await trophyGenerator.loadTrophyImage();
             }
             
-            // Generate the trophy
-            const result = await trophyGenerator.generateAndShare(playerData, {
-                download: true,
-                copyToClipboard: true
-            });
+            // Generate and show preview (new method)
+            const result = await trophyGenerator.generateAndPreview(playerData);
             
             if (result.success) {
-                let message = '🏆 Trophy image generated!';
-                if (result.downloaded) message += '\n📥 Downloaded to your device';
-                if (result.copied) message += '\n📋 Copied to clipboard';
-                
-                this.showNotification(message, 'success');
-                console.log('✅ Trophy generation successful');
+                console.log('✅ Trophy preview shown');
             } else {
                 this.showNotification('❌ Failed to generate trophy: ' + result.error, 'error');
                 console.error('Trophy generation failed:', result.error);

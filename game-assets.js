@@ -831,8 +831,8 @@ class GameAssets {
         
         // Use taco sprite if available
         if (this.images.taco && this.loaded) {
-            // Standard uniform size for all collectibles
-            const tacoSize = 40; // Uniform size for consistency
+            // Larger taco size for better visibility and collection
+            const tacoSize = 80; // 2x bigger as requested
             const aspectRatio = this.images.taco.naturalWidth / this.images.taco.naturalHeight;
             const tacoWidth = tacoSize * aspectRatio;
             const tacoHeight = tacoSize;
@@ -844,17 +844,17 @@ class GameAssets {
                 tacoHeight
             );
         } else {
-            // Fallback: Draw procedural taco with uniform size
-            const fallbackWidth = 40; // Standard uniform size
-            const fallbackHeight = 40;
+            // Fallback: Draw procedural taco with larger size
+            const fallbackWidth = 80; // 2x bigger to match sprite size
+            const fallbackHeight = 80;
             ctx.fillStyle = '#D2691E';
             ctx.fillRect(-fallbackWidth/2, -fallbackHeight/2, fallbackWidth, fallbackHeight);
             
-            // Add some taco details
+            // Add some taco details (scaled for larger size)
             ctx.fillStyle = '#228B22';
-            ctx.fillRect(-18, -18, 36, 4); // Green lettuce stripe
+            ctx.fillRect(-36, -36, 72, 8); // Green lettuce stripe (2x size)
             ctx.fillStyle = '#FF6347';
-            ctx.fillRect(-18, -10, 36, 3); // Red tomato stripe
+            ctx.fillRect(-36, -20, 72, 6); // Red tomato stripe (2x size)
         }
         
         // No sparkle effect - clean taco drawing

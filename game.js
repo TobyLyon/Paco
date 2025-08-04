@@ -49,7 +49,20 @@ class PacoJumpGame {
         this.fpsDisplay = 0;
         this.lastFPSTime = 0;
         
-        console.log('🎮 Paco Jump game engine initialized');
+        // === ENHANCED AUDIO TRACKING FOR ADDICTIVE SOUNDSCAPE ===
+        this.audioState = {
+            lastMilestoneScore: 0,
+            tacoStreak: 0,
+            perfectBounceStreak: 0,
+            lastHeightMilestone: 0,
+            currentComboLevel: 0,
+            dangerZoneWarned: false,
+            isHighAltitude: false,
+            lastTacoTime: 0,
+            lastPlatformSoundTime: 0
+        };
+        
+        console.log('🎮 Paco Jump game engine initialized with enhanced audio! 🎵');
     }
 
     // Detect mobile device for performance optimizations
@@ -347,8 +360,8 @@ class PacoJumpGame {
         // Hide overlay
         this.hideOverlay();
         
-        // Play start sound
-        this.playSound('jump');
+        // Play enhanced start sound
+        this.playSound('gameStart');
         
         // Show brief message about custom assets if loaded
         if (gameAssets.isReady() && gameAssets.images.jump) {
@@ -407,7 +420,7 @@ class PacoJumpGame {
         this.showGameOverScreen();
         
         // Play game over sound
-        this.playSound('fall');
+        this.playSound('gameOver');
         
         console.log(`🎯 Game ended - Score: ${this.score}`);
     }
@@ -467,7 +480,7 @@ class PacoJumpGame {
         const targetY = gamePhysics.getCameraTarget(this.player, this.canvas.height);
         gamePhysics.updateCamera(this.camera, targetY, deltaTime);
         
-        // Update score
+        // Update score with enhanced audio feedback
         this.updateScore();
         
         // Update combo timer
@@ -543,8 +556,35 @@ class PacoJumpGame {
                     );
                     this.particles.push(...particles);
                     
-                    // Play sound based on platform type
-                    this.playSound(platform.type === 'spring' ? 'bounce' : 'platform');
+                    // Play enhanced platform-specific sounds with throttling
+                    const now = Date.now();
+                    if (now - this.audioState.lastPlatformSoundTime > 50) { // Throttle rapid sounds
+                        let soundType = 'platform';
+                        switch(platform.type) {
+                            case 'spring':
+                                soundType = 'springBounce';
+                                break;
+                            case 'superspring':
+                                soundType = 'superSpringBounce';
+                                break;
+                            case 'minispring':
+                                soundType = 'miniSpringBounce';
+                                break;
+                            case 'moving':
+                                soundType = 'movingPlatform';
+                                break;
+                            case 'breaking':
+                                soundType = 'breakingPlatform';
+                                break;
+                            case 'cloud':
+                                soundType = 'cloudPlatform';
+                                break;
+                            default:
+                                soundType = 'platform';
+                        }
+                        this.playSound(soundType);
+                        this.audioState.lastPlatformSoundTime = now;
+                    }
                 }
                 
                 this.player.grounded = true;
@@ -567,16 +607,52 @@ class PacoJumpGame {
         });
     }
 
-    // Update score
+    // Update score with enhanced audio milestones
     updateScore() {
         const newScore = gamePhysics.calculateScore(this.player.y, this.gameStartY);
         if (newScore > this.score) {
+            const oldScore = this.score;
             this.score = newScore;
             this.updateScoreDisplay();
             
-            // Play score sound occasionally
-            if (this.score % 100 === 0) {
+            // === MILESTONE AUDIO SYSTEM ===
+            
+            // Check for major milestones (1000s)
+            if (Math.floor(this.score / 1000) > Math.floor(oldScore / 1000)) {
+                this.playSound('milestone1000');
+                this.audioState.lastMilestoneScore = this.score;
+            }
+            // Check for medium milestones (500s)
+            else if (Math.floor(this.score / 500) > Math.floor(oldScore / 500)) {
+                this.playSound('milestone500');
+                this.audioState.lastMilestoneScore = this.score;
+            }
+            // Check for small milestones (100s)
+            else if (Math.floor(this.score / 100) > Math.floor(oldScore / 100)) {
+                this.playSound('milestone100');
+                this.audioState.lastMilestoneScore = this.score;
+            }
+            // Regular score progress sound (every 50 points, but not if milestone just played)
+            else if (this.score % 50 === 0 && this.score !== this.audioState.lastMilestoneScore) {
                 this.playSound('score');
+            }
+            
+            // Check for new personal best with celebration
+            if (this.score > this.bestScore) {
+                // Only play once per session when crossing previous best
+                if (oldScore <= this.bestScore && this.score > this.bestScore) {
+                    this.playSound('newPersonalBest');
+                }
+            }
+            
+            // Height-based atmospheric sounds
+            const height = Math.abs(this.player.y);
+            if (height > 2000 && !this.audioState.isHighAltitude) {
+                this.playSound('windWhoosh');
+                this.audioState.isHighAltitude = true;
+            } else if (height > 5000 && Math.floor(height / 1000) > this.audioState.lastHeightMilestone) {
+                this.playSound('spaceAmbient');
+                this.audioState.lastHeightMilestone = Math.floor(height / 1000);
             }
         }
     }
@@ -683,7 +759,7 @@ class PacoJumpGame {
         }
     }
 
-    // Check for game over conditions
+    // Check for game over conditions with audio warnings
     checkGameOver() {
         // More forgiving death zone near starting area
         const distanceFromStart = Math.abs(this.player.y - this.gameStartY);
@@ -694,6 +770,25 @@ class PacoJumpGame {
             deathBuffer = 400; // 4x more forgiving at start
         } else if (distanceFromStart < 500) {
             deathBuffer = 250; // 2.5x more forgiving in early game
+        }
+        
+        // === DANGER ZONE AUDIO WARNINGS ===
+        const dangerDistance = this.player.y - (this.camera.y + this.canvas.height);
+        
+        // Last chance warning (very close to death)
+        if (dangerDistance > deathBuffer * 0.8 && !this.audioState.dangerZoneWarned) {
+            this.playSound('lastChance');
+            this.audioState.dangerZoneWarned = true;
+        } 
+        // Danger zone warning (getting close)
+        else if (dangerDistance > deathBuffer * 0.5 && !this.audioState.dangerZoneWarned) {
+            this.playSound('dangerZone');
+            this.audioState.dangerZoneWarned = true;
+        }
+        
+        // Reset danger warning when player gets back to safety
+        if (dangerDistance < deathBuffer * 0.3) {
+            this.audioState.dangerZoneWarned = false;
         }
         
         // Game over if player falls too far below camera
@@ -923,8 +1018,23 @@ class PacoJumpGame {
         this.score += bonus;
         this.updateScoreDisplay();
         
-        // Play collection sound
-        this.playSound('taco');
+        // Enhanced taco collection audio with streak detection
+        const now = Date.now();
+        const timeSinceLastTaco = now - this.audioState.lastTacoTime;
+        
+        if (timeSinceLastTaco < 2000) { // Within 2 seconds = streak
+            this.audioState.tacoStreak++;
+            if (this.audioState.tacoStreak >= 3) {
+                this.playSound('tacoStreak'); // Special streak sound
+            } else {
+                this.playSound('taco');
+            }
+        } else {
+            this.audioState.tacoStreak = 1;
+            this.playSound('taco');
+        }
+        
+        this.audioState.lastTacoTime = now;
         
         // Create collection particles
         this.createTacoCollectionEffect(taco);
@@ -980,8 +1090,8 @@ class PacoJumpGame {
         this.score += bonusPoints;
         this.updateScoreDisplay();
         
-        // Play victory sound
-        this.playSound('powerupCorn');
+        // Play triumphant victory sound
+        this.playSound('evilFlockoDefeat');
         
         // Create victory particles
         this.createEvilFlockoDefeatEffect(platform);
@@ -1161,6 +1271,13 @@ class PacoJumpGame {
         for (let [type, data] of this.activePowerups) {
             // Countdown timer
             data.timeLeft -= deltaTime * 16.67; // Convert to milliseconds
+            
+            // === POWER-UP LOW TIME WARNING ===
+            // Play warning sound when power-up is running low (last 2 seconds)
+            if (data.timeLeft <= 2000 && data.timeLeft > 1800 && !data.warningPlayed) {
+                this.playSound('powerupLowTime');
+                data.warningPlayed = true;
+            }
             
             // Check for expiration
             if (data.timeLeft <= 0) {

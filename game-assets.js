@@ -118,29 +118,73 @@ class GameAssets {
         };
     }
 
-    // Sound effect configuration
+    // Sound effect configuration - ENHANCED FOR ADDICTIVE AUDIO! 🎵
     getSoundEffects() {
         return {
+            // === CORE MOVEMENT SOUNDS ===
             jump: { frequency: 400, duration: 0.1 },
             platform: { frequency: 300, duration: 0.05 },
             bounce: { frequency: 600, duration: 0.15 },
-            powerup: { frequency: 800, duration: 0.2 },
-            fall: { frequency: 200, duration: 0.3 },
-            score: { frequency: 523, duration: 0.1 },
-            flying: { frequency: 880, duration: 0.4 }, // Flying power-up sound! 🌽✈️
-            taco: { frequency: 660, duration: 0.2 }, // Taco collection sound! 🌮
             
-            // Power-up specific sounds
+            // === ENHANCED PLATFORM SOUNDS ===
+            springBounce: { frequency: 800, duration: 0.2 }, // Standard spring - satisfying pop! 🟢
+            superSpringBounce: { frequency: 1200, duration: 0.4 }, // MEGA spring - epic launch! 🟡
+            miniSpringBounce: { frequency: 650, duration: 0.15 }, // Mini spring - cute hop! 🔵
+            movingPlatform: { frequency: 420, duration: 0.08 }, // Moving platform wobble
+            breakingPlatform: { frequency: 180, duration: 0.6 }, // Platform breaking - ominous crack!
+            cloudPlatform: { frequency: 550, duration: 0.12 }, // Soft cloud bounce - airy feel
+            
+            // === COLLECTION & REWARD SOUNDS ===
+            powerup: { frequency: 800, duration: 0.2 },
+            taco: { frequency: 660, duration: 0.2 }, // Taco collection sound! 🌮
+            tacoStreak: { frequency: 880, duration: 0.3 }, // Multiple tacos in a row! 🌮🌮
+            score: { frequency: 523, duration: 0.1 },
+            scoreStreak: { frequency: 740, duration: 0.15 }, // Rapid scoring combo!
+            comboBonus: { frequency: 987, duration: 0.4 }, // Combo multiplier achieved! ⚡
+            
+            // === MILESTONE SOUNDS ===
+            milestone100: { frequency: 600, duration: 0.3 }, // Every 100 points - gentle chime
+            milestone500: { frequency: 800, duration: 0.4 }, // Every 500 points - satisfying ding
+            milestone1000: { frequency: 1100, duration: 0.6 }, // Every 1000 points - epic fanfare!
+            newPersonalBest: { frequency: 1400, duration: 1.0 }, // New high score - celebration!
+            
+            // === POWER-UP ENHANCED SOUNDS ===
+            flying: { frequency: 880, duration: 0.4 }, // Flying power-up sound! 🌽✈️
             powerupCorn: { frequency: 950, duration: 0.5 }, // Super flight activation! 🌽
             powerupShield: { frequency: 440, duration: 0.6 }, // Evil shield activation! 👹
             powerupMagnet: { frequency: 740, duration: 0.4 }, // Taco magnet activation! 🧲
             powerupExpire: { frequency: 350, duration: 0.3 }, // Power-up expiring
+            powerupLowTime: { frequency: 450, duration: 0.1 }, // Power-up running out - warning beep
             
-            // Perfect timing bounce
+            // === PERFECT TIMING & SKILL SOUNDS ===
             perfectBounce: { frequency: 1200, duration: 0.3 }, // Perfect timing bounce! ⚡
+            skillStreak: { frequency: 1050, duration: 0.25 }, // Multiple perfect bounces in a row
             
-            // Evil flocko death sound
-            evilFlockoDeath: { frequency: 150, duration: 0.8 } // Deep, ominous death sound! 💀
+            // === DANGER & DEATH SOUNDS ===
+            fall: { frequency: 200, duration: 0.3 },
+            evilFlockoDeath: { frequency: 150, duration: 0.8 }, // Deep, ominous death sound! 💀
+            evilFlockoDefeat: { frequency: 1300, duration: 0.5 }, // Defeating evil flocko - triumphant!
+            dangerZone: { frequency: 250, duration: 0.2 }, // Getting close to death zone
+            lastChance: { frequency: 300, duration: 0.4 }, // Very close to game over - urgent!
+            
+            // === ATMOSPHERIC SOUNDS ===
+            heightGain: { frequency: 480, duration: 0.08 }, // Subtle upward progress sound
+            windWhoosh: { frequency: 200, duration: 0.15 }, // High altitude wind effect
+            spaceAmbient: { frequency: 350, duration: 0.25 }, // Entering space zone
+            
+            // === UI & FEEDBACK SOUNDS ===
+            gameStart: { frequency: 523, duration: 0.3 }, // Game starting - uplifting tone
+            gameOver: { frequency: 220, duration: 1.2 }, // Game over - somber but not harsh
+            newGame: { frequency: 659, duration: 0.4 }, // Starting new game - hopeful tone
+            buttonHover: { frequency: 400, duration: 0.05 }, // UI feedback - subtle
+            buttonClick: { frequency: 600, duration: 0.08 }, // UI confirmation - crisp
+            
+            // === COMBO SYSTEM SOUNDS ===
+            combo2x: { frequency: 700, duration: 0.2 }, // 2x combo multiplier
+            combo3x: { frequency: 850, duration: 0.25 }, // 3x combo multiplier  
+            combo5x: { frequency: 1000, duration: 0.3 }, // 5x combo multiplier
+            comboMax: { frequency: 1200, duration: 0.5 }, // Maximum combo - epic!
+            comboLost: { frequency: 400, duration: 0.2 } // Combo broken - disappointed but not harsh
         };
     }
 

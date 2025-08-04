@@ -62,6 +62,11 @@ class PacoJumpGame {
             lastPlatformSoundTime: 0
         };
         
+        // Background music setup
+        this.backgroundMusic = null;
+        this.musicVolume = 0.3; // Soft background volume
+        this.musicEnabled = true;
+        
         console.log('🎮 Paco Jump game engine initialized with enhanced audio! 🎵');
     }
 
@@ -70,6 +75,50 @@ class PacoJumpGame {
         return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
                window.innerWidth <= 768 ||
                'ontouchstart' in window;
+    }
+
+    // Background music management
+    loadBackgroundMusic(audioUrl) {
+        try {
+            this.backgroundMusic = new Audio(audioUrl);
+            this.backgroundMusic.loop = true;
+            this.backgroundMusic.volume = this.musicVolume;
+            this.backgroundMusic.preload = 'auto';
+            console.log('🎵 Background music loaded:', audioUrl);
+        } catch (error) {
+            console.warn('Failed to load background music:', error);
+        }
+    }
+
+    startBackgroundMusic() {
+        if (!this.musicEnabled || !this.backgroundMusic) return;
+        
+        try {
+            // Reset to beginning and play
+            this.backgroundMusic.currentTime = 0;
+            this.backgroundMusic.play().catch(e => {
+                console.log('🎵 Background music autoplay blocked - will start on first user interaction');
+            });
+        } catch (error) {
+            console.warn('Failed to start background music:', error);
+        }
+    }
+
+    stopBackgroundMusic() {
+        if (this.backgroundMusic) {
+            this.backgroundMusic.pause();
+            this.backgroundMusic.currentTime = 0;
+        }
+    }
+
+    toggleBackgroundMusic() {
+        this.musicEnabled = !this.musicEnabled;
+        if (this.musicEnabled) {
+            this.startBackgroundMusic();
+        } else {
+            this.stopBackgroundMusic();
+        }
+        console.log('🎵 Background music:', this.musicEnabled ? 'ON' : 'OFF');
     }
 
     // Initialize game with robust error handling
@@ -236,6 +285,9 @@ class PacoJumpGame {
         // Update UI
         this.updateScoreDisplay();
         
+        // Stop background music when resetting
+        this.stopBackgroundMusic();
+        
         console.log('🎮 Game reset');
     }
 
@@ -363,6 +415,13 @@ class PacoJumpGame {
         // Play enhanced start sound
         this.playSound('gameStart');
         
+        // Start background music
+        if (!this.backgroundMusic) {
+            // Load the background music (you'll need to add this file)
+            this.loadBackgroundMusic('assets/audio/background-music.mp3');
+        }
+        this.startBackgroundMusic();
+        
         // Show brief message about custom assets if loaded
         if (gameAssets.isReady() && gameAssets.images.jump) {
             setTimeout(() => {
@@ -409,6 +468,9 @@ class PacoJumpGame {
     endGame() {
         this.isGameRunning = false;
         this.gameState = 'gameOver';
+        
+        // Stop background music
+        this.stopBackgroundMusic();
         
         // Update best score
         if (this.score > this.bestScore) {

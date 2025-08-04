@@ -1,14 +1,7 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "public",
-  "functions": {
-    "api/twitter/token.js": {
-      "runtime": "nodejs18.x"
-    },
-    "api/twitter/user.js": {
-      "runtime": "nodejs18.x"
-    }
-  },
+
   "headers": [
     {
       "source": "/api/(.*)",

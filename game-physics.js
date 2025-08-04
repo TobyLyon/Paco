@@ -8,70 +8,61 @@
 
 class GamePhysics {
     constructor() {
-        this.gravity = 0.4; // Tuned for Doodle Jump feel (less heavy)
-        this.friction = 0.8;
-        this.airResistance = 0.96; // Tuned for Doodle Jump feel (more air control, less slide)
-        this.terminalVelocity = 20;
+        // CLASSIC DOODLE JUMP PHYSICS VALUES
+        this.gravity = 0.5;              // Simple gravity per frame
+        this.jumpForce = 15;             // Auto-jump force when hitting platform
+        this.horizontalSpeed = 5;        // Left/right movement speed (increased for better feel)
+        this.friction = 0.85;            // Horizontal friction (simple!)
+        this.terminalVelocity = 15;      // Max fall speed
         
-        // Platform collision settings
-        this.platformCollisionBuffer = 5;
-        this.velocityThreshold = 0.1; // Minimum velocity for platform collision
+        // Simple collision settings (like original)
+        this.platformTolerance = 5;      // Landing tolerance - much simpler!
     }
 
-    // Update player physics - optimized for stability
+    // Update player physics - SIMPLE DOODLE JUMP STYLE!
     updatePlayer(player, deltaTime, canvasWidth) {
-        // Clamp delta time for stability
-        deltaTime = Math.min(deltaTime, 3.0); // Prevent physics explosions
-        
-        // Handle flying mode
+        // FLYING MODE (corn power-up)
         if (player.isFlying && player.flyingTimeLeft > 0) {
-            // Count down flying time
-            player.flyingTimeLeft -= deltaTime * 16.67; // Convert to milliseconds
+            player.flyingTimeLeft -= deltaTime * 16.67;
             
-            // Apply reduced gravity and upward flying force
-            const reducedGravity = this.gravity * 0.6; // Less dramatic gravity reduction (was 0.3)
-            player.velocityY += reducedGravity * deltaTime;
-            player.velocityY -= player.flyingPower * deltaTime; // Continuous upward force
+            // Reduced gravity + upward force when flying
+            player.velocityY += this.gravity * 0.3;  // Much less gravity
+            player.velocityY -= player.flyingPower * 0.6;  // Flying force
             
-            // End flying mode when time runs out
             if (player.flyingTimeLeft <= 0) {
                 player.isFlying = false;
                 player.flyingTimeLeft = 0;
                 console.log('🌽 Flying mode ended');
             }
         } else {
-            // Normal gravity when not flying
-            player.velocityY += this.gravity * deltaTime;
+            // SIMPLE GRAVITY - just add it every frame!
+            player.velocityY += this.gravity;
         }
         
-        // Apply air resistance with stability check
-        player.velocityX *= Math.pow(this.airResistance, deltaTime / 16.67);
+        // SIMPLE HORIZONTAL FRICTION (not complex air resistance!)
+        player.velocityX *= this.friction;
         
-        // Clamp velocities for stability - LOOSENED for better gameplay
+        // CLAMP VELOCITIES  
         player.velocityY = Math.min(player.velocityY, this.terminalVelocity);
-        player.velocityX = Math.max(-20, Math.min(20, player.velocityX)); // Allow faster movement
+        player.velocityX = Math.max(-15, Math.min(15, player.velocityX));
         
-        // Update position with less restrictive movement
-        const maxMovement = 30; // INCREASED - allow faster movement
-        const deltaX = Math.max(-maxMovement, Math.min(maxMovement, player.velocityX * deltaTime));
-        const deltaY = Math.max(-maxMovement, Math.min(maxMovement, player.velocityY * deltaTime));
+        // UPDATE POSITION - SIMPLE!
+        player.x += player.velocityX;
+        player.y += player.velocityY;
         
-        player.x += deltaX;
-        player.y += deltaY;
-        
-        // Handle horizontal screen wrapping
+        // SCREEN WRAPPING (classic Doodle Jump!)
         if (player.x + player.width < 0) {
             player.x = canvasWidth;
         } else if (player.x > canvasWidth) {
             player.x = -player.width;
         }
         
-        // Update player rotation based on movement (smoother)
-        const targetRotation = Math.max(-0.3, Math.min(0.3, player.velocityX * 0.08));
-        player.rotation = this.lerp(player.rotation, targetRotation, 0.15);
+        // SIMPLE ROTATION based on horizontal movement
+        const targetRotation = player.velocityX * 0.05;
+        player.rotation = this.lerp(player.rotation, targetRotation, 0.2);
         
-        // Update trail positions (less frequently for performance)
-        if (Math.random() < 0.7) { // 70% chance to update trail each frame
+        // TRAIL EFFECT (occasionally)
+        if (Math.random() < 0.7) {
             this.updatePlayerTrail(player);
         }
     }
@@ -98,74 +89,66 @@ class GamePhysics {
         }
     }
 
-    // Check collision between player and platform
+    // Check collision - SIMPLE DOODLE JUMP STYLE!
     checkPlatformCollision(player, platform) {
-        // Only check collision if player is falling (any downward velocity)
-        if (player.velocityY < 0) {
-            return false; // Player is moving up, no collision
+        // ONLY CHECK IF FALLING (original Doodle Jump behavior)
+        if (player.velocityY <= 0) {
+            return false; // Moving up or not moving, no collision
         }
         
-        // Check horizontal overlap
-        const playerCenterX = player.x + player.width/2;
+        // SIMPLE HORIZONTAL OVERLAP CHECK
+        const playerCenter = player.x + player.width / 2;
         const platformLeft = platform.x;
         const platformRight = platform.x + platform.width;
         
-        if (playerCenterX < platformLeft || playerCenterX > platformRight) {
+        // Player center must be over platform
+        if (playerCenter < platformLeft || playerCenter > platformRight) {
             return false;
         }
         
-        // Check vertical collision - player must be landing on top of platform
+        // SIMPLE VERTICAL COLLISION (like original!)
         const playerBottom = player.y + player.height;
         const platformTop = platform.y;
         
-        // Allow collision if player is just above or touching the platform top
-        if (playerBottom >= platformTop && playerBottom <= platformTop + platform.height + this.platformCollisionBuffer) {
-            // Additional check: only trigger if player was above platform in previous frame
-            // This prevents collision when player is inside or below platform
-            if (player.y <= platformTop) {
-                return true;
-            }
+        // Landing on platform with simple tolerance
+        if (playerBottom >= platformTop - this.platformTolerance && 
+            playerBottom <= platformTop + this.platformTolerance) {
+            return true;
         }
         
         return false;
     }
 
-    // Handle player jumping from platform
+    // Handle platform jump - CLASSIC DOODLE JUMP AUTO-BOUNCE!
     handlePlatformJump(player, platform) {
-        // Calculate jump force based on platform type
-        let jumpForce = gameAssets.config.player.jumpForce;
+        // PLATFORM-SPECIFIC JUMP FORCES (like original!)
+        let jumpForce = this.jumpForce;
         
         switch(platform.type) {
             case 'spring':
-                // Springs give a single, powerful super-bounce, like Doodle Jump
-                jumpForce *= 2.5; // 250% jump height!
-                this.createJumpParticles(player.x + player.width / 2, player.y, 'spark', 40); // Extra particles
+                jumpForce = this.jumpForce * 1.6; // Spring boost!
+                this.createJumpParticles(player.x + player.width / 2, player.y, 'spark', 25);
                 break;
             case 'cloud':
-                jumpForce *= 0.8; // Cloud platforms are softer
-                break;
-            case 'breaking':
-                // Breaking platforms will be handled separately
-                jumpForce *= 1.0;
+                jumpForce = this.jumpForce * 0.8; // Softer cloud bounce
                 break;
             case 'evil':
-                jumpForce *= 0.6; // Evil platforms reduce jump force (challenging!)
+                jumpForce = this.jumpForce * 0.6; // Weaker evil platform
+                break;
+            default:
+                jumpForce = this.jumpForce; // Normal bounce
                 break;
         }
         
-        // Apply jump velocity
+        // AUTO-BOUNCE! (key Doodle Jump mechanic)
         player.velocityY = -jumpForce;
         
-        // Position player on top of platform
+        // Position player on platform surface
         player.y = platform.y - player.height;
         
-        // Add slight horizontal velocity for variety
-        const horizontalBoost = (Math.random() - 0.5) * 2;
+        // Small random horizontal variation (subtle!)
+        const horizontalBoost = (Math.random() - 0.5) * 1.0;
         player.velocityX += horizontalBoost;
-        
-        // Clamp horizontal velocity
-        player.velocityX = Math.max(-gameAssets.config.player.maxSpeed, 
-                                  Math.min(gameAssets.config.player.maxSpeed, player.velocityX));
         
         return {
             type: platform.type,
@@ -174,7 +157,7 @@ class GamePhysics {
         };
     }
 
-    // Update platform physics (for moving platforms)
+    // Update platform physics - SIMPLE DOODLE JUMP STYLE!
     updatePlatform(platform, deltaTime, canvasWidth) {
         if (platform.type === 'moving') {
             // Initialize movement if not set
@@ -182,26 +165,20 @@ class GamePhysics {
                 platform.velocityX = (Math.random() > 0.5 ? 1 : -1) * 2;
             }
             
-            // Update position
-            platform.x += platform.velocityX * deltaTime;
+            // SIMPLE PLATFORM MOVEMENT!
+            platform.x += platform.velocityX;
             
-            // Bounce off screen edges
-            if (platform.x <= 0 || platform.x + platform.width >= canvasWidth) {
-                platform.velocityX *= -1;
+            // BOUNCE OFF WALLS (simple!)
+            if (platform.x <= 0 || platform.x >= canvasWidth - platform.width) {
+                platform.velocityX = -platform.velocityX;
                 platform.x = Math.max(0, Math.min(canvasWidth - platform.width, platform.x));
             }
         }
         
-        // Handle breaking platforms
-        if (platform.type === 'breaking' && platform.touched) {
-            if (!platform.breakTimer) {
-                platform.breakTimer = 0;
-            }
-            
+        if (platform.type === 'breaking' && platform.breakTimer !== undefined) {
+            // SIMPLE BREAK TIMER 
             platform.breakTimer += deltaTime;
-            
-            // Platform breaks after a short delay
-            if (platform.breakTimer > 30) { // 30 frames = 0.5 seconds at 60fps
+            if (platform.breakTimer >= 30) { // ~500ms at 60fps
                 platform.broken = true;
             }
         }
@@ -228,25 +205,46 @@ class GamePhysics {
         return particles;
     }
 
-    // Update particles
+    // DOODLE JUMP HORIZONTAL MOVEMENT - CLASSIC FEEL!
+    movePlayerHorizontal(player, direction) {
+        // direction: -1 for left, 1 for right, 0 for no input
+        if (direction !== 0) {
+            // ACCELERATE in movement direction (like original!)
+            player.velocityX += direction * this.horizontalSpeed * 0.5; // Increased from 0.3 to 0.5
+        }
+        
+        // CLAMP TO MAX SPEED (more responsive)
+        const maxSpeed = this.horizontalSpeed * 3.0; // Increased from 2.5 to 3.0
+        player.velocityX = Math.max(-maxSpeed, Math.min(maxSpeed, player.velocityX));
+    }
+
+    // Update particles - SIMPLE style!
     updateParticles(particles, deltaTime) {
+        // Simple particle updates
         for (let i = particles.length - 1; i >= 0; i--) {
             const particle = particles[i];
             
-            // Update position
-            particle.x += particle.velocityX * deltaTime;
-            particle.y += particle.velocityY * deltaTime;
+            // SIMPLE position updates
+            particle.x += particle.velocityX;
+            particle.y += particle.velocityY;
             
-            // Apply gravity to particles
-            particle.velocityY += this.gravity * 0.3 * deltaTime;
+            // Simple gravity for particles
+            particle.velocityY += this.gravity * 0.2;
             
-            // Fade out
-            particle.life -= deltaTime;
-            particle.alpha = particle.life / 60;
-            
-            // Remove dead particles
-            if (particle.life <= 0) {
-                particles.splice(i, 1);
+            // SIMPLE particle aging
+            if (particle.life !== undefined) {
+                particle.life--;
+                particle.alpha = particle.life / 60;
+                
+                if (particle.life <= 0) {
+                    particles.splice(i, 1);
+                }
+            } else if (particle.decay !== undefined) {
+                particle.alpha -= particle.decay;
+                
+                if (particle.alpha <= 0) {
+                    particles.splice(i, 1);
+                }
             }
         }
     }
@@ -292,18 +290,37 @@ class GamePhysics {
             const gapSize = minGap + Math.random() * (maxGap - minGap);
             currentY -= gapSize;
             
-            // Smarter X positioning - ensure platforms are reachable
+            // IMPROVED X positioning - guarantee reachability based on physics
             let x;
             if (platforms.length === 0) {
                 // First platform - place reasonably centered
                 x = (canvasWidth - platformConfig.width) / 2 + (Math.random() - 0.5) * 100;
             } else {
-                // Place within reasonable horizontal distance from last platform
+                // Calculate actual horizontal reach based on jump physics
                 const lastPlatform = platforms[platforms.length - 1];
-                const maxHorizontalReach = 120; // Player can reach this far horizontally
-                const minX = Math.max(0, lastPlatform.x - maxHorizontalReach);
-                const maxX = Math.min(canvasWidth - platformConfig.width, lastPlatform.x + maxHorizontalReach);
-                x = minX + Math.random() * (maxX - minX);
+                const jumpForce = gameAssets.config.player.jumpForce;
+                const gravity = this.gravity;
+                const maxSpeed = gameAssets.config.player.maxSpeed;
+                
+                // Physics-based horizontal reach calculation
+                // Time to fall from jump height: t = 2 * jumpForce / gravity
+                const jumpTime = (2 * jumpForce) / gravity;
+                // Horizontal distance with air control: distance = maxSpeed * jumpTime * airControlFactor
+                const maxHorizontalReach = Math.min(150, maxSpeed * jumpTime * 0.8); // 0.8 = air control factor
+                
+                // Ensure platform is within reach, with safety margin
+                const safetyMargin = 20;
+                const effectiveReach = maxHorizontalReach - safetyMargin;
+                
+                const minX = Math.max(0, lastPlatform.x - effectiveReach);
+                const maxX = Math.min(canvasWidth - platformConfig.width, lastPlatform.x + effectiveReach);
+                
+                // Guarantee valid range
+                if (minX >= maxX) {
+                    x = Math.max(0, Math.min(canvasWidth - platformConfig.width, lastPlatform.x));
+                } else {
+                    x = minX + Math.random() * (maxX - minX);
+                }
             }
             
             // Determine platform type based on height/difficulty
@@ -385,10 +402,14 @@ class GamePhysics {
         return player.y - canvasHeight * 0.7;
     }
 
-    // Update camera with smooth following
+    // Update camera with smooth following - IMPROVED for frame-rate independence
     updateCamera(camera, targetY, deltaTime) {
+        const normalizedDelta = deltaTime / 16.67; // Consistent normalization
         const followSpeed = 0.1;
-        camera.y = this.lerp(camera.y, targetY, followSpeed);
+        
+        // Smooth camera interpolation with frame-rate independence
+        const lerpFactor = Math.min(1.0, followSpeed * normalizedDelta);
+        camera.y = this.lerp(camera.y, targetY, lerpFactor);
         
         // Prevent camera from going down (only follow upward movement)
         camera.y = Math.min(camera.y, camera.maxY || camera.y);
@@ -398,4 +419,5 @@ class GamePhysics {
 
 // Export singleton instance
 const gamePhysics = new GamePhysics();
+console.log('⚡ Game physics loaded');
 console.log('⚡ Game physics loaded');

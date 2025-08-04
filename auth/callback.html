@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitter Auth Callback</title>
+    <style>
+        body {
+            font-family: 'Fredoka', cursive;
+            background: linear-gradient(135deg, #dc2626, #f97316);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .callback-container {
+            text-align: center;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 2rem;
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body>
+    <div class="callback-container">
+        <h2>🐦 Connecting to Twitter...</h2>
+        <p>Please wait while we complete the authentication process.</p>
+    </div>
+
+    <script>
+        // Extract authorization code from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        const error = urlParams.get('error');
+        const state = urlParams.get('state');
+
+        if (error) {
+            // Send error back to parent window
+            if (window.opener) {
+                window.opener.postMessage({
+                    type: 'TWITTER_AUTH_ERROR',
+                    error: error
+                }, window.location.origin);
+            }
+            window.close();
+        } else if (code) {
+            // Send success back to parent window
+            if (window.opener) {
+                window.opener.postMessage({
+                    type: 'TWITTER_AUTH_SUCCESS',
+                    code: code,
+                    state: state
+                }, window.location.origin);
+            }
+            window.close();
+        } else {
+            // No code or error - something went wrong
+            if (window.opener) {
+                window.opener.postMessage({
+                    type: 'TWITTER_AUTH_ERROR',
+                    error: 'No authorization code received'
+                }, window.location.origin);
+            }
+            window.close();
+        }
+    </script>
+</body>
+</html>

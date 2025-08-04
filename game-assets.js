@@ -16,20 +16,20 @@ class GameAssets {
         this.sounds = this.getSoundEffects();
         this.config = this.getGameConfig();
         
-        // Asset paths - FIXED FOR LIVE SITE
+        // Asset paths - FIXED FOR GAME SUBDIRECTORY
         this.assetPaths = {
             // Player sprites
             jump: 'jump.png',
-            leftJump: 'left_jump.png',
-            rightJump: 'right_jump.png',
-            walk: 'walk.gif',
+            leftJump: 'game/left_jump.png',
+            rightJump: 'game/right_jump.png', 
+            walk: 'game/walk.gif',
             
             // Platform decorations
-            corn: 'corn.png',
-            taco: 'taco.png',
+            corn: 'game/corn.png',
+            taco: 'game/taco.png',
             
             // Enemies/obstacles
-            evilFlocko: 'evil-flocko.png'
+            evilFlocko: 'game/evil-flocko.png'
         };
         
         // Power-up types using existing assets

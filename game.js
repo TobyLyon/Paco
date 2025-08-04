@@ -447,12 +447,12 @@ class PacoJumpGame {
         this.render();
     }
 
-    // Update game state
+    // Update game state - FIXED to avoid double normalization
     update(deltaTime) {
-        const normalizedDelta = deltaTime / 16.67; // Normalize to 60fps
+        // Physics system now handles its own normalization, pass raw deltaTime
         
         // Update player physics
-        gamePhysics.updatePlayer(this.player, normalizedDelta, this.canvas.width);
+        gamePhysics.updatePlayer(this.player, deltaTime, this.canvas.width);
         
         // Check for flying sound trigger
         if (this.player.flyingJustActivated) {
@@ -462,7 +462,7 @@ class PacoJumpGame {
         
         // Update platforms
         this.platforms.forEach(platform => {
-            gamePhysics.updatePlatform(platform, normalizedDelta, this.canvas.width);
+            gamePhysics.updatePlatform(platform, deltaTime, this.canvas.width);
         });
         
         // Check platform collisions
@@ -470,7 +470,7 @@ class PacoJumpGame {
         
         // Update camera
         const targetY = gamePhysics.getCameraTarget(this.player, this.canvas.height);
-        gamePhysics.updateCamera(this.camera, targetY, normalizedDelta);
+        gamePhysics.updateCamera(this.camera, targetY, deltaTime);
         
         // Update score
         this.updateScore();
@@ -479,7 +479,7 @@ class PacoJumpGame {
         this.updateComboSystem();
         
         // Update particles with better memory management
-        gamePhysics.updateParticles(this.particles, normalizedDelta);
+        gamePhysics.updateParticles(this.particles, deltaTime);
         
         // Clean up excessive particles for performance
         if (this.particles.length > 150) {
@@ -496,13 +496,13 @@ class PacoJumpGame {
         this.managePowerups();
         
         // Update active power-up effects
-        this.updateActivePowerups(normalizedDelta);
+        this.updateActivePowerups(deltaTime);
         
         // Check for game over
         this.checkGameOver();
         
-        // Handle input
-        this.handleInput(normalizedDelta);
+        // Handle input (simple now!)
+        this.handleInput(deltaTime);
     }
 
     // Check collisions
@@ -707,9 +707,8 @@ class PacoJumpGame {
         }
     }
 
-    // Handle input
+    // Handle input - CLASSIC DOODLE JUMP STYLE!
     handleInput(deltaTime) {
-        const moveSpeed = gameAssets.config.player.maxSpeed;
         let moveDirection = 0;
         
         // Keyboard input
@@ -728,15 +727,8 @@ class PacoJumpGame {
             moveDirection += 1;
         }
         
-        // Apply movement with responsive acceleration
-        if (moveDirection !== 0) {
-            const acceleration = 1.1; // Further tuned for smoother control
-            this.player.velocityX += moveDirection * acceleration * deltaTime;
-            
-            // Clamp to max speed for consistent control
-            this.player.velocityX = Math.max(-moveSpeed, 
-                                           Math.min(moveSpeed, this.player.velocityX));
-        }
+        // USE NEW DOODLE JUMP HORIZONTAL MOVEMENT!
+        gamePhysics.movePlayerHorizontal(this.player, moveDirection);
     }
 
     // Render game - optimized for performance
@@ -1671,42 +1663,120 @@ class PacoJumpGame {
         }
         
         const content = `
-            <div class="game-over-screen">
-                <h2 class="game-over-title">OH NOOO U DIEDDDDD</h2>
+            <div style="
+                max-width: 260px; 
+                margin: 0 auto; 
+                text-align: center;
+                font-family: var(--font-display);
+                background: linear-gradient(145deg, rgba(0, 0, 0, 0.95), rgba(20, 20, 20, 0.9));
+                border-radius: 16px;
+                padding: 16px 18px;
+                backdrop-filter: blur(15px);
+                border: 2px solid rgba(220, 38, 38, 0.4);
+                box-shadow: 
+                    0 8px 24px rgba(0, 0, 0, 0.8),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+                position: relative;
+            ">
+                <!-- Game Over Title -->
+                <h2 style="
+                    color: #ef4444;
+                    font-size: 1.5rem;
+                    font-weight: 900;
+                    margin: 0 0 12px 0;
+                    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+                    text-transform: uppercase;
+                ">💀 GAME OVER</h2>
                 
-                <div class="game-over-scores">
-                    <div class="game-over-final-score">${scoreText}</div>
+                <!-- Score Section -->
+                <div style="margin-bottom: 14px;">
+                    <div style="
+                        color: #fbbf24;
+                        font-size: 2rem;
+                        font-weight: 900;
+                        margin-bottom: 4px;
+                        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+                    ">${scoreText}</div>
                     ${bestScoreDisplay}
                     ${submissionStatus}
                 </div>
                 
-                <div class="game-over-buttons">
-                    <button onclick="game.startGame()" class="game-btn primary">
-                        🎮 Play Again
+                <!-- Action Buttons -->
+                <div style="
+                    display: flex;
+                    gap: 8px;
+                    margin-bottom: ${this.score >= 500 ? '12px' : '0'};
+                ">
+                    <button onclick="game.startGame()" style="
+                        flex: 1;
+                        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+                        border: none;
+                        border-radius: 10px;
+                        padding: 10px;
+                        color: white;
+                        font-weight: 700;
+                        font-size: 0.85rem;
+                        cursor: pointer;
+                        text-transform: uppercase;
+                        box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+                        transition: all 0.2s ease;
+                    " onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
+                        🎮 Again
                     </button>
-                    <button onclick="showLeaderboard()" class="game-btn secondary">
-                        🏆 Leaderboard
+                    <button onclick="showLeaderboard()" style="
+                        flex: 1;
+                        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+                        border: none;
+                        border-radius: 10px;
+                        padding: 10px;
+                        color: white;
+                        font-weight: 700;
+                        font-size: 0.85rem;
+                        cursor: pointer;
+                        text-transform: uppercase;
+                        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+                        transition: all 0.2s ease;
+                    " onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
+                        🏆 Board
                     </button>
                 </div>
                 
                 ${this.score >= 500 ? `
-                    <div class="share-section">
-                        <p class="share-title">🏆 Share Your Achievement!</p>
-                        <div class="share-buttons">
+                    <div style="
+                        background: rgba(255, 255, 255, 0.05);
+                        border-radius: 10px;
+                        padding: 10px;
+                        border: 1px solid rgba(255, 255, 255, 0.1);
+                    ">
+                        <div style="
+                            color: #fbbf24;
+                            font-size: 0.75rem;
+                            font-weight: 600;
+                            margin-bottom: 6px;
+                        ">🏆 High Score Achieved!</div>
+                        <div style="display: flex; gap: 6px;">
                             ${twitterAuth.authenticated ? `
-                                <button onclick="game.shareOnTwitter()" class="game-btn twitter">
-                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path></svg>
-                                    Share Score
-                                </button>
+                                <button onclick="game.shareOnTwitter()" style="
+                                    flex: 1;
+                                    background: #1DA1F2;
+                                    border: none;
+                                    border-radius: 8px;
+                                    padding: 6px;
+                                    color: white;
+                                    font-size: 0.7rem;
+                                    cursor: pointer;
+                                ">🐦 Share</button>
                             ` : ''}
-                            <button onclick="game.generateTrophyImage()" class="game-btn secondary">
-                                📸 Trophy Image
-                            </button>
-                            ${twitterAuth.authenticated ? `
-                                <button onclick="game.generateAndShareTrophy()" class="game-btn primary">
-                                    🚀 Trophy + Tweet
-                                </button>
-                            ` : ''}
+                            <button onclick="game.generateTrophyImage()" style="
+                                flex: 1;
+                                background: #6b7280;
+                                border: none;
+                                border-radius: 8px;
+                                padding: 6px;
+                                color: white;
+                                font-size: 0.7rem;
+                                cursor: pointer;
+                            ">📸 Trophy</button>
                         </div>
                     </div>
                 ` : ''}
@@ -1770,53 +1840,76 @@ class PacoJumpGame {
                 margin: 0 auto; 
                 text-align: center;
                 font-family: var(--font-display);
-                background: rgba(0, 0, 0, 0.8);
+                background: linear-gradient(145deg, rgba(0, 0, 0, 0.95), rgba(20, 20, 20, 0.9));
                 border-radius: 16px;
-                padding: 20px 16px;
-                backdrop-filter: blur(10px);
+                padding: 16px 18px;
+                backdrop-filter: blur(15px);
+                border: 2px solid rgba(251, 191, 36, 0.3);
+                box-shadow: 
+                    0 8px 24px rgba(0, 0, 0, 0.8),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+                position: relative;
             ">
                 <!-- Game Title -->
-                <h1 style="
-                    color: #fbbf24;
-                    font-size: 2rem;
-                    font-weight: 900;
-                    margin: 0 0 12px 0;
-                    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-                ">🎮 PACO JUMP</h1>
+                <div style="
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin-bottom: 12px;
+                ">
+                    <img src="jump.png" alt="Paco Jumping" class="tab-icon jump-animation" style="
+                        width: 36px; 
+                        height: 36px; 
+                        margin-right: 8px;
+                        filter: drop-shadow(0 2px 6px rgba(251, 191, 36, 0.4));
+                    ">
+                    <h1 style="
+                        color: #fbbf24;
+                        font-size: 1.8rem;
+                        font-weight: 900;
+                        margin: 0;
+                        text-shadow: 
+                            0 2px 0 #d97706,
+                            0 2px 4px rgba(0, 0, 0, 0.8);
+                        letter-spacing: 0.02em;
+                    ">PACO JUMP</h1>
+                </div>
                 
-                <!-- Ultra-Compact Controls -->
+                <!-- Compact Controls -->
                 <div style="
                     color: #ffffff;
-                    font-size: 0.9rem;
+                    font-size: 0.75rem;
                     margin-bottom: 12px;
-                    line-height: 1.2;
+                    line-height: 1.3;
                 ">
-                    <div style="margin-bottom: 3px;">📱 <strong>Tap sides • Hold center</strong></div>
-                    <div>⌨️ <strong>Arrow keys • Spacebar</strong></div>
+                    <div style="margin-bottom: 4px;">📱 <strong>Tap sides</strong> • ⌨️ <strong>Arrow keys</strong></div>
+                    <div style="color: rgba(203, 213, 225, 0.8); font-size: 0.7rem;">
+                        Jump on platforms • Avoid 👹 • Collect 🌽
+                    </div>
                 </div>
                 
-                <!-- Quick Tips -->
+                <!-- Start Button -->
                 <div style="
-                    color: #cbd5e1;
-                    font-size: 0.8rem;
-                    margin-bottom: 16px;
-                    line-height: 1.2;
-                ">
-                    Jump on platforms • Avoid 👹 enemies • Use 🌽 corn to defeat them!
-                </div>
-                
-                <!-- Call to Action -->
-                <div style="
-                    background: linear-gradient(135deg, var(--restaurant-orange), var(--restaurant-red));
+                    background: linear-gradient(135deg, #f97316 0%, #dc2626 50%, #b91c1c 100%);
                     border-radius: 12px;
-                    padding: 12px;
+                    padding: 12px 20px;
                     color: white;
-                    font-weight: 800;
+                    font-weight: 900;
                     font-size: 1rem;
-                    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+                    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
                     cursor: pointer;
-                " onclick="game.startGame()">
-                    🚀 TAP TO START
+                    border: 2px solid rgba(251, 191, 36, 0.4);
+                    box-shadow: 
+                        0 4px 16px rgba(220, 38, 38, 0.4),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+                    transition: all 0.2s ease;
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                    transform: translateY(0);
+                " onclick="game.startGame()" 
+                onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 20px rgba(220, 38, 38, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3)'" 
+                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 16px rgba(220, 38, 38, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)'">
+                    <span style="font-size: 0.9em; margin-right: 6px;">🚀</span>TAP TO START
                 </div>
             </div>
         `);

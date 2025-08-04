@@ -152,30 +152,27 @@ class TwitterAuth {
 
     // Exchange authorization code for access token
     async exchangeCodeForToken(code, codeVerifier) {
-        // Note: In a production environment, this should be handled by your backend
-        // to keep client secrets secure. This is a simplified version for demo purposes.
-        
         try {
-            const tokenParams = new URLSearchParams({
+            const tokenParams = {
                 grant_type: 'authorization_code',
                 client_id: this.config.clientId,
                 code: code,
                 redirect_uri: this.config.redirectUri,
                 code_verifier: codeVerifier
-            });
+            };
             
-            // This would typically be a call to your backend API
-            // which then makes the secure call to Twitter's token endpoint
+            // Call our Vercel serverless function for secure token exchange
             const response = await fetch('/api/twitter/token', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Content-Type': 'application/json',
                 },
-                body: tokenParams.toString()
+                body: JSON.stringify(tokenParams)
             });
             
             if (!response.ok) {
-                throw new Error('Token exchange failed');
+                const errorData = await response.json();
+                throw new Error(`Token exchange failed: ${errorData.error || response.statusText}`);
             }
             
             return await response.json();
@@ -183,19 +180,15 @@ class TwitterAuth {
         } catch (error) {
             console.error('Token exchange error:', error);
             
-            // Fallback: simulate successful authentication for demo
-            console.warn('⚠️ Using demo mode - Twitter auth simulated');
-            return {
-                access_token: 'demo_token_' + Date.now(),
-                token_type: 'bearer'
-            };
+            // Don't fallback to demo mode - show real error
+            throw new Error(`Twitter authentication failed: ${error.message}`);
         }
     }
 
     // Fetch user information from Twitter API
     async fetchUserInfo(accessToken) {
         try {
-            // This would typically be a call to your backend API
+            // Call our Vercel serverless function for user info
             const response = await fetch('/api/twitter/user', {
                 headers: {
                     'Authorization': `Bearer ${accessToken}`
@@ -203,7 +196,8 @@ class TwitterAuth {
             });
             
             if (!response.ok) {
-                throw new Error('Failed to fetch user info');
+                const errorData = await response.json();
+                throw new Error(`Failed to fetch user info: ${errorData.error || response.statusText}`);
             }
             
             const data = await response.json();
@@ -212,15 +206,8 @@ class TwitterAuth {
         } catch (error) {
             console.error('User info fetch error:', error);
             
-            // Fallback: simulate user data for demo
-            console.warn('⚠️ Using demo mode - generating mock user data');
-            return {
-                id: 'demo_user_' + Date.now(),
-                username: 'PacoPlayer' + Math.floor(Math.random() * 1000),
-                name: 'Paco Jump Player',
-                profile_image_url: 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png',
-                verified: false
-            };
+            // Don't fallback to demo mode - show real error
+            throw new Error(`Failed to get Twitter user info: ${error.message}`);
         }
     }
 

@@ -1408,8 +1408,9 @@ body {
 .tab-navigation {
     display: flex;
     justify-content: center;
+    align-items: center;
     gap: var(--space-sm);
-    margin: 0 0 var(--space-lg) 0; /* Reduced bottom margin */
+    margin: 0 auto var(--space-lg) auto;
     padding: var(--space-sm);
     background: rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(20px);
@@ -1419,8 +1420,8 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.15);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
     width: fit-content;
-    margin-left: auto;
-    margin-right: auto;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 /* Tab icon styles */
@@ -1469,6 +1470,19 @@ body {
     position: relative;
     overflow: hidden;
     min-width: 160px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    box-sizing: border-box;
+    /* Mobile touch optimization */
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 .tab-button::before {
@@ -1507,6 +1521,16 @@ body {
 .tab-button.active:hover {
     background: linear-gradient(135deg, var(--restaurant-orange) 0%, var(--restaurant-red) 100%);
     transform: translateY(-3px);
+}
+
+/* Mobile active feedback */
+.tab-button:active {
+    transform: translateY(0px) scale(0.98);
+    transition: all 0.1s ease;
+}
+
+.tab-button.active:active {
+    transform: translateY(-1px) scale(0.98);
 }
 
 .tab-panel {
@@ -2934,16 +2958,27 @@ body {
 @media (max-width: 768px) {
     /* ===== MOBILE TAB NAVIGATION ===== */
     .tab-navigation {
-        margin: 0 0 var(--space-md) 0; /* Reduced mobile margin */
+        margin: 0 auto var(--space-md) auto;
         padding: var(--space-xs);
         border-radius: 12px;
+        gap: var(--space-xs);
+        width: calc(100% - var(--space-lg));
+        max-width: 400px;
     }
     
     .tab-button {
-        padding: var(--space-sm) var(--space-lg);
+        padding: var(--space-sm) var(--space-md);
         font-size: var(--font-size-sm);
-        min-width: 120px;
+        min-width: 0;
+        flex: 1;
         border-radius: 8px;
+        max-width: 180px;
+    }
+    
+    .tab-icon {
+        width: 24px;
+        height: 24px;
+        margin-right: 6px;
     }
     
     /* ===== MOBILE GAME CONTAINER ===== */
@@ -2972,6 +3007,56 @@ body {
     .stat-box {
         min-width: 50px;
         padding: var(--space-xs);
+    }
+}
+
+/* ===== EXTRA SMALL MOBILE SCREENS ===== */
+@media (max-width: 480px) {
+    .tab-navigation {
+        width: calc(100% - var(--space-sm));
+        padding: 6px;
+        gap: 4px;
+    }
+    
+    .tab-button {
+        padding: var(--space-xs) var(--space-sm);
+        font-size: 0.8rem;
+        letter-spacing: 0.01em;
+    }
+    
+    .tab-icon {
+        width: 20px;
+        height: 20px;
+        margin-right: 4px;
+    }
+}
+
+/* ===== VERY SMALL SCREENS ===== */
+@media (max-width: 360px) {
+    .tab-navigation {
+        width: calc(100% - 8px);
+        padding: 4px;
+        gap: 2px;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    
+    .tab-navigation::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .tab-button {
+        padding: 6px 8px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        min-width: 80px;
+    }
+    
+    .tab-icon {
+        width: 18px;
+        height: 18px;
+        margin-right: 3px;
     }
     
     .stat-value {

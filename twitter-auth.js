@@ -16,7 +16,7 @@ class TwitterAuth {
         // Twitter API configuration - Get client ID from build-time configuration
         this.config = {
             clientId: window.TWITTER_CLIENT_ID || this.getClientIdFromMeta(), // Get from build configuration
-            redirectUri: 'https://pacothechicken.xyz/auth/callback',
+            redirectUri: this.getRedirectUri(),
             scopes: ['tweet.read', 'users.read', 'tweet.write', 'offline.access'],
             authUrl: 'https://twitter.com/i/oauth2/authorize'
         };
@@ -25,12 +25,29 @@ class TwitterAuth {
         this.loadAuthState();
         
         console.log('🐦 Twitter auth module initialized');
+        console.log('🔗 Redirect URI:', this.config.redirectUri);
+        console.log('🆔 Client ID:', this.config.clientId ? 'SET' : 'NOT SET');
     }
 
     // Get client ID from meta tag (set during build)
     getClientIdFromMeta() {
         const metaTag = document.querySelector('meta[name="twitter-client-id"]');
         return metaTag ? metaTag.getAttribute('content') : null;
+    }
+
+    // Get appropriate redirect URI based on environment
+    getRedirectUri() {
+        const hostname = window.location.hostname;
+        const port = window.location.port;
+        
+        // Check if we're running on localhost
+        if (hostname === 'localhost' || hostname === '127.0.0.1') {
+            const localPort = port || '3001'; // Default to 3001 if no port specified
+            return `http://localhost:${localPort}/auth/callback`;
+        }
+        
+        // Production environment
+        return 'https://pacothechicken.xyz/auth/callback';
     }
 
     // Check if user is authenticated

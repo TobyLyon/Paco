@@ -51,11 +51,11 @@ app.use(express.urlencoded({ extended: true }));
 
 // ===== TWITTER OAUTH ENDPOINTS =====
 
-// Twitter OAuth configuration
-const TWITTER_CONFIG = {
+// Twitter OAuth configuration - will be updated with actual port when server starts
+let TWITTER_CONFIG = {
     clientId: process.env.TWITTER_CLIENT_ID || 'YOUR_TWITTER_CLIENT_ID',
     clientSecret: process.env.TWITTER_CLIENT_SECRET || 'YOUR_TWITTER_CLIENT_SECRET',
-    redirectUri: process.env.TWITTER_REDIRECT_URI || 'http://localhost:3000/auth/callback',
+    redirectUri: process.env.TWITTER_REDIRECT_URI || 'http://localhost:3001/auth/callback', // Default to 3001
     tokenUrl: 'https://api.twitter.com/2/oauth2/token',
     userUrl: 'https://api.twitter.com/2/users/me'
 };
@@ -146,6 +146,19 @@ app.get('/api/twitter/user', async (req, res) => {
     }
 });
 
+// Debug endpoint to check Twitter configuration
+app.get('/api/twitter/debug', (req, res) => {
+    const config = {
+        clientId: TWITTER_CONFIG.clientId !== 'YOUR_TWITTER_CLIENT_ID' ? 'SET' : 'NOT SET',
+        clientSecret: TWITTER_CONFIG.clientSecret !== 'YOUR_TWITTER_CLIENT_SECRET' ? 'SET' : 'NOT SET',
+        redirectUri: TWITTER_CONFIG.redirectUri,
+        port: req.get('host')
+    };
+    
+    console.log('🐦 Twitter debug info requested:', config);
+    res.json(config);
+});
+
 // Twitter OAuth callback handler
 app.get('/auth/callback', (req, res) => {
     const { code, error, state } = req.query;
@@ -197,10 +210,16 @@ app.get('/auth/callback', (req, res) => {
 // Start server with automatic port fallback
 function startServer(port = PORT) {
     const server = app.listen(port, () => {
+        // Update Twitter config with actual port
+        if (!process.env.TWITTER_REDIRECT_URI) {
+            TWITTER_CONFIG.redirectUri = `http://localhost:${port}/auth/callback`;
+        }
+        
         console.log(`✅ Development server running at http://localhost:${port}`);
         console.log(`📁 Assets served dynamically from: ./assets/`);
         console.log(`🎨 Add new assets to ./assets/hat/ or ./assets/item/ - no build needed!`);
         console.log(`🔄 Changes are reflected immediately!`);
+        console.log(`🐦 Twitter OAuth redirect: ${TWITTER_CONFIG.redirectUri}`);
         console.log(`💡 To use a different port: PORT=3002 npm run dev`);
     });
 

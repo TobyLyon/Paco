@@ -1923,12 +1923,17 @@ class PacoJumpGame {
         // Get leaderboard data for integration
         let leaderboardHTML = '';
         try {
-            // Refresh leaderboard data
-            await leaderboard.loadLeaderboard();
-            leaderboardHTML = this.generateIntegratedLeaderboard();
+            // Refresh leaderboard data using correct method
+            if (leaderboard && typeof leaderboard.fetchTodayLeaderboard === 'function') {
+                await leaderboard.fetchTodayLeaderboard();
+                leaderboardHTML = this.generateIntegratedLeaderboard();
+            } else {
+                console.warn('Leaderboard not available, showing placeholder');
+                leaderboardHTML = this.generatePlaceholderLeaderboard();
+            }
         } catch (error) {
             console.error('Failed to load leaderboard:', error);
-            leaderboardHTML = '<div style="color: #ef4444; font-size: 0.8rem; text-align: center; padding: 10px;">Failed to load leaderboard</div>';
+            leaderboardHTML = this.generatePlaceholderLeaderboard();
         }
 
         // Get player's rank for sharing
@@ -2196,6 +2201,18 @@ class PacoJumpGame {
         }
 
         return html;
+    }
+
+    // Generate placeholder leaderboard when data unavailable
+    generatePlaceholderLeaderboard() {
+        return `
+            <div style="text-align: center; padding: 20px; color: var(--text-secondary);">
+                <div style="font-size: 2rem; margin-bottom: 8px;">🐔</div>
+                <h3 style="color: #fbbf24; margin: 0 0 8px 0;">🏆 Daily Leaderboard</h3>
+                <p style="margin: 0; font-size: 0.9rem;">Loading leaderboard...</p>
+                <p style="font-size: 0.8rem; color: var(--restaurant-yellow); margin: 4px 0 0 0;">Connect Twitter to join the contest!</p>
+            </div>
+        `;
     }
 
     // Unified share and download function

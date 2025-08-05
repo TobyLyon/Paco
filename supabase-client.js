@@ -257,14 +257,58 @@ class OrderTracker {
                 ...(scoreData.checksum && { checksum: scoreData.checksum })
             };
 
-            // Always submit scores - let the database handle duplicates with its unique constraint
-            // The unique constraint will ensure only one entry per user/date/score combination
-
-            // Use insert to record all scores
-            const { data, error } = await supabase
+            // Check if user already has a score for today
+            const { data: existingScores, error: fetchError } = await supabase
                 .from('game_scores')
-                .insert([scoreRecord])
-                .select();
+                .select('*')
+                .eq('user_id', scoreData.user_id)
+                .eq('game_date', scoreData.game_date)
+                .order('score', { ascending: false })
+                .limit(1);
+
+            if (fetchError) {
+                console.error('Error checking existing scores:', fetchError);
+                return { success: false, error: fetchError };
+            }
+
+            let data, error;
+            
+            if (existingScores && existingScores.length > 0) {
+                const existingScore = existingScores[0];
+                
+                if (scoreData.score > existingScore.score) {
+                    // New score is higher - update the existing record
+                    const updateResult = await supabase
+                        .from('game_scores')
+                        .update(scoreRecord)
+                        .eq('id', existingScore.id)
+                        .select();
+                    
+                    data = updateResult.data;
+                    error = updateResult.error;
+                    
+                    if (!error) {
+                        console.log('✅ Higher score updated successfully:', data);
+                    }
+                } else {
+                    // Existing score is higher or equal - don't update
+                    console.log(`📊 Score ${scoreData.score} not higher than existing score ${existingScore.score}, keeping existing`);
+                    return { success: true, data: existingScore, skipped: true };
+                }
+            } else {
+                // No existing score - insert new record
+                const insertResult = await supabase
+                    .from('game_scores')
+                    .insert([scoreRecord])
+                    .select();
+                
+                data = insertResult.data;
+                error = insertResult.error;
+                
+                if (!error) {
+                    console.log('✅ First score recorded successfully:', data);
+                }
+            }
 
             if (error) {
                 console.error('Error recording game score:', error);

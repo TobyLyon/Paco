@@ -158,7 +158,11 @@ class Leaderboard {
                 const result = await orderTracker.recordGameScore(scoreData);
                 
                 if (result.success) {
-                    console.log('✅ Score submitted successfully');
+                    if (result.skipped) {
+                        console.log('📊 Score not submitted - existing score is higher');
+                    } else {
+                        console.log('✅ Score submitted successfully');
+                    }
                     
                     // Update local best score
                     this.userBestScore = Math.max(this.userBestScore, score);

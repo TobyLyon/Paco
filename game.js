@@ -2119,9 +2119,9 @@ class PacoJumpGame {
                     margin-bottom: 12px;
                 ">
                     <img src="game/jump.png" alt="Paco Jumping" class="tab-icon jump-animation" style="
-                        width: 36px; 
-                        height: 36px; 
-                        margin-right: 8px;
+                        width: 48px; 
+                        height: 48px; 
+                        margin-right: 10px;
                         filter: drop-shadow(0 2px 6px rgba(251, 191, 36, 0.4));
                     ">
                 <h1 style="

@@ -190,10 +190,14 @@ class GameAssets {
 
     // Game configuration
     getGameConfig() {
-        // Detect mobile for larger canvas - EXPANDED for better zoom coverage
+        // Detect mobile for larger canvas - EXPANDED for maximum coverage with zoom
         const isMobile = window.innerWidth <= 768;
-        const canvasWidth = isMobile ? 480 : 400;   // Wider to accommodate zoom
-        const canvasHeight = isMobile ? 720 : 560;  // Taller to accommodate zoom
+        const canvasWidth = isMobile ? 
+            Math.min(window.innerWidth, 600) :     // Mobile: Use screen width up to 600px 
+            Math.min(window.innerWidth * 0.9, 800); // Desktop: 90% of screen width up to 800px
+        const canvasHeight = isMobile ? 
+            Math.min(window.innerHeight * 0.85, 720) : // Mobile: 85% of screen height
+            Math.min(window.innerHeight * 0.8, 700);   // Desktop: 80% of screen height
         
         return {
             // Canvas settings

@@ -10,7 +10,7 @@ class GamePhysics {
     constructor() {
         // CLASSIC DOODLE JUMP PHYSICS VALUES
         this.gravity = 0.5;              // Simple gravity per frame
-        this.jumpForce = 15;             // Auto-jump force when hitting platform
+        this.jumpForce = 16;             // Auto-jump force when hitting platform - MUST MATCH gameAssets.config.player.jumpForce!
         this.horizontalSpeed = 5;        // Left/right movement speed (increased for better feel)
         this.friction = 0.85;            // Horizontal friction (simple!)
         this.terminalVelocity = 15;      // Max fall speed
@@ -310,7 +310,7 @@ class GamePhysics {
             } else {
                 // Calculate actual horizontal reach based on jump physics
                 const lastPlatform = platforms[platforms.length - 1];
-                const jumpForce = gameAssets.config.player.jumpForce;
+                const jumpForce = this.jumpForce; // Use physics engine jump force for consistency
                 const gravity = this.gravity;
                 const maxSpeed = gameAssets.config.player.maxSpeed;
                 
@@ -344,7 +344,7 @@ class GamePhysics {
             const horizontalDistanceFromLast = platforms.length > 0 ? Math.abs(x - platforms[platforms.length - 1].x) : 0;
             
             // Calculate if this gap is approaching maximum reachability  
-            const actualJumpForce = gameAssets.config.player.jumpForce; // Use actual player jump force, not physics engine value
+            const actualJumpForce = this.jumpForce; // Use physics engine jump force for consistency
             const maxReachableGap = (actualJumpForce * actualJumpForce) / this.gravity; // Physics-based max height
             const isLargeGap = gapFromLast > maxReachableGap * 0.7; // 70% of max reach
             const isVeryLargeGap = gapFromLast > maxReachableGap * 0.85; // 85% of max reach
@@ -352,8 +352,10 @@ class GamePhysics {
             
             // Count recent spring platforms to avoid clustering
             let recentSprings = 0;
+            let recentEvil = 0;
             for (let i = Math.max(0, platforms.length - 3); i < platforms.length; i++) {
                 if (platforms[i].type.includes('spring')) recentSprings++;
+                if (platforms[i].type === 'evil') recentEvil++;
             }
             
             // STRATEGIC PLACEMENT LOGIC - SAFETY FIRST, THEN DIFFICULTY
@@ -367,6 +369,9 @@ class GamePhysics {
             } else if (gapFromLast > maxReachableGap * 0.6 && recentSprings < 1) {
                 // Safety net for medium-large gaps at ANY height
                 type = Math.random() < 0.8 ? 'spring' : 'minispring';
+            } else if (recentEvil >= 2) {
+                // Force a helpful platform after multiple evil platforms
+                type = Math.random() < 0.7 ? 'spring' : 'minispring';
             } else if (height < 400) {
                 // Early game - mostly normal with frequent helpful springs
                 if (gapFromLast > maxReachableGap * 0.4) type = 'minispring'; // Extra safety for early game

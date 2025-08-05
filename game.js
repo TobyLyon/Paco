@@ -830,15 +830,17 @@ class PacoJumpGame {
         const topPlatform = this.platforms.reduce((highest, platform) => 
             platform.y < highest.y ? platform : highest, { y: Infinity });
         
-        const generateY = this.camera.y - this.canvas.height - 500;
+        // More aggressive platform generation to prevent gaps
+        const generateY = this.camera.y - this.canvas.height - 800; // Increased buffer
         
         if (topPlatform.y > generateY) {
             const newPlatforms = gamePhysics.generatePlatforms(
-                topPlatform.y - 100,
+                topPlatform.y - 50, // Smaller gap to ensure continuity
                 generateY,
                 this.canvas.width
             );
             this.platforms.push(...newPlatforms);
+            console.log(`Generated ${newPlatforms.length} new platforms at height ${Math.abs(topPlatform.y).toFixed(0)}px`);
         }
     }
 

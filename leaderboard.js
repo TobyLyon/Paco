@@ -381,15 +381,13 @@ class Leaderboard {
         return 0;
     }
 
-    // Display leaderboard in UI
+    // Display leaderboard in UI - SIMPLE AND CLEAN
     showLeaderboard(expandedMode = false) {
         if (expandedMode) {
-            // For expanded mode, create modal outside game container
             this.showExpandedModal();
             return;
         }
         
-        // For compact mode, use game overlay
         const overlay = document.getElementById('gameOverlay');
         const overlayContent = document.getElementById('overlayContent');
         
@@ -398,16 +396,10 @@ class Leaderboard {
             return;
         }
 
-        // Build leaderboard HTML with enhanced styling
-        const containerClass = expandedMode ? 'leaderboard-container expanded' : 'leaderboard-container compact';
-        let leaderboardHTML = `<div class="${containerClass}">`;
-        
-        // Add toggle/close button
-        if (expandedMode) {
-            leaderboardHTML += '<button class="leaderboard-close" onclick="leaderboard.closeExpandedLeaderboard()" title="Close">×</button>';
-        } else {
-            leaderboardHTML += '<button class="leaderboard-toggle" onclick="leaderboard.showExpandedLeaderboard()" title="Expand leaderboard">🔍</button>';
-        }
+        // Simple, clean leaderboard HTML
+        let leaderboardHTML = '<div class="leaderboard-container compact">';
+        leaderboardHTML += '<button class="leaderboard-toggle" onclick="leaderboard.showExpandedLeaderboard()" title="Expand">🔍</button>';
+        leaderboardHTML += '<h3>🏆 Leaderboard</h3>';
         
         leaderboardHTML += '<h3>🏆 Daily Contest Leaderboard</h3>';
         
@@ -422,7 +414,7 @@ class Leaderboard {
         } else {
             leaderboardHTML += '<div class="leaderboard-list">';
             
-            const maxEntries = 5; // Show even fewer entries in compact mode to prevent overflow
+            const maxEntries = 8; // Show reasonable number of entries
             this.currentLeaderboard.slice(0, maxEntries).forEach((entry, index) => {
                 // Validate entry data
                 if (!entry || typeof entry.score !== 'number' || !entry.username) {

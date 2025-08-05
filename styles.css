@@ -3456,9 +3456,9 @@ body {
         justify-content: center;
         align-items: center;
         padding: 8px;
-        margin: 0;
-        width: 100%;
-        max-width: 100%;
+        margin: 0 auto;
+        width: min(90vw, 420px);
+        max-width: 420px;
     }
     
     .game-controls {

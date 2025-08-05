@@ -211,9 +211,9 @@
     }
     
     .game-canvas-container {
-        width: 100% !important;
-        max-width: 100% !important;
-        margin: 0 !important;
+        width: min(90vw, 420px) !important;
+        max-width: 420px !important;
+        margin: 0 auto !important;
         padding: 8px !important;
         display: flex !important;
         justify-content: center !important;
@@ -221,7 +221,7 @@
     }
     
     #gameCanvas {
-        width: min(90vw, 420px) !important;
+        width: 100% !important;
         height: min(75vh, 650px) !important;
         max-width: 420px !important;
         max-height: 650px !important;

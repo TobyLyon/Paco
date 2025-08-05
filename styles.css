@@ -1925,7 +1925,8 @@ body {
 
 /* Compact leaderboard (default - stays in game container) */
 .leaderboard-container.compact {
-    max-height: 45vh; /* Much smaller to prevent overflow */
+    max-height: 35vh; /* Even smaller to ensure no overflow */
+    overflow: hidden;
 }
 
 /* Expanded leaderboard (moves outside game container) */
@@ -1991,8 +1992,10 @@ body {
 
 /* Compact list - smaller entries */
 .leaderboard-container.compact .leaderboard-list {
-    gap: var(--space-xxs);
-    max-height: 30vh; /* Much smaller list height */
+    gap: 2px; /* Minimal gap */
+    max-height: 20vh; /* Much smaller list height */
+    overflow-y: auto;
+    scrollbar-width: thin;
 }
 
 /* Expanded list - more space */
@@ -2017,8 +2020,9 @@ body {
 
 /* Compact entries - smaller padding and text */
 .leaderboard-container.compact .leaderboard-entry {
-    padding: var(--space-xs) var(--space-sm);
-    font-size: 0.9rem;
+    padding: 4px 8px; /* Minimal padding */
+    font-size: 0.8rem; /* Smaller text */
+    min-height: auto;
 }
 
 /* Expanded entries - more comfortable spacing */
@@ -2138,11 +2142,11 @@ body {
 /* Very small screens */
 @media (max-width: 480px) {
     .leaderboard-container.compact {
-        max-height: 55vh;
+        max-height: 30vh; /* Even smaller on mobile */
     }
     
     .leaderboard-container.compact .leaderboard-list {
-        max-height: 40vh;
+        max-height: 18vh; /* Much smaller on mobile */
     }
     
     .leaderboard-container.expanded {
@@ -2156,8 +2160,13 @@ body {
     }
     
     .leaderboard-container.compact .leaderboard-entry {
-        padding: var(--space-xxs) var(--space-xs);
-        font-size: 0.85rem;
+        padding: 2px 4px; /* Minimal padding on mobile */
+        font-size: 0.75rem; /* Smaller text on mobile */
+    }
+    
+    .leaderboard-container.compact h3 {
+        font-size: 1rem; /* Smaller title on mobile */
+        margin-bottom: 8px;
     }
 }
 

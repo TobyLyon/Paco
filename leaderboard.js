@@ -256,7 +256,35 @@ class Leaderboard {
             
         } catch (error) {
             console.error('Score submission failed:', error);
-            throw error;
+            
+            // Provide more specific error information
+            let errorMessage = 'Score submission failed';
+            if (error.message) {
+                errorMessage += ': ' + error.message;
+            }
+            
+            // Try to store locally as fallback
+            try {
+                const user = twitterAuth.currentUser;
+                if (user) {
+                    const scoreData = {
+                        user_id: user.id,
+                        username: user.username,
+                        display_name: user.name,
+                        score: score,
+                        created_at: new Date().toISOString(),
+                        game_date: this.getCurrentGameDate(),
+                        local_fallback: true
+                    };
+                    this.storeScoreLocally(scoreData);
+                    console.log('💾 Score saved locally as fallback');
+                    return { success: true, local: true, fallback: true };
+                }
+            } catch (fallbackError) {
+                console.error('Local fallback also failed:', fallbackError);
+            }
+            
+            throw new Error(errorMessage);
         }
     }
 
@@ -394,7 +422,7 @@ class Leaderboard {
         } else {
             leaderboardHTML += '<div class="leaderboard-list">';
             
-            const maxEntries = 8; // Show fewer entries in compact mode to prevent overflow
+            const maxEntries = 5; // Show even fewer entries in compact mode to prevent overflow
             this.currentLeaderboard.slice(0, maxEntries).forEach((entry, index) => {
                 // Validate entry data
                 if (!entry || typeof entry.score !== 'number' || !entry.username) {

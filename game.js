@@ -1895,7 +1895,7 @@ class PacoJumpGame {
         }
     }
 
-    // Show game over screen
+    // Show game over screen with integrated leaderboard
     async showGameOverScreen() {
         let scoreText = `${this.score.toLocaleString()}`;
         let bestScoreDisplay = '';
@@ -1917,59 +1917,79 @@ class PacoJumpGame {
                 submissionStatus = `<div style="color: #ef4444; font-size: 0.85rem; margin: 8px 0;">⚠️ Submit failed</div>`;
             }
         } else {
-            submissionStatus = `<div style="color: #60a5fa; font-size: 0.85rem; margin: 8px 0;">🐦 Connect Twitter to compete in the contest!</div>`;
+            submissionStatus = `<div style="color: #60a5fa; font-size: 0.85rem; margin: 8px 0;">🐦 Connect Twitter to compete!</div>`;
+        }
+
+        // Get leaderboard data for integration
+        let leaderboardHTML = '';
+        try {
+            // Refresh leaderboard data
+            await leaderboard.loadLeaderboard();
+            leaderboardHTML = this.generateIntegratedLeaderboard();
+        } catch (error) {
+            console.error('Failed to load leaderboard:', error);
+            leaderboardHTML = '<div style="color: #ef4444; font-size: 0.8rem; text-align: center; padding: 10px;">Failed to load leaderboard</div>';
+        }
+
+        // Get player's rank for sharing
+        let playerRank = null;
+        if (twitterAuth.authenticated && leaderboard.currentLeaderboard) {
+            const playerEntry = leaderboard.currentLeaderboard.find(entry => 
+                entry.user_id === twitterAuth.currentUser?.id
+            );
+            if (playerEntry) {
+                playerRank = leaderboard.currentLeaderboard.indexOf(playerEntry) + 1;
+            }
         }
         
         const content = `
             <div style="
-                max-width: 260px; 
+                max-width: 480px; 
                 margin: 0 auto; 
                 text-align: center;
                 font-family: var(--font-display);
                 background: linear-gradient(145deg, rgba(0, 0, 0, 0.95), rgba(20, 20, 20, 0.9));
-                border-radius: 16px;
-                padding: 16px 18px;
+                border-radius: 20px;
+                padding: 20px;
                 backdrop-filter: blur(15px);
                 border: 2px solid rgba(220, 38, 38, 0.4);
                 box-shadow: 
-                    0 8px 24px rgba(0, 0, 0, 0.8),
+                    0 12px 32px rgba(0, 0, 0, 0.8),
                     inset 0 1px 0 rgba(255, 255, 255, 0.1);
                 position: relative;
             ">
                 <!-- Close Button -->
                 <button onclick="game.hideOverlay()" style="
                     position: absolute;
-                    top: 8px;
-                    right: 8px;
+                    top: 12px;
+                    right: 12px;
                     background: rgba(255, 255, 255, 0.1);
                     border: none;
                     border-radius: 50%;
-                    width: 24px;
-                    height: 24px;
+                    width: 28px;
+                    height: 28px;
                     color: rgba(255, 255, 255, 0.7);
                     cursor: pointer;
-                    font-size: 14px;
+                    font-size: 16px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     transition: all 0.2s ease;
                 " onmouseover="this.style.background='rgba(255, 255, 255, 0.2)'; this.style.color='white'" onmouseout="this.style.background='rgba(255, 255, 255, 0.1)'; this.style.color='rgba(255, 255, 255, 0.7)'">✕</button>
                 
-                <!-- Game Over Title -->
-                <h2 style="
-                    color: #ef4444;
-                    font-size: 1.5rem;
-                    font-weight: 900;
-                    margin: 0 0 12px 0;
-                    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
-                    text-transform: uppercase;
-                ">💀 GAME OVER</h2>
-                
-                <!-- Score Section -->
-                <div style="margin-bottom: 14px;">
+                <!-- Score Section - Compact -->
+                <div style="margin-bottom: 20px;">
+                    <h2 style="
+                        color: #ef4444;
+                        font-size: 1.3rem;
+                        font-weight: 900;
+                        margin: 0 0 8px 0;
+                        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+                        text-transform: uppercase;
+                    ">💀 GAME OVER</h2>
                     <div style="
                         color: #fbbf24;
-                        font-size: 2rem;
+                        font-size: 1.8rem;
                         font-weight: 900;
                         margin-bottom: 4px;
                         text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
@@ -1977,95 +1997,279 @@ class PacoJumpGame {
                     ${bestScoreDisplay}
                     ${submissionStatus}
                 </div>
+
+                <!-- FOCAL PRIORITY: INTEGRATED LEADERBOARD -->
+                <div style="
+                    background: rgba(0, 0, 0, 0.3);
+                    border-radius: 12px;
+                    padding: 16px;
+                    margin-bottom: 20px;
+                    border: 1px solid rgba(220, 38, 38, 0.2);
+                    max-height: 300px;
+                    overflow-y: auto;
+                ">
+                    ${leaderboardHTML}
+                </div>
                 
-                <!-- Action Buttons -->
+                <!-- Simplified Action Buttons -->
                 <div style="
                     display: flex;
-                    gap: 8px;
-                    margin-bottom: ${this.score >= 500 ? '12px' : '0'};
+                    gap: 12px;
+                    margin-bottom: 12px;
                 ">
                     <button onclick="game.startGame()" style="
                         flex: 1;
                         background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
                         border: none;
-                        border-radius: 10px;
-                        padding: 10px;
+                        border-radius: 12px;
+                        padding: 12px;
                         color: white;
                         font-weight: 700;
-                        font-size: 0.85rem;
+                        font-size: 0.9rem;
                         cursor: pointer;
                         text-transform: uppercase;
                         box-shadow: 0 4px 12px rgba(249, 115, 22, 0.4);
                         transition: all 0.2s ease;
-                    " onmouseover="this.style.transform='translateY(-1px)'; this.style.background='linear-gradient(135deg, #fb923c 0%, #f97316 100%)'" onmouseout="this.style.transform='translateY(0)'; this.style.background='linear-gradient(135deg, #f97316 0%, #ea580c 100%)'">
-                        🎮 Again
+                    " onmouseover="this.style.transform='translateY(-2px)'; this.style.background='linear-gradient(135deg, #fb923c 0%, #f97316 100%)'" onmouseout="this.style.transform='translateY(0)'; this.style.background='linear-gradient(135deg, #f97316 0%, #ea580c 100%)'">
+                        🎮 Play Again
                     </button>
-                    <button onclick="showLeaderboard()" style="
-                        flex: 1;
-                        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-                        border: none;
-                        border-radius: 10px;
-                        padding: 10px;
-                        color: white;
-                        font-weight: 700;
-                        font-size: 0.85rem;
-                        cursor: pointer;
-                        text-transform: uppercase;
-                        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
-                        transition: all 0.2s ease;
-                    " onmouseover="this.style.transform='translateY(-1px)'; this.style.background='linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'" onmouseout="this.style.transform='translateY(0)'; this.style.background='linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)'">
-                        🏆 Board
-                    </button>
+                    
+                    <!-- UNIFIED SHARE & DOWNLOAD BUTTON -->
+                    ${this.score >= 500 || playerRank ? `
+                        <button onclick="game.shareAndDownloadScore(${this.score}, ${playerRank || 'null'})" style="
+                            flex: 1;
+                            background: linear-gradient(135deg, #1d9bf0 0%, #1a8cd8 100%);
+                            border: none;
+                            border-radius: 12px;
+                            padding: 12px;
+                            color: white;
+                            font-weight: 700;
+                            font-size: 0.9rem;
+                            cursor: pointer;
+                            text-transform: uppercase;
+                            box-shadow: 0 4px 12px rgba(29, 155, 240, 0.4);
+                            transition: all 0.2s ease;
+                        " onmouseover="this.style.transform='translateY(-2px)'; this.style.background='linear-gradient(135deg, #2ea8ff 0%, #1d9bf0 100%)'" onmouseout="this.style.transform='translateY(0)'; this.style.background='linear-gradient(135deg, #1d9bf0 0%, #1a8cd8 100%)'">
+                            🐦📥 Share & Save
+                        </button>
+                    ` : `
+                        <button onclick="leaderboard.showExpandedLeaderboard()" style="
+                            flex: 1;
+                            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+                            border: none;
+                            border-radius: 12px;
+                            padding: 12px;
+                            color: white;
+                            font-weight: 700;
+                            font-size: 0.9rem;
+                            cursor: pointer;
+                            text-transform: uppercase;
+                            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+                            transition: all 0.2s ease;
+                        " onmouseover="this.style.transform='translateY(-2px)'; this.style.background='linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'" onmouseout="this.style.transform='translateY(0)'; this.style.background='linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)'">
+                            🏆 Full Board
+                        </button>
+                    `}
                 </div>
-                
-                ${this.score >= 500 ? `
+
+                ${!twitterAuth.authenticated ? `
                     <div style="
-                        background: rgba(255, 255, 255, 0.05);
-                        border-radius: 10px;
-                        padding: 10px;
-                        border: 1px solid rgba(255, 255, 255, 0.1);
+                        background: rgba(29, 155, 240, 0.1);
+                        border-radius: 8px;
+                        padding: 8px;
+                        border: 1px solid rgba(29, 155, 240, 0.3);
+                        font-size: 0.8rem;
+                        color: #60a5fa;
                     ">
-                        <div style="
-                            color: #fbbf24;
+                        🐦 Connect Twitter to join the leaderboard contest!
+                        <button onclick="twitterAuth.initiateAuth()" style="
+                            background: #1d9bf0;
+                            color: white;
+                            border: none;
+                            border-radius: 4px;
+                            padding: 4px 8px;
+                            margin-left: 8px;
+                            cursor: pointer;
                             font-size: 0.75rem;
-                            font-weight: 600;
-                            margin-bottom: 6px;
-                        ">🏆 High Score Achieved!</div>
-                        <div style="display: flex; gap: 6px;">
-                            ${twitterAuth.authenticated ? `
-                                <button onclick="game.shareOnTwitter()" style="
-                                    flex: 1;
-                                    background: linear-gradient(135deg, #1DA1F2 0%, #1a91da 100%);
-                                    border: none;
-                                    border-radius: 8px;
-                                    padding: 6px;
-                                    color: white;
-                                    font-size: 0.7rem;
-                                    cursor: pointer;
-                                    transition: all 0.2s ease;
-                                    box-shadow: 0 2px 6px rgba(29, 161, 242, 0.3);
-                                " onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">🐦 Share</button>
-                            ` : ''}
-                            <button onclick="game.generateTrophyImage()" style="
-                                flex: 1;
-                                background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-                                border: none;
-                                border-radius: 8px;
-                                padding: 6px;
-                                color: white;
-                                font-size: 0.7rem;
-                                cursor: pointer;
-                                transition: all 0.2s ease;
-                                box-shadow: 0 2px 6px rgba(251, 191, 36, 0.3);
-                                text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-                            " onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">📸 Trophy</button>
-                        </div>
+                        ">Connect</button>
                     </div>
                 ` : ''}
             </div>
         `;
         
         this.showOverlay(content, true); // Make game over screen persistent
+    }
+
+    // Generate integrated leaderboard HTML for game over screen
+    generateIntegratedLeaderboard() {
+        if (!leaderboard.currentLeaderboard || leaderboard.currentLeaderboard.length === 0) {
+            return `
+                <div style="text-align: center; padding: 20px; color: var(--text-secondary);">
+                    <div style="font-size: 2rem; margin-bottom: 8px;">🐔</div>
+                    <h3 style="color: #fbbf24; margin: 0 0 8px 0;">🏆 Daily Leaderboard</h3>
+                    <p style="margin: 0; font-size: 0.9rem;">No scores yet today!</p>
+                    <p style="font-size: 0.8rem; color: var(--restaurant-yellow); margin: 4px 0 0 0;">Be the first Paco champion!</p>
+                </div>
+            `;
+        }
+
+        let html = `
+            <div style="text-align: center; margin-bottom: 12px;">
+                <h3 style="color: #fbbf24; margin: 0 0 8px 0;">🏆 Daily Leaderboard</h3>
+                <div style="font-size: 0.75rem; color: #94a3b8;">
+                    Contest resets in: ${leaderboard.getTimeUntilReset()}
+                </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+        `;
+
+        // Show top 8 entries for compact view
+        const maxEntries = 8;
+        leaderboard.currentLeaderboard.slice(0, maxEntries).forEach((entry, index) => {
+            if (!entry || typeof entry.score !== 'number' || !entry.username) {
+                return;
+            }
+            
+            const rank = index + 1;
+            const isCurrentUser = twitterAuth.authenticated && 
+                                entry.user_id === twitterAuth.currentUser?.id;
+            
+            const rankEmoji = leaderboard.getRankEmoji(rank);
+            
+            // Check if recent score
+            let isRecentScore = false;
+            if (entry.created_at) {
+                try {
+                    isRecentScore = Date.now() - new Date(entry.created_at).getTime() < 300000; // 5 minutes
+                } catch (e) {
+                    // Invalid date format, ignore
+                }
+            }
+            const liveIndicator = isRecentScore ? ' 🔴' : '';
+            
+            html += `
+                <div style="
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 8px 12px;
+                    background: ${isCurrentUser ? 'rgba(251, 191, 36, 0.15)' : 'rgba(255, 255, 255, 0.05)'};
+                    border-radius: 8px;
+                    border: ${isCurrentUser ? '1px solid rgba(251, 191, 36, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)'};
+                    font-size: 0.85rem;
+                ">
+                    <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
+                        <span style="color: ${rank <= 3 ? '#fbbf24' : '#94a3b8'}; font-weight: bold; min-width: 20px;">
+                            ${rankEmoji}
+                        </span>
+                        <span style="color: ${isCurrentUser ? '#fbbf24' : '#e2e8f0'}; font-weight: ${isCurrentUser ? 'bold' : 'normal'};">
+                            @${entry.username}${liveIndicator}
+                        </span>
+                    </div>
+                    <span style="color: #fbbf24; font-weight: bold;">
+                        ${entry.score.toLocaleString()}
+                    </span>
+                </div>
+            `;
+        });
+
+        html += '</div>';
+
+        // Add "View Full Leaderboard" link if there are more entries
+        if (leaderboard.currentLeaderboard.length > maxEntries) {
+            html += `
+                <div style="text-align: center; margin-top: 12px;">
+                    <button onclick="leaderboard.showExpandedLeaderboard()" style="
+                        background: rgba(220, 38, 38, 0.2);
+                        color: #ef4444;
+                        border: 1px solid rgba(220, 38, 38, 0.4);
+                        border-radius: 6px;
+                        padding: 6px 12px;
+                        font-size: 0.75rem;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                    " onmouseover="this.style.background='rgba(220, 38, 38, 0.3)'" onmouseout="this.style.background='rgba(220, 38, 38, 0.2)'">
+                        View All ${leaderboard.currentLeaderboard.length} Players →
+                    </button>
+                </div>
+            `;
+        }
+
+        return html;
+    }
+
+    // Unified share and download function
+    async shareAndDownloadScore(score, rank = null) {
+        try {
+            // Generate trophy image first
+            const trophyCanvas = await this.generateTrophyCanvas(score, rank);
+            
+            if (trophyCanvas) {
+                // Download the image
+                const link = document.createElement('a');
+                link.download = `paco-champion-${score}-${Date.now()}.png`;
+                link.href = trophyCanvas.toDataURL();
+                link.click();
+                
+                this.showNotification('🏆 Trophy image downloaded!', 'success');
+            }
+            
+            // Share on Twitter (no auth needed for web intent)
+            let tweetText = `🐔 Just scored ${score.toLocaleString()} points in PACO JUMP! 🎮`;
+            
+            if (rank) {
+                if (rank === 1) {
+                    tweetText += `\n\n🥇 I'm currently #1 on the leaderboard! 🏆`;
+                } else if (rank <= 3) {
+                    tweetText += `\n\n🏅 Ranked #${rank} on the leaderboard!`;
+                } else if (rank <= 10) {
+                    tweetText += `\n\n🎯 Made it to the top 10 at rank #${rank}!`;
+                } else {
+                    tweetText += `\n\n📈 Ranked #${rank} on the leaderboard!`;
+                }
+            }
+
+            tweetText += `\n\nCan you beat my score? 🤔\n\nPlay now: ${window.location.origin}`;
+
+            const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
+            
+            const shareWindow = window.open(
+                tweetUrl,
+                'twitterShare',
+                'width=550,height=420,scrollbars=yes,resizable=yes'
+            );
+
+            if (shareWindow) {
+                this.showNotification('🐦 Twitter share opened!', 'success');
+            } else {
+                this.showNotification('⚠️ Please allow popups for sharing', 'warning');
+            }
+
+        } catch (error) {
+            console.error('Share and download error:', error);
+            this.showNotification('❌ Share and download failed', 'error');
+        }
+    }
+
+    // Generate trophy canvas for download
+    async generateTrophyCanvas(score, rank) {
+        try {
+            if (!window.trophyGenerator) {
+                console.error('Trophy generator not available');
+                return null;
+            }
+
+            const playerData = {
+                username: twitterAuth.currentUser?.username || 'Anonymous',
+                score: score,
+                rank: rank || null
+            };
+
+            return await window.trophyGenerator.generateTrophy(playerData);
+        } catch (error) {
+            console.error('Trophy canvas generation error:', error);
+            return null;
+        }
     }
 
     // Update score display

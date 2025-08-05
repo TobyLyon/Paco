@@ -322,23 +322,47 @@
             }
         }
 
+        // Detect if this is mobile (same-window) or desktop (popup) flow
+        const isMobileFlow = !window.opener;
+        
         if (error) {
             updateStatus('Authentication failed. Please try again.', 'error');
             setTimeout(() => {
                 if (window.opener) {
+                    // Desktop popup flow
                     window.opener.postMessage({
                         type: 'TWITTER_AUTH_ERROR',
                         error: error
                     }, window.location.origin);
+                    window.close();
+                } else {
+                    // Mobile same-window flow - redirect back to game
+                    window.location.href = '/';
                 }
-                window.close();
             }, 2000);
         } else if (code) {
             // Step 1: Success message
             updateStatus('Authentication successful!', 'success');
             
-            // Send success back to parent window with enhanced error handling
-            if (window.opener && !window.opener.closed) {
+            if (isMobileFlow) {
+                // Mobile flow: Store auth data and redirect back to game
+                console.log('📱 MOBILE: Same-window flow detected');
+                console.log('📱 MOBILE: Storing auth data in localStorage');
+                
+                // Store the auth code for the main window to pick up
+                localStorage.setItem('twitter_auth_code', code);
+                localStorage.setItem('twitter_auth_state_mobile', state || '');
+                localStorage.setItem('twitter_auth_timestamp', Date.now().toString());
+                
+                setTimeout(() => {
+                    updateStatus('Redirecting back to game...', 'processing');
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1000);
+                }, 1000);
+                
+            } else if (window.opener && !window.opener.closed) {
+                // Desktop popup flow
                 console.log('🎉 POPUP: Parent window found. Preparing to send message...');
                 console.log('🔍 POPUP DEBUG: Code received:', code);
                 console.log('🔍 POPUP DEBUG: State received:', state);

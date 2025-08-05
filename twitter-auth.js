@@ -24,6 +24,9 @@ class TwitterAuth {
         // Load saved authentication state
         this.loadAuthState();
         
+        // Check for mobile auth callback data
+        this.checkMobileAuthCallback();
+        
         console.log('🐦 Twitter auth module initialized');
         console.log('🔗 Redirect URI:', this.config.redirectUri);
         console.log('🆔 Client ID:', this.config.clientId ? 'SET' : 'NOT SET');
@@ -423,6 +426,36 @@ class TwitterAuth {
         } catch (error) {
             console.error('Failed to load auth state:', error);
             localStorage.removeItem('twitter_auth_state');
+        }
+    }
+    
+    // Check for mobile auth callback data in localStorage
+    checkMobileAuthCallback() {
+        const authCode = localStorage.getItem('twitter_auth_code');
+        const authState = localStorage.getItem('twitter_auth_state_mobile');
+        const authTimestamp = localStorage.getItem('twitter_auth_timestamp');
+        
+        if (authCode && authTimestamp) {
+            const timestamp = parseInt(authTimestamp);
+            const now = Date.now();
+            
+            // Check if auth data is recent (within 5 minutes)
+            if (now - timestamp < 5 * 60 * 1000) {
+                console.log('📱 MOBILE: Found auth callback data, processing...');
+                
+                // Clean up stored data
+                localStorage.removeItem('twitter_auth_code');
+                localStorage.removeItem('twitter_auth_state_mobile');
+                localStorage.removeItem('twitter_auth_timestamp');
+                
+                // Process the auth code
+                this.handleAuthCallback(authCode, authState);
+            } else {
+                console.log('📱 MOBILE: Auth data expired, cleaning up...');
+                localStorage.removeItem('twitter_auth_code');
+                localStorage.removeItem('twitter_auth_state_mobile');
+                localStorage.removeItem('twitter_auth_timestamp');
+            }
         }
     }
 

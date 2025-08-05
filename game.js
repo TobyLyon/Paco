@@ -23,7 +23,7 @@ class PacoJumpGame {
         this.camera = { 
             y: 0, 
             maxY: 0,
-            zoom: 1.3  // Zoom factor for closer camera view (1.0 = normal, 1.3 = 30% closer)
+            zoom: 1.0  // Zoom factor - 1.0 = normal view to prevent edge clipping
         };
         
         // Power-up system
@@ -1023,8 +1023,9 @@ class PacoJumpGame {
         
         // Calculate viewport bounds for culling (adjusted for zoom)
         const zoomBuffer = (this.camera.zoom - 1) * this.canvas.height / 2;
-        const viewTop = this.camera.y - 50 - zoomBuffer;
-        const viewBottom = this.camera.y + this.canvas.height + 50 + zoomBuffer;
+        const renderBuffer = 100; // Increased buffer for better edge visibility
+        const viewTop = this.camera.y - renderBuffer - zoomBuffer;
+        const viewBottom = this.camera.y + this.canvas.height + renderBuffer + zoomBuffer;
         
         // Draw platforms (with optimized culling)
         for (let i = 0; i < this.platforms.length; i++) {

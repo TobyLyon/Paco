@@ -235,9 +235,13 @@ class OrderTracker {
     async recordGameScore(scoreData) {
         try {
             // Server-side validation
+            console.log('🔍 Validating score submission:', scoreData);
             const validation = this.validateScoreSubmission(scoreData);
+            console.log('🔍 Validation result:', validation);
+            
             if (!validation.valid) {
                 console.error('🚨 Server-side validation failed:', validation.reasons);
+                console.error('🚨 Failed data:', scoreData);
                 return { success: false, error: `Validation failed: ${validation.reasons.join(', ')}` };
             }
 

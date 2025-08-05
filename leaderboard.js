@@ -315,6 +315,8 @@ class Leaderboard {
             // Submit to Supabase
             if (orderTracker && typeof orderTracker.recordGameScore === 'function') {
                 console.log('🎯 Submitting score data:', scoreData);
+                console.log('🎯 User ID:', scoreData.user_id, 'Score:', scoreData.score, 'Date:', scoreData.game_date);
+                
                 const result = await orderTracker.recordGameScore(scoreData);
                 console.log('🎯 Score submission result:', result);
                 
@@ -322,9 +324,11 @@ class Leaderboard {
                     if (result.skipped) {
                         console.log('📊 Score not submitted - existing score is higher');
                         console.log('📊 Existing score data:', result.data);
+                        console.log('📊 SKIPPED: New score', scoreData.score, 'vs existing', result.data.score);
                     } else {
-                        console.log('✅ Score submitted successfully');
+                        console.log('✅ Score submitted successfully to database!');
                         console.log('✅ New score data:', result.data);
+                        console.log('✅ DATABASE UPDATED: User', scoreData.username, 'score', scoreData.score);
                     }
                     
                     // Update local best score
@@ -333,11 +337,19 @@ class Leaderboard {
                     
                     // Refresh leaderboard
                     console.log('🔄 Refreshing leaderboard after score submission...');
+                    const oldCount = this.currentLeaderboard.length;
                     await this.fetchTodayLeaderboard();
-                    console.log('🔄 Leaderboard refreshed, current entries:', this.currentLeaderboard.length);
+                    const newCount = this.currentLeaderboard.length;
+                    console.log('🔄 Leaderboard refreshed:', oldCount, '→', newCount, 'entries');
+                    
+                    if (!result.skipped && newCount === oldCount) {
+                        console.error('🚨 DATABASE ISSUE: Score submitted but leaderboard count unchanged!');
+                        console.error('🚨 This indicates the database write may have failed silently');
+                    }
                     
                     return result;
                 } else {
+                    console.error('🚨 SCORE SUBMISSION FAILED:', result.error);
                     throw new Error(result.error);
                 }
             } else {

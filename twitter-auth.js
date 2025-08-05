@@ -105,6 +105,8 @@ class TwitterAuth {
             const authUrl = `${this.config.authUrl}?${authParams.toString()}`;
             
             console.log('🔗 Opening Twitter authorization window...');
+            console.log('🌐 Auth URL:', authUrl);
+            console.log('🔧 Auth params:', Object.fromEntries(authParams));
             
             // Open popup window for authentication
             const popup = window.open(
@@ -112,6 +114,16 @@ class TwitterAuth {
                 'twitterAuth',
                 'width=500,height=600,scrollbars=yes,resizable=yes'
             );
+            
+            // Debug popup loading
+            setTimeout(() => {
+                if (popup && !popup.closed) {
+                    console.log('🔍 Popup status: OPEN');
+                    console.log('🌐 Popup URL:', popup.location.href || 'Cannot access URL (cross-origin)');
+                } else {
+                    console.log('❌ Popup status: CLOSED OR BLOCKED');
+                }
+            }, 2000);
             
             if (!popup) {
                 throw new Error('Popup blocked! Please allow popups for this site and try again.');
@@ -203,10 +215,14 @@ class TwitterAuth {
                 }, 30000); // 30 second timeout
                 
                 // Check if popup was closed manually (but not if auth completed)
+                let checkCount = 0;
                 const checkClosed = setInterval(() => {
+                    checkCount++;
+                    
                     if (popup.closed && !authCompleted) {
                         console.log('🚪 Popup window closed');
-                        console.log('📊 Auth status:', { authCompleted, messageReceived });
+                        console.log('📊 Auth status:', { authCompleted, messageReceived, checkCount });
+                        console.log('⏱️ Popup was open for ~' + checkCount + ' seconds');
                         clearInterval(checkClosed);
                         clearTimeout(authTimeout);
                         window.removeEventListener('message', messageHandler);
@@ -221,9 +237,15 @@ class TwitterAuth {
                                 }
                             }, 2000); // Give more time
                         } else {
-                            console.log('❌ No auth message received - user cancelled or popup blocked');
+                            console.log('❌ No auth message received - possible causes:');
+                            console.log('   1. User cancelled authentication');
+                            console.log('   2. Twitter app not configured properly');
+                            console.log('   3. Callback URL mismatch');
+                            console.log('   4. Network/CORS issues');
                             reject(new Error('Authentication cancelled - no response from Twitter'));
                         }
+                    } else if (!popup.closed && checkCount % 10 === 0) {
+                        console.log('⏳ Popup still open... (' + checkCount + 's)');
                     }
                 }, 1000); // Check every 1 second
             });

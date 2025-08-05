@@ -212,18 +212,21 @@
     
     .game-canvas-container {
         width: 100% !important;
-        max-width: 360px !important;
-        margin: 0 auto !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 8px !important;
         display: flex !important;
         justify-content: center !important;
         align-items: center !important;
     }
     
     #gameCanvas {
-        width: 315px !important;
-        height: 490px !important;
-        max-width: 315px !important;
-        max-height: 490px !important;
+        width: min(90vw, 420px) !important;
+        height: min(75vh, 650px) !important;
+        max-width: 420px !important;
+        max-height: 650px !important;
+        min-width: 300px !important;
+        min-height: 450px !important;
     }
     
     /* ===== FIX BUTTONS AND CONTROLS ===== */

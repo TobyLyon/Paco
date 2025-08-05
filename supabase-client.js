@@ -285,6 +285,9 @@ class OrderTracker {
                 
                 if (scoreData.score > existingScore.score) {
                     // New score is higher - update the existing record
+                    console.log(`🔄 UPDATING SCORE: ${existingScore.score} → ${scoreData.score} for user ${scoreData.username}`);
+                    console.log(`🆔 Updating record ID: ${existingScore.id}`);
+                    
                     const updateResult = await supabase
                         .from('game_scores')
                         .update(scoreRecord)
@@ -294,8 +297,14 @@ class OrderTracker {
                     data = updateResult.data;
                     error = updateResult.error;
                     
-                    if (!error) {
-                        console.log('✅ Higher score updated successfully:', data);
+                    if (!error && data && data.length > 0) {
+                        console.log('✅ Higher score updated successfully!');
+                        console.log('✅ Updated record:', data[0]);
+                        console.log(`✅ CONFIRMED: Score updated from ${existingScore.score} to ${data[0].score}`);
+                    } else if (error) {
+                        console.error('❌ UPDATE FAILED:', error);
+                    } else {
+                        console.error('❌ UPDATE RETURNED NO DATA:', updateResult);
                     }
                 } else {
                     // Existing score is higher or equal - don't update
@@ -326,7 +335,7 @@ class OrderTracker {
 
             console.log('✅ Game score recorded successfully:', data);
             console.log('✅ Recorded score data:', data[0]);
-            return { success: true, data };
+            return { success: true, data: data[0] };
         } catch (error) {
             console.error('Exception recording game score:', error);
             return { success: false, error: error.message };

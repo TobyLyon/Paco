@@ -244,36 +244,13 @@ class OrderTracker {
                 created_at: scoreData.created_at || new Date().toISOString()
             };
 
-            // First, check if user has existing scores for today
-            const { data: existingScores, error: fetchError } = await supabase
-                .from('game_scores')
-                .select('*')
-                .eq('user_id', scoreData.user_id)
-                .eq('game_date', scoreData.game_date)
-                .order('score', { ascending: false })
-                .limit(1);
+            // Always submit scores - let the database handle duplicates with its unique constraint
+            // The unique constraint will ensure only one entry per user/date/score combination
 
-            if (fetchError) {
-                console.error('Error fetching existing scores:', fetchError);
-                return { success: false, error: fetchError };
-            }
-
-            // If user has an existing score today, only proceed if new score is higher
-            if (existingScores && existingScores.length > 0) {
-                const existingScore = existingScores[0];
-                if (scoreData.score <= existingScore.score) {
-                    console.log(`📊 Score ${scoreData.score} not higher than existing score ${existingScore.score}, skipping`);
-                    return { success: true, data: existingScore, skipped: true };
-                }
-            }
-
-            // Use upsert to handle the unique constraint gracefully
+            // Use insert to record all scores
             const { data, error } = await supabase
                 .from('game_scores')
-                .upsert([scoreRecord], { 
-                    onConflict: 'user_id,game_date,score',
-                    ignoreDuplicates: true 
-                })
+                .insert([scoreRecord])
                 .select();
 
             if (error) {
@@ -301,7 +278,7 @@ class OrderTracker {
             });
 
             // If the function doesn't exist, fall back to the old method with client-side deduplication
-            if (error && error.code === '42883') {
+            if (error && (error.code === '42883' || error.code === 'PGRST202')) {
                 console.log('📊 Using fallback method for leaderboard deduplication');
                 return await this.getTodayLeaderboardFallback();
             }

@@ -127,7 +127,12 @@ class Leaderboard {
         const resetTime = this.dailyResetTime.getTime();
         const diff = resetTime - now;
         
+        // Debug info
         if (diff <= 0) {
+            console.log('⏰ Contest ended! Reset time:', new Date(resetTime).toLocaleString(), 'Current time:', new Date(now).toLocaleString());
+            // Auto-reset to next day if contest ended
+            this.dailyResetTime = this.getTodayResetTime();
+            localStorage.removeItem('leaderboard_reset_time');
             return 'Contest ended!';
         }
         
@@ -461,8 +466,8 @@ class Leaderboard {
             // Compact reset timer
             const timeUntilReset = this.getTimeUntilReset();
             leaderboardHTML += `
-                <div style="text-align: center; margin: 4px 0; padding: 2px; font-size: 0.65rem; color: #94a3b8;">
-                    Resets in: ${timeUntilReset}
+                <div class="reset-timer" style="text-align: center; margin: 4px 0; padding: 2px; font-size: 0.65rem; color: #94a3b8;">
+                    Resets in: <strong>${timeUntilReset}</strong>
                 </div>
             `;
         }
@@ -957,6 +962,32 @@ async function leaderboardShareAndDownload(score, rank) {
 // Export singleton instance
 const leaderboard = new Leaderboard();
 
-// Console commands removed for contest security
+// Debug functions for countdown timer
+window.debugCountdown = function() {
+    console.log('🔍 COUNTDOWN DEBUG INFO:');
+    console.log('Current time:', new Date().toLocaleString());
+    console.log('Reset time:', leaderboard.dailyResetTime.toLocaleString());
+    console.log('Time until reset:', leaderboard.getTimeUntilReset());
+    console.log('LocalStorage data:', localStorage.getItem('leaderboard_reset_time'));
+    return {
+        now: new Date(),
+        resetTime: leaderboard.dailyResetTime,
+        timeUntilReset: leaderboard.getTimeUntilReset(),
+        localStorage: localStorage.getItem('leaderboard_reset_time')
+    };
+};
+
+window.fixCountdown = function() {
+    console.log('🔧 FIXING COUNTDOWN TIMER...');
+    localStorage.removeItem('leaderboard_reset_time');
+    leaderboard.dailyResetTime = leaderboard.getTodayResetTime();
+    leaderboard.startCountdownTimer();
+    console.log('✅ Countdown reset to:', leaderboard.dailyResetTime.toLocaleString());
+    console.log('⏰ Time remaining:', leaderboard.getTimeUntilReset());
+    return leaderboard.getTimeUntilReset();
+};
 
 console.log('📊 Leaderboard module loaded');
+console.log('🔧 Debug commands: debugCountdown(), fixCountdown()');
+
+// Console commands removed for contest security

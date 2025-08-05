@@ -2121,8 +2121,8 @@ class PacoJumpGame {
         let html = `
             <div style="text-align: center; margin-bottom: 8px;">
                 <h3 style="color: #fbbf24; margin: 0 0 4px 0; font-size: 1.1rem;">🏆 Leaderboard</h3>
-                <div style="font-size: 0.65rem; color: #94a3b8;">
-                    Resets in: ${leaderboard.getTimeUntilReset()}
+                <div class="reset-timer" style="font-size: 0.65rem; color: #94a3b8;">
+                    Resets in: <strong>${leaderboard.getTimeUntilReset()}</strong>
                 </div>
             </div>
             <div style="display: flex; flex-direction: column; gap: 2px;">

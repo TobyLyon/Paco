@@ -219,6 +219,9 @@
         justify-content: center !important;
         align-items: center !important;
         overflow: visible !important;
+        position: relative !important; /* Ensure overlay positioning works */
+        min-height: 450px !important; /* Minimum height for overlay */
+        max-height: 80vh !important; /* Prevent extending too tall */
     }
     
     #gameCanvas {
@@ -267,6 +270,35 @@
         width: 100% !important;
         max-width: 280px !important;
         min-height: 44px !important;
+    }
+    
+    /* ===== MOBILE OVERLAY FIXES ===== */
+    .game-overlay {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        z-index: 1000 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 10px !important;
+        box-sizing: border-box !important;
+    }
+    
+    .overlay-content {
+        max-width: 90vw !important;
+        max-height: 80vh !important;
+        min-width: 280px !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        padding: 15px !important;
+        box-sizing: border-box !important;
+        margin: 0 auto !important;
+        transform: none !important; /* Reset any transforms */
     }
     
     /* ===== FIX MENU GRID ===== */

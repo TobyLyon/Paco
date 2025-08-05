@@ -20,7 +20,11 @@ class PacoJumpGame {
         this.player = null;
         this.platforms = [];
         this.particles = [];
-        this.camera = { y: 0, maxY: 0 };
+        this.camera = { 
+            y: 0, 
+            maxY: 0,
+            zoom: 1.3  // Zoom factor for closer camera view (1.0 = normal, 1.3 = 30% closer)
+        };
         
         // Power-up system
         this.powerups = [];
@@ -1001,18 +1005,26 @@ class PacoJumpGame {
         // Clear canvas efficiently
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
-        // Save context
+        // Draw background BEFORE camera transform to ensure it covers the entire screen
+        gameAssets.drawBackground(this.ctx, this.canvas.width, this.canvas.height, this.camera.y, this.score);
+        
+        // Save context for game world rendering
         this.ctx.save();
         
-        // Apply camera transform
+        // Apply zoom transform centered on screen
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        this.ctx.translate(centerX, centerY);
+        this.ctx.scale(this.camera.zoom, this.camera.zoom);
+        this.ctx.translate(-centerX, -centerY);
+        
+        // Apply camera transform for game objects
         this.ctx.translate(0, -this.camera.y);
         
-        // Calculate viewport bounds for culling
-        const viewTop = this.camera.y - 50;
-        const viewBottom = this.camera.y + this.canvas.height + 50;
-        
-        // Draw background
-        gameAssets.drawBackground(this.ctx, this.canvas.width, this.canvas.height, this.camera.y, this.score);
+        // Calculate viewport bounds for culling (adjusted for zoom)
+        const zoomBuffer = (this.camera.zoom - 1) * this.canvas.height / 2;
+        const viewTop = this.camera.y - 50 - zoomBuffer;
+        const viewBottom = this.camera.y + this.canvas.height + 50 + zoomBuffer;
         
         // Draw platforms (with optimized culling)
         for (let i = 0; i < this.platforms.length; i++) {
@@ -1949,19 +1961,23 @@ class PacoJumpGame {
         
         const content = `
             <div style="
-                max-width: 480px; 
+                max-width: min(480px, 90vw); 
+                width: 100%;
                 margin: 0 auto; 
                 text-align: center;
                 font-family: var(--font-display);
                 background: linear-gradient(145deg, rgba(0, 0, 0, 0.95), rgba(20, 20, 20, 0.9));
                 border-radius: 20px;
-                padding: 20px;
+                padding: min(20px, 4vw);
                 backdrop-filter: blur(15px);
                 border: 2px solid rgba(220, 38, 38, 0.4);
                 box-shadow: 
                     0 12px 32px rgba(0, 0, 0, 0.8),
                     inset 0 1px 0 rgba(255, 255, 255, 0.1);
                 position: relative;
+                box-sizing: border-box;
+                max-height: 70vh;
+                overflow-y: auto;
             ">
                 <!-- Close Button -->
                 <button onclick="game.hideOverlay()" style="

@@ -681,14 +681,15 @@ class GameAssets {
             stars: lowerLayer.stars + (upperLayer.stars - lowerLayer.stars) * blendFactor
         };
         
-        // Create the atmospheric gradient
+        // Create the atmospheric gradient with extended coverage
         const gradient = ctx.createLinearGradient(0, 0, 0, canvasHeight);
         gradient.addColorStop(0, blendedLayer.top);
         gradient.addColorStop(0.3, blendedLayer.middle);
         gradient.addColorStop(1, blendedLayer.bottom);
         
         ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        // Fill entire canvas with slight padding to ensure complete coverage
+        ctx.fillRect(-10, -10, canvasWidth + 20, canvasHeight + 20);
         
         // Draw stars in space (higher altitude = more stars)
         if (blendedLayer.stars > 0) {

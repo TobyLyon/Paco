@@ -322,20 +322,27 @@
             }
         }
 
-        // Enhanced mobile detection
+        // Enhanced mobile detection with forced mobile handling
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         const isStandalone = window.navigator.standalone === true;
         const hasOpener = window.opener && !window.opener.closed;
+        const isSmallScreen = window.innerWidth <= 768 || window.innerHeight <= 600;
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
         
-        // If on mobile device OR no opener window, treat as mobile flow
-        const isMobileFlow = isMobile || !hasOpener;
+        // Force mobile flow for mobile devices even if opener exists (more reliable)
+        const forceMobileForDevices = isMobile || (isSmallScreen && isTouchDevice);
+        const isMobileFlow = forceMobileForDevices || !hasOpener;
         
-        console.log('🔍 DEVICE DETECTION:', {
-            userAgent: navigator.userAgent,
+        console.log('🔍 ENHANCED DEVICE DETECTION:', {
+            userAgent: navigator.userAgent.substring(0, 50) + '...',
             isMobile,
             isStandalone,
             hasOpener,
-            isMobileFlow
+            isSmallScreen,
+            isTouchDevice,
+            forceMobileForDevices,
+            isMobileFlow,
+            strategy: isMobileFlow ? 'MOBILE_REDIRECT' : 'DESKTOP_POPUP'
         });
         
         if (error) {
@@ -367,9 +374,13 @@
                 localStorage.setItem('twitter_auth_state_mobile', state || '');
                 localStorage.setItem('twitter_auth_timestamp', Date.now().toString());
                 
-                // Try to post message to opener if it exists (for mobile popups)
+                // Mobile authentication completion - multiple strategies for reliability
+                console.log('📱 MOBILE: Implementing multiple close strategies...');
+                
+                // Strategy 1: Try to message opener window (for popup cases)
+                let messageStrategy = false;
                 if (hasOpener) {
-                    console.log('📱 MOBILE: Found opener window, sending message...');
+                    console.log('📱 MOBILE: Attempting opener message strategy...');
                     try {
                         window.opener.postMessage({
                             type: 'TWITTER_AUTH_SUCCESS',
@@ -377,24 +388,52 @@
                             state: state,
                             timestamp: Date.now()
                         }, '*');
-                        
-                        setTimeout(() => {
-                            updateStatus('Closing authentication window...', 'success');
-                            window.close();
-                        }, 1000);
+                        messageStrategy = true;
+                        console.log('📱 MOBILE: Message sent to opener successfully');
                     } catch (error) {
-                        console.log('📱 MOBILE: Could not message opener, redirecting instead');
-                        setTimeout(() => {
-                            updateStatus('Redirecting back to game...', 'processing');
-                            window.location.href = '/';
-                        }, 500);
+                        console.log('📱 MOBILE: Opener message failed:', error.message);
                     }
-                } else {
-                    setTimeout(() => {
-                        updateStatus('Redirecting back to game...', 'processing');
-                        window.location.href = '/';
-                    }, 500);
                 }
+                
+                // Strategy 2: Immediate redirect (most reliable for mobile)
+                console.log('📱 MOBILE: Initiating immediate redirect...');
+                updateStatus('Returning to game...', 'success');
+                
+                // Multiple redirect attempts for reliability
+                setTimeout(() => {
+                    console.log('📱 MOBILE: Redirect attempt 1');
+                    if (messageStrategy) {
+                        // If we successfully messaged opener, try to close first
+                        try {
+                            window.close();
+                        } catch (e) {
+                            console.log('📱 MOBILE: Close failed, redirecting...');
+                            window.location.href = '/';
+                        }
+                    } else {
+                        // Direct redirect
+                        window.location.href = '/';
+                    }
+                }, 100);
+                
+                // Fallback redirect in case first attempt fails
+                setTimeout(() => {
+                    console.log('📱 MOBILE: Fallback redirect attempt');
+                    if (window.location.pathname !== '/') {
+                        window.location.replace('/');
+                    }
+                }, 1000);
+                
+                // Emergency redirect for stubborn browsers
+                setTimeout(() => {
+                    console.log('📱 MOBILE: Emergency redirect - forcing navigation');
+                    try {
+                        window.location.assign('/');
+                    } catch (e) {
+                        // Last resort - reload the main domain
+                        window.location.href = window.location.origin;
+                    }
+                }, 3000);
                 
             } else if (window.opener && !window.opener.closed) {
                 // Desktop popup flow

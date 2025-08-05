@@ -111,24 +111,32 @@ class TwitterAuth {
             console.log('🌐 Auth URL:', authUrl);
             console.log('🔧 Auth params:', Object.fromEntries(authParams));
             
-            // Enhanced mobile detection for better auth flow
+            // Enhanced mobile detection - be aggressive about forcing mobile flow
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             const isSmallScreen = window.innerWidth <= 768 || window.innerHeight <= 600;
             const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-            const shouldUseMobileFlow = isMobile || (isSmallScreen && isTouchDevice);
+            const isLikelyMobile = window.innerWidth < window.innerHeight; // Portrait orientation
+            const hasTouch = navigator.maxTouchPoints > 0;
             
-            console.log('🔍 AUTH FLOW DETECTION:', {
-                userAgent: navigator.userAgent,
+            // Force mobile flow for better reliability
+            const shouldUseMobileFlow = isMobile || isSmallScreen || isTouchDevice || isLikelyMobile || hasTouch;
+            
+            console.log('🔍 AGGRESSIVE MOBILE DETECTION:', {
+                userAgent: navigator.userAgent.substring(0, 50) + '...',
                 isMobile,
                 isSmallScreen,
                 isTouchDevice,
+                isLikelyMobile,
+                hasTouch,
                 shouldUseMobileFlow,
-                screenSize: `${window.innerWidth}x${window.innerHeight}`
+                screenSize: `${window.innerWidth}x${window.innerHeight}`,
+                orientation: window.innerWidth < window.innerHeight ? 'portrait' : 'landscape'
             });
             
             if (shouldUseMobileFlow) {
-                // Mobile: Use same window redirect instead of popup
-                console.log('📱 Mobile device detected, using same-window redirect for better compatibility');
+                // Mobile: Force same window redirect (most reliable for mobile)
+                console.log('📱 MOBILE FORCED: Using same-window redirect for maximum compatibility');
+                console.log('📱 This should redirect back automatically after authentication');
                 window.location.href = authUrl;
                 return;
             }

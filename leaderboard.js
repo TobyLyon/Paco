@@ -121,6 +121,20 @@ class Leaderboard {
                 throw new Error('Twitter authentication required for leaderboard');
             }
 
+            // Anti-cheat validation
+            let secureSubmission = null;
+            if (typeof antiCheat !== 'undefined') {
+                try {
+                    secureSubmission = antiCheat.createSecureSubmission(score);
+                    console.log('🛡️ Score passed anti-cheat validation');
+                } catch (error) {
+                    console.error('🚨 Anti-cheat validation failed:', error.message);
+                    throw new Error(`Score validation failed: ${error.message}`);
+                }
+            } else {
+                console.warn('⚠️ Anti-cheat system not available');
+            }
+
             const user = twitterAuth.currentUser;
             const scoreData = {
                 user_id: user.id,
@@ -129,7 +143,14 @@ class Leaderboard {
                 profile_image: user.profileImage,
                 score: score,
                 created_at: new Date().toISOString(),
-                game_date: this.getCurrentGameDate()
+                game_date: this.getCurrentGameDate(),
+                // Add anti-cheat data if available
+                ...(secureSubmission && {
+                    session_id: secureSubmission.sessionId,
+                    game_time: secureSubmission.gameTime,
+                    platforms_jumped: secureSubmission.platformsJumped,
+                    checksum: secureSubmission.checksum
+                })
             };
 
             // Submit to Supabase

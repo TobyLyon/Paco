@@ -234,6 +234,13 @@ class OrderTracker {
     // Record game score
     async recordGameScore(scoreData) {
         try {
+            // Server-side validation
+            const validation = this.validateScoreSubmission(scoreData);
+            if (!validation.valid) {
+                console.error('🚨 Server-side validation failed:', validation.reasons);
+                return { success: false, error: `Validation failed: ${validation.reasons.join(', ')}` };
+            }
+
             const scoreRecord = {
                 user_id: scoreData.user_id,
                 username: scoreData.username,
@@ -241,7 +248,13 @@ class OrderTracker {
                 profile_image: scoreData.profile_image,
                 score: scoreData.score,
                 game_date: scoreData.game_date,
-                created_at: scoreData.created_at || new Date().toISOString()
+                created_at: scoreData.created_at || new Date().toISOString(),
+                // Add anti-cheat metadata
+                user_agent: navigator.userAgent,
+                ...(scoreData.session_id && { session_id: scoreData.session_id }),
+                ...(scoreData.game_time && { game_time: scoreData.game_time }),
+                ...(scoreData.platforms_jumped && { platforms_jumped: scoreData.platforms_jumped }),
+                ...(scoreData.checksum && { checksum: scoreData.checksum })
             };
 
             // Always submit scores - let the database handle duplicates with its unique constraint
@@ -264,6 +277,59 @@ class OrderTracker {
             console.error('Exception recording game score:', error);
             return { success: false, error: error.message };
         }
+    }
+
+    // Server-side score validation
+    validateScoreSubmission(scoreData) {
+        const validation = { valid: true, reasons: [] };
+        const score = scoreData.score;
+        
+        // Basic validation
+        if (typeof score !== 'number' || score < 0) {
+            validation.valid = false;
+            validation.reasons.push('Invalid score value');
+        }
+        
+        if (score > 50000) { // Maximum realistic score
+            validation.valid = false;
+            validation.reasons.push('Score exceeds maximum realistic limit');
+        }
+        
+        // Check for suspicious patterns
+        if (score > 1000 && score % 1000 === 0) {
+            validation.reasons.push('Suspiciously round score detected');
+        }
+        
+        // Validate game time if provided
+        if (scoreData.game_time) {
+            const gameTimeSeconds = scoreData.game_time / 1000;
+            const scorePerSecond = score / Math.max(gameTimeSeconds, 1);
+            
+            if (gameTimeSeconds < 10 && score > 100) {
+                validation.valid = false;
+                validation.reasons.push('Score too high for game duration');
+            }
+            
+            if (scorePerSecond > 500) {
+                validation.valid = false;
+                validation.reasons.push('Score per second exceeds realistic limits');
+            }
+        }
+        
+        // Rate limiting check
+        const submissionKey = `last_submission_${scoreData.user_id}`;
+        const lastSubmission = localStorage.getItem(submissionKey);
+        const now = Date.now();
+        
+        if (lastSubmission && (now - parseInt(lastSubmission)) < 5000) {
+            validation.valid = false;
+            validation.reasons.push('Submission rate limit exceeded');
+        }
+        
+        // Update last submission time
+        localStorage.setItem(submissionKey, now.toString());
+        
+        return validation;
     }
 
     // Get today's leaderboard - only best score per user

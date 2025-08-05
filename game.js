@@ -485,6 +485,12 @@ class PacoJumpGame {
         this.isGameRunning = true;
         this.isPaused = false;
         
+        // Initialize anti-cheat tracking
+        if (typeof antiCheat !== 'undefined') {
+            antiCheat.resetSession();
+            antiCheat.trackGameEvent('game_start');
+        }
+        
         // Reset if coming from game over
         if (this.gameState !== 'paused') {
             this.resetGame();
@@ -558,6 +564,12 @@ class PacoJumpGame {
     endGame() {
         this.isGameRunning = false;
         this.gameState = 'gameOver';
+        
+        // Track game end for anti-cheat
+        if (typeof antiCheat !== 'undefined') {
+            antiCheat.trackGameEvent('game_end', { finalScore: this.score });
+            antiCheat.verifySession();
+        }
         
         // Stop background music
         this.stopBackgroundMusic();
@@ -695,6 +707,15 @@ class PacoJumpGame {
                 
                 // Normal platform handling
                 const jumpResult = gamePhysics.handlePlatformJump(this.player, platform);
+                
+                // Track platform jump for anti-cheat
+                if (typeof antiCheat !== 'undefined') {
+                    antiCheat.trackGameEvent('platform_jump', {
+                        platformType: platform.type,
+                        score: this.score,
+                        height: Math.abs(this.player.y)
+                    });
+                }
                 
                 // Mark platform as touched
                 if (!platform.touched) {

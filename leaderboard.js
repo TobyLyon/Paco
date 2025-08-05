@@ -295,8 +295,13 @@ class Leaderboard {
                 const result = await orderTracker.getTodayLeaderboard();
                 
                 if (result.success) {
-                    this.currentLeaderboard = result.data;
-                    console.log(`📊 Loaded ${this.currentLeaderboard.length} leaderboard entries`);
+                    // FORCE PROPER SORTING - highest scores first
+                    this.currentLeaderboard = (result.data || [])
+                        .filter(entry => entry && typeof entry.score === 'number')
+                        .sort((a, b) => b.score - a.score); // Highest to lowest
+                    
+                    console.log(`📊 Loaded ${this.currentLeaderboard.length} leaderboard entries (sorted by score)`);
+                    console.log('Top 3 scores:', this.currentLeaderboard.slice(0, 3).map(e => `${e.username}: ${e.score}`));
                     return this.currentLeaderboard;
                 } else {
                     throw new Error(result.error);
@@ -750,21 +755,7 @@ class Leaderboard {
         }
     }
 
-    // Get time until daily reset
-    getTimeUntilReset() {
-        const now = Date.now();
-        const resetTime = this.dailyResetTime.getTime();
-        const diff = resetTime - now;
-        
-        if (diff <= 0) {
-            return 'Soon';
-        }
-        
-        const hours = Math.floor(diff / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        
-        return `${hours}h ${minutes}m`;
-    }
+
 
     // Save user's best score locally
     saveBestScore() {

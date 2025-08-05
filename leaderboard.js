@@ -833,13 +833,36 @@ class Leaderboard {
                     
                     // Add to current leaderboard if it's for today
                     if (newScore.game_date === this.getCurrentGameDate()) {
+                        console.log('🔴 Processing real-time score update:', newScore);
+                        
+                        // Check if user already exists in leaderboard
+                        const existingIndex = this.currentLeaderboard.findIndex(entry => 
+                            entry.user_id === newScore.user_id
+                        );
+                        
+                        if (existingIndex !== -1) {
+                            // User exists - replace if new score is higher
+                            const existingScore = this.currentLeaderboard[existingIndex];
+                            if (newScore.score > existingScore.score) {
+                                console.log(`🔄 Updating ${newScore.username}: ${existingScore.score} → ${newScore.score}`);
+                                this.currentLeaderboard[existingIndex] = newScore;
+                            } else {
+                                console.log(`📊 Keeping existing higher score for ${newScore.username}: ${existingScore.score} vs ${newScore.score}`);
+                                return; // Don't update UI if score wasn't improved
+                            }
+                        } else {
+                            // New user - add to leaderboard
+                            console.log(`🆕 Adding new user ${newScore.username} with score ${newScore.score}`);
                         this.currentLeaderboard.push(newScore);
+                        }
                         
                         // Re-sort leaderboard
                         this.currentLeaderboard.sort((a, b) => b.score - a.score);
                         
                         // Keep only top 50 for performance
                         this.currentLeaderboard = this.currentLeaderboard.slice(0, 50);
+                        
+                        console.log('🔴 Updated leaderboard entries:', this.currentLeaderboard.length);
                         
                         // Update UI if leaderboard is currently shown
                         const overlay = document.getElementById('gameOverlay');

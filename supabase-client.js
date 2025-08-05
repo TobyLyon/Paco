@@ -379,6 +379,11 @@ class OrderTracker {
     // Get today's leaderboard - only best score per user
     async getTodayLeaderboard() {
         try {
+            // FORCE USE FALLBACK METHOD - Database function is broken
+            console.log('📊 Using reliable fallback method for leaderboard');
+            return await this.getTodayLeaderboardFallback();
+            
+            /* DISABLED - Database function is causing missing scores
             const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
 
             // Use a raw SQL query to get only the best score per user
@@ -400,6 +405,7 @@ class OrderTracker {
 
             console.log('📊 Fetched deduplicated leaderboard with', data?.length || 0, 'unique users');
             return { success: true, data: data || [] };
+            */
         } catch (error) {
             console.error('Exception getting today leaderboard:', error);
             return { success: false, data: [], error: error.message };

@@ -3428,9 +3428,9 @@ body {
     }
     
     #gameCanvas {
-        width: 280px !important;
+        width: 315px !important;
         height: 490px !important;
-        max-width: 280px !important;
+        max-width: 315px !important;
         max-height: 490px !important;
         border-radius: 10px;
         image-rendering: pixelated !important;
@@ -3444,7 +3444,7 @@ body {
         align-items: center;
         padding: var(--space-sm);
         margin: 0 auto;
-        max-width: 320px;
+        max-width: 360px;
     }
     
     .game-controls {

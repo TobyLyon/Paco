@@ -483,72 +483,29 @@ class Leaderboard {
                             <p style="color: var(--restaurant-yellow); font-size: 0.85rem; margin-bottom: 8px; text-align: center;">
                                 🏆 You're in the Top ${userRank <= 3 ? '3' : '10'}! Share your achievement:
                             </p>
-                            <div style="display: flex; gap: 6px; margin-bottom: 6px;">
-                                <button onclick="shareLeaderboardAchievement(${userEntry.score}, ${userRank})" style="
-                                    background: linear-gradient(135deg, #1d9bf0 0%, #1a91da 100%);
-                                    color: white;
-                                    border: none;
-                                    border-radius: 6px;
-                                    padding: 6px 12px;
-                                    font-family: var(--font-display);
-                                    font-weight: 600;
-                                    font-size: 0.75rem;
-                                    cursor: pointer;
-                                    transition: all 0.3s ease;
-                                    flex: 1;
-                                " onmouseover="
-                                    this.style.transform='translateY(-1px)';
-                                    this.style.filter='brightness(1.1)';
-                                " onmouseout="
-                                    this.style.transform='translateY(0)';
-                                    this.style.filter='brightness(1)';
-                                ">
-                                    🐦 Share Rank
-                                </button>
-                                
-                                <button onclick="generateLeaderboardTrophy(${userEntry.score}, '${userEntry.username}', ${userRank})" style="
-                                    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-                                    color: #1f2937;
-                                    border: none;
-                                    border-radius: 6px;
-                                    padding: 6px 12px;
-                                    font-family: var(--font-display);
-                                    font-weight: 600;
-                                    font-size: 0.75rem;
-                                    cursor: pointer;
-                                    transition: all 0.3s ease;
-                                    flex: 1;
-                                " onmouseover="
-                                    this.style.transform='translateY(-1px)';
-                                    this.style.filter='brightness(1.1)';
-                                " onmouseout="
-                                    this.style.transform='translateY(0)';
-                                    this.style.filter='brightness(1)';
-                                ">
-                                    📸 Trophy
-                                </button>
-                            </div>
-                            
-                            <button onclick="generateAndShareLeaderboardTrophy(${userEntry.score}, '${userEntry.username}', ${userRank})" style="
-                                background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+                            <!-- UNIFIED SHARE & DOWNLOAD BUTTON -->
+                            <button onclick="leaderboardShareAndDownload(${userEntry.score}, ${userRank})" style="
+                                background: linear-gradient(135deg, #1d9bf0 0%, #1a8cd8 100%);
                                 color: white;
                                 border: none;
-                                border-radius: 6px;
-                                padding: 6px 12px;
+                                border-radius: 8px;
+                                padding: 10px 16px;
                                 font-family: var(--font-display);
-                                font-weight: 600;
-                                font-size: 0.75rem;
+                                font-weight: 700;
+                                font-size: 0.85rem;
                                 cursor: pointer;
-                                transition: all 0.3s ease;
+                                transition: all 0.2s ease;
                                 width: 100%;
+                                text-transform: uppercase;
+                                box-shadow: 0 4px 12px rgba(29, 155, 240, 0.4);
                             " onmouseover="
-                                this.style.transform='translateY(-1px)';
-                                this.style.filter='brightness(1.1)';
+                                this.style.transform='translateY(-2px)';
+                                this.style.background='linear-gradient(135deg, #2ea8ff 0%, #1d9bf0 100%)';
                             " onmouseout="
                                 this.style.transform='translateY(0)';
-                                this.style.filter='brightness(1)';
+                                this.style.background='linear-gradient(135deg, #1d9bf0 0%, #1a8cd8 100%)';
                             ">
-                                🚀 Trophy + Tweet
+                                🐦📥 Share & Save Achievement
                             </button>
                         </div>
                     `;
@@ -936,6 +893,67 @@ async function generateAndShareLeaderboardTrophy(score, username, rank) {
     } catch (error) {
         console.error('Leaderboard trophy share error:', error);
         alert('❌ Trophy sharing failed');
+    }
+}
+
+// Unified share and download function for leaderboard
+async function leaderboardShareAndDownload(score, rank) {
+    try {
+        // Generate trophy image first
+        if (window.trophyGenerator) {
+            const playerData = {
+                username: twitterAuth.currentUser?.username || 'Anonymous',
+                score: score,
+                rank: rank || null
+            };
+
+            const trophyCanvas = await window.trophyGenerator.generateTrophy(playerData);
+            
+            if (trophyCanvas) {
+                // Download the image
+                const link = document.createElement('a');
+                link.download = `paco-champion-${score}-${Date.now()}.png`;
+                link.href = trophyCanvas.toDataURL();
+                link.click();
+                
+                console.log('🏆 Trophy image downloaded!');
+            }
+        }
+        
+        // Share on Twitter (no auth needed for web intent)
+        let tweetText = `🐔 Just scored ${score.toLocaleString()} points in PACO JUMP! 🎮`;
+        
+        if (rank) {
+            if (rank === 1) {
+                tweetText += `\n\n🥇 I'm currently #1 on the leaderboard! 🏆`;
+            } else if (rank <= 3) {
+                tweetText += `\n\n🏅 Ranked #${rank} on the leaderboard!`;
+            } else if (rank <= 10) {
+                tweetText += `\n\n🎯 Made it to the top 10 at rank #${rank}!`;
+            } else {
+                tweetText += `\n\n📈 Ranked #${rank} on the leaderboard!`;
+            }
+        }
+
+        tweetText += `\n\nCan you beat my score? 🤔\n\nPlay now: ${window.location.origin}`;
+
+        const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
+        
+        const shareWindow = window.open(
+            tweetUrl,
+            'twitterShare',
+            'width=550,height=420,scrollbars=yes,resizable=yes'
+        );
+
+        if (shareWindow) {
+            console.log('🐦 Twitter share opened!');
+        } else {
+            console.log('⚠️ Please allow popups for sharing');
+        }
+
+    } catch (error) {
+        console.error('Share and download error:', error);
+        alert('❌ Share and download failed');
     }
 }
 

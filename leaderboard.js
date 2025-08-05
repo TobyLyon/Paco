@@ -232,12 +232,12 @@ class Leaderboard {
                     
                     // Update all timer elements
                     timerElements.forEach(timerElement => {
-                        timerElement.textContent = timeRemaining;
-                        
-                        // Check if contest ended
-                        if (timeRemaining === 'Contest ended!') {
-                            timerElement.style.color = '#ef4444'; // Red color
-                            timerElement.parentElement.innerHTML = '🏁 Contest ended! New contest starts soon...';
+                    timerElement.textContent = timeRemaining;
+                    
+                    // Check if contest ended
+                    if (timeRemaining === 'Contest ended!') {
+                        timerElement.style.color = '#ef4444'; // Red color
+                        timerElement.parentElement.innerHTML = '🏁 Contest ended! New contest starts soon...';
                         }
                     });
                     
@@ -314,13 +314,17 @@ class Leaderboard {
 
             // Submit to Supabase
             if (orderTracker && typeof orderTracker.recordGameScore === 'function') {
+                console.log('🎯 Submitting score data:', scoreData);
                 const result = await orderTracker.recordGameScore(scoreData);
+                console.log('🎯 Score submission result:', result);
                 
                 if (result.success) {
                     if (result.skipped) {
                         console.log('📊 Score not submitted - existing score is higher');
+                        console.log('📊 Existing score data:', result.data);
                     } else {
                         console.log('✅ Score submitted successfully');
+                        console.log('✅ New score data:', result.data);
                     }
                     
                     // Update local best score
@@ -328,7 +332,9 @@ class Leaderboard {
                     this.saveBestScore();
                     
                     // Refresh leaderboard
+                    console.log('🔄 Refreshing leaderboard after score submission...');
                     await this.fetchTodayLeaderboard();
+                    console.log('🔄 Leaderboard refreshed, current entries:', this.currentLeaderboard.length);
                     
                     return result;
                 } else {
@@ -570,14 +576,14 @@ class Leaderboard {
                             <!-- UNIFIED SHARE & DOWNLOAD BUTTON -->
                             <button onclick="leaderboardShareAndDownload(${userEntry.score}, ${userRank})" style="
                                 background: linear-gradient(135deg, #1d9bf0 0%, #1a8cd8 100%);
-                                color: white;
-                                border: none;
-                                border-radius: 6px;
+                                    color: white;
+                                    border: none;
+                                    border-radius: 6px;
                                 padding: 6px 10px;
-                                font-family: var(--font-display);
-                                font-weight: 600;
+                                    font-family: var(--font-display);
+                                    font-weight: 600;
                                 font-size: 0.7rem;
-                                cursor: pointer;
+                                    cursor: pointer;
                                 transition: all 0.2s ease;
                                 width: 100%;
                                 text-transform: uppercase;
@@ -605,7 +611,7 @@ class Leaderboard {
         
         // Start countdown timer updates (only if not already running)
         if (!this.countdownInterval) {
-            this.startCountdownTimer();
+        this.startCountdownTimer();
         }
     }
 
@@ -1159,7 +1165,44 @@ window.checkTimerState = function() {
     };
 };
 
+window.debugScoreSubmission = function() {
+    console.log('🔍 SCORE SUBMISSION DEBUG:');
+    console.log('Twitter authenticated:', twitterAuth.authenticated);
+    console.log('Current user:', twitterAuth.currentUser);
+    console.log('Current game date:', leaderboard.getCurrentGameDate());
+    console.log('Leaderboard entries:', leaderboard.currentLeaderboard.length);
+    console.log('User best score:', leaderboard.userBestScore);
+    
+    if (twitterAuth.currentUser) {
+        const userEntry = leaderboard.currentLeaderboard.find(entry => 
+            entry.user_id === twitterAuth.currentUser.id
+        );
+        console.log('User in leaderboard:', userEntry);
+    }
+    
+    return {
+        authenticated: twitterAuth.authenticated,
+        currentUser: twitterAuth.currentUser,
+        gameDate: leaderboard.getCurrentGameDate(),
+        leaderboardCount: leaderboard.currentLeaderboard.length,
+        userBestScore: leaderboard.userBestScore
+    };
+};
+
+window.forceRefreshLeaderboard = async function() {
+    console.log('🔄 FORCING LEADERBOARD REFRESH...');
+    try {
+        await leaderboard.fetchTodayLeaderboard();
+        console.log('✅ Leaderboard refreshed, entries:', leaderboard.currentLeaderboard.length);
+        return leaderboard.currentLeaderboard;
+    } catch (error) {
+        console.error('❌ Refresh failed:', error);
+        return null;
+    }
+};
+
 console.log('📊 Leaderboard module loaded');
 console.log('🔧 Debug commands: debugCountdown(), fixCountdown(), testTimer(), checkTimerState()');
+console.log('🔧 Score debug: debugScoreSubmission(), forceRefreshLeaderboard()');
 
 // Console commands removed for contest security

@@ -181,8 +181,8 @@ class TrophyGenerator {
         this.ctx.save();
         this.ctx.textAlign = 'center';
         
-        // Move score much lower to fit in the open space perfectly
-        const scoreY = this.canvas.height * 0.82;
+        // Move score to optimal position with better spacing
+        const scoreY = this.canvas.height * 0.78;
         
         // Score display (background containers removed for cleaner look)
         

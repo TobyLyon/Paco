@@ -211,21 +211,22 @@
     }
     
     .game-canvas-container {
-        width: min(90vw, 420px) !important;
-        max-width: 420px !important;
+        width: 95vw !important;
+        max-width: 100% !important;
         margin: 0 auto !important;
-        padding: 8px !important;
+        padding: 4px !important;
         display: flex !important;
         justify-content: center !important;
         align-items: center !important;
+        overflow: visible !important;
     }
     
     #gameCanvas {
         width: 100% !important;
         height: min(75vh, 650px) !important;
-        max-width: 420px !important;
+        max-width: none !important;
         max-height: 650px !important;
-        min-width: 300px !important;
+        min-width: 350px !important;
         min-height: 450px !important;
     }
     

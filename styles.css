@@ -3455,10 +3455,11 @@ body {
         display: flex;
         justify-content: center;
         align-items: center;
-        padding: 8px;
+        padding: 4px;
         margin: 0 auto;
-        width: min(90vw, 420px);
-        max-width: 420px;
+        width: 95vw;
+        max-width: 100%;
+        overflow: visible;
     }
     
     .game-controls {

@@ -1196,6 +1196,11 @@ window.debugScoreSubmission = function() {
     console.log('Leaderboard entries:', leaderboard.currentLeaderboard.length);
     console.log('User best score:', leaderboard.userBestScore);
     
+    console.log('📊 FULL LEADERBOARD DATA:');
+    leaderboard.currentLeaderboard.forEach((entry, index) => {
+        console.log(`${index + 1}. ${entry.username} (${entry.user_id}): ${entry.score} - ${entry.game_date}`);
+    });
+    
     if (twitterAuth.currentUser) {
         const userEntry = leaderboard.currentLeaderboard.find(entry => 
             entry.user_id === twitterAuth.currentUser.id
@@ -1208,7 +1213,8 @@ window.debugScoreSubmission = function() {
         currentUser: twitterAuth.currentUser,
         gameDate: leaderboard.getCurrentGameDate(),
         leaderboardCount: leaderboard.currentLeaderboard.length,
-        userBestScore: leaderboard.userBestScore
+        userBestScore: leaderboard.userBestScore,
+        fullLeaderboard: leaderboard.currentLeaderboard
     };
 };
 
@@ -1250,8 +1256,46 @@ window.checkRealtimeStatus = function() {
     };
 };
 
+window.compareLeaderboardData = async function() {
+    console.log('🔍 COMPARING DATABASE VS MEMORY:');
+    
+    if (!orderTracker) {
+        console.error('OrderTracker not available');
+        return;
+    }
+    
+    try {
+        const dbResult = await orderTracker.getTodayLeaderboard();
+        console.log('📊 Database leaderboard entries:', dbResult.data?.length || 0);
+        console.log('🧠 Memory leaderboard entries:', leaderboard.currentLeaderboard.length);
+        
+        if (dbResult.success && dbResult.data) {
+            console.log('📊 DATABASE TOP 10:');
+            dbResult.data.slice(0, 10).forEach((entry, index) => {
+                console.log(`${index + 1}. ${entry.username}: ${entry.score} (${entry.game_date})`);
+            });
+        }
+        
+        console.log('🧠 MEMORY TOP 10:');
+        leaderboard.currentLeaderboard.slice(0, 10).forEach((entry, index) => {
+            console.log(`${index + 1}. ${entry.username}: ${entry.score} (${entry.game_date})`);
+        });
+        
+        return {
+            databaseCount: dbResult.data?.length || 0,
+            memoryCount: leaderboard.currentLeaderboard.length,
+            databaseData: dbResult.data,
+            memoryData: leaderboard.currentLeaderboard
+        };
+    } catch (error) {
+        console.error('Error comparing data:', error);
+        return null;
+    }
+};
+
 console.log('📊 Leaderboard module loaded');
 console.log('🔧 Debug commands: debugCountdown(), fixCountdown(), testTimer(), checkTimerState()');
 console.log('🔧 Score debug: debugScoreSubmission(), forceRefreshLeaderboard(), checkRealtimeStatus()');
+console.log('🔧 Data compare: compareLeaderboardData()');
 
 // Console commands removed for contest security

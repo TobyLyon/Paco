@@ -221,9 +221,10 @@
     
     #gameCanvas {
         width: 280px !important;
-        height: 420px !important;
+        height: min(65vh, 520px) !important;
         max-width: 280px !important;
-        max-height: 420px !important;
+        min-height: 420px !important;
+        max-height: 650px !important;
     }
     
     /* ===== FIX BUTTONS AND CONTROLS ===== */
@@ -346,5 +347,21 @@
     .menu-item {
         width: 35px !important;
         height: 35px !important;
+    }
+}
+
+/* ===== LARGER MOBILE SCREENS - MORE VERTICAL SPACE ===== */
+@media (max-width: 768px) and (min-height: 700px) {
+    #gameCanvas {
+        height: min(70vh, 580px) !important;
+        max-height: 700px !important;
+    }
+}
+
+/* ===== TALL MOBILE SCREENS - MAXIMIZE GAME HEIGHT ===== */
+@media (max-width: 768px) and (min-height: 800px) {
+    #gameCanvas {
+        height: min(75vh, 640px) !important;
+        max-height: 750px !important;
     }
 }

@@ -320,6 +320,12 @@ class Leaderboard {
                 const result = await orderTracker.recordGameScore(scoreData);
                 console.log('🎯 Score submission result:', result);
                 
+                if (!result.success) {
+                    console.error('❌ SCORE SUBMISSION FAILED:', result.error);
+                    alert('Score submission failed: ' + result.error);
+                    return false;
+                }
+                
                 if (result.success) {
                     if (result.skipped) {
                         console.log('📊 Score not submitted - existing score is higher');

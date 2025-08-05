@@ -28,6 +28,12 @@
     <div class="callback-container">
         <h2>🐦 Connecting to Twitter...</h2>
         <p>Please wait while we complete the authentication process.</p>
+        <p><strong>⚠️ Do NOT close this window!</strong></p>
+        <p>This will close automatically when done.</p>
+        
+        <div id="status" style="margin-top: 20px; font-size: 14px;">
+            ⏳ Processing...
+        </div>
     </div>
 
     <script>
@@ -52,6 +58,9 @@
             }
             window.close();
         } else if (code) {
+            // Update status
+            document.getElementById('status').innerHTML = '✅ Success! Sending data back to game...';
+            
             // Send success back to parent window with enhanced error handling
             if (window.opener && !window.opener.closed) {
                 console.log('🎉 Sending success message to parent window...');
@@ -84,21 +93,27 @@
                     });
                     
                     attempts++;
-                    if (attempts < 3) {
-                        setTimeout(sendMessage, 100); // Retry up to 3 times
+                    if (attempts < 5) {
+                        setTimeout(sendMessage, 200); // Retry up to 5 times with longer intervals
                     }
                 };
                 
                 sendMessage();
                 
-                // Wait longer before closing to ensure all messages are sent
+                // Update status and wait longer before closing
+                document.getElementById('status').innerHTML = '🔄 Completing authentication...';
+                
                 setTimeout(() => {
-                    console.log('🔒 Closing authentication popup...');
-                    window.close();
-                }, 1000); // Increased to 1 second
+                    document.getElementById('status').innerHTML = '✅ Complete! Closing window...';
+                    setTimeout(() => {
+                        console.log('🔒 Closing authentication popup...');
+                        window.close();
+                    }, 500);
+                }, 1500); // Increased to 1.5 seconds total
             } else {
                 console.warn('⚠️ No valid opener window found');
-                window.close();
+                document.getElementById('status').innerHTML = '❌ Error: Cannot communicate with main window';
+                setTimeout(() => window.close(), 2000);
             }
         } else {
             // No code or error - something went wrong

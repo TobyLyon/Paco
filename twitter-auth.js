@@ -113,7 +113,15 @@ class TwitterAuth {
                 'width=500,height=600,scrollbars=yes,resizable=yes'
             );
             
+            if (!popup) {
+                throw new Error('Popup blocked! Please allow popups for this site and try again.');
+            }
+            
             this.authWindow = popup;
+            
+            // Give user instructions
+            console.log('🎯 IMPORTANT: Do NOT close the Twitter popup window!');
+            console.log('📱 Complete the Twitter authorization and it will close automatically.');
             
             // Listen for popup messages with enhanced error handling
             return new Promise((resolve, reject) => {
@@ -197,21 +205,24 @@ class TwitterAuth {
                 // Check if popup was closed manually (but not if auth completed)
                 const checkClosed = setInterval(() => {
                     if (popup.closed && !authCompleted) {
-                        console.log('🚪 Popup window closed by user');
+                        console.log('🚪 Popup window closed');
+                        console.log('📊 Auth status:', { authCompleted, messageReceived });
                         clearInterval(checkClosed);
                         clearTimeout(authTimeout);
                         window.removeEventListener('message', messageHandler);
                         
                         if (messageReceived) {
-                            console.log('📨 Message was received before popup closed - authentication may still succeed');
+                            console.log('📨 Message was received before popup closed - giving extra time...');
                             // Don't reject immediately if we received a message
                             setTimeout(() => {
                                 if (!authCompleted) {
-                                    reject(new Error('Authentication cancelled'));
+                                    console.log('⏰ Authentication still not completed after extra time');
+                                    reject(new Error('Authentication cancelled - popup closed too early'));
                                 }
-                            }, 1000);
+                            }, 2000); // Give more time
                         } else {
-                            reject(new Error('Authentication cancelled'));
+                            console.log('❌ No auth message received - user cancelled or popup blocked');
+                            reject(new Error('Authentication cancelled - no response from Twitter'));
                         }
                     }
                 }, 1000); // Check every 1 second

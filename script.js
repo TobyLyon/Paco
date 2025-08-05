@@ -1210,10 +1210,20 @@ function loadPreferences() {
     }
 }
 
-// Error handling
+// Error handling - avoid showing errors for authentication flows
 window.addEventListener('error', function(e) {
     console.error('Restaurant error:', e.error);
-    showNotification('⚠️ Kitchen hiccup, but we\'re still cooking!');
+    
+    // Don't show kitchen hiccup for authentication-related errors
+    const errorMessage = e.error?.message || e.message || '';
+    const isAuthError = errorMessage.toLowerCase().includes('twitter') || 
+                       errorMessage.toLowerCase().includes('auth') ||
+                       errorMessage.toLowerCase().includes('token') ||
+                       window.location.pathname.includes('callback');
+    
+    if (!isAuthError) {
+        showNotification('⚠️ Kitchen hiccup, but we\'re still cooking!');
+    }
 });
 
 // Handle visibility change

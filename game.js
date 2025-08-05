@@ -1961,14 +1961,14 @@ class PacoJumpGame {
         
         const content = `
             <div style="
-                max-width: min(480px, 90vw); 
+                max-width: min(480px, 95vw); 
                 width: 100%;
                 margin: 0 auto; 
                 text-align: center;
                 font-family: var(--font-display);
                 background: linear-gradient(145deg, rgba(0, 0, 0, 0.95), rgba(20, 20, 20, 0.9));
-                border-radius: 20px;
-                padding: min(20px, 4vw);
+                border-radius: 16px;
+                padding: min(15px, 3vw);
                 backdrop-filter: blur(15px);
                 border: 2px solid rgba(220, 38, 38, 0.4);
                 box-shadow: 
@@ -1976,7 +1976,7 @@ class PacoJumpGame {
                     inset 0 1px 0 rgba(255, 255, 255, 0.1);
                 position: relative;
                 box-sizing: border-box;
-                max-height: 70vh;
+                max-height: 65vh;
                 overflow-y: auto;
             ">
                 <!-- Close Button -->

@@ -3,36 +3,286 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Twitter Auth Callback</title>
+    <title>Connecting to Twitter - Paco's Chicken Palace</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --restaurant-red: #dc2626;
+            --restaurant-orange: #f97316;
+            --restaurant-yellow: #fbbf24;
+            --restaurant-green: #10b981;
+            --surface-dark: #1f2937;
+            --surface-darker: #111827;
+            --surface-accent: #374151;
+            --text-primary: #ffffff;
+            --text-secondary: #f9fafb;
+            --text-muted: #d1d5db;
+            --border-radius-lg: 12px;
+            --border-radius-xl: 16px;
+            --shadow-glow: 0 4px 20px rgba(251, 191, 36, 0.2);
+            --shadow-yellow: 0 4px 20px rgba(251, 191, 36, 0.4);
+            --transition-base: 0.3s ease;
+            --font-display: 'Fredoka', cursive;
+            --font-body: 'Poppins', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Fredoka', cursive;
-            background: linear-gradient(135deg, #dc2626, #f97316);
-            color: white;
+            font-family: var(--font-body);
+            background: 
+                linear-gradient(135deg, rgba(220, 38, 38, 0.15), rgba(249, 115, 22, 0.15), rgba(251, 191, 36, 0.15), rgba(16, 185, 129, 0.15)),
+                radial-gradient(circle at 50% 50%, rgba(251, 191, 36, 0.05) 0%, transparent 50%),
+                var(--surface-darker);
+            background-size: 400% 400%, 100% 100%, 100% 100%;
+            background-position: 0% 50%, center, center;
+            animation: gradientShift 8s ease infinite;
+            color: var(--text-primary);
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
+            overflow: hidden;
         }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%, center, center; }
+            50% { background-position: 100% 50%, center, center; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.02); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
         .callback-container {
+            background: linear-gradient(145deg, rgba(31, 41, 55, 0.95), rgba(17, 24, 39, 0.98));
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(251, 191, 36, 0.2);
+            border-radius: var(--border-radius-xl);
+            box-shadow: var(--shadow-yellow), 0 0 40px rgba(251, 191, 36, 0.1);
+            padding: 3rem 2.5rem;
             text-align: center;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 2rem;
-            border-radius: 16px;
-            backdrop-filter: blur(10px);
+            max-width: 420px;
+            width: 90%;
+            animation: fadeIn 0.6s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .callback-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--restaurant-yellow), transparent);
+            animation: pulse 2s ease infinite;
+        }
+
+        .logo-section {
+            margin-bottom: 2rem;
+        }
+
+        .logo {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--restaurant-yellow);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .logo .icon {
+            font-size: 2rem;
+            animation: pulse 2s ease infinite;
+        }
+
+        .subtitle {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .main-title {
+            font-family: var(--font-display);
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+        }
+
+        .main-title .twitter-icon {
+            color: #1DA1F2;
+            animation: pulse 1.5s ease infinite;
+        }
+
+        .description {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            line-height: 1.5;
+        }
+
+        .warning {
+            font-size: 0.875rem;
+            color: var(--restaurant-yellow);
+            margin-bottom: 2rem;
+            padding: 0.75rem 1rem;
+            background: rgba(251, 191, 36, 0.1);
+            border: 1px solid rgba(251, 191, 36, 0.2);
+            border-radius: var(--border-radius-lg);
+            font-weight: 500;
+        }
+
+        .status-section {
+            position: relative;
+        }
+
+        .status {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            padding: 1rem;
+            background: rgba(55, 65, 81, 0.5);
+            border-radius: var(--border-radius-lg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all var(--transition-base);
+        }
+
+        .status.success {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: rgba(16, 185, 129, 0.3);
+            color: var(--restaurant-green);
+        }
+
+        .status.processing {
+            background: rgba(251, 191, 36, 0.15);
+            border-color: rgba(251, 191, 36, 0.3);
+            color: var(--restaurant-yellow);
+        }
+
+        .status.error {
+            background: rgba(220, 38, 38, 0.15);
+            border-color: rgba(220, 38, 38, 0.3);
+            color: var(--restaurant-red);
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(251, 191, 36, 0.3);
+            border-top: 2px solid var(--restaurant-yellow);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .success-icon {
+            color: var(--restaurant-green);
+            font-size: 1.25rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            margin-top: 1.5rem;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--restaurant-yellow), var(--restaurant-orange));
+            border-radius: 2px;
+            width: 0%;
+            animation: progressFill 2s ease forwards;
+        }
+
+        @keyframes progressFill {
+            0% { width: 0%; }
+            50% { width: 70%; }
+            100% { width: 100%; }
+        }
+
+        /* Responsive design */
+        @media (max-width: 480px) {
+            .callback-container {
+                padding: 2rem 1.5rem;
+                margin: 1rem;
+            }
+            
+            .main-title {
+                font-size: 1.5rem;
+            }
+            
+            .description {
+                font-size: 0.875rem;
+            }
         }
     </style>
 </head>
 <body>
     <div class="callback-container">
-        <h2>🐦 Connecting to Twitter...</h2>
-        <p>Please wait while we complete the authentication process.</p>
-        <p><strong>⚠️ Do NOT close this window!</strong></p>
-        <p>This will close automatically when done.</p>
+        <div class="logo-section">
+            <div class="logo">
+                <span class="icon">🐔</span>
+                PACO'S CHICKEN PALACE
+            </div>
+            <div class="subtitle">Connecting Your Account</div>
+        </div>
+
+        <h1 class="main-title">
+            <span class="twitter-icon">🐦</span>
+            Twitter Authentication
+        </h1>
         
-        <div id="status" style="margin-top: 20px; font-size: 14px;">
-            ⏳ Processing...
+        <p class="description">
+            Securely connecting your Twitter account to access leaderboards and achievements.
+        </p>
+        
+        <div class="warning">
+            <strong>⚠️ Please keep this window open</strong><br>
+            This will close automatically when complete
+        </div>
+        
+        <div class="status-section">
+            <div id="status" class="status processing">
+                <div class="spinner"></div>
+                <span id="status-text">Processing authentication...</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
         </div>
     </div>
 
@@ -48,24 +298,55 @@
         
         console.log('📋 URL Parameters:', { code: code ? 'FOUND' : 'MISSING', error, state });
 
-        if (error) {
-            // Send error back to parent window
-            if (window.opener) {
-                window.opener.postMessage({
-                    type: 'TWITTER_AUTH_ERROR',
-                    error: error
-                }, window.location.origin);
+        function updateStatus(message, type = 'processing') {
+            const statusEl = document.getElementById('status');
+            const statusTextEl = document.getElementById('status-text');
+            
+            // Remove existing type classes
+            statusEl.classList.remove('processing', 'success', 'error');
+            statusEl.classList.add(type);
+            
+            // Update content based on type
+            if (type === 'success') {
+                statusEl.innerHTML = `
+                    <div class="success-icon">✅</div>
+                    <span>${message}</span>
+                `;
+            } else if (type === 'error') {
+                statusEl.innerHTML = `
+                    <div class="success-icon" style="color: var(--restaurant-red);">❌</div>
+                    <span style="color: var(--restaurant-red);">${message}</span>
+                `;
+            } else {
+                statusTextEl.textContent = message;
             }
-            window.close();
+        }
+
+        if (error) {
+            updateStatus('Authentication failed. Please try again.', 'error');
+            setTimeout(() => {
+                if (window.opener) {
+                    window.opener.postMessage({
+                        type: 'TWITTER_AUTH_ERROR',
+                        error: error
+                    }, window.location.origin);
+                }
+                window.close();
+            }, 2000);
         } else if (code) {
-            // Update status
-            document.getElementById('status').innerHTML = '✅ Success! Sending data back to game...';
+            // Step 1: Success message
+            updateStatus('Authentication successful!', 'success');
             
             // Send success back to parent window with enhanced error handling
             if (window.opener && !window.opener.closed) {
                 console.log('🎉 POPUP: Parent window found. Preparing to send message...');
                 console.log('🔍 POPUP DEBUG: Code received:', code);
                 console.log('🔍 POPUP DEBUG: State received:', state);
+                
+                // Step 2: Sending data
+                setTimeout(() => {
+                    updateStatus('Sending data to game...', 'processing');
+                }, 800);
                 
                 // Send message to all possible origins to avoid CORS issues
                 const origins = [
@@ -108,32 +389,41 @@
                     }
                 };
                 
-                sendMessage();
-                
-                // Update status and wait longer before closing
-                document.getElementById('status').innerHTML = '🔄 Completing authentication...';
-                
                 setTimeout(() => {
-                    document.getElementById('status').innerHTML = '✅ Complete! Closing window...';
+                    sendMessage();
+                    
+                    // Step 3: Completing authentication
                     setTimeout(() => {
-                        console.log('🔒 Closing authentication popup...');
-                        window.close();
+                        updateStatus('Finalizing connection...', 'processing');
                     }, 500);
-                }, 1500); // Increased to 1.5 seconds total
+                    
+                    // Step 4: Final success and close
+                    setTimeout(() => {
+                        updateStatus('Complete! Window closing...', 'success');
+                        setTimeout(() => {
+                            console.log('🔒 Closing authentication popup...');
+                            window.close();
+                        }, 800);
+                    }, 1200);
+                }, 1000);
+                
             } else {
                 console.error('❌ FATAL: Cannot find the main game window (window.opener is null or closed).');
-                document.getElementById('status').innerHTML = '❌ Error: Cannot communicate back to the game. Please close this window and try again.';
+                updateStatus('Cannot communicate with game. Please close this window and try again.', 'error');
                 setTimeout(() => window.close(), 3000);
             }
         } else {
             // No code or error - something went wrong
-            if (window.opener) {
-                window.opener.postMessage({
-                    type: 'TWITTER_AUTH_ERROR',
-                    error: 'No authorization code received'
-                }, window.location.origin);
-            }
-            window.close();
+            updateStatus('No authorization code received. Please try again.', 'error');
+            setTimeout(() => {
+                if (window.opener) {
+                    window.opener.postMessage({
+                        type: 'TWITTER_AUTH_ERROR',
+                        error: 'No authorization code received'
+                    }, window.location.origin);
+                }
+                window.close();
+            }, 2000);
         }
     </script>
 </body>

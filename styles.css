@@ -3447,6 +3447,9 @@ body {
         min-height: 450px !important;
         border-radius: 10px;
         image-rendering: pixelated !important;
+        image-rendering: -moz-crisp-edges !important;
+        image-rendering: crisp-edges !important;
+        object-fit: contain !important;
         margin: 0 auto;
         display: block;
     }

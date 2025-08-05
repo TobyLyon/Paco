@@ -228,6 +228,10 @@
         max-height: 650px !important;
         min-width: 350px !important;
         min-height: 450px !important;
+        image-rendering: pixelated !important;
+        image-rendering: -moz-crisp-edges !important;
+        image-rendering: crisp-edges !important;
+        object-fit: contain !important;
     }
     
     /* ===== FIX BUTTONS AND CONTROLS ===== */

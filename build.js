@@ -115,6 +115,16 @@ async function build() {
         }
         console.log('✅  Root files copied.');
 
+        // 3.5. Copy the auth directory if it exists
+        const authDir = path.join(rootDir, 'auth');
+        if (await fs.pathExists(authDir)) {
+            console.log(`🔐  Copying auth directory to ${path.join(outputDir, 'auth')}...`);
+            await fs.copy(authDir, path.join(outputDir, 'auth'));
+            console.log('✅  Auth directory copied successfully.');
+        } else {
+            console.warn('⚠️  Auth directory not found!');
+        }
+
         // 4. Recursively copy everything from the source 'Public' directory (for general assets).
         const normalizedSourcePublic = path.resolve(sourcePublicDir).toLowerCase();
         const normalizedOutput = path.resolve(outputDir).toLowerCase();

@@ -63,7 +63,9 @@
             
             // Send success back to parent window with enhanced error handling
             if (window.opener && !window.opener.closed) {
-                console.log('🎉 Sending success message to parent window...');
+                console.log('🎉 POPUP: Parent window found. Preparing to send message...');
+                console.log('🔍 POPUP DEBUG: Code received:', code);
+                console.log('🔍 POPUP DEBUG: State received:', state);
                 
                 // Send message to all possible origins to avoid CORS issues
                 const origins = [
@@ -85,21 +87,24 @@
                 let messageSent = false;
                 
                 const sendMessage = () => {
+                    console.log(`🚀 POPUP (Attempt ${attempts + 1}): Attempting to send message...`, message);
                     origins.forEach(origin => {
                         try {
-                            window.opener.postMessage(message, origin);
-                            console.log(`📤 Message sent to origin: ${origin}`);
-                            messageSent = true;
+                            if (window.opener && !window.opener.closed) {
+                                window.opener.postMessage(message, origin);
+                                console.log(`📤 POPUP: Message sent to origin: ${origin}`);
+                                messageSent = true;
+                            } else {
+                                console.error('❌ POPUP: window.opener closed before send!');
+                            }
                         } catch (error) {
-                            console.warn(`⚠️ Failed to send to ${origin}:`, error.message);
+                            console.error(`❌ POPUP: Failed to send to ${origin}:`, error.message);
                         }
                     });
                     
                     attempts++;
-                    console.log(`🔄 Message attempt ${attempts}/5, sent: ${messageSent}`);
-                    
                     if (attempts < 5 && !messageSent) {
-                        setTimeout(sendMessage, 300); // Retry up to 5 times with longer intervals
+                        setTimeout(sendMessage, 300); // Retry with longer intervals
                     }
                 };
                 
@@ -116,9 +121,9 @@
                     }, 500);
                 }, 1500); // Increased to 1.5 seconds total
             } else {
-                console.warn('⚠️ No valid opener window found');
-                document.getElementById('status').innerHTML = '❌ Error: Cannot communicate with main window';
-                setTimeout(() => window.close(), 2000);
+                console.error('❌ FATAL: Cannot find the main game window (window.opener is null or closed).');
+                document.getElementById('status').innerHTML = '❌ Error: Cannot communicate back to the game. Please close this window and try again.';
+                setTimeout(() => window.close(), 3000);
             }
         } else {
             // No code or error - something went wrong

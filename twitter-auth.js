@@ -141,63 +141,48 @@ class TwitterAuth {
                 let messageReceived = false;
                 
                 const messageHandler = (event) => {
-                    // Filter out browser extension messages (like MetaMask)
-                    if (event.data && event.data.target && event.data.target.includes('metamask')) {
-                        console.log('🦊 Ignoring MetaMask message');
-                        return;
+                    // We ONLY care about messages with a 'type' property for our auth flow.
+                    if (!event.data || !event.data.type) {
+                        if (event.data && event.data.target && event.data.target.includes('metamask')) {
+                            console.log('🦊 Ignoring MetaMask message (no type)');
+                        }
+                        return; // This will ignore MetaMask, other extensions, and random string messages.
                     }
-                    
-                    // Filter out other browser extension messages
-                    if (event.data && (
-                        event.data.target || 
-                        event.data.source === 'react-devtools' ||
-                        event.data.type === 'webpackWarnings' ||
-                        typeof event.data === 'string'
-                    )) {
-                        console.log('🔌 Ignoring browser extension message:', event.data);
-                        return;
-                    }
-                    
-                    // Only log Twitter auth messages to avoid spam
-                    if (event.data && (event.data.type === 'TWITTER_AUTH_SUCCESS' || event.data.type === 'TWITTER_AUTH_ERROR')) {
-                        console.log('📨 Received Twitter auth message:', event.data, 'from origin:', event.origin);
-                    }
-                    
-                    if (event.data && event.data.type === 'TWITTER_AUTH_SUCCESS') {
-                        console.log('✅ Received authentication success message!');
-                        console.log('🔑 Auth code received:', event.data.code ? 'YES' : 'NO');
+
+                    // Log any message that looks like it might be for us.
+                    console.log('📨 Received potential message:', event.data, 'from origin:', event.origin);
+
+                    if (event.data.type === 'TWITTER_AUTH_SUCCESS') {
+                        console.log('✅✅✅ SUCCESS MESSAGE RECEIVED! Processing...');
                         messageReceived = true;
-                        authCompleted = true;
+                        authCompleted = true; // Mark as completed
+                        
+                        // Clean up listeners and timers
                         clearInterval(checkClosed);
                         clearTimeout(authTimeout);
                         window.removeEventListener('message', messageHandler);
-                        
-                        // Close popup after a delay to ensure message processing
+
+                        // Close popup after a delay
                         setTimeout(() => {
                             if (popup && !popup.closed) {
                                 popup.close();
                             }
-                        }, 100);
-                        
-                        this.handleAuthSuccess(event.data.code, codeVerifier)
+                        }, 200);
+
+                        this.handleAuthSuccess(event.data.code, localStorage.getItem('twitter_code_verifier'))
                             .then(resolve)
                             .catch(reject);
-                            
-                    } else if (event.data && event.data.type === 'TWITTER_AUTH_ERROR') {
-                        console.log('❌ Received authentication error message:', event.data.error);
-                        messageReceived = true;
-                        authCompleted = true;
+
+                    } else if (event.data.type === 'TWITTER_AUTH_ERROR') {
+                        console.error('❌❌❌ ERROR MESSAGE RECEIVED!', event.data.error);
+                        reject(new Error(event.data.error || 'Authentication failed in popup'));
+                        
+                        // Clean up
                         clearInterval(checkClosed);
                         clearTimeout(authTimeout);
                         window.removeEventListener('message', messageHandler);
-                        
-                        setTimeout(() => {
-                            if (popup && !popup.closed) {
-                                popup.close();
-                            }
-                        }, 100);
-                        
-                        reject(new Error(event.data.error));
+                    } else {
+                        console.log('🔌 Ignoring non-Twitter message with type:', event.data.type);
                     }
                 };
                 
@@ -516,7 +501,7 @@ class TwitterAuth {
                 }
             }
 
-            tweetText += `\n\nCan you beat my score? 🤔\n\n#PacoJump #Gaming #Contest`;
+            tweetText += `\n\nCan you beat my score? 🤔\n\n`;
 
             // Add game URL if available
             const gameUrl = window.location.origin;
@@ -566,7 +551,7 @@ class TwitterAuth {
                 }
             }
 
-            tweetText += `\n\n🎮 Think you can beat this? Try PACO JUMP now!\n\n#PacoJump #Gaming #Achievement #Contest`;
+            tweetText += `\n\n🎮 Think you can beat this? Try PACO JUMP now!\n\n`;
 
             // Add game URL
             const gameUrl = window.location.origin;

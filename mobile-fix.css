@@ -284,17 +284,11 @@
         display: none !important;
     }
     
-    /* ===== FIX BUTTON TEXT ALIGNMENT ONLY ===== */
+    /* ===== MAKE BUTTON TEXT/ICONS SMALLER ===== */
     .action-buttons button {
-        line-height: 1.2 !important;
-        padding: 8px 12px !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        box-sizing: border-box !important;
+        font-size: 11px !important;
+        line-height: 1.1 !important;
+        padding: 6px 8px !important;
     }
 }
 

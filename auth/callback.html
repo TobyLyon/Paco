@@ -82,19 +82,24 @@
                 
                 // Try multiple origins and also try multiple times
                 let attempts = 0;
+                let messageSent = false;
+                
                 const sendMessage = () => {
                     origins.forEach(origin => {
                         try {
                             window.opener.postMessage(message, origin);
                             console.log(`📤 Message sent to origin: ${origin}`);
+                            messageSent = true;
                         } catch (error) {
                             console.warn(`⚠️ Failed to send to ${origin}:`, error.message);
                         }
                     });
                     
                     attempts++;
-                    if (attempts < 5) {
-                        setTimeout(sendMessage, 200); // Retry up to 5 times with longer intervals
+                    console.log(`🔄 Message attempt ${attempts}/5, sent: ${messageSent}`);
+                    
+                    if (attempts < 5 && !messageSent) {
+                        setTimeout(sendMessage, 300); // Retry up to 5 times with longer intervals
                     }
                 };
                 

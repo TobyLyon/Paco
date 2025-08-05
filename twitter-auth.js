@@ -115,11 +115,11 @@ class TwitterAuth {
                 'width=500,height=600,scrollbars=yes,resizable=yes'
             );
             
-            // Debug popup loading
+            // Debug popup loading (avoid CORS errors)
             setTimeout(() => {
                 if (popup && !popup.closed) {
                     console.log('🔍 Popup status: OPEN');
-                    console.log('🌐 Popup URL:', popup.location.href || 'Cannot access URL (cross-origin)');
+                    console.log('🌐 Popup navigated to Twitter (cannot access URL due to CORS)');
                 } else {
                     console.log('❌ Popup status: CLOSED OR BLOCKED');
                 }
@@ -158,7 +158,10 @@ class TwitterAuth {
                         return;
                     }
                     
-                    console.log('📨 Received message:', event.data, 'from origin:', event.origin);
+                    // Only log Twitter auth messages to avoid spam
+                    if (event.data && (event.data.type === 'TWITTER_AUTH_SUCCESS' || event.data.type === 'TWITTER_AUTH_ERROR')) {
+                        console.log('📨 Received Twitter auth message:', event.data, 'from origin:', event.origin);
+                    }
                     
                     if (event.data && event.data.type === 'TWITTER_AUTH_SUCCESS') {
                         console.log('✅ Received authentication success message!');

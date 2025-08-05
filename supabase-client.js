@@ -240,8 +240,11 @@ class OrderTracker {
             console.log('🔍 Validation result:', validation);
             
             if (!validation.valid) {
-                console.error('🚨 Server-side validation failed:', validation.reasons);
-                console.error('🚨 Failed data:', scoreData);
+                console.error('🚨 VALIDATION FAILED - SCORE REJECTED:');
+                console.error('🚨 User:', scoreData.username, '(', scoreData.user_id, ')');
+                console.error('🚨 Score:', scoreData.score);
+                console.error('🚨 Reasons:', validation.reasons);
+                console.error('🚨 Full data:', scoreData);
                 return { success: false, error: `Validation failed: ${validation.reasons.join(', ')}` };
             }
 
@@ -315,11 +318,14 @@ class OrderTracker {
             }
 
             if (error) {
-                console.error('Error recording game score:', error);
+                console.error('❌ ERROR RECORDING GAME SCORE:', error);
+                console.error('❌ Score data that failed:', scoreRecord);
+                console.error('❌ Full error object:', JSON.stringify(error, null, 2));
                 return { success: false, error };
             }
 
             console.log('✅ Game score recorded successfully:', data);
+            console.log('✅ Recorded score data:', data[0]);
             return { success: true, data };
         } catch (error) {
             console.error('Exception recording game score:', error);

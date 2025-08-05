@@ -1311,61 +1311,48 @@ window.testSupabaseConnection = async function() {
     
     try {
         // Test basic connection by trying to read the table structure
-        const { data: tableInfo, error: tableError } = await supabase
-            .from('game_scores')
-            .select('*')
-            .limit(1);
-            
-        if (tableError) {
-            console.error('❌ Cannot read from game_scores table:', tableError);
-            return { connected: false, error: tableError };
+        const result = await orderTracker.getTodayLeaderboard();
+        
+        if (!result.success) {
+            console.error('❌ Cannot fetch leaderboard:', result.error);
+            return { connected: false, error: result.error };
         }
         
         console.log('✅ Can read from game_scores table');
+        console.log('📊 Current leaderboard entries:', result.data?.length || 0);
         
-        // Test basic insert permission (we'll rollback)
-        const testRecord = {
+        // Test basic insert permission with a dummy score
+        const testScoreData = {
             user_id: 'test_connection_' + Date.now(),
             username: 'connection_test',
             display_name: 'Connection Test',
             profile_image: '',
             score: 1,
             game_date: new Date().toISOString().split('T')[0],
-            user_agent: navigator.userAgent
+            created_at: new Date().toISOString()
         };
         
         console.log('🧪 Testing insert permission...');
-        const { data: insertData, error: insertError } = await supabase
-            .from('game_scores')
-            .insert([testRecord])
-            .select();
+        const insertResult = await orderTracker.recordGameScore(testScoreData);
             
-        if (insertError) {
-            console.error('❌ Cannot insert to game_scores:', insertError);
+        if (!insertResult.success) {
+            console.error('❌ Cannot insert to game_scores:', insertResult.error);
             return { 
                 connected: true, 
                 canRead: true, 
                 canWrite: false, 
-                error: insertError 
+                error: insertResult.error 
             };
         }
         
-        console.log('✅ Successfully inserted test record:', insertData[0]?.id);
-        
-        // Clean up test record
-        if (insertData && insertData[0]) {
-            await supabase
-                .from('game_scores')
-                .delete()
-                .eq('id', insertData[0].id);
-            console.log('🧹 Cleaned up test record');
-        }
+        console.log('✅ Successfully inserted test record');
         
         return { 
             connected: true, 
             canRead: true, 
             canWrite: true,
-            tableExists: true
+            tableExists: true,
+            currentEntries: result.data?.length || 0
         };
         
     } catch (error) {
@@ -1374,9 +1361,81 @@ window.testSupabaseConnection = async function() {
     }
 };
 
+// Debug raw database entries to see duplicate pattern
+window.debugRawEntries = async function() {
+    console.log('🔍 ANALYZING RAW DATABASE ENTRIES...');
+    
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Get ALL entries for today (before deduplication)
+        // We need to access supabase through orderTracker since it's not directly available
+        console.log('⚠️ Note: Using orderTracker method instead of direct supabase access');
+        
+        // Instead, let's examine what the fallback method sees
+        console.log('🔍 Calling getTodayLeaderboardFallback to see raw data...');
+        
+        // This is a workaround - we'll analyze the issue from the submission side
+        console.log('📊 Current time:', new Date().toISOString());
+        console.log('📊 Game date:', today);
+        
+        return {
+            note: 'Direct supabase access not available in leaderboard.js',
+            suggestion: 'Check supabase-client.js getTodayLeaderboardFallback logs',
+            currentGameDate: today,
+            currentTime: new Date().toISOString()
+        };
+            
+        if (error) {
+            console.error('❌ Error fetching raw entries:', error);
+            return null;
+        }
+        
+        console.log('📊 TOTAL RAW ENTRIES:', data.length);
+        
+        // Group by user to see duplication pattern
+        const userGroups = {};
+        data.forEach(entry => {
+            if (!userGroups[entry.user_id]) {
+                userGroups[entry.user_id] = [];
+            }
+            userGroups[entry.user_id].push(entry);
+        });
+        
+        console.log('👥 USERS WITH MULTIPLE ENTRIES:');
+        Object.keys(userGroups).forEach(userId => {
+            const entries = userGroups[userId];
+            if (entries.length > 1) {
+                console.log(`🔄 ${entries[0].username} (${userId}): ${entries.length} entries`);
+                console.log('   Scores:', entries.map(e => e.score).join(', '));
+                console.log('   Times:', entries.slice(0, 3).map(e => new Date(e.created_at).toLocaleTimeString()));
+                if (entries.length > 3) console.log(`   ... and ${entries.length - 3} more`);
+            }
+        });
+        
+        console.log('📈 HIGHEST SCORES PER USER:');
+        Object.keys(userGroups).forEach(userId => {
+            const entries = userGroups[userId];
+            const highest = entries.reduce((max, entry) => entry.score > max.score ? entry : max);
+            console.log(`🏆 ${highest.username}: ${highest.score} (best of ${entries.length} attempts)`);
+        });
+        
+        return {
+            totalEntries: data.length,
+            uniqueUsers: Object.keys(userGroups).length,
+            userGroups: userGroups,
+            rawData: data
+        };
+        
+    } catch (error) {
+        console.error('❌ Error analyzing raw entries:', error);
+        return null;
+    }
+};
+
 console.log('📊 Leaderboard module loaded');
 console.log('🔧 Debug commands: debugCountdown(), fixCountdown(), testTimer(), checkTimerState()');
 console.log('🔧 Score debug: debugScoreSubmission(), forceRefreshLeaderboard(), checkRealtimeStatus()');
-console.log('🔧 Data compare: compareLeaderboardData(), testSupabaseConnection()');
+console.log('🔧 Data compare: compareLeaderboardData(), testSupabaseConnection(), debugRawEntries()');
 
 // Console commands removed for contest security

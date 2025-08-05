@@ -440,19 +440,7 @@ class Leaderboard {
             leaderboardHTML += `
                 <div style="text-align: center; margin: 12px 0; padding: 8px; background: rgba(251, 191, 36, 0.1); border-radius: 6px; border: 1px solid rgba(251, 191, 36, 0.3);">
                     <p class="reset-timer">🎯 Contest resets in: <strong>${timeUntilReset}</strong></p>
-                    <button onclick="leaderboard.restartCountdown(24)" style="
-                        background: rgba(34, 197, 94, 0.2);
-                        border: 1px solid rgba(34, 197, 94, 0.4);
-                        color: #10b981;
-                        padding: 4px 8px;
-                        border-radius: 4px;
-                        font-size: 0.8rem;
-                        cursor: pointer;
-                        margin-top: 4px;
-                        transition: all 0.3s ease;
-                    " onmouseover="this.style.background='rgba(34, 197, 94, 0.3)'" onmouseout="this.style.background='rgba(34, 197, 94, 0.2)'">
-                        ⏱️ Extend Contest (+24h)
-                    </button>
+
                 </div>
             `;
         }
@@ -677,19 +665,7 @@ class Leaderboard {
             leaderboardHTML += `
                 <div style="text-align: center; margin: 12px 0; padding: 8px; background: rgba(251, 191, 36, 0.1); border-radius: 6px; border: 1px solid rgba(251, 191, 36, 0.3);">
                     <p class="reset-timer">🎯 Contest resets in: <strong>${timeUntilReset}</strong></p>
-                    <button onclick="leaderboard.restartCountdown(24)" style="
-                        background: rgba(34, 197, 94, 0.2);
-                        border: 1px solid rgba(34, 197, 94, 0.4);
-                        color: #10b981;
-                        padding: 4px 8px;
-                        border-radius: 4px;
-                        font-size: 0.8rem;
-                        cursor: pointer;
-                        margin-top: 4px;
-                        transition: all 0.3s ease;
-                    " onmouseover="this.style.background='rgba(34, 197, 94, 0.3)'" onmouseout="this.style.background='rgba(34, 197, 94, 0.2)'">
-                        ⏱️ Extend Contest (+24h)
-                    </button>
+
                 </div>
             `;
         }
@@ -955,29 +931,6 @@ async function generateAndShareLeaderboardTrophy(score, username, rank) {
 // Export singleton instance
 const leaderboard = new Leaderboard();
 
-// Global functions for leaderboard management (accessible from browser console)
-window.restartLeaderboardCountdown = function(hours = 24) {
-    if (leaderboard) {
-        return leaderboard.restartCountdown(hours);
-    } else {
-        console.error('❌ Leaderboard not initialized yet');
-        return null;
-    }
-};
-
-window.resetLeaderboardToDefault = function() {
-    if (leaderboard) {
-        return leaderboard.resetToDefaultSchedule();
-    } else {
-        console.error('❌ Leaderboard not initialized yet');
-        return null;
-    }
-};
-
-// Helpful console commands info
-console.log('🏆 Leaderboard Console Commands:');
-console.log('- restartLeaderboardCountdown(hours) - Extend countdown by specified hours (default: 24)');
-console.log('- resetLeaderboardToDefault() - Reset to normal daily schedule');
-console.log('- Example: restartLeaderboardCountdown(48) // Extend by 48 hours');
+// Console commands removed for contest security
 
 console.log('📊 Leaderboard module loaded');

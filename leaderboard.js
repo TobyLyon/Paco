@@ -92,7 +92,7 @@ class Leaderboard {
             this.showLeaderboard();
         }
         
-        // Restart countdown timer with new time
+        // Restart countdown timer with new time (force restart since reset time changed)
         this.startCountdownTimer();
         
         return this.dailyResetTime;
@@ -115,7 +115,7 @@ class Leaderboard {
             this.showLeaderboard();
         }
         
-        // Restart countdown timer with new time
+        // Restart countdown timer with new time (force restart since reset time changed)
         this.startCountdownTimer();
         
         return this.dailyResetTime;
@@ -153,6 +153,7 @@ class Leaderboard {
     startCountdownTimer() {
         // Clear existing timer
         if (this.countdownInterval) {
+            console.log('⏱️ Clearing existing countdown timer...');
             clearInterval(this.countdownInterval);
         }
         
@@ -532,8 +533,10 @@ class Leaderboard {
         overlayContent.innerHTML = leaderboardHTML;
         overlay.classList.add('show');
         
-        // Start countdown timer updates
-        this.startCountdownTimer();
+        // Start countdown timer updates (only if not already running)
+        if (!this.countdownInterval) {
+            this.startCountdownTimer();
+        }
     }
 
     // Hide leaderboard
@@ -972,6 +975,21 @@ async function leaderboardShareAndDownload(score, rank) {
 
 // Export singleton instance
 const leaderboard = new Leaderboard();
+
+// Start the countdown timer when the module loads (only once)
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('🏁 DOM loaded, starting initial countdown timer...');
+    leaderboard.startCountdownTimer();
+});
+
+// Fallback for cases where DOM is already loaded
+if (document.readyState === 'loading') {
+    // DOM is still loading, event listener will handle it
+} else {
+    // DOM is already loaded
+    console.log('🏁 DOM already loaded, starting initial countdown timer...');
+    leaderboard.startCountdownTimer();
+}
 
 // Debug functions for countdown timer
 window.debugCountdown = function() {

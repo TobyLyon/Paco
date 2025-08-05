@@ -50,11 +50,17 @@ async function build() {
         require('dotenv').config();
         console.log('📋  Environment variables loaded');
         
+        // Debug: Show what environment variables we have
+        console.log('🔍  TWITTER_CLIENT_ID:', process.env.TWITTER_CLIENT_ID ? 'FOUND' : 'NOT FOUND');
+        console.log('🔍  TWITTER_CLIENT_SECRET:', process.env.TWITTER_CLIENT_SECRET ? 'FOUND' : 'NOT FOUND');
+        
         // Check if required environment variables are set
         if (!process.env.TWITTER_CLIENT_ID) {
             console.warn('⚠️  TWITTER_CLIENT_ID not found in environment variables!');
             console.warn('⚠️  Please create a .env file with your Twitter credentials');
             console.warn('⚠️  See env-template.txt for the required format');
+            console.warn('⚠️  Current working directory:', process.cwd());
+            console.warn('⚠️  Looking for .env file at:', require('path').join(process.cwd(), '.env'));
         } else {
             console.log('✅  Twitter Client ID found in environment');
         }

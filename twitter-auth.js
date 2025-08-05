@@ -121,7 +121,23 @@ class TwitterAuth {
                 let messageReceived = false;
                 
                 const messageHandler = (event) => {
-                    // Accept messages from any origin to avoid CORS issues
+                    // Filter out browser extension messages (like MetaMask)
+                    if (event.data && event.data.target && event.data.target.includes('metamask')) {
+                        console.log('🦊 Ignoring MetaMask message');
+                        return;
+                    }
+                    
+                    // Filter out other browser extension messages
+                    if (event.data && (
+                        event.data.target || 
+                        event.data.source === 'react-devtools' ||
+                        event.data.type === 'webpackWarnings' ||
+                        typeof event.data === 'string'
+                    )) {
+                        console.log('🔌 Ignoring browser extension message:', event.data);
+                        return;
+                    }
+                    
                     console.log('📨 Received message:', event.data, 'from origin:', event.origin);
                     
                     if (event.data && event.data.type === 'TWITTER_AUTH_SUCCESS') {

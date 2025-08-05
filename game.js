@@ -2119,17 +2119,17 @@ class PacoJumpGame {
         }
 
         let html = `
-            <div style="text-align: center; margin-bottom: 12px;">
-                <h3 style="color: #fbbf24; margin: 0 0 8px 0;">🏆 Daily Leaderboard</h3>
-                <div style="font-size: 0.75rem; color: #94a3b8;">
-                    Contest resets in: ${leaderboard.getTimeUntilReset()}
+            <div style="text-align: center; margin-bottom: 8px;">
+                <h3 style="color: #fbbf24; margin: 0 0 4px 0; font-size: 1.1rem;">🏆 Leaderboard</h3>
+                <div style="font-size: 0.65rem; color: #94a3b8;">
+                    Resets in: ${leaderboard.getTimeUntilReset()}
                 </div>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 4px;">
+            <div style="display: flex; flex-direction: column; gap: 2px;">
         `;
 
-        // Show top 8 entries for compact view
-        const maxEntries = 8;
+        // Show top 5 entries for compact view
+        const maxEntries = 5;
         leaderboard.currentLeaderboard.slice(0, maxEntries).forEach((entry, index) => {
             if (!entry || typeof entry.score !== 'number' || !entry.username) {
                 return;
@@ -2157,11 +2157,12 @@ class PacoJumpGame {
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
-                    padding: 8px 12px;
+                    padding: 6px 8px;
+                    margin: 2px 0;
                     background: ${isCurrentUser ? 'rgba(251, 191, 36, 0.15)' : 'rgba(255, 255, 255, 0.05)'};
-                    border-radius: 8px;
+                    border-radius: 6px;
                     border: ${isCurrentUser ? '1px solid rgba(251, 191, 36, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)'};
-                    font-size: 0.85rem;
+                    font-size: 0.8rem;
                 ">
                     <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
                         <span style="color: ${rank <= 3 ? '#fbbf24' : '#94a3b8'}; font-weight: bold; min-width: 20px;">

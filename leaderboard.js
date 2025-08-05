@@ -401,12 +401,10 @@ class Leaderboard {
             return;
         }
 
-        // Simple, clean leaderboard HTML
+        // Clean, simple leaderboard HTML
         let leaderboardHTML = '<div class="leaderboard-container compact">';
         leaderboardHTML += '<button class="leaderboard-toggle" onclick="leaderboard.showExpandedLeaderboard()" title="Expand">🔍</button>';
-        leaderboardHTML += '<h3>🏆 Leaderboard</h3>';
-        
-        leaderboardHTML += '<h3>🏆 Daily Contest Leaderboard</h3>';
+        leaderboardHTML += '<h3 style="margin: 0 0 12px 0; font-size: 1.1rem;">🏆 Leaderboard</h3>';
         
         if (this.currentLeaderboard.length === 0) {
             leaderboardHTML += `
@@ -417,9 +415,9 @@ class Leaderboard {
                 </div>
             `;
         } else {
-            leaderboardHTML += '<div class="leaderboard-list">';
+            leaderboardHTML += '<div class="leaderboard-list" style="max-height: none; overflow: visible;">';
             
-            const maxEntries = 8; // Show reasonable number of entries
+            const maxEntries = 5; // Show top 5 instantly visible
             this.currentLeaderboard.slice(0, maxEntries).forEach((entry, index) => {
                 // Validate entry data
                 if (!entry || typeof entry.score !== 'number' || !entry.username) {
@@ -446,66 +444,65 @@ class Leaderboard {
                 const liveIndicator = isRecentScore ? ' 🔴' : '';
                 
                 leaderboardHTML += `
-                    <div class="leaderboard-entry ${userClass}">
-                        <span class="rank">${rankEmoji} ${rank}</span>
-                        <span class="username">
+                    <div class="leaderboard-entry ${userClass}" style="padding: 6px 8px; margin: 2px 0;">
+                        <span class="rank" style="font-size: 0.8rem;">${rankEmoji} ${rank}</span>
+                        <span class="username" style="font-size: 0.8rem;">
                             <a href="https://twitter.com/${entry.username}" target="_blank" rel="noopener noreferrer" class="twitter-handle">
                                 @${entry.username}
                             </a>${liveIndicator}
                         </span>
-                        <span class="score">${entry.score.toLocaleString()}</span>
+                        <span class="score" style="font-size: 0.8rem;">${entry.score.toLocaleString()}</span>
                     </div>
                 `;
             });
             
             leaderboardHTML += '</div>';
             
-            // Enhanced reset timer with contest theme and restart button
+            // Compact reset timer
             const timeUntilReset = this.getTimeUntilReset();
             leaderboardHTML += `
-                <div style="text-align: center; margin: 12px 0; padding: 8px; background: rgba(251, 191, 36, 0.1); border-radius: 6px; border: 1px solid rgba(251, 191, 36, 0.3);">
-                    <p class="reset-timer">🎯 Contest resets in: <strong>${timeUntilReset}</strong></p>
-
+                <div style="text-align: center; margin: 4px 0; padding: 2px; font-size: 0.65rem; color: #94a3b8;">
+                    Resets in: ${timeUntilReset}
                 </div>
             `;
         }
         
-        // Add trophy generation for current user if they're in top 10
+        // Add trophy generation for current user if they're in top 5
         if (twitterAuth.authenticated) {
             const userEntry = this.currentLeaderboard.find(entry => 
                 entry.user_id === twitterAuth.currentUser.id
             );
             if (userEntry) {
                 const userRank = this.currentLeaderboard.indexOf(userEntry) + 1;
-                if (userRank <= 10) {
+                if (userRank <= 5) {
                     leaderboardHTML += `
-                        <div style="margin: 12px 0; padding: 12px; background: rgba(251, 191, 36, 0.1); border-radius: 8px; border: 1px solid rgba(251, 191, 36, 0.3);">
-                            <p style="color: var(--restaurant-yellow); font-size: 0.85rem; margin-bottom: 8px; text-align: center;">
-                                🏆 You're in the Top ${userRank <= 3 ? '3' : '10'}! Share your achievement:
+                        <div style="margin: 6px 0; padding: 6px; background: rgba(251, 191, 36, 0.1); border-radius: 6px; border: 1px solid rgba(251, 191, 36, 0.3);">
+                            <p style="color: var(--restaurant-yellow); font-size: 0.7rem; margin-bottom: 4px; text-align: center;">
+                                🏆 Top ${userRank <= 3 ? '3' : '5'}! Share:
                             </p>
                             <!-- UNIFIED SHARE & DOWNLOAD BUTTON -->
                             <button onclick="leaderboardShareAndDownload(${userEntry.score}, ${userRank})" style="
                                 background: linear-gradient(135deg, #1d9bf0 0%, #1a8cd8 100%);
                                 color: white;
                                 border: none;
-                                border-radius: 8px;
-                                padding: 10px 16px;
+                                border-radius: 6px;
+                                padding: 6px 10px;
                                 font-family: var(--font-display);
-                                font-weight: 700;
-                                font-size: 0.85rem;
+                                font-weight: 600;
+                                font-size: 0.7rem;
                                 cursor: pointer;
                                 transition: all 0.2s ease;
                                 width: 100%;
                                 text-transform: uppercase;
-                                box-shadow: 0 4px 12px rgba(29, 155, 240, 0.4);
+                                box-shadow: 0 2px 6px rgba(29, 155, 240, 0.3);
                             " onmouseover="
-                                this.style.transform='translateY(-2px)';
+                                this.style.transform='translateY(-1px)';
                                 this.style.background='linear-gradient(135deg, #2ea8ff 0%, #1d9bf0 100%)';
                             " onmouseout="
                                 this.style.transform='translateY(0)';
                                 this.style.background='linear-gradient(135deg, #1d9bf0 0%, #1a8cd8 100%)';
                             ">
-                                🐦📥 Share & Save Achievement
+                                🐦📥 Share & Save
                             </button>
                         </div>
                     `;

@@ -3285,21 +3285,9 @@ body {
         display: none !important;
     }
     
-    .action-buttons {
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 12px !important;
-        padding: 16px 8px !important;
-        width: 100% !important;
-    }
-    
     .action-buttons button {
-        width: 100% !important;
-        min-height: 48px !important;
-        font-size: 14px !important;
         line-height: 1.2 !important;
-        padding: 12px 8px !important;
-        border-radius: 8px !important;
+        padding: 8px 12px !important;
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;

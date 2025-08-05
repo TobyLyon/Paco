@@ -282,7 +282,7 @@ class Leaderboard {
     }
 
     // Display leaderboard in UI
-    showLeaderboard() {
+    showLeaderboard(expandedMode = false) {
         const overlay = document.getElementById('gameOverlay');
         const overlayContent = document.getElementById('overlayContent');
         
@@ -291,8 +291,22 @@ class Leaderboard {
             return;
         }
 
+        // Create backdrop for expanded mode
+        if (expandedMode) {
+            this.createLeaderboardBackdrop();
+        }
+
         // Build leaderboard HTML with enhanced styling
-        let leaderboardHTML = '<div class="leaderboard-container">';
+        const containerClass = expandedMode ? 'leaderboard-container expanded' : 'leaderboard-container compact';
+        let leaderboardHTML = `<div class="${containerClass}">`;
+        
+        // Add toggle/close button
+        if (expandedMode) {
+            leaderboardHTML += '<button class="leaderboard-close" onclick="leaderboard.closeExpandedLeaderboard()" title="Close">×</button>';
+        } else {
+            leaderboardHTML += '<button class="leaderboard-toggle" onclick="leaderboard.showExpandedLeaderboard()" title="Expand leaderboard">🔍</button>';
+        }
+        
         leaderboardHTML += '<h3>🏆 Daily Contest Leaderboard</h3>';
         
         if (this.currentLeaderboard.length === 0) {
@@ -306,7 +320,8 @@ class Leaderboard {
         } else {
             leaderboardHTML += '<div class="leaderboard-list">';
             
-            this.currentLeaderboard.slice(0, 15).forEach((entry, index) => {
+            const maxEntries = expandedMode ? 25 : 10; // Show more entries in expanded mode
+            this.currentLeaderboard.slice(0, maxEntries).forEach((entry, index) => {
                 // Validate entry data
                 if (!entry || typeof entry.score !== 'number' || !entry.username) {
                     console.warn('Invalid leaderboard entry:', entry);
@@ -453,6 +468,46 @@ class Leaderboard {
         const overlay = document.getElementById('gameOverlay');
         if (overlay) {
             overlay.classList.remove('show');
+        }
+        this.removeLeaderboardBackdrop();
+    }
+
+    // Show expanded leaderboard
+    showExpandedLeaderboard() {
+        this.showLeaderboard(true);
+    }
+
+    // Close expanded leaderboard
+    closeExpandedLeaderboard() {
+        this.hideLeaderboard();
+    }
+
+    // Create backdrop for expanded leaderboard
+    createLeaderboardBackdrop() {
+        // Remove existing backdrop if any
+        this.removeLeaderboardBackdrop();
+        
+        const backdrop = document.createElement('div');
+        backdrop.className = 'leaderboard-backdrop';
+        backdrop.id = 'leaderboardBackdrop';
+        backdrop.onclick = () => this.closeExpandedLeaderboard();
+        
+        document.body.appendChild(backdrop);
+        
+        // Trigger animation
+        setTimeout(() => {
+            backdrop.classList.add('active');
+        }, 10);
+    }
+
+    // Remove backdrop
+    removeLeaderboardBackdrop() {
+        const backdrop = document.getElementById('leaderboardBackdrop');
+        if (backdrop) {
+            backdrop.classList.remove('active');
+            setTimeout(() => {
+                backdrop.remove();
+            }, 300);
         }
     }
 

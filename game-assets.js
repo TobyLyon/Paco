@@ -190,11 +190,15 @@ class GameAssets {
 
     // Game configuration
     getGameConfig() {
+        // Detect mobile for taller canvas
+        const isMobile = window.innerWidth <= 768;
+        const canvasHeight = isMobile ? 560 : 480; // 80px taller on mobile
+        
         return {
             // Canvas settings
             canvas: {
                 width: 320,
-                height: 480
+                height: canvasHeight
             },
             
             // Player settings

@@ -3429,10 +3429,9 @@ body {
     
     #gameCanvas {
         width: 280px !important;
-        height: min(55vh, 480px) !important;
+        height: 490px !important;
         max-width: 280px !important;
-        min-height: 420px !important;
-        max-height: 520px !important;
+        max-height: 490px !important;
         border-radius: 10px;
         image-rendering: pixelated !important;
         margin: 0 auto;

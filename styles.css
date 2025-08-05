@@ -1925,15 +1925,15 @@ body {
 
 /* Compact leaderboard (default - stays in game container) */
 .leaderboard-container.compact {
-    max-height: 60vh;
+    max-height: 45vh; /* Much smaller to prevent overflow */
 }
 
 /* Expanded leaderboard (moves outside game container) */
 .leaderboard-container.expanded {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
     max-width: 500px;
     max-height: 80vh;
     background: linear-gradient(145deg, var(--surface-dark) 0%, #0f172a 100%);
@@ -1944,8 +1944,12 @@ body {
         0 24px 80px rgba(0, 0, 0, 0.5),
         0 8px 32px rgba(220, 38, 38, 0.2),
         inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    z-index: 1000;
+    z-index: 10000 !important; /* Much higher z-index */
     padding: var(--space-lg);
+    /* Ensure it's visible */
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
 }
 
 .leaderboard-container.expanded::before {
@@ -1988,7 +1992,7 @@ body {
 /* Compact list - smaller entries */
 .leaderboard-container.compact .leaderboard-list {
     gap: var(--space-xxs);
-    max-height: 45vh;
+    max-height: 30vh; /* Much smaller list height */
 }
 
 /* Expanded list - more space */

@@ -355,17 +355,19 @@ class Leaderboard {
 
     // Display leaderboard in UI
     showLeaderboard(expandedMode = false) {
+        if (expandedMode) {
+            // For expanded mode, create modal outside game container
+            this.showExpandedModal();
+            return;
+        }
+        
+        // For compact mode, use game overlay
         const overlay = document.getElementById('gameOverlay');
         const overlayContent = document.getElementById('overlayContent');
         
         if (!overlay || !overlayContent) {
             console.error('Leaderboard UI elements not found');
             return;
-        }
-
-        // Create backdrop for expanded mode
-        if (expandedMode) {
-            this.createLeaderboardBackdrop();
         }
 
         // Build leaderboard HTML with enhanced styling
@@ -392,7 +394,7 @@ class Leaderboard {
         } else {
             leaderboardHTML += '<div class="leaderboard-list">';
             
-            const maxEntries = expandedMode ? 25 : 10; // Show more entries in expanded mode
+            const maxEntries = 8; // Show fewer entries in compact mode to prevent overflow
             this.currentLeaderboard.slice(0, maxEntries).forEach((entry, index) => {
                 // Validate entry data
                 if (!entry || typeof entry.score !== 'number' || !entry.username) {
@@ -570,7 +572,19 @@ class Leaderboard {
 
     // Close expanded leaderboard
     closeExpandedLeaderboard() {
-        this.hideLeaderboard();
+        // Remove expanded modal
+        const expandedModal = document.getElementById('expandedLeaderboardModal');
+        if (expandedModal) {
+            expandedModal.remove();
+        }
+        
+        // Remove backdrop
+        this.removeLeaderboardBackdrop();
+        
+        // Stop countdown timer
+        this.stopCountdownTimer();
+        
+        console.log('❌ Expanded leaderboard closed');
     }
 
     // Create backdrop for expanded leaderboard
@@ -600,6 +614,134 @@ class Leaderboard {
                 backdrop.remove();
             }, 300);
         }
+    }
+
+    // Show expanded modal outside game container
+    showExpandedModal() {
+        // Create backdrop
+        this.createLeaderboardBackdrop();
+        
+        // Create expanded modal container
+        const expandedModal = document.createElement('div');
+        expandedModal.id = 'expandedLeaderboardModal';
+        expandedModal.className = 'leaderboard-container expanded';
+        
+        // Build leaderboard HTML
+        let leaderboardHTML = '';
+        
+        // Add close button
+        leaderboardHTML += '<button class="leaderboard-close" onclick="leaderboard.closeExpandedLeaderboard()" title="Close">×</button>';
+        
+        leaderboardHTML += '<h3>🏆 Daily Contest Leaderboard</h3>';
+        
+        if (this.currentLeaderboard.length === 0) {
+            leaderboardHTML += `
+                <div style="text-align: center; padding: 20px; color: var(--text-secondary);">
+                    <div style="font-size: 2rem; margin-bottom: 8px;">🐔</div>
+                    <p>No scores yet today!</p>
+                    <p style="font-size: 0.9rem; color: var(--restaurant-yellow);">Be the first Paco champion!</p>
+                </div>
+            `;
+        } else {
+            leaderboardHTML += '<div class="leaderboard-list">';
+            
+            const maxEntries = 25; // Show more entries in expanded mode
+            this.currentLeaderboard.slice(0, maxEntries).forEach((entry, index) => {
+                if (!entry || typeof entry.score !== 'number' || !entry.username) {
+                    return;
+                }
+                
+                const rank = index + 1;
+                const isCurrentUser = twitterAuth.authenticated && 
+                                    entry.user_id === twitterAuth.currentUser?.id;
+                
+                const rankEmoji = this.getRankEmoji(rank);
+                const displayName = entry.display_name || entry.username || 'Anonymous';
+                const formattedScore = entry.score.toLocaleString();
+                
+                leaderboardHTML += `
+                    <div class="leaderboard-entry ${isCurrentUser ? 'current-user' : ''}">
+                        <div class="player-info">
+                            <span class="rank">${rankEmoji} ${rank}</span>
+                            <span class="username">@${displayName}</span>
+                        </div>
+                        <div class="score">${formattedScore}</div>
+                    </div>
+                `;
+            });
+            
+            leaderboardHTML += '</div>';
+            
+            // Enhanced reset timer with contest theme and restart button
+            const timeUntilReset = this.getTimeUntilReset();
+            leaderboardHTML += `
+                <div style="text-align: center; margin: 12px 0; padding: 8px; background: rgba(251, 191, 36, 0.1); border-radius: 6px; border: 1px solid rgba(251, 191, 36, 0.3);">
+                    <p class="reset-timer">🎯 Contest resets in: <strong>${timeUntilReset}</strong></p>
+                    <button onclick="leaderboard.restartCountdown(24)" style="
+                        background: rgba(34, 197, 94, 0.2);
+                        border: 1px solid rgba(34, 197, 94, 0.4);
+                        color: #10b981;
+                        padding: 4px 8px;
+                        border-radius: 4px;
+                        font-size: 0.8rem;
+                        cursor: pointer;
+                        margin-top: 4px;
+                        transition: all 0.3s ease;
+                    " onmouseover="this.style.background='rgba(34, 197, 94, 0.3)'" onmouseout="this.style.background='rgba(34, 197, 94, 0.2)'">
+                        ⏱️ Extend Contest (+24h)
+                    </button>
+                </div>
+            `;
+        }
+        
+        // Add trophy generation for current user if they're in top 10
+        if (twitterAuth.authenticated) {
+            const userEntry = this.currentLeaderboard.find(entry => 
+                entry.user_id === twitterAuth.currentUser.id
+            );
+            if (userEntry) {
+                const userRank = this.currentLeaderboard.indexOf(userEntry) + 1;
+                if (userRank <= 10) {
+                    leaderboardHTML += `
+                        <div style="text-align: center; margin-top: 16px; padding: 12px; background: rgba(251, 191, 36, 0.1); border-radius: 8px; border: 1px solid rgba(251, 191, 36, 0.3);">
+                            <p style="color: var(--restaurant-yellow); font-weight: 600; margin: 0 0 8px 0;">
+                                🏆 You're in the Top ${userRank}! Share your achievement.
+                            </p>
+                            <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+                                <button 
+                                    onclick="generateAndShareLeaderboardTrophy(${userEntry.score}, '${userEntry.username}', ${userRank})"
+                                    style="
+                                        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+                                        border: none;
+                                        color: white;
+                                        padding: 8px 12px;
+                                        border-radius: 6px;
+                                        font-size: 0.85rem;
+                                        cursor: pointer;
+                                        transition: all 0.3s ease;
+                                        font-weight: 600;
+                                    "
+                                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(59, 130, 246, 0.4)'"
+                                    onmouseout="this.style.transform='translateY(0px)'; this.style.boxShadow='none'"
+                                >
+                                    🚀 Trophy + Tweet
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+        }
+        
+        leaderboardHTML += '<button onclick="leaderboard.closeExpandedLeaderboard()" class="close-btn">Close</button>';
+        
+        expandedModal.innerHTML = leaderboardHTML;
+        document.body.appendChild(expandedModal);
+        
+        // Start countdown timer
+        this.startCountdownTimer();
+        
+        console.log('🔍 Expanded leaderboard modal created');
     }
 
     // Get emoji for rank

@@ -1696,11 +1696,11 @@ body {
     user-select: none;
     -webkit-user-select: none;
     -moz-user-select: none;
-    /* Desktop enhancement: Scale up for better visibility */
-    width: 480px;
-    height: 720px;
-    max-width: 480px;
-    max-height: 720px;
+    /* Desktop enhancement: Scale up for better visibility with zoom accommodation */
+    width: 560px;
+    height: 800px;
+    max-width: 560px;
+    max-height: 800px;
     image-rendering: pixelated;
     image-rendering: -moz-crisp-edges;
     image-rendering: crisp-edges;
@@ -3439,12 +3439,12 @@ body {
     }
     
     #gameCanvas {
-        width: min(90vw, 420px) !important;
-        height: min(75vh, 650px) !important;
-        max-width: 420px !important;
-        max-height: 650px !important;
-        min-width: 300px !important;
-        min-height: 450px !important;
+        width: min(95vw, 480px) !important;
+        height: min(80vh, 720px) !important;
+        max-width: 480px !important;
+        max-height: 720px !important;
+        min-width: 320px !important;
+        min-height: 480px !important;
         border-radius: 10px;
         image-rendering: pixelated !important;
         image-rendering: -moz-crisp-edges !important;

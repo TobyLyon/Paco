@@ -324,14 +324,12 @@ class GamePhysics {
                 const safetyMargin = 20;
                 const effectiveReach = maxHorizontalReach - safetyMargin;
                 
-                // Add extra buffer space to prevent edge clipping 
-                const edgeBuffer = 30; // Extra space from screen edges
-                const minX = Math.max(edgeBuffer, lastPlatform.x - effectiveReach);
-                const maxX = Math.min(canvasWidth - platformConfig.width - edgeBuffer, lastPlatform.x + effectiveReach);
+                const minX = Math.max(0, lastPlatform.x - effectiveReach);
+                const maxX = Math.min(canvasWidth - platformConfig.width, lastPlatform.x + effectiveReach);
                 
                 // Guarantee valid range
                 if (minX >= maxX) {
-                    x = Math.max(edgeBuffer, Math.min(canvasWidth - platformConfig.width - edgeBuffer, lastPlatform.x));
+                    x = Math.max(0, Math.min(canvasWidth - platformConfig.width, lastPlatform.x));
                 } else {
                     x = minX + Math.random() * (maxX - minX);
                 }

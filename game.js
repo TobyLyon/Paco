@@ -23,7 +23,7 @@ class PacoJumpGame {
         this.camera = { 
             y: 0, 
             maxY: 0,
-            zoom: 1.0  // Zoom factor - 1.0 = normal view to prevent edge clipping
+            zoom: 1.3  // Zoom factor for closer camera view (1.0 = normal, 1.3 = 30% closer)
         };
         
         // Power-up system

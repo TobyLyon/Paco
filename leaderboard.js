@@ -156,29 +156,40 @@ class Leaderboard {
             clearInterval(this.countdownInterval);
         }
         
+        console.log('⏱️ Starting countdown timer...');
+        
         // Update every second
         this.countdownInterval = setInterval(() => {
-            // Check if leaderboard is visible
-            const overlay = document.getElementById('gameOverlay');
-            if (overlay && overlay.classList.contains('show')) {
-                // Update countdown display
-                const timerElement = document.querySelector('.reset-timer strong');
-                if (timerElement) {
-                    const timeRemaining = this.getTimeUntilReset();
+            // Find all timer elements (could be in leaderboard or game over screen)
+            const timerElements = document.querySelectorAll('.reset-timer strong');
+            
+            if (timerElements.length > 0) {
+                const timeRemaining = this.getTimeUntilReset();
+                
+                // Update all timer elements
+                timerElements.forEach(timerElement => {
                     timerElement.textContent = timeRemaining;
                     
                     // Check if contest ended
                     if (timeRemaining === 'Contest ended!') {
                         timerElement.style.color = '#ef4444'; // Red color
                         timerElement.parentElement.innerHTML = '🏁 Contest ended! New contest starts soon...';
-                        clearInterval(this.countdownInterval);
-                        this.countdownInterval = null;
                     }
+                });
+                
+                // Stop timer if contest ended
+                if (timeRemaining === 'Contest ended!') {
+                    clearInterval(this.countdownInterval);
+                    this.countdownInterval = null;
+                    console.log('⏰ Contest ended, timer stopped');
                 }
+            } else {
+                // Debug: No timer elements found
+                console.log('🔍 No .reset-timer strong elements found');
             }
         }, 1000);
         
-        console.log('⏱️ Countdown timer started');
+        console.log('⏱️ Countdown timer started, updating every second');
     }
 
     // Stop countdown timer
@@ -969,11 +980,23 @@ window.debugCountdown = function() {
     console.log('Reset time:', leaderboard.dailyResetTime.toLocaleString());
     console.log('Time until reset:', leaderboard.getTimeUntilReset());
     console.log('LocalStorage data:', localStorage.getItem('leaderboard_reset_time'));
+    console.log('Timer interval active:', !!leaderboard.countdownInterval);
+    console.log('Timer elements found:', document.querySelectorAll('.reset-timer strong').length);
+    console.log('Game overlay visible:', document.getElementById('gameOverlay')?.classList.contains('show'));
+    
+    // List all timer elements
+    const timerElements = document.querySelectorAll('.reset-timer strong');
+    timerElements.forEach((el, i) => {
+        console.log(`Timer element ${i}:`, el.textContent, el);
+    });
+    
     return {
         now: new Date(),
         resetTime: leaderboard.dailyResetTime,
         timeUntilReset: leaderboard.getTimeUntilReset(),
-        localStorage: localStorage.getItem('leaderboard_reset_time')
+        localStorage: localStorage.getItem('leaderboard_reset_time'),
+        timerActive: !!leaderboard.countdownInterval,
+        timerElementsCount: timerElements.length
     };
 };
 
@@ -987,7 +1010,25 @@ window.fixCountdown = function() {
     return leaderboard.getTimeUntilReset();
 };
 
+window.testTimer = function() {
+    console.log('🧪 TESTING TIMER UPDATE...');
+    const timerElements = document.querySelectorAll('.reset-timer strong');
+    console.log('Found', timerElements.length, 'timer elements');
+    
+    if (timerElements.length > 0) {
+        const newTime = leaderboard.getTimeUntilReset();
+        console.log('Updating to:', newTime);
+        timerElements.forEach((el, i) => {
+            console.log(`Updating element ${i} from "${el.textContent}" to "${newTime}"`);
+            el.textContent = newTime;
+        });
+        return 'Timer elements updated';
+    } else {
+        return 'No timer elements found';
+    }
+};
+
 console.log('📊 Leaderboard module loaded');
-console.log('🔧 Debug commands: debugCountdown(), fixCountdown()');
+console.log('🔧 Debug commands: debugCountdown(), fixCountdown(), testTimer()');
 
 // Console commands removed for contest security

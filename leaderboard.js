@@ -14,6 +14,7 @@ class Leaderboard {
         this.dailyResetTime = this.getResetTime();
         this.realtimeChannel = null;
         this.countdownInterval = null;
+        this.currentTimeRemaining = null; // Store current countdown state
         
         console.log('🏆 Leaderboard system initialized');
         console.log(`⏰ Daily reset time: ${this.dailyResetTime.toLocaleString()}`);
@@ -121,20 +122,49 @@ class Leaderboard {
         return this.dailyResetTime;
     }
 
-    // Get formatted time until reset
+    // Get formatted time until reset - CONTINUOUS COUNTDOWN
     getTimeUntilReset() {
         const now = Date.now();
         const resetTime = this.dailyResetTime.getTime();
-        const diff = resetTime - now;
+        let diff = resetTime - now;
         
-        // Debug info
+        // Check if contest ended
         if (diff <= 0) {
             console.log('⏰ Contest ended! Reset time:', new Date(resetTime).toLocaleString(), 'Current time:', new Date(now).toLocaleString());
             // Auto-reset to next day if contest ended
             this.dailyResetTime = this.getTodayResetTime();
             localStorage.removeItem('leaderboard_reset_time');
+            localStorage.removeItem('timer_display_state');
+            this.currentTimeRemaining = null;
             return 'Contest ended!';
         }
+        
+        // Initialize or update the continuous timer state
+        const stored = localStorage.getItem('timer_display_state');
+        if (stored && this.currentTimeRemaining === null) {
+            try {
+                const state = JSON.parse(stored);
+                const timeSinceStore = now - state.timestamp;
+                const adjustedRemaining = Math.max(0, state.remaining - timeSinceStore);
+                
+                // Only use stored state if it's reasonably close to calculated time (within 5 seconds)
+                if (Math.abs(adjustedRemaining - diff) < 5000) {
+                    diff = adjustedRemaining;
+                    console.log('🔄 Restored continuous timer state');
+                }
+            } catch (e) {
+                console.log('⚠️ Invalid timer state, using calculated time');
+            }
+        }
+        
+        // Store current state for continuity across refreshes
+        localStorage.setItem('timer_display_state', JSON.stringify({
+            remaining: diff,
+            timestamp: now,
+            resetTime: resetTime
+        }));
+        
+        this.currentTimeRemaining = diff;
         
         const hours = Math.floor(diff / (1000 * 60 * 60));
         const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
@@ -159,30 +189,67 @@ class Leaderboard {
         
         console.log('⏱️ Starting countdown timer...');
         
-        // Update every second
+        // Update every second - CONTINUOUS COUNTDOWN
         this.countdownInterval = setInterval(() => {
             // Find all timer elements (could be in leaderboard or game over screen)
             const timerElements = document.querySelectorAll('.reset-timer strong');
             
             if (timerElements.length > 0) {
-                const timeRemaining = this.getTimeUntilReset();
-                
-                // Update all timer elements
-                timerElements.forEach(timerElement => {
-                    timerElement.textContent = timeRemaining;
+                // Decrement the current time remaining for smooth countdown
+                if (this.currentTimeRemaining !== null && this.currentTimeRemaining > 0) {
+                    this.currentTimeRemaining -= 1000; // Subtract 1 second
                     
-                    // Check if contest ended
-                    if (timeRemaining === 'Contest ended!') {
-                        timerElement.style.color = '#ef4444'; // Red color
-                        timerElement.parentElement.innerHTML = '🏁 Contest ended! New contest starts soon...';
+                    // Update localStorage with new state
+                    localStorage.setItem('timer_display_state', JSON.stringify({
+                        remaining: this.currentTimeRemaining,
+                        timestamp: Date.now(),
+                        resetTime: this.dailyResetTime.getTime()
+                    }));
+                    
+                    // Format the display
+                    const diff = this.currentTimeRemaining;
+                    let timeRemaining;
+                    
+                    if (diff <= 0) {
+                        timeRemaining = 'Contest ended!';
+                        this.currentTimeRemaining = null;
+                    } else {
+                        const hours = Math.floor(diff / (1000 * 60 * 60));
+                        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                        
+                        if (hours > 0) {
+                            timeRemaining = `${hours}h ${minutes}m`;
+                        } else if (minutes > 0) {
+                            timeRemaining = `${minutes}m ${seconds}s`;
+                        } else {
+                            timeRemaining = `${seconds}s`;
+                        }
                     }
-                });
-                
-                // Stop timer if contest ended
-                if (timeRemaining === 'Contest ended!') {
-                    clearInterval(this.countdownInterval);
-                    this.countdownInterval = null;
-                    console.log('⏰ Contest ended, timer stopped');
+                    
+                    // Update all timer elements
+                    timerElements.forEach(timerElement => {
+                        timerElement.textContent = timeRemaining;
+                        
+                        // Check if contest ended
+                        if (timeRemaining === 'Contest ended!') {
+                            timerElement.style.color = '#ef4444'; // Red color
+                            timerElement.parentElement.innerHTML = '🏁 Contest ended! New contest starts soon...';
+                        }
+                    });
+                    
+                    // Stop timer if contest ended
+                    if (timeRemaining === 'Contest ended!') {
+                        clearInterval(this.countdownInterval);
+                        this.countdownInterval = null;
+                        console.log('⏰ Contest ended, timer stopped');
+                    }
+                } else {
+                    // Fallback to recalculated time if state is lost
+                    const timeRemaining = this.getTimeUntilReset();
+                    timerElements.forEach(timerElement => {
+                        timerElement.textContent = timeRemaining;
+                    });
                 }
             } else {
                 // Debug: No timer elements found

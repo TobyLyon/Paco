@@ -124,6 +124,22 @@ class Leaderboard {
 
     // Get formatted time until reset - CONTINUOUS COUNTDOWN
     getTimeUntilReset() {
+        // If we already have a current time remaining (from restored state), use that
+        if (this.currentTimeRemaining !== null && this.currentTimeRemaining > 0) {
+            const diff = this.currentTimeRemaining;
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            
+            if (hours > 0) {
+                return `${hours}h ${minutes}m`;
+            } else if (minutes > 0) {
+                return `${minutes}m ${seconds}s`;
+            } else {
+                return `${seconds}s`;
+            }
+        }
+        
         const now = Date.now();
         const resetTime = this.dailyResetTime.getTime();
         let diff = resetTime - now;
@@ -139,32 +155,19 @@ class Leaderboard {
             return 'Contest ended!';
         }
         
-        // Initialize or update the continuous timer state
-        const stored = localStorage.getItem('timer_display_state');
-        if (stored && this.currentTimeRemaining === null) {
-            try {
-                const state = JSON.parse(stored);
-                const timeSinceStore = now - state.timestamp;
-                const adjustedRemaining = Math.max(0, state.remaining - timeSinceStore);
-                
-                // Only use stored state if it's reasonably close to calculated time (within 5 seconds)
-                if (Math.abs(adjustedRemaining - diff) < 5000) {
-                    diff = adjustedRemaining;
-                    console.log('🔄 Restored continuous timer state');
-                }
-            } catch (e) {
-                console.log('⚠️ Invalid timer state, using calculated time');
-            }
+        // Initialize timer state if not already set
+        if (this.currentTimeRemaining === null) {
+            this.currentTimeRemaining = diff;
+            
+            // Store initial state
+            localStorage.setItem('timer_display_state', JSON.stringify({
+                remaining: diff,
+                timestamp: now,
+                resetTime: resetTime
+            }));
+            
+            console.log('🆕 Initialized timer state:', Math.floor(diff / 1000), 'seconds remaining');
         }
-        
-        // Store current state for continuity across refreshes
-        localStorage.setItem('timer_display_state', JSON.stringify({
-            remaining: diff,
-            timestamp: now,
-            resetTime: resetTime
-        }));
-        
-        this.currentTimeRemaining = diff;
         
         const hours = Math.floor(diff / (1000 * 60 * 60));
         const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
@@ -1043,9 +1046,29 @@ async function leaderboardShareAndDownload(score, rank) {
 // Export singleton instance
 const leaderboard = new Leaderboard();
 
+// Initialize timer state from localStorage on page load
+function initializeTimerState() {
+    const stored = localStorage.getItem('timer_display_state');
+    if (stored) {
+        try {
+            const state = JSON.parse(stored);
+            const now = Date.now();
+            const timeSinceStore = now - state.timestamp;
+            const adjustedRemaining = Math.max(0, state.remaining - timeSinceStore);
+            
+            // Restore the timer state
+            leaderboard.currentTimeRemaining = adjustedRemaining;
+            console.log('🔄 Restored timer state:', Math.floor(adjustedRemaining / 1000), 'seconds remaining');
+        } catch (e) {
+            console.log('⚠️ Invalid stored timer state');
+        }
+    }
+}
+
 // Start the countdown timer when the module loads (only once)
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🏁 DOM loaded, starting initial countdown timer...');
+    console.log('🏁 DOM loaded, initializing timer state...');
+    initializeTimerState();
     leaderboard.startCountdownTimer();
 });
 
@@ -1054,7 +1077,8 @@ if (document.readyState === 'loading') {
     // DOM is still loading, event listener will handle it
 } else {
     // DOM is already loaded
-    console.log('🏁 DOM already loaded, starting initial countdown timer...');
+    console.log('🏁 DOM already loaded, initializing timer state...');
+    initializeTimerState();
     leaderboard.startCountdownTimer();
 }
 
@@ -1113,7 +1137,29 @@ window.testTimer = function() {
     }
 };
 
+window.checkTimerState = function() {
+    console.log('📊 TIMER STATE CHECK:');
+    console.log('Current time remaining:', leaderboard.currentTimeRemaining);
+    console.log('Stored state:', localStorage.getItem('timer_display_state'));
+    console.log('Timer interval running:', !!leaderboard.countdownInterval);
+    
+    const stored = localStorage.getItem('timer_display_state');
+    if (stored) {
+        const state = JSON.parse(stored);
+        const now = Date.now();
+        const timeSinceStore = now - state.timestamp;
+        console.log('Time since last store:', Math.floor(timeSinceStore / 1000), 'seconds');
+        console.log('Adjusted remaining:', Math.floor((state.remaining - timeSinceStore) / 1000), 'seconds');
+    }
+    
+    return {
+        currentTimeRemaining: leaderboard.currentTimeRemaining,
+        timerRunning: !!leaderboard.countdownInterval,
+        storedState: stored ? JSON.parse(stored) : null
+    };
+};
+
 console.log('📊 Leaderboard module loaded');
-console.log('🔧 Debug commands: debugCountdown(), fixCountdown(), testTimer()');
+console.log('🔧 Debug commands: debugCountdown(), fixCountdown(), testTimer(), checkTimerState()');
 
 // Console commands removed for contest security

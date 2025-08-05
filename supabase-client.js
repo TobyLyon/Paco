@@ -244,9 +244,36 @@ class OrderTracker {
                 created_at: scoreData.created_at || new Date().toISOString()
             };
 
+            // First, check if user has existing scores for today
+            const { data: existingScores, error: fetchError } = await supabase
+                .from('game_scores')
+                .select('*')
+                .eq('user_id', scoreData.user_id)
+                .eq('game_date', scoreData.game_date)
+                .order('score', { ascending: false })
+                .limit(1);
+
+            if (fetchError) {
+                console.error('Error fetching existing scores:', fetchError);
+                return { success: false, error: fetchError };
+            }
+
+            // If user has an existing score today, only proceed if new score is higher
+            if (existingScores && existingScores.length > 0) {
+                const existingScore = existingScores[0];
+                if (scoreData.score <= existingScore.score) {
+                    console.log(`📊 Score ${scoreData.score} not higher than existing score ${existingScore.score}, skipping`);
+                    return { success: true, data: existingScore, skipped: true };
+                }
+            }
+
+            // Use upsert to handle the unique constraint gracefully
             const { data, error } = await supabase
                 .from('game_scores')
-                .insert([scoreRecord])
+                .upsert([scoreRecord], { 
+                    onConflict: 'user_id,game_date,score',
+                    ignoreDuplicates: true 
+                })
                 .select();
 
             if (error) {

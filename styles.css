@@ -1979,6 +1979,38 @@ body {
     white-space: nowrap;
 }
 
+.leaderboard-entry .twitter-handle {
+    color: inherit;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.2s ease;
+    border-radius: 4px;
+    padding: 2px 4px;
+    margin: -2px -4px;
+    cursor: pointer;
+}
+
+.leaderboard-entry .twitter-handle:hover {
+    color: #1DA1F2;
+    background: rgba(29, 161, 242, 0.1);
+    text-decoration: none;
+    transform: translateY(-1px);
+    text-shadow: 0 1px 3px rgba(29, 161, 242, 0.3);
+}
+
+.leaderboard-entry .twitter-handle:active {
+    transform: translateY(0);
+}
+
+/* Mobile touch support for Twitter handles */
+@media (hover: none) and (pointer: coarse) {
+    .leaderboard-entry .twitter-handle:active {
+        color: #1DA1F2;
+        background: rgba(29, 161, 242, 0.1);
+        text-shadow: 0 1px 3px rgba(29, 161, 242, 0.3);
+    }
+}
+
 .leaderboard-entry .score {
     font-family: var(--font-display);
     font-weight: 700;

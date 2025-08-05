@@ -60,7 +60,11 @@ class Leaderboard {
                 const result = await orderTracker.recordGameScore(scoreData);
                 
                 if (result.success) {
-                    console.log('✅ Score submitted successfully');
+                    if (result.skipped) {
+                        console.log('📊 Score not submitted - not higher than existing best score');
+                    } else {
+                        console.log('✅ Score submitted successfully');
+                    }
                     
                     // Update local best score
                     this.userBestScore = Math.max(this.userBestScore, score);
@@ -232,7 +236,11 @@ class Leaderboard {
                 leaderboardHTML += `
                     <div class="leaderboard-entry ${userClass}">
                         <span class="rank">${rankEmoji} ${rank}</span>
-                        <span class="username">@${entry.username}${liveIndicator}</span>
+                        <span class="username">
+                            <a href="https://twitter.com/${entry.username}" target="_blank" rel="noopener noreferrer" class="twitter-handle">
+                                @${entry.username}
+                            </a>${liveIndicator}
+                        </span>
                         <span class="score">${entry.score.toLocaleString()}</span>
                     </div>
                 `;

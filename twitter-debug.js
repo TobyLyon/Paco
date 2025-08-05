@@ -50,11 +50,22 @@ function runTwitterDiagnostics() {
     // 4. Test API availability
     console.log('\n4. 🧪 Testing API Availability:');
     
-    // Test token endpoint
+    // Test debug endpoint (only available in development)
     fetch('/api/twitter/debug')
-        .then(response => response.json())
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            } else if (response.status === 404) {
+                console.log('   ℹ️ Debug endpoint not available (production mode)');
+                return null;
+            } else {
+                throw new Error(`HTTP ${response.status}`);
+            }
+        })
         .then(data => {
-            console.log('   ✅ Debug endpoint response:', data);
+            if (data) {
+                console.log('   ✅ Debug endpoint response:', data);
+            }
         })
         .catch(error => {
             console.error('   ❌ Debug endpoint failed:', error);

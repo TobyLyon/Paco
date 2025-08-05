@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Paco's Farm - 2D pixel farming simulator on Abstract L2" />
+    
+    <!-- Prevent zooming on mobile -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    
+    <!-- Preload critical assets -->
+    <link rel="preload" href="/assets/sprites/chicken-idle.png" as="image" />
+    <link rel="preload" href="/assets/sprites/coop-base.png" as="image" />
+    
+    <title>Paco's Farm - Secret Alpha</title>
+    
+    <style>
+      /* Prevent text selection and right-click in game */
+      body {
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+        -webkit-tap-highlight-color: transparent;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: #1a1a1a;
+        font-family: 'Courier New', monospace;
+      }
+      
+
+      
+
+    </style>
+  </head>
+  <body>
+    <!-- Loading Screen is now handled by React -->
+    
+    <!-- Game Root -->
+    <div id="root"></div>
+    
+    <!-- Game Scripts -->
+    <script type="module" src="/src/main.jsx"></script>
+    
+    <script>
+      // Disable right-click context menu in production
+      if (window.location.hostname !== 'localhost') {
+        document.addEventListener('contextmenu', e => e.preventDefault());
+      }
+    </script>
+  </body>
+</html>

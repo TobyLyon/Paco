@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global Game Styles */
+@layer base {
+  html {
+    font-family: 'Courier New', monospace;
+  }
+  
+  body {
+    @apply bg-gray-900 text-white overflow-hidden;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+  }
+  
+  * {
+    box-sizing: border-box;
+  }
+}
+
+/* Game UI Components */
+@layer components {
+  .pixel-button {
+    @apply bg-paco-yellow text-black font-bold py-2 px-4 border-2 border-paco-orange;
+    @apply hover:bg-paco-orange hover:border-paco-red transition-colors;
+    @apply active:scale-95 transform;
+    image-rendering: pixelated;
+    font-family: 'Courier New', monospace;
+  }
+  
+  .game-panel {
+    @apply bg-gray-800 border-2 border-gray-600 rounded-lg p-4;
+    @apply backdrop-blur-sm bg-opacity-90;
+    image-rendering: pixelated;
+  }
+  
+  .nft-card {
+    @apply bg-gray-700 border border-gray-500 rounded-lg p-3;
+    @apply hover:border-paco-yellow transition-colors cursor-pointer;
+    @apply transform hover:scale-105;
+    image-rendering: pixelated;
+  }
+  
+  .stat-display {
+    @apply flex items-center justify-between p-2 bg-gray-700 rounded;
+    @apply border border-gray-600;
+  }
+  
+  .loading-spinner {
+    @apply animate-spin rounded-full h-6 w-6 border-b-2 border-paco-yellow;
+  }
+}
+
+/* Pixel Art Specific Styles */
+@layer utilities {
+  .pixel-perfect {
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+  }
+  
+  .no-select {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+  
+  .no-drag {
+    -webkit-user-drag: none;
+    -moz-user-drag: none;
+    -ms-user-drag: none;
+    user-drag: none;
+  }
+}
+
+/* Animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 5px #FFD700; }
+  50% { box-shadow: 0 0 20px #FFD700, 0 0 30px #FFD700; }
+}
+
+.float-animation {
+  animation: float 3s ease-in-out infinite;
+}
+
+.glow-animation {
+  animation: glow 2s ease-in-out infinite;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+  .pixel-button {
+    @apply py-3 px-5 text-lg;
+  }
+  
+  .game-panel {
+    @apply p-3 text-sm;
+  }
+}
+
+/* Disable text selection on game elements */
+canvas, .game-ui * {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}

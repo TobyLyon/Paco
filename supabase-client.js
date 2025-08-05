@@ -389,33 +389,30 @@ class OrderTracker {
     // Get today's leaderboard - only best score per user
     async getTodayLeaderboard() {
         try {
-            // FORCE USE FALLBACK METHOD - Database function is broken
-            console.log('📊 Using reliable fallback method for leaderboard');
-            return await this.getTodayLeaderboardFallback();
-            
-            /* DISABLED - Database function is causing missing scores
             const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
 
-            // Use a raw SQL query to get only the best score per user
+            console.log('📊 Testing database function for leaderboard...');
+            
+            // Try the optimized database function first
             const { data, error } = await supabase.rpc('get_daily_leaderboard', {
                 target_date: today,
                 score_limit: 50
             });
 
-            // If the function doesn't exist, fall back to the old method with client-side deduplication
+            // If the function doesn't exist, fall back to the client-side method
             if (error && (error.code === '42883' || error.code === 'PGRST202')) {
-                console.log('📊 Using fallback method for leaderboard deduplication');
+                console.log('⚠️ Database function not found, using fallback method');
                 return await this.getTodayLeaderboardFallback();
             }
 
             if (error) {
-                console.error('Error getting today leaderboard:', error);
-                return { success: false, data: [], error };
+                console.error('❌ Error calling database function:', error);
+                console.log('🔄 Falling back to client-side deduplication');
+                return await this.getTodayLeaderboardFallback();
             }
 
-            console.log('📊 Fetched deduplicated leaderboard with', data?.length || 0, 'unique users');
+            console.log('✅ SUCCESS: Using optimized database function with', data?.length || 0, 'entries');
             return { success: true, data: data || [] };
-            */
         } catch (error) {
             console.error('Exception getting today leaderboard:', error);
             return { success: false, data: [], error: error.message };

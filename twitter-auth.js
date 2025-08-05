@@ -111,21 +111,39 @@ class TwitterAuth {
             console.log('🌐 Auth URL:', authUrl);
             console.log('🔧 Auth params:', Object.fromEntries(authParams));
             
-            // Check if mobile device for different auth approach
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+            // Enhanced mobile detection for better auth flow
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const isSmallScreen = window.innerWidth <= 768 || window.innerHeight <= 600;
+            const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            const shouldUseMobileFlow = isMobile || (isSmallScreen && isTouchDevice);
             
-            if (isMobile) {
+            console.log('🔍 AUTH FLOW DETECTION:', {
+                userAgent: navigator.userAgent,
+                isMobile,
+                isSmallScreen,
+                isTouchDevice,
+                shouldUseMobileFlow,
+                screenSize: `${window.innerWidth}x${window.innerHeight}`
+            });
+            
+            if (shouldUseMobileFlow) {
                 // Mobile: Use same window redirect instead of popup
-                console.log('📱 Mobile detected, using same-window redirect');
+                console.log('📱 Mobile device detected, using same-window redirect for better compatibility');
                 window.location.href = authUrl;
                 return;
             }
             
             // Desktop: Use popup window for authentication
+            // On mobile, use smaller popup dimensions
+            const popupWidth = isMobile ? Math.min(400, window.screen.width - 20) : 500;
+            const popupHeight = isMobile ? Math.min(600, window.screen.height - 40) : 600;
+            const left = isMobile ? 10 : (window.screen.width / 2) - (popupWidth / 2);
+            const top = isMobile ? 20 : (window.screen.height / 2) - (popupHeight / 2);
+            
             const popup = window.open(
                 authUrl,
                 'twitterAuth',
-                'width=500,height=600,scrollbars=yes,resizable=yes'
+                `width=${popupWidth},height=${popupHeight},left=${left},top=${top},scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,status=no`
             );
             
             // Debug popup loading (avoid CORS errors)

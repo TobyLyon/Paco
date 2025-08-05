@@ -5,10 +5,15 @@ TWITTER_CLIENT_ID=N3BYdkxPZFJIS1lmSzkyRUJkcUM6MTpjaQ
 TWITTER_CLIENT_SECRET=YOUR_TWITTER_CLIENT_SECRET_HERE
 TWITTER_REDIRECT_URI=https://pacothechicken.xyz/auth/callback
 
+# Security Notes:
+# - Client ID: Public information (safe to share/hardcode)
+# - Client Secret: PRIVATE (never share/commit this!)
+# - Client ID identifies your app, Secret authenticates it
+
 # Instructions:
 # 1. Copy this file to .env
 # 2. Replace YOUR_TWITTER_CLIENT_SECRET_HERE with your actual Twitter client secret
-# 3. The client ID above is already configured for your app
+# 3. The client ID above is your existing Twitter app ID
 # 4. Run npm run build to inject these values into your HTML files
 
 # Note: The .env file is ignored by git for security

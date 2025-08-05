@@ -43,9 +43,10 @@ class TwitterAuth {
             console.warn('⚠️  Make sure to run: npm run build');
             console.warn('⚠️  And create .env file with TWITTER_CLIENT_ID');
             
-            // Return known working client ID as fallback
+            // Use your existing client ID as fallback (this was already in your env-template)
+            // NOTE: Client IDs are public information, not secrets
             const fallbackClientId = 'N3BYdkxPZFJIS1lmSzkyRUJkcUM6MTpjaQ';
-            console.log('🔄 Using fallback client ID:', fallbackClientId);
+            console.log('🔄 Using fallback client ID (public info, not secret)');
             return fallbackClientId;
         }
         

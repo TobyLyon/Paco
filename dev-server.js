@@ -51,6 +51,11 @@ app.use(express.urlencoded({ extended: true }));
 
 // ===== TWITTER OAUTH ENDPOINTS =====
 
+// Debug environment loading
+console.log('🔍 Environment check:');
+console.log('   TWITTER_CLIENT_ID:', process.env.TWITTER_CLIENT_ID ? 'FOUND' : 'NOT FOUND');
+console.log('   TWITTER_CLIENT_SECRET:', process.env.TWITTER_CLIENT_SECRET ? 'FOUND' : 'NOT FOUND');
+
 // Twitter OAuth configuration - will be updated with actual port when server starts
 let TWITTER_CONFIG = {
     clientId: process.env.TWITTER_CLIENT_ID || 'YOUR_TWITTER_CLIENT_ID',
@@ -59,6 +64,12 @@ let TWITTER_CONFIG = {
     tokenUrl: 'https://api.twitter.com/2/oauth2/token',
     userUrl: 'https://api.twitter.com/2/users/me'
 };
+
+console.log('🐦 Twitter config loaded:', {
+    clientId: TWITTER_CONFIG.clientId !== 'YOUR_TWITTER_CLIENT_ID' ? 'SET' : 'NOT SET',
+    clientSecret: TWITTER_CONFIG.clientSecret !== 'YOUR_TWITTER_CLIENT_SECRET' ? 'SET' : 'NOT SET',
+    redirectUri: TWITTER_CONFIG.redirectUri
+});
 
 // Exchange authorization code for access token
 app.post('/api/twitter/token', async (req, res) => {
@@ -152,7 +163,11 @@ app.get('/api/twitter/debug', (req, res) => {
         clientId: TWITTER_CONFIG.clientId !== 'YOUR_TWITTER_CLIENT_ID' ? 'SET' : 'NOT SET',
         clientSecret: TWITTER_CONFIG.clientSecret !== 'YOUR_TWITTER_CLIENT_SECRET' ? 'SET' : 'NOT SET',
         redirectUri: TWITTER_CONFIG.redirectUri,
-        port: req.get('host')
+        port: req.get('host'),
+        envLoaded: {
+            TWITTER_CLIENT_ID: process.env.TWITTER_CLIENT_ID ? 'FOUND' : 'NOT FOUND',
+            TWITTER_CLIENT_SECRET: process.env.TWITTER_CLIENT_SECRET ? 'FOUND' : 'NOT FOUND'
+        }
     };
     
     console.log('🐦 Twitter debug info requested:', config);

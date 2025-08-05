@@ -1,15 +1,14 @@
-# Copy this content to a new file called ".env" in your project root
-# Get your Twitter credentials from https://developer.twitter.com/en/portal/dashboard
+# Copy this file to .env and replace with your actual values
 
-# Your Twitter Client ID (example shown below)
+# Twitter API Configuration
 TWITTER_CLIENT_ID=N3BYdkxPZFJIS1lmSzkyRUJkcUM6MTpjaQ
-TWITTER_CLIENT_SECRET=your_twitter_client_secret_here
-
-# For development (localhost)
-# TWITTER_REDIRECT_URI=http://localhost:3000/auth/callback
-
-# For production (update to your domain)
+TWITTER_CLIENT_SECRET=YOUR_TWITTER_CLIENT_SECRET_HERE
 TWITTER_REDIRECT_URI=https://pacothechicken.xyz/auth/callback
 
-NODE_ENV=production
-PORT=3000
+# Instructions:
+# 1. Copy this file to .env
+# 2. Replace YOUR_TWITTER_CLIENT_SECRET_HERE with your actual Twitter client secret
+# 3. The client ID above is already configured for your app
+# 4. Run npm run build to inject these values into your HTML files
+
+# Note: The .env file is ignored by git for security

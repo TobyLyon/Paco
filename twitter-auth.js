@@ -42,10 +42,14 @@ class TwitterAuth {
             console.warn('⚠️  Twitter Client ID placeholder not replaced!');
             console.warn('⚠️  Make sure to run: npm run build');
             console.warn('⚠️  And create .env file with TWITTER_CLIENT_ID');
+            
             // Return known working client ID as fallback
-            return 'N3BYdkxPZFJIS1lmSzkyRUJkcUM6MTpjaQ';
+            const fallbackClientId = 'N3BYdkxPZFJIS1lmSzkyRUJkcUM6MTpjaQ';
+            console.log('🔄 Using fallback client ID:', fallbackClientId);
+            return fallbackClientId;
         }
         
+        console.log('✅ Client ID successfully loaded from meta tag');
         return clientId;
     }
 
@@ -110,43 +114,90 @@ class TwitterAuth {
             
             this.authWindow = popup;
             
-            // Listen for popup messages
+            // Listen for popup messages with enhanced error handling
             return new Promise((resolve, reject) => {
                 let authCompleted = false;
+                let messageReceived = false;
                 
                 const messageHandler = (event) => {
-                    if (event.origin !== window.location.origin) return;
+                    // Accept messages from any origin to avoid CORS issues
+                    console.log('📨 Received message:', event.data, 'from origin:', event.origin);
                     
-                    if (event.data.type === 'TWITTER_AUTH_SUCCESS') {
+                    if (event.data && event.data.type === 'TWITTER_AUTH_SUCCESS') {
                         console.log('✅ Received authentication success message!');
+                        console.log('🔑 Auth code received:', event.data.code ? 'YES' : 'NO');
+                        messageReceived = true;
                         authCompleted = true;
                         clearInterval(checkClosed);
+                        clearTimeout(authTimeout);
                         window.removeEventListener('message', messageHandler);
-                        popup.close();
+                        
+                        // Close popup after a delay to ensure message processing
+                        setTimeout(() => {
+                            if (popup && !popup.closed) {
+                                popup.close();
+                            }
+                        }, 100);
+                        
                         this.handleAuthSuccess(event.data.code, codeVerifier)
                             .then(resolve)
                             .catch(reject);
-                    } else if (event.data.type === 'TWITTER_AUTH_ERROR') {
+                            
+                    } else if (event.data && event.data.type === 'TWITTER_AUTH_ERROR') {
                         console.log('❌ Received authentication error message:', event.data.error);
+                        messageReceived = true;
                         authCompleted = true;
                         clearInterval(checkClosed);
+                        clearTimeout(authTimeout);
                         window.removeEventListener('message', messageHandler);
-                        popup.close();
+                        
+                        setTimeout(() => {
+                            if (popup && !popup.closed) {
+                                popup.close();
+                            }
+                        }, 100);
+                        
                         reject(new Error(event.data.error));
                     }
                 };
                 
                 window.addEventListener('message', messageHandler);
                 
+                // Add timeout for the entire auth process
+                const authTimeout = setTimeout(() => {
+                    if (!authCompleted) {
+                        console.warn('⏰ Authentication timeout - no response received');
+                        authCompleted = true;
+                        clearInterval(checkClosed);
+                        window.removeEventListener('message', messageHandler);
+                        if (popup && !popup.closed) {
+                            popup.close();
+                        }
+                        reject(new Error('Authentication timeout'));
+                    }
+                }, 30000); // 30 second timeout
+                
                 // Check if popup was closed manually (but not if auth completed)
                 const checkClosed = setInterval(() => {
                     if (popup.closed && !authCompleted) {
                         console.log('🚪 Popup window closed by user');
                         clearInterval(checkClosed);
+                        clearTimeout(authTimeout);
                         window.removeEventListener('message', messageHandler);
-                        reject(new Error('Authentication cancelled'));
+                        
+                        if (messageReceived) {
+                            console.log('📨 Message was received before popup closed - authentication may still succeed');
+                            // Don't reject immediately if we received a message
+                            setTimeout(() => {
+                                if (!authCompleted) {
+                                    reject(new Error('Authentication cancelled'));
+                                }
+                            }, 1000);
+                        } else {
+                            reject(new Error('Authentication cancelled'));
+                        }
                     }
-                }, 2000); // Increased to 2 seconds to give more time for slow connections
+                }, 1000); // Check every 1 second
             });
             
         } catch (error) {

@@ -52,21 +52,52 @@
             }
             window.close();
         } else if (code) {
-            // Send success back to parent window
-            if (window.opener) {
+            // Send success back to parent window with enhanced error handling
+            if (window.opener && !window.opener.closed) {
                 console.log('🎉 Sending success message to parent window...');
-                window.opener.postMessage({
+                
+                // Send message to all possible origins to avoid CORS issues
+                const origins = [
+                    window.location.origin,
+                    'http://localhost:3000',
+                    'https://pacothechicken.xyz',
+                    '*' // Last resort
+                ];
+                
+                const message = {
                     type: 'TWITTER_AUTH_SUCCESS',
                     code: code,
-                    state: state
-                }, window.location.origin);
+                    state: state,
+                    timestamp: Date.now()
+                };
                 
-                // Wait a moment before closing to ensure message is received
+                // Try multiple origins and also try multiple times
+                let attempts = 0;
+                const sendMessage = () => {
+                    origins.forEach(origin => {
+                        try {
+                            window.opener.postMessage(message, origin);
+                            console.log(`📤 Message sent to origin: ${origin}`);
+                        } catch (error) {
+                            console.warn(`⚠️ Failed to send to ${origin}:`, error.message);
+                        }
+                    });
+                    
+                    attempts++;
+                    if (attempts < 3) {
+                        setTimeout(sendMessage, 100); // Retry up to 3 times
+                    }
+                };
+                
+                sendMessage();
+                
+                // Wait longer before closing to ensure all messages are sent
                 setTimeout(() => {
                     console.log('🔒 Closing authentication popup...');
                     window.close();
-                }, 500);
+                }, 1000); // Increased to 1 second
             } else {
+                console.warn('⚠️ No valid opener window found');
                 window.close();
             }
         } else {

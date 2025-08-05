@@ -31,11 +31,16 @@
     </div>
 
     <script>
+        console.log('🐦 Twitter OAuth callback page loaded');
+        console.log('🔗 Current URL:', window.location.href);
+        
         // Extract authorization code from URL
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
         const error = urlParams.get('error');
         const state = urlParams.get('state');
+        
+        console.log('📋 URL Parameters:', { code: code ? 'FOUND' : 'MISSING', error, state });
 
         if (error) {
             // Send error back to parent window
@@ -49,13 +54,21 @@
         } else if (code) {
             // Send success back to parent window
             if (window.opener) {
+                console.log('🎉 Sending success message to parent window...');
                 window.opener.postMessage({
                     type: 'TWITTER_AUTH_SUCCESS',
                     code: code,
                     state: state
                 }, window.location.origin);
+                
+                // Wait a moment before closing to ensure message is received
+                setTimeout(() => {
+                    console.log('🔒 Closing authentication popup...');
+                    window.close();
+                }, 500);
+            } else {
+                window.close();
             }
-            window.close();
         } else {
             // No code or error - something went wrong
             if (window.opener) {

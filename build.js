@@ -14,7 +14,14 @@ async function injectEnvironmentVariables(outputDir) {
             let content = await fs.readFile(filePath, 'utf8');
             
             // Replace environment variable placeholders
-            content = content.replace('__TWITTER_CLIENT_ID__', process.env.TWITTER_CLIENT_ID || '');
+            const twitterClientId = process.env.TWITTER_CLIENT_ID || '';
+            content = content.replace('__TWITTER_CLIENT_ID__', twitterClientId);
+            
+            if (!twitterClientId) {
+                console.warn(`    ⚠️  No Twitter Client ID available for ${htmlFile}`);
+            } else {
+                console.log(`    ✅  Twitter Client ID injected into ${htmlFile}`);
+            }
             
             await fs.writeFile(filePath, content, 'utf8');
             console.log(`    ✅ Injected environment variables into ${htmlFile}`);
@@ -42,6 +49,15 @@ async function build() {
         // 2.5. Load environment variables
         require('dotenv').config();
         console.log('📋  Environment variables loaded');
+        
+        // Check if required environment variables are set
+        if (!process.env.TWITTER_CLIENT_ID) {
+            console.warn('⚠️  TWITTER_CLIENT_ID not found in environment variables!');
+            console.warn('⚠️  Please create a .env file with your Twitter credentials');
+            console.warn('⚠️  See env-template.txt for the required format');
+        } else {
+            console.log('✅  Twitter Client ID found in environment');
+        }
 
         // 3. Copy all essential files from the root directory.
         console.log(`📄  Copying files from root to ${outputDir}...`);

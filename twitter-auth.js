@@ -32,7 +32,21 @@ class TwitterAuth {
     // Get client ID from meta tag (set during build)
     getClientIdFromMeta() {
         const metaTag = document.querySelector('meta[name="twitter-client-id"]');
-        return metaTag ? metaTag.getAttribute('content') : null;
+        const clientId = metaTag ? metaTag.getAttribute('content') : null;
+        
+        // Debugging: Log what we found
+        console.log('🔍 Twitter Client ID from meta tag:', clientId);
+        
+        // If still a placeholder, return fallback
+        if (clientId === '__TWITTER_CLIENT_ID__' || !clientId) {
+            console.warn('⚠️  Twitter Client ID placeholder not replaced!');
+            console.warn('⚠️  Make sure to run: npm run build');
+            console.warn('⚠️  And create .env file with TWITTER_CLIENT_ID');
+            // Return known working client ID as fallback
+            return 'N3BYdkxPZFJIS1lmSzkyRUJkcUM6MTpjaQ';
+        }
+        
+        return clientId;
     }
 
     // Get appropriate redirect URI based on environment
@@ -98,16 +112,24 @@ class TwitterAuth {
             
             // Listen for popup messages
             return new Promise((resolve, reject) => {
+                let authCompleted = false;
+                
                 const messageHandler = (event) => {
                     if (event.origin !== window.location.origin) return;
                     
                     if (event.data.type === 'TWITTER_AUTH_SUCCESS') {
+                        console.log('✅ Received authentication success message!');
+                        authCompleted = true;
+                        clearInterval(checkClosed);
                         window.removeEventListener('message', messageHandler);
                         popup.close();
                         this.handleAuthSuccess(event.data.code, codeVerifier)
                             .then(resolve)
                             .catch(reject);
                     } else if (event.data.type === 'TWITTER_AUTH_ERROR') {
+                        console.log('❌ Received authentication error message:', event.data.error);
+                        authCompleted = true;
+                        clearInterval(checkClosed);
                         window.removeEventListener('message', messageHandler);
                         popup.close();
                         reject(new Error(event.data.error));
@@ -116,14 +138,15 @@ class TwitterAuth {
                 
                 window.addEventListener('message', messageHandler);
                 
-                // Check if popup was closed manually
+                // Check if popup was closed manually (but not if auth completed)
                 const checkClosed = setInterval(() => {
-                    if (popup.closed) {
+                    if (popup.closed && !authCompleted) {
+                        console.log('🚪 Popup window closed by user');
                         clearInterval(checkClosed);
                         window.removeEventListener('message', messageHandler);
                         reject(new Error('Authentication cancelled'));
                     }
-                }, 1000);
+                }, 2000); // Increased to 2 seconds to give more time for slow connections
             });
             
         } catch (error) {
@@ -137,6 +160,10 @@ class TwitterAuth {
     // Handle successful authentication
     async handleAuthSuccess(authCode, codeVerifier) {
         try {
+            console.log('🔄 Processing authentication success...');
+            console.log('📋 Auth code received:', authCode ? 'YES' : 'NO');
+            console.log('🔑 Code verifier available:', codeVerifier ? 'YES' : 'NO');
+            
             // Exchange authorization code for access token
             const tokenResponse = await this.exchangeCodeForToken(authCode, codeVerifier);
             
@@ -203,8 +230,21 @@ class TwitterAuth {
         } catch (error) {
             console.error('Token exchange error:', error);
             
-            // Don't fallback to demo mode - show real error
-            throw new Error(`Twitter authentication failed: ${error.message}`);
+            // Provide more specific error messages
+            let errorMessage = 'Twitter authentication failed';
+            if (error.message.includes('Failed to fetch')) {
+                errorMessage = 'Cannot connect to Twitter API. Check your internet connection or try again later.';
+            } else if (error.message.includes('400')) {
+                errorMessage = 'Invalid authentication request. Please try connecting again.';
+            } else if (error.message.includes('401')) {
+                errorMessage = 'Twitter authentication failed. Please check your app permissions.';
+            } else if (error.message.includes('500')) {
+                errorMessage = 'Server error during authentication. Please try again.';
+            } else {
+                errorMessage = `Twitter authentication failed: ${error.message}`;
+            }
+            
+            throw new Error(errorMessage);
         }
     }
 

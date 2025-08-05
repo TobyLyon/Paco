@@ -160,18 +160,18 @@ class TrophyGenerator {
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
         
-        // Main title with enhanced shadow
-        this.ctx.font = 'bold 52px "Fredoka", sans-serif';
+        // Main title with enhanced shadow - BIGGER SIZE
+        this.ctx.font = 'bold 64px "Fredoka", sans-serif';
         this.ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-        this.ctx.fillText('PACO JUMP', this.canvas.width / 2 + 3, 48);
+        this.ctx.fillText('PACO JUMP', this.canvas.width / 2 + 3, 55);
         
         this.ctx.fillStyle = '#ffffff';
-        this.ctx.fillText('PACO JUMP', this.canvas.width / 2, 45);
+        this.ctx.fillText('PACO JUMP', this.canvas.width / 2, 52);
         
-        // Subtitle with better spacing
-        this.ctx.font = 'bold 22px "Fredoka", sans-serif';
+        // Subtitle with better spacing - BIGGER SIZE
+        this.ctx.font = 'bold 28px "Fredoka", sans-serif';
         this.ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-        this.ctx.fillText('🐔 CHAMPION ACHIEVEMENT 🐔', this.canvas.width / 2, 80);
+        this.ctx.fillText('🐔 CHAMPION ACHIEVEMENT 🐔', this.canvas.width / 2, 90);
         
         this.ctx.restore();
     }
@@ -181,12 +181,13 @@ class TrophyGenerator {
         this.ctx.save();
         this.ctx.textAlign = 'center';
         
-        const scoreY = this.canvas.height * 0.72;
+        // Move score much lower to fit in the open space perfectly
+        const scoreY = this.canvas.height * 0.82;
         
         // Score display (background containers removed for cleaner look)
         
-        // Score text with enhanced shadow
-        this.ctx.font = 'bold 48px "Fredoka", sans-serif';
+        // Score text with enhanced shadow - BIGGER SIZE
+        this.ctx.font = 'bold 54px "Fredoka", sans-serif';
         this.ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
         this.ctx.fillText(score.toLocaleString(), this.canvas.width / 2 + 3, scoreY + 3);
         
@@ -195,13 +196,13 @@ class TrophyGenerator {
         
         // Rank display if provided with better spacing
         if (rank) {
-            this.ctx.font = 'bold 22px "Fredoka", sans-serif';
+            this.ctx.font = 'bold 24px "Fredoka", sans-serif';
             this.ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
             const rankText = rank === 1 ? '🥇 #1 CHAMPION' : 
                            rank === 2 ? '🥈 #2 RUNNER-UP' : 
                            rank === 3 ? '🥉 #3 BRONZE' : 
                            `🏅 RANK #${rank}`;
-            this.ctx.fillText(rankText, this.canvas.width / 2, scoreY + 40);
+            this.ctx.fillText(rankText, this.canvas.width / 2, scoreY + 45);
         }
         
         this.ctx.restore();

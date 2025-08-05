@@ -2918,26 +2918,43 @@ body {
     }
     
     .canvas-container {
-        padding: var(--space-md);
+        padding: var(--space-sm);
         margin-bottom: var(--space-sm);
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
     
     #pfpCanvas {
-        width: 320px;
-        height: 320px;
-        max-width: 320px;
-        max-height: 320px;
+        width: 300px;
+        height: 300px;
+        max-width: 300px;
+        max-height: 300px;
+        border-radius: 12px;
     }
     
     .menu-section-compact {
         flex: none;
         padding: var(--space-sm);
         gap: var(--space-sm);
-        max-height: 300px;
+        max-height: none;
+        width: 100%;
     }
     
     .menu-category {
         margin-bottom: var(--space-sm);
+    }
+    
+    .menu-grid {
+        grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
+        gap: var(--space-xs);
+        justify-items: center;
+    }
+    
+    .order-summary-compact {
+        margin: var(--space-md) 0;
+        padding: var(--space-sm);
+        text-align: center;
     }
 }
 
@@ -3008,6 +3025,41 @@ body {
         min-width: 50px;
         padding: var(--space-xs);
     }
+    
+    /* ===== MOBILE GAME LAYOUT FIXES ===== */
+    .game-header {
+        padding: var(--space-md);
+        flex-direction: column;
+        gap: var(--space-sm);
+        text-align: center;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .game-controls {
+        padding: var(--space-md);
+        gap: var(--space-sm);
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .game-btn {
+        width: 100%;
+        max-width: 280px;
+        padding: var(--space-sm) var(--space-md);
+        font-size: var(--font-size-sm);
+        min-height: 44px;
+        border-radius: 8px;
+    }
+    
+    .mobile-instructions {
+        padding: var(--space-sm);
+        text-align: center;
+        width: 100%;
+        box-sizing: border-box;
+    }
 }
 
 /* ===== EXTRA SMALL MOBILE SCREENS ===== */
@@ -3069,12 +3121,23 @@ body {
     }
     
     #gameCanvas {
-        width: 100% !important;
-        height: auto !important;
+        width: 280px !important;
+        height: 420px !important;
         max-width: 280px !important;
         max-height: 420px !important;
         border-radius: 10px;
-        image-rendering: auto !important; /* Better for small mobile screens */
+        image-rendering: pixelated !important;
+        margin: 0 auto;
+        display: block;
+    }
+    
+    .game-canvas-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: var(--space-sm);
+        margin: 0 auto;
+        max-width: 320px;
     }
     
     .game-controls {
@@ -3183,19 +3246,24 @@ body {
     body {
         overflow-y: auto;
         height: auto;
+        padding: 0;
+        margin: 0;
     }
     
     .restaurant-container {
         padding: var(--space-sm);
         height: auto;
         min-height: calc(100vh - 55px);
+        width: 100%;
+        box-sizing: border-box;
     }
     
-    .pfp-generator {
-        flex-direction: column;
-        max-width: 100%;
+    /* ===== MOBILE TAB PANELS ===== */
+    .tab-panel {
+        padding: var(--space-sm);
         margin: 0;
         width: 100%;
+        box-sizing: border-box;
     }
     
     .generator-content {

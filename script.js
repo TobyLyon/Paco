@@ -1369,17 +1369,19 @@ function initializeTabSystem() {
     console.log('✅ Tab system initialized');
 }
 
-// Initialize mobile-specific UI adjustments
+// Initialize mobile-specific UI adjustments - RESTORED ORIGINAL SYSTEM
 function initializeMobileUI() {
     if (isMobileDevice()) {
-        console.log('📱 Mobile device detected, adjusting UI...');
+        console.log('📱 Mobile device detected, applying original optimizations...');
+        
+        // Apply mobile-optimized body class for CSS targeting
+        document.body.classList.add('mobile-optimized');
         
         // Update copy button for mobile users
         const copyBtn = document.querySelector('.copy-btn');
         if (copyBtn) {
             // Add mobile indicator to copy button
-            const originalText = copyBtn.textContent;
-            copyBtn.innerHTML = '📋 COPY <small style="opacity: 0.8; font-size: 0.7em; display: block; margin-top: 2px;">May not work on all mobile browsers</small>';
+            copyBtn.innerHTML = '📋 COPY <small style="opacity: 0.8; font-size: 0.7em; display: block; margin-top: 2px;">May not work on all browsers</small>';
             
             // Add mobile-specific styling
             copyBtn.style.fontSize = '0.85em';
@@ -1393,7 +1395,37 @@ function initializeMobileUI() {
             downloadBtn.innerHTML = '📥 DOWNLOAD <small style="opacity: 0.9; font-size: 0.8em; display: block; margin-top: 1px;">Recommended for mobile</small>';
         }
         
-        console.log('✅ Mobile UI adjustments applied');
+        // Hide elements that waste space on mobile
+        const elementsToHide = [
+            '.combo-buttons', // Quick combos take too much space
+            '.item-name', // Item names are redundant with emojis
+            '.palace-tagline', // Extra text in header
+            '.abstract-text' // Text next to logo
+        ];
+        
+        elementsToHide.forEach(selector => {
+            const elements = document.querySelectorAll(selector);
+            elements.forEach(el => {
+                el.style.display = 'none';
+            });
+        });
+        
+        // Optimize mobile game instructions
+        const gameInstructions = document.querySelector('.mobile-instructions p');
+        if (gameInstructions) {
+            gameInstructions.textContent = '📱 Tap left/right to move • Jump higher for more points!';
+        }
+        
+        // Add mobile orientation optimization
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                console.log('📱 Orientation changed, adjusting layout...');
+                // Force layout recalculation after orientation change
+                window.dispatchEvent(new Event('resize'));
+            }, 100);
+        });
+        
+        console.log('✅ Original mobile optimizations restored and applied');
     }
 }
 

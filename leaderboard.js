@@ -13,8 +13,10 @@ class Leaderboard {
         this.userBestScore = 0;
         this.dailyResetTime = this.getResetTime();
         this.realtimeChannel = null;
+        this.countdownInterval = null;
         
         console.log('🏆 Leaderboard system initialized');
+        console.log(`⏰ Daily reset time: ${this.dailyResetTime.toLocaleString()}`);
     }
 
     // Get reset time - check for custom time first, then default
@@ -90,6 +92,9 @@ class Leaderboard {
             this.showLeaderboard();
         }
         
+        // Restart countdown timer with new time
+        this.startCountdownTimer();
+        
         return this.dailyResetTime;
     }
 
@@ -110,7 +115,74 @@ class Leaderboard {
             this.showLeaderboard();
         }
         
+        // Restart countdown timer with new time
+        this.startCountdownTimer();
+        
         return this.dailyResetTime;
+    }
+
+    // Get formatted time until reset
+    getTimeUntilReset() {
+        const now = Date.now();
+        const resetTime = this.dailyResetTime.getTime();
+        const diff = resetTime - now;
+        
+        if (diff <= 0) {
+            return 'Contest ended!';
+        }
+        
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+        
+        if (hours > 0) {
+            return `${hours}h ${minutes}m`;
+        } else if (minutes > 0) {
+            return `${minutes}m ${seconds}s`;
+        } else {
+            return `${seconds}s`;
+        }
+    }
+
+    // Start countdown timer updates
+    startCountdownTimer() {
+        // Clear existing timer
+        if (this.countdownInterval) {
+            clearInterval(this.countdownInterval);
+        }
+        
+        // Update every second
+        this.countdownInterval = setInterval(() => {
+            // Check if leaderboard is visible
+            const overlay = document.getElementById('gameOverlay');
+            if (overlay && overlay.classList.contains('show')) {
+                // Update countdown display
+                const timerElement = document.querySelector('.reset-timer strong');
+                if (timerElement) {
+                    const timeRemaining = this.getTimeUntilReset();
+                    timerElement.textContent = timeRemaining;
+                    
+                    // Check if contest ended
+                    if (timeRemaining === 'Contest ended!') {
+                        timerElement.style.color = '#ef4444'; // Red color
+                        timerElement.parentElement.innerHTML = '🏁 Contest ended! New contest starts soon...';
+                        clearInterval(this.countdownInterval);
+                        this.countdownInterval = null;
+                    }
+                }
+            }
+        }, 1000);
+        
+        console.log('⏱️ Countdown timer started');
+    }
+
+    // Stop countdown timer
+    stopCountdownTimer() {
+        if (this.countdownInterval) {
+            clearInterval(this.countdownInterval);
+            this.countdownInterval = null;
+            console.log('⏱️ Countdown timer stopped');
+        }
     }
 
     // Submit score to leaderboard
@@ -361,11 +433,24 @@ class Leaderboard {
             
             leaderboardHTML += '</div>';
             
-            // Enhanced reset timer with contest theme
+            // Enhanced reset timer with contest theme and restart button
             const timeUntilReset = this.getTimeUntilReset();
             leaderboardHTML += `
                 <div style="text-align: center; margin: 12px 0; padding: 8px; background: rgba(251, 191, 36, 0.1); border-radius: 6px; border: 1px solid rgba(251, 191, 36, 0.3);">
                     <p class="reset-timer">🎯 Contest resets in: <strong>${timeUntilReset}</strong></p>
+                    <button onclick="leaderboard.restartCountdown(24)" style="
+                        background: rgba(34, 197, 94, 0.2);
+                        border: 1px solid rgba(34, 197, 94, 0.4);
+                        color: #10b981;
+                        padding: 4px 8px;
+                        border-radius: 4px;
+                        font-size: 0.8rem;
+                        cursor: pointer;
+                        margin-top: 4px;
+                        transition: all 0.3s ease;
+                    " onmouseover="this.style.background='rgba(34, 197, 94, 0.3)'" onmouseout="this.style.background='rgba(34, 197, 94, 0.2)'">
+                        ⏱️ Extend Contest (+24h)
+                    </button>
                 </div>
             `;
         }
@@ -461,6 +546,9 @@ class Leaderboard {
         
         overlayContent.innerHTML = leaderboardHTML;
         overlay.classList.add('show');
+        
+        // Start countdown timer updates
+        this.startCountdownTimer();
     }
 
     // Hide leaderboard
@@ -470,6 +558,9 @@ class Leaderboard {
             overlay.classList.remove('show');
         }
         this.removeLeaderboardBackdrop();
+        
+        // Stop countdown timer
+        this.stopCountdownTimer();
     }
 
     // Show expanded leaderboard

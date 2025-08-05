@@ -2211,7 +2211,6 @@ class PacoJumpGame {
                 <div style="font-size: 2rem; margin-bottom: 8px;">🐔</div>
                 <h3 style="color: #fbbf24; margin: 0 0 8px 0;">🏆 Daily Leaderboard</h3>
                 <p style="margin: 0; font-size: 0.9rem;">Loading leaderboard...</p>
-                <p style="font-size: 0.8rem; color: var(--restaurant-yellow); margin: 4px 0 0 0;">Connect Twitter to join the contest!</p>
             </div>
         `;
     }

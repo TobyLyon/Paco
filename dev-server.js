@@ -17,6 +17,9 @@ console.log('🚀 Starting dynamic development server...');
 // Serve static files from root directory
 app.use(express.static('.'));
 
+// Explicitly serve auth directory
+app.use('/auth', express.static('./auth'));
+
 // DYNAMIC ASSET SERVING - directly from source!
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 

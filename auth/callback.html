@@ -356,10 +356,8 @@
                 
                 setTimeout(() => {
                     updateStatus('Redirecting back to game...', 'processing');
-                    setTimeout(() => {
-                        window.location.href = '/';
-                    }, 1000);
-                }, 1000);
+                    window.location.href = '/';
+                }, 500);
                 
             } else if (window.opener && !window.opener.closed) {
                 // Desktop popup flow

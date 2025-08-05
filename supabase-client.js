@@ -289,26 +289,71 @@ class OrderTracker {
         }
     }
 
-    // Get today's leaderboard
+    // Get today's leaderboard - only best score per user
     async getTodayLeaderboard() {
         try {
             const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
 
-            const { data, error } = await supabase
-                .from('game_scores')
-                .select('*')
-                .eq('game_date', today)
-                .order('score', { ascending: false })
-                .limit(50);
+            // Use a raw SQL query to get only the best score per user
+            const { data, error } = await supabase.rpc('get_daily_leaderboard', {
+                target_date: today,
+                score_limit: 50
+            });
+
+            // If the function doesn't exist, fall back to the old method with client-side deduplication
+            if (error && error.code === '42883') {
+                console.log('📊 Using fallback method for leaderboard deduplication');
+                return await this.getTodayLeaderboardFallback();
+            }
 
             if (error) {
                 console.error('Error getting today leaderboard:', error);
                 return { success: false, data: [], error };
             }
 
+            console.log('📊 Fetched deduplicated leaderboard with', data?.length || 0, 'unique users');
             return { success: true, data: data || [] };
         } catch (error) {
             console.error('Exception getting today leaderboard:', error);
+            return { success: false, data: [], error: error.message };
+        }
+    }
+
+    // Fallback method - fetch all scores and deduplicate client-side
+    async getTodayLeaderboardFallback() {
+        try {
+            const today = new Date().toISOString().split('T')[0];
+
+            const { data, error } = await supabase
+                .from('game_scores')
+                .select('*')
+                .eq('game_date', today)
+                .order('score', { ascending: false });
+
+            if (error) {
+                console.error('Error getting today leaderboard fallback:', error);
+                return { success: false, data: [], error };
+            }
+
+            // Deduplicate - keep only the best score per user
+            const userBestScores = new Map();
+            
+            (data || []).forEach(entry => {
+                const existingScore = userBestScores.get(entry.user_id);
+                if (!existingScore || entry.score > existingScore.score) {
+                    userBestScores.set(entry.user_id, entry);
+                }
+            });
+
+            // Convert back to array and sort by score
+            const deduplicatedData = Array.from(userBestScores.values())
+                .sort((a, b) => b.score - a.score)
+                .slice(0, 50);
+
+            console.log('📊 Client-side deduplication: reduced', data?.length || 0, 'entries to', deduplicatedData.length, 'unique users');
+            return { success: true, data: deduplicatedData };
+        } catch (error) {
+            console.error('Exception in leaderboard fallback:', error);
             return { success: false, data: [], error: error.message };
         }
     }

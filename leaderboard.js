@@ -11,10 +11,38 @@ class Leaderboard {
         this.tableName = 'game_scores';
         this.currentLeaderboard = [];
         this.userBestScore = 0;
-        this.dailyResetTime = this.getTodayResetTime();
+        this.dailyResetTime = this.getResetTime();
         this.realtimeChannel = null;
         
         console.log('🏆 Leaderboard system initialized');
+    }
+
+    // Get reset time - check for custom time first, then default
+    getResetTime() {
+        // Check if there's a custom reset time set
+        const customResetData = localStorage.getItem('leaderboard_reset_time');
+        if (customResetData) {
+            try {
+                const resetData = JSON.parse(customResetData);
+                const customResetTime = new Date(resetData.resetTime);
+                
+                // Only use custom time if it's in the future
+                if (customResetTime.getTime() > Date.now()) {
+                    console.log('⏰ Using custom reset time:', customResetTime.toLocaleString());
+                    return customResetTime;
+                } else {
+                    // Custom time has passed, remove it and use default
+                    localStorage.removeItem('leaderboard_reset_time');
+                    console.log('⏰ Custom reset time expired, using default');
+                }
+            } catch (error) {
+                console.warn('⚠️ Invalid custom reset time data, using default');
+                localStorage.removeItem('leaderboard_reset_time');
+            }
+        }
+        
+        // Use default daily reset time
+        return this.getTodayResetTime();
     }
 
     // Get today's reset time (UTC midnight)
@@ -34,6 +62,55 @@ class Leaderboard {
     // Check if leaderboard needs reset
     needsReset() {
         return Date.now() >= this.dailyResetTime.getTime();
+    }
+
+    // Restart/extend the countdown timer
+    restartCountdown(hoursToExtend = 24) {
+        console.log(`🔄 Restarting leaderboard countdown by ${hoursToExtend} hours`);
+        
+        // Set new reset time to current time + specified hours
+        const newResetTime = new Date();
+        newResetTime.setTime(newResetTime.getTime() + (hoursToExtend * 60 * 60 * 1000));
+        
+        this.dailyResetTime = newResetTime;
+        
+        // Save the new reset time to localStorage so it persists
+        const resetData = {
+            resetTime: this.dailyResetTime.toISOString(),
+            extendedAt: new Date().toISOString(),
+            hoursExtended: hoursToExtend
+        };
+        localStorage.setItem('leaderboard_reset_time', JSON.stringify(resetData));
+        
+        console.log(`⏰ New countdown reset time: ${this.dailyResetTime.toLocaleString()}`);
+        console.log(`⏱️ Time remaining: ${this.getTimeUntilReset()}`);
+        
+        // Refresh the leaderboard display to show new countdown
+        if (this.currentLeaderboard.length > 0) {
+            this.showLeaderboard();
+        }
+        
+        return this.dailyResetTime;
+    }
+
+    // Reset countdown back to normal daily schedule
+    resetToDefaultSchedule() {
+        console.log('🔄 Resetting countdown to default daily schedule');
+        
+        // Clear any custom reset time
+        localStorage.removeItem('leaderboard_reset_time');
+        
+        // Set back to normal daily reset
+        this.dailyResetTime = this.getTodayResetTime();
+        
+        console.log(`⏰ Reset to default schedule: ${this.dailyResetTime.toLocaleString()}`);
+        
+        // Refresh the leaderboard display
+        if (this.currentLeaderboard.length > 0) {
+            this.showLeaderboard();
+        }
+        
+        return this.dailyResetTime;
     }
 
     // Submit score to leaderboard
@@ -568,5 +645,30 @@ async function generateAndShareLeaderboardTrophy(score, username, rank) {
 
 // Export singleton instance
 const leaderboard = new Leaderboard();
+
+// Global functions for leaderboard management (accessible from browser console)
+window.restartLeaderboardCountdown = function(hours = 24) {
+    if (leaderboard) {
+        return leaderboard.restartCountdown(hours);
+    } else {
+        console.error('❌ Leaderboard not initialized yet');
+        return null;
+    }
+};
+
+window.resetLeaderboardToDefault = function() {
+    if (leaderboard) {
+        return leaderboard.resetToDefaultSchedule();
+    } else {
+        console.error('❌ Leaderboard not initialized yet');
+        return null;
+    }
+};
+
+// Helpful console commands info
+console.log('🏆 Leaderboard Console Commands:');
+console.log('- restartLeaderboardCountdown(hours) - Extend countdown by specified hours (default: 24)');
+console.log('- resetLeaderboardToDefault() - Reset to normal daily schedule');
+console.log('- Example: restartLeaderboardCountdown(48) // Extend by 48 hours');
 
 console.log('📊 Leaderboard module loaded');

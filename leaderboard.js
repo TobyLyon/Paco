@@ -1305,9 +1305,78 @@ window.compareLeaderboardData = async function() {
     }
 };
 
+// NEW: Test if we can actually write to Supabase
+window.testSupabaseConnection = async function() {
+    console.log('🔍 TESTING SUPABASE CONNECTION...');
+    
+    try {
+        // Test basic connection by trying to read the table structure
+        const { data: tableInfo, error: tableError } = await supabase
+            .from('game_scores')
+            .select('*')
+            .limit(1);
+            
+        if (tableError) {
+            console.error('❌ Cannot read from game_scores table:', tableError);
+            return { connected: false, error: tableError };
+        }
+        
+        console.log('✅ Can read from game_scores table');
+        
+        // Test basic insert permission (we'll rollback)
+        const testRecord = {
+            user_id: 'test_connection_' + Date.now(),
+            username: 'connection_test',
+            display_name: 'Connection Test',
+            profile_image: '',
+            score: 1,
+            game_date: new Date().toISOString().split('T')[0],
+            user_agent: navigator.userAgent
+        };
+        
+        console.log('🧪 Testing insert permission...');
+        const { data: insertData, error: insertError } = await supabase
+            .from('game_scores')
+            .insert([testRecord])
+            .select();
+            
+        if (insertError) {
+            console.error('❌ Cannot insert to game_scores:', insertError);
+            return { 
+                connected: true, 
+                canRead: true, 
+                canWrite: false, 
+                error: insertError 
+            };
+        }
+        
+        console.log('✅ Successfully inserted test record:', insertData[0]?.id);
+        
+        // Clean up test record
+        if (insertData && insertData[0]) {
+            await supabase
+                .from('game_scores')
+                .delete()
+                .eq('id', insertData[0].id);
+            console.log('🧹 Cleaned up test record');
+        }
+        
+        return { 
+            connected: true, 
+            canRead: true, 
+            canWrite: true,
+            tableExists: true
+        };
+        
+    } catch (error) {
+        console.error('❌ Supabase connection test failed:', error);
+        return { connected: false, error: error.message };
+    }
+};
+
 console.log('📊 Leaderboard module loaded');
 console.log('🔧 Debug commands: debugCountdown(), fixCountdown(), testTimer(), checkTimerState()');
 console.log('🔧 Score debug: debugScoreSubmission(), forceRefreshLeaderboard(), checkRealtimeStatus()');
-console.log('🔧 Data compare: compareLeaderboardData()');
+console.log('🔧 Data compare: compareLeaderboardData(), testSupabaseConnection()');
 
 // Console commands removed for contest security

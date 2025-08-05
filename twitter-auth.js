@@ -108,7 +108,17 @@ class TwitterAuth {
             console.log('🌐 Auth URL:', authUrl);
             console.log('🔧 Auth params:', Object.fromEntries(authParams));
             
-            // Open popup window for authentication
+            // Check if mobile device for different auth approach
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+            
+            if (isMobile) {
+                // Mobile: Use same window redirect instead of popup
+                console.log('📱 Mobile detected, using same-window redirect');
+                window.location.href = authUrl;
+                return;
+            }
+            
+            // Desktop: Use popup window for authentication
             const popup = window.open(
                 authUrl,
                 'twitterAuth',

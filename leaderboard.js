@@ -1217,6 +1217,14 @@ window.forceRefreshLeaderboard = async function() {
     try {
         await leaderboard.fetchTodayLeaderboard();
         console.log('✅ Leaderboard refreshed, entries:', leaderboard.currentLeaderboard.length);
+        
+        // If leaderboard is currently shown, refresh the display
+        const overlay = document.getElementById('gameOverlay');
+        if (overlay && overlay.classList.contains('show')) {
+            leaderboard.showLeaderboard();
+            console.log('🔄 UI refreshed');
+        }
+        
         return leaderboard.currentLeaderboard;
     } catch (error) {
         console.error('❌ Refresh failed:', error);
@@ -1224,8 +1232,26 @@ window.forceRefreshLeaderboard = async function() {
     }
 };
 
+window.checkRealtimeStatus = function() {
+    console.log('📡 REAL-TIME STATUS CHECK:');
+    console.log('Real-time channel exists:', !!leaderboard.realtimeChannel);
+    console.log('OrderTracker available:', !!orderTracker);
+    console.log('SubscribeToGameScores function:', typeof orderTracker?.subscribeToGameScores);
+    
+    if (orderTracker && orderTracker.realtimeChannel) {
+        console.log('Supabase channel state:', orderTracker.realtimeChannel.state);
+    }
+    
+    return {
+        channelExists: !!leaderboard.realtimeChannel,
+        orderTrackerAvailable: !!orderTracker,
+        subscribeFunction: typeof orderTracker?.subscribeToGameScores,
+        channelState: orderTracker?.realtimeChannel?.state
+    };
+};
+
 console.log('📊 Leaderboard module loaded');
 console.log('🔧 Debug commands: debugCountdown(), fixCountdown(), testTimer(), checkTimerState()');
-console.log('🔧 Score debug: debugScoreSubmission(), forceRefreshLeaderboard()');
+console.log('🔧 Score debug: debugScoreSubmission(), forceRefreshLeaderboard(), checkRealtimeStatus()');
 
 // Console commands removed for contest security

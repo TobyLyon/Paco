@@ -484,6 +484,61 @@ class TwitterAuth {
             }
         }
     }
+    
+    // Handle auth callback data (mobile flow)
+    async handleAuthCallback(authCode, authState) {
+        try {
+            console.log('📱 MOBILE: Processing stored auth callback data...');
+            console.log('📋 Auth code:', authCode ? 'PRESENT' : 'MISSING');
+            console.log('🔑 Auth state:', authState ? 'PRESENT' : 'MISSING');
+            
+            // Get the stored code verifier
+            const codeVerifier = localStorage.getItem('twitter_code_verifier');
+            
+            if (!codeVerifier) {
+                throw new Error('Code verifier not found - authentication expired');
+            }
+            
+            console.log('🔑 Code verifier found, proceeding with token exchange...');
+            
+            // Process the authentication using the existing handleAuthSuccess method
+            const user = await this.handleAuthSuccess(authCode, codeVerifier);
+            
+            console.log('✅ MOBILE: Authentication completed successfully!', user);
+            
+            // Update UI to reflect authenticated state
+            this.updateUI();
+            
+            // Trigger any callbacks or events
+            this.dispatchAuthEvent('success', user);
+            
+            return user;
+            
+        } catch (error) {
+            console.error('❌ MOBILE: Auth callback handling failed:', error);
+            
+            // Clean up any remaining auth data
+            localStorage.removeItem('twitter_code_verifier');
+            
+            // Trigger error event
+            this.dispatchAuthEvent('error', error);
+            
+            throw error;
+        }
+    }
+    
+    // Dispatch authentication events for better integration
+    dispatchAuthEvent(type, data) {
+        try {
+            const event = new CustomEvent('twitterAuthStateChange', {
+                detail: { type, data, authenticated: this.authenticated }
+            });
+            window.dispatchEvent(event);
+            console.log(`🔔 Dispatched auth event: ${type}`);
+        } catch (error) {
+            console.warn('Failed to dispatch auth event:', error);
+        }
+    }
 
     // Generate PKCE code verifier
     generateCodeVerifier() {
@@ -521,12 +576,18 @@ class TwitterAuth {
         const authButton = document.getElementById('twitterAuthButton');
         const leaderboardButton = document.getElementById('leaderboardButton');
         
+        console.log('🔄 Updating UI, authenticated:', this.authenticated, 'user:', this.user?.username);
+        
         if (this.authenticated) {
             // Hide auth button, show leaderboard access
-            if (authButton) authButton.style.display = 'none';
+            if (authButton) {
+                authButton.style.display = 'none';
+                console.log('✅ UI: Auth button hidden');
+            }
             if (leaderboardButton) {
                 leaderboardButton.disabled = false;
                 leaderboardButton.textContent = '🏆 Leaderboard';
+                console.log('✅ UI: Leaderboard button enabled');
             }
             
             // Update any user display elements
@@ -536,12 +597,19 @@ class TwitterAuth {
             if (authButton) {
                 authButton.style.display = 'block';
                 authButton.textContent = '🐦 Connect Twitter for Contest';
+                authButton.disabled = false; // Ensure button is clickable
+                console.log('✅ UI: Auth button shown and enabled');
             }
             if (leaderboardButton) {
                 leaderboardButton.disabled = true;
                 leaderboardButton.textContent = '🔒 Twitter Required';
+                console.log('✅ UI: Leaderboard button disabled');
             }
         }
+        
+        // Force DOM update by triggering a reflow
+        if (authButton) authButton.offsetHeight;
+        if (leaderboardButton) leaderboardButton.offsetHeight;
     }
 
     // Update user display in UI

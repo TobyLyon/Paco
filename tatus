@@ -3,3 +3,109 @@
 [33ma2ff0be[m  Fix broken Paco Jump tab - removed duplicate walk.gif from PFP Generator tab
 [33m8da8f8b[m  Contest Ready: Twitter Integration + Trophy System + Performance Optimizations
 [33mf7cbf0c[m Fix action buttons clipping issue - ensure copy/download buttons always visible
+[1mdiff --git a/twitter-auth.js b/twitter-auth.js[m
+[1mindex fffd430..be8cf83 100644[m
+[1m--- a/twitter-auth.js[m
+[1m+++ b/twitter-auth.js[m
+[36m@@ -484,6 +484,61 @@[m [mclass TwitterAuth {[m
+             }[m
+         }[m
+     }[m
+[32m+[m[41m    [m
+[32m+[m[32m    // Handle auth callback data (mobile flow)[m
+[32m+[m[32m    async handleAuthCallback(authCode, authState) {[m
+[32m+[m[32m        try {[m
+[32m+[m[32m            console.log('📱 MOBILE: Processing stored auth callback data...');[m
+[32m+[m[32m            console.log('📋 Auth code:', authCode ? 'PRESENT' : 'MISSING');[m
+[32m+[m[32m            console.log('🔑 Auth state:', authState ? 'PRESENT' : 'MISSING');[m
+[32m+[m[41m            [m
+[32m+[m[32m            // Get the stored code verifier[m
+[32m+[m[32m            const codeVerifier = localStorage.getItem('twitter_code_verifier');[m
+[32m+[m[41m            [m
+[32m+[m[32m            if (!codeVerifier) {[m
+[32m+[m[32m                throw new Error('Code verifier not found - authentication expired');[m
+[32m+[m[32m            }[m
+[32m+[m[41m            [m
+[32m+[m[32m            console.log('🔑 Code verifier found, proceeding with token exchange...');[m
+[32m+[m[41m            [m
+[32m+[m[32m            // Process the authentication using the existing handleAuthSuccess method[m
+[32m+[m[32m            const user = await this.handleAuthSuccess(authCode, codeVerifier);[m
+[32m+[m[41m            [m
+[32m+[m[32m            console.log('✅ MOBILE: Authentication completed successfully!', user);[m
+[32m+[m[41m            [m
+[32m+[m[32m            // Update UI to reflect authenticated state[m
+[32m+[m[32m            this.updateUI();[m
+[32m+[m[41m            [m
+[32m+[m[32m            // Trigger any callbacks or events[m
+[32m+[m[32m            this.dispatchAuthEvent('success', user);[m
+[32m+[m[41m            [m
+[32m+[m[32m            return user;[m
+[32m+[m[41m            [m
+[32m+[m[32m        } catch (error) {[m
+[32m+[m[32m            console.error('❌ MOBILE: Auth callback handling failed:', error);[m
+[32m+[m[41m            [m
+[32m+[m[32m            // Clean up any remaining auth data[m
+[32m+[m[32m            localStorage.removeItem('twitter_code_verifier');[m
+[32m+[m[41m            [m
+[32m+[m[32m            // Trigger error event[m
+[32m+[m[32m            this.dispatchAuthEvent('error', error);[m
+[32m+[m[41m            [m
+[32m+[m[32m            throw error;[m
+[32m+[m[32m        }[m
+[32m+[m[32m    }[m
+[32m+[m[41m    [m
+[32m+[m[32m    // Dispatch authentication events for better integration[m
+[32m+[m[32m    dispatchAuthEvent(type, data) {[m
+[32m+[m[32m        try {[m
+[32m+[m[32m            const event = new CustomEvent('twitterAuthStateChange', {[m
+[32m+[m[32m                detail: { type, data, authenticated: this.authenticated }[m
+[32m+[m[32m            });[m
+[32m+[m[32m            window.dispatchEvent(event);[m
+[32m+[m[32m            console.log(`🔔 Dispatched auth event: ${type}`);[m
+[32m+[m[32m        } catch (error) {[m
+[32m+[m[32m            console.warn('Failed to dispatch auth event:', error);[m
+[32m+[m[32m        }[m
+[32m+[m[32m    }[m
+ [m
+     // Generate PKCE code verifier[m
+     generateCodeVerifier() {[m
+[36m@@ -521,12 +576,18 @@[m [mclass TwitterAuth {[m
+         const authButton = document.getElementById('twitterAuthButton');[m
+         const leaderboardButton = document.getElementById('leaderboardButton');[m
+         [m
+[32m+[m[32m        console.log('🔄 Updating UI, authenticated:', this.authenticated, 'user:', this.user?.username);[m
+[32m+[m[41m        [m
+         if (this.authenticated) {[m
+             // Hide auth button, show leaderboard access[m
+[31m-            if (authButton) authButton.style.display = 'none';[m
+[32m+[m[32m            if (authButton) {[m
+[32m+[m[32m                authButton.style.display = 'none';[m
+[32m+[m[32m                console.log('✅ UI: Auth button hidden');[m
+[32m+[m[32m            }[m
+             if (leaderboardButton) {[m
+                 leaderboardButton.disabled = false;[m
+                 leaderboardButton.textContent = '🏆 Leaderboard';[m
+[32m+[m[32m                console.log('✅ UI: Leaderboard button enabled');[m
+             }[m
+             [m
+             // Update any user display elements[m
+[36m@@ -536,12 +597,19 @@[m [mclass TwitterAuth {[m
+             if (authButton) {[m
+                 authButton.style.display = 'block';[m
+                 authButton.textContent = '🐦 Connect Twitter for Contest';[m
+[32m+[m[32m                authButton.disabled = false; // Ensure button is clickable[m
+[32m+[m[32m                console.log('✅ UI: Auth button shown and enabled');[m
+             }[m
+             if (leaderboardButton) {[m
+                 leaderboardButton.disabled = true;[m
+                 leaderboardButton.textContent = '🔒 Twitter Required';[m
+[32m+[m[32m                console.log('✅ UI: Leaderboard button disabled');[m
+             }[m
+         }[m
+[32m+[m[41m        [m
+[32m+[m[32m        // Force DOM update by triggering a reflow[m
+[32m+[m[32m        if (authButton) authButton.offsetHeight;[m
+[32m+[m[32m        if (leaderboardButton) leaderboardButton.offsetHeight;[m
+     }[m
+ [m
+     // Update user display in UI[m

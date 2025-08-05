@@ -499,16 +499,21 @@ class Leaderboard {
 
     // Display leaderboard in UI - SIMPLE AND CLEAN
     showLeaderboard(expandedMode = false) {
-        if (expandedMode) {
-            this.showExpandedModal();
-            return;
-        }
+        try {
+            console.log('📊 showLeaderboard called, expandedMode:', expandedMode);
+            
+            if (expandedMode) {
+                this.showExpandedModal();
+                return;
+            }
         
         const overlay = document.getElementById('gameOverlay');
         const overlayContent = document.getElementById('overlayContent');
         
         if (!overlay || !overlayContent) {
-            console.error('Leaderboard UI elements not found');
+            console.error('❌ LEADERBOARD ERROR: UI elements not found');
+            console.error('❌ overlay exists:', !!overlay);
+            console.error('❌ overlayContent exists:', !!overlayContent);
             return;
         }
 
@@ -630,6 +635,26 @@ class Leaderboard {
         // Start countdown timer updates (only if not already running)
         if (!this.countdownInterval) {
         this.startCountdownTimer();
+        }
+        
+        } catch (error) {
+            console.error('❌ LEADERBOARD DISPLAY ERROR:', error);
+            console.error('❌ Error stack:', error.stack);
+            console.error('❌ Mobile user agent:', navigator.userAgent);
+            
+            // Show a fallback message
+            const overlay = document.getElementById('gameOverlay');
+            const overlayContent = document.getElementById('overlayContent');
+            if (overlay && overlayContent) {
+                overlayContent.innerHTML = `
+                    <div style="text-align: center; padding: 20px; color: var(--text-secondary);">
+                        <h3 style="color: #fbbf24; margin: 0 0 12px 0;">🏆 Leaderboard</h3>
+                        <p style="margin: 0; color: #ef4444;">Unable to load leaderboard</p>
+                        <p style="margin: 8px 0 0 0; font-size: 0.8rem; color: #94a3b8;">Please try refreshing the page</p>
+                    </div>
+                `;
+                overlay.classList.add('show');
+            }
         }
     }
 

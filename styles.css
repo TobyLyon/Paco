@@ -2081,11 +2081,17 @@ body {
     box-shadow: 0 2px 8px rgba(251, 191, 36, 0.3);
 }
 
+/* Leaderboard header container */
+.leaderboard-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    position: relative;
+}
+
 /* Leaderboard toggle button */
 .leaderboard-toggle {
-    position: absolute;
-    top: var(--space-sm);
-    right: var(--space-sm);
     background: rgba(255, 255, 255, 0.1);
     border: none; /* Remove border */
     border-radius: 8px;
@@ -2096,12 +2102,12 @@ body {
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     font-size: 1.2rem; /* Bigger magnifying glass */
-    z-index: 10;
     width: 36px; /* Fixed width */
     height: 36px; /* Fixed height */
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0; /* Don't shrink */
 }
 
 .leaderboard-toggle:hover {

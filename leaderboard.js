@@ -526,8 +526,10 @@ class Leaderboard {
 
         // Clean, simple leaderboard HTML
         let leaderboardHTML = '<div class="leaderboard-container compact">';
+        leaderboardHTML += '<div class="leaderboard-header">';
+        leaderboardHTML += '<h3 style="margin: 0; font-size: 1.1rem;">🏆 Leaderboard</h3>';
         leaderboardHTML += '<button class="leaderboard-toggle" onclick="leaderboard.showExpandedLeaderboard()" title="Expand">🔍</button>';
-        leaderboardHTML += '<h3 style="margin: 0 0 12px 0; font-size: 1.1rem;">🏆 Leaderboard</h3>';
+        leaderboardHTML += '</div>';
         
         if (this.currentLeaderboard.length === 0) {
             leaderboardHTML += `

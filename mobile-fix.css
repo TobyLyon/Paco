@@ -41,6 +41,11 @@
         font-size: 1.1rem !important;
     }
     
+    /* Header spacing for mobile */
+    .leaderboard-header {
+        margin-bottom: 8px !important;
+    }
+    
     /* ===== RESTORE ORIGINAL MOBILE HEADER OPTIMIZATIONS ===== */
     
     /* Hide palace title and tagline on mobile for space */

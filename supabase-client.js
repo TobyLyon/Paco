@@ -287,37 +287,26 @@ class OrderTracker {
                 console.log(`🔍 IS NEW SCORE HIGHER? ${scoreData.score > existingScore.score}`);
                 
                 if (scoreData.score > existingScore.score) {
-                    // New score is higher - DELETE old record and INSERT new one (workaround for update issues)
-                    console.log(`🚀 REPLACING RECORD ID ${existingScore.id} FROM ${existingScore.score} TO ${scoreData.score}`);
+                    // New score is higher - use UPSERT to handle constraint properly
+                    console.log(`🚀 UPSERTING RECORD: ${existingScore.score} TO ${scoreData.score}`);
                     
-                    // First delete the old record
-                    const deleteResult = await supabase
+                    // Use UPSERT (INSERT with ON CONFLICT UPDATE)
+                    const upsertResult = await supabase
                         .from('game_scores')
-                        .delete()
-                        .eq('id', existingScore.id);
+                        .upsert(scoreRecord, {
+                            onConflict: 'user_id,game_date',
+                            ignoreDuplicates: false
+                        })
+                        .select();
                     
-                    if (deleteResult.error) {
-                        console.error('❌ DELETE FAILED:', deleteResult.error);
-                        data = null;
-                        error = deleteResult.error;
+                    data = upsertResult.data;
+                    error = upsertResult.error;
+                    
+                    if (!error) {
+                        console.log('✅ Score upserted successfully:', data);
+                        console.log('✅ Upserted record details:', data[0]);
                     } else {
-                        console.log('✅ Old record deleted successfully');
-                        
-                        // Then insert the new record
-                        const insertResult = await supabase
-                            .from('game_scores')
-                            .insert([scoreRecord])
-                            .select();
-                        
-                        data = insertResult.data;
-                        error = insertResult.error;
-                        
-                        if (!error) {
-                            console.log('✅ New higher score inserted successfully:', data);
-                            console.log('✅ New record details:', data[0]);
-                        } else {
-                            console.error('❌ INSERT FAILED:', error);
-                        }
+                        console.error('❌ UPSERT FAILED:', error);
                     }
                 } else {
                     // Existing score is higher or equal - don't update

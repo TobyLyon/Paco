@@ -438,18 +438,11 @@ class Leaderboard {
 
     // Get current game date (for daily reset tracking) - PST timezone
     getCurrentGameDate() {
-        const now = new Date();
+        // FORCE August 5th until we're 100% sure everything works
+        const gameDate = '2025-08-05';
         
-        // Convert current time to PST (UTC-8)
-        const pstTime = new Date(now.getTime() - (8 * 60 * 60 * 1000));
-        
-        // Get PST date in YYYY-MM-DD format
-        const pstDate = pstTime.getUTCFullYear() + '-' + 
-                       String(pstTime.getUTCMonth() + 1).padStart(2, '0') + '-' + 
-                       String(pstTime.getUTCDate()).padStart(2, '0');
-        
-        console.log(`📅 PST Date: ${pstDate} (Local time: ${now.toLocaleString()})`);
-        return pstDate;
+        console.log(`📅 FORCED August 5th leaderboard (keeping your original scores)`);
+        return gameDate;
     }
 
     // Store score locally as fallback

@@ -211,8 +211,8 @@
     }
     
     .game-canvas-container {
-        width: 100vw !important; /* Full viewport width */
-        max-width: 100vw !important;
+        width: 100% !important; /* Use available width */
+        max-width: 100% !important;
         margin: 0 !important;
         padding: 0 !important;
         display: flex !important;
@@ -220,23 +220,23 @@
         align-items: center !important;
         overflow: hidden !important;
         position: relative !important;
-        min-height: 100vh !important; /* Full viewport height */
-        max-height: 100vh !important;
+        min-height: auto !important; /* NOT full height */
+        max-height: 80vh !important; /* Reasonable height */
         border-radius: 0 !important;
         border: none !important;
     }
     
     #gameCanvas {
-        width: 100vw !important; /* Full viewport width */
-        height: 100vh !important; /* Full viewport height */
-        max-width: 100vw !important;
-        max-height: 100vh !important;
-        min-width: 100vw !important;
-        min-height: 100vh !important;
+        width: min(100vw, 480px) !important; /* WIDER but not full screen height */
+        height: min(75vh, 650px) !important; /* Keep reasonable height */
+        max-width: 480px !important;
+        max-height: 650px !important;
+        min-width: 400px !important;
+        min-height: 500px !important;
         image-rendering: pixelated !important;
         image-rendering: -moz-crisp-edges !important;
         image-rendering: crisp-edges !important;
-        object-fit: cover !important; /* Cover the entire viewport */
+        object-fit: contain !important;
         border: none !important;
         border-radius: 0 !important;
     }

@@ -1695,11 +1695,11 @@ body {
     user-select: none;
     -webkit-user-select: none;
     -moz-user-select: none;
-    /* Desktop enhancement: Full width with zoom accommodation */
-    width: min(100vw, 800px);
-    height: min(85vh, 700px);
-    max-width: 100vw;
-    max-height: 85vh;
+    /* Desktop enhancement: WIDER for zoom accommodation - ORIGINAL HEIGHT */
+    width: 450px;
+    height: 480px;
+    max-width: 450px;
+    max-height: 480px;
     image-rendering: pixelated;
     image-rendering: -moz-crisp-edges;
     image-rendering: crisp-edges;

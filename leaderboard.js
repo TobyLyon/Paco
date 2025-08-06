@@ -564,7 +564,7 @@ class Leaderboard {
                         // Invalid date format, ignore
                     }
                 }
-                const liveIndicator = ''; // Red circles removed
+                const liveIndicator = isRecentScore ? ' 🔴' : '';
                 
                 leaderboardHTML += `
                     <div class="leaderboard-entry ${userClass}" style="padding: 6px 8px; margin: 2px 0;">

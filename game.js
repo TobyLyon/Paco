@@ -2167,7 +2167,7 @@ class PacoJumpGame {
                     // Invalid date format, ignore
                 }
             }
-            const liveIndicator = ''; // Red circles removed
+            const liveIndicator = isRecentScore ? ' 🔴' : '';
             
             html += `
                 <div style="

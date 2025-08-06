@@ -2,6 +2,45 @@
 /* Your custom mobile layout that excludes elements for better space and orientation */
 
 @media (max-width: 768px) {
+    /* ===== MOBILE LEADERBOARD IMPROVEMENTS ===== */
+    
+    /* Make expanded leaderboard more mobile-friendly */
+    .leaderboard-container.expanded {
+        width: 95vw !important;
+        max-width: 95vw !important;
+        max-height: 90vh !important;
+        padding: 16px !important;
+        border-radius: 16px !important;
+        margin: 0 !important;
+    }
+    
+    /* Smaller header and entries for mobile */
+    .leaderboard-container.expanded h3 {
+        font-size: 1.2rem !important;
+        margin-bottom: 16px !important;
+    }
+    
+    /* Compact leaderboard entries on mobile */
+    .leaderboard-entry {
+        padding: 8px 12px !important;
+        margin-bottom: 6px !important;
+        font-size: 0.9rem !important;
+    }
+    
+    /* Smaller close button on mobile */
+    .leaderboard-close {
+        width: 28px !important;
+        height: 28px !important;
+        font-size: 1rem !important;
+    }
+    
+    /* Better toggle button for mobile */
+    .leaderboard-toggle {
+        width: 32px !important;
+        height: 32px !important;
+        font-size: 1.1rem !important;
+    }
+    
     /* ===== RESTORE ORIGINAL MOBILE HEADER OPTIMIZATIONS ===== */
     
     /* Hide palace title and tagline on mobile for space */

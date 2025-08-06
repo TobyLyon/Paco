@@ -211,34 +211,31 @@
     }
     
     .game-canvas-container {
-        width: 100% !important; /* Use available width */
+        width: 100vw !important; /* Full width to prevent horizontal clipping */
         max-width: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
+        margin: 0 auto !important;
+        padding: 0px !important; /* Remove padding that causes clipping */
         display: flex !important;
         justify-content: center !important;
         align-items: center !important;
-        overflow: hidden !important;
-        position: relative !important;
-        min-height: auto !important; /* NOT full height */
-        max-height: 80vh !important; /* Reasonable height */
-        border-radius: 0 !important;
-        border: none !important;
+        overflow: visible !important;
+        position: relative !important; /* Ensure overlay positioning works */
+        min-height: 450px !important; /* Minimum height for overlay */
+        max-height: 80vh !important; /* Prevent extending too tall */
     }
     
     #gameCanvas {
-        width: min(100vw, 600px) !important; /* MUCH WIDER mobile canvas */
-        height: min(75vh, 650px) !important; /* Keep reasonable height */
-        max-width: 600px !important;
-        max-height: 650px !important;
-        min-width: 500px !important;
-        min-height: 500px !important;
+        width: 100vw !important; /* Full viewport width to prevent clipping */
+        height: min(80vh, 720px) !important;
+        max-width: 100vw !important; /* Allow full width */
+        max-height: 720px !important;
+        min-width: 360px !important; /* Slightly larger minimum for zoom */
+        min-height: 480px !important;
         image-rendering: pixelated !important;
         image-rendering: -moz-crisp-edges !important;
         image-rendering: crisp-edges !important;
         object-fit: contain !important;
-        border: none !important;
-        border-radius: 0 !important;
+        border: none !important; /* Remove any borders that cause clipping */
     }
     
     /* ===== FIX BUTTONS AND CONTROLS ===== */

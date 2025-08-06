@@ -48,13 +48,18 @@ class Leaderboard {
         return this.getTodayResetTime();
     }
 
-    // Get today's reset time (UTC midnight)
+    // Get today's reset time (PST midnight)
     getTodayResetTime() {
         const now = new Date();
-        const resetTime = new Date(now);
-        resetTime.setUTCHours(0, 0, 0, 0);
         
-        // If it's past midnight, set for next day
+        // Create PST midnight (UTC-8 hours)
+        const resetTime = new Date(now);
+        
+        // Convert to PST by adjusting for timezone offset
+        // PST is UTC-8, so we need to set hours to 8 UTC (which is midnight PST)
+        resetTime.setUTCHours(8, 0, 0, 0); // 8 AM UTC = Midnight PST
+        
+        // If current time is past PST midnight, set for next day
         if (now.getTime() >= resetTime.getTime()) {
             resetTime.setUTCDate(resetTime.getUTCDate() + 1);
         }
@@ -548,7 +553,16 @@ class Leaderboard {
                 const rankEmoji = this.getRankEmoji(rank);
                 const userClass = isCurrentUser ? 'current-user' : '';
                 
-                // Removed live indicator - cleaner display
+                // Add live indicator for recent scores (with null check)
+                let isRecentScore = false;
+                if (entry.created_at) {
+                    try {
+                        isRecentScore = Date.now() - new Date(entry.created_at).getTime() < 300000; // 5 minutes
+                    } catch (e) {
+                        // Invalid date format, ignore
+                    }
+                }
+                const liveIndicator = isRecentScore ? ' 🔴' : '';
                 
                 leaderboardHTML += `
                     <div class="leaderboard-entry ${userClass}" style="padding: 6px 8px; margin: 2px 0;">
@@ -556,7 +570,7 @@ class Leaderboard {
                         <span class="username" style="font-size: 0.8rem;">
                             <a href="https://twitter.com/${entry.username}" target="_blank" rel="noopener noreferrer" class="twitter-handle">
                                 @${entry.username}
-                            </a>
+                            </a>${liveIndicator}
                         </span>
                         <span class="score" style="font-size: 0.8rem;">${entry.score.toLocaleString()}</span>
                     </div>

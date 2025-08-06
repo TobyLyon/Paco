@@ -190,10 +190,10 @@ class GameAssets {
 
     // Game configuration
     getGameConfig() {
-        // Detect mobile for MUCH WIDER canvas - EXPAND VIEW SCOPE for 1.3x zoom
+        // Detect mobile for larger canvas - EXPANDED for better zoom coverage
         const isMobile = window.innerWidth <= 768;
-        const canvasWidth = isMobile ? 600 : 650;   // MUCH WIDER to see more game world
-        const canvasHeight = isMobile ? 650 : 480;  // Keep original height!
+        const canvasWidth = isMobile ? 480 : 400;   // Wider to accommodate zoom
+        const canvasHeight = isMobile ? 720 : 560;  // Taller to accommodate zoom
         
         return {
             // Canvas settings

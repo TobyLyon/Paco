@@ -468,7 +468,7 @@ class OrderTracker {
     // Get user's best score for today
     async getUserBestScore(userId) {
         try {
-            const today = new Date().toISOString().split('T')[0];
+            const today = '2025-08-05'; // FORCE August 5th
 
             const { data, error } = await supabase
                 .from('game_scores')

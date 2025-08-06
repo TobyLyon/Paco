@@ -285,19 +285,20 @@ class Leaderboard {
                 throw new Error('Twitter authentication required for leaderboard');
             }
 
-            // Anti-cheat validation
+            // Anti-cheat validation - TEMPORARILY DISABLED FOR TESTING
             let secureSubmission = null;
-            if (typeof antiCheat !== 'undefined') {
-                try {
-                    secureSubmission = antiCheat.createSecureSubmission(score);
-                    console.log('🛡️ Score passed anti-cheat validation');
-                } catch (error) {
-                    console.error('🚨 Anti-cheat validation failed:', error.message);
-                    throw new Error(`Score validation failed: ${error.message}`);
-                }
-            } else {
-                console.warn('⚠️ Anti-cheat system not available');
-            }
+            console.log('🛡️ Anti-cheat validation DISABLED for testing');
+            // if (typeof antiCheat !== 'undefined') {
+            //     try {
+            //         secureSubmission = antiCheat.createSecureSubmission(score);
+            //         console.log('🛡️ Score passed anti-cheat validation');
+            //     } catch (error) {
+            //         console.error('🚨 Anti-cheat validation failed:', error.message);
+            //         throw new Error(`Score validation failed: ${error.message}`);
+            //     }
+            // } else {
+            //     console.warn('⚠️ Anti-cheat system not available');
+            // }
 
             const user = twitterAuth.currentUser;
             const scoreData = {

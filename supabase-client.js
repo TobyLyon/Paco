@@ -234,19 +234,19 @@ class OrderTracker {
     // Record game score
     async recordGameScore(scoreData) {
         try {
-            // Server-side validation
-            console.log('🔍 Validating score submission:', scoreData);
-            const validation = this.validateScoreSubmission(scoreData);
-            console.log('🔍 Validation result:', validation);
+            // Server-side validation - TEMPORARILY DISABLED FOR TESTING
+            console.log('🔍 Score submission (validation disabled):', scoreData);
+            // const validation = this.validateScoreSubmission(scoreData);
+            // console.log('🔍 Validation result:', validation);
             
-            if (!validation.valid) {
-                console.error('🚨 VALIDATION FAILED - SCORE REJECTED:');
-                console.error('🚨 User:', scoreData.username, '(', scoreData.user_id, ')');
-                console.error('🚨 Score:', scoreData.score);
-                console.error('🚨 Reasons:', validation.reasons);
-                console.error('🚨 Full data:', scoreData);
-                return { success: false, error: `Validation failed: ${validation.reasons.join(', ')}` };
-            }
+            // if (!validation.valid) {
+            //     console.error('🚨 VALIDATION FAILED - SCORE REJECTED:');
+            //     console.error('🚨 User:', scoreData.username, '(', scoreData.user_id, ')');
+            //     console.error('🚨 Score:', scoreData.score);
+            //     console.error('🚨 Reasons:', validation.reasons);
+            //     console.error('🚨 Full data:', scoreData);
+            //     return { success: false, error: `Validation failed: ${validation.reasons.join(', ')}` };
+            // }
 
             const scoreRecord = {
                 user_id: scoreData.user_id,

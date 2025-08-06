@@ -1,4 +1,4 @@
--- ===== FIX DATABASE CONSTRAINTS FOR SCORE UPDATES =====
+-- ===== FIX DATABASE CONSTRAINTS FOR SCORE UPDATES (CORRECTED) =====
 -- This SQL fixes the constraint issue preventing score updates
 
 -- STEP 1: Check current constraints
@@ -82,32 +82,38 @@ BEGIN
 END $$;
 
 -- STEP 6: Verify the fix
-SELECT 'Final constraints:' as info;
+SELECT 'Final constraints after fix:' as info;
 SELECT conname, pg_get_constraintdef(oid) as definition 
 FROM pg_constraint 
 WHERE conrelid = 'game_scores'::regclass 
 AND contype = 'u';
 
 -- STEP 7: Show current scores to verify cleanup worked
-SELECT 'Current scores after cleanup:' as info;
+SELECT 'Current scores after cleanup (should be only 1 per user per day):' as info;
 SELECT 
     user_id,
+    username,
     game_date,
     score,
-    username,
     created_at,
-    COUNT(*) OVER (PARTITION BY user_id, game_date) as score_count_for_user_date
+    COUNT(*) OVER (PARTITION BY user_id, game_date) as scores_per_user_date
 FROM game_scores 
-WHERE game_date >= CURRENT_DATE - INTERVAL '2 days'
+WHERE game_date >= CURRENT_DATE - INTERVAL '3 days'
 ORDER BY game_date DESC, score DESC;
 
-SELECT 'Summary:' as info;
+-- STEP 8: Final summary
+SELECT 'SUMMARY - Scores per user per day (should all be 1):' as info;
 SELECT 
     game_date,
-    COUNT(DISTINCT user_id) as unique_users,
-    COUNT(*) as total_scores,
+    user_id,
+    username,
+    COUNT(*) as score_count,
     MAX(score) as highest_score
 FROM game_scores 
-WHERE game_date >= CURRENT_DATE - INTERVAL '2 days'
-GROUP BY game_date 
-ORDER BY game_date DESC;
+WHERE game_date >= CURRENT_DATE - INTERVAL '3 days'
+GROUP BY game_date, user_id, username
+HAVING COUNT(*) > 1  -- This should return NO rows if fix worked
+ORDER BY game_date DESC, score_count DESC;
+
+-- If the above query returns no rows, the fix worked perfectly!
+SELECT 'If no rows above, the constraint fix was successful! ✅' as final_status;

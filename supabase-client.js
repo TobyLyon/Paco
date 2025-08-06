@@ -386,15 +386,10 @@ class OrderTracker {
         return validation;
     }
 
-    // Get today's leaderboard - only best score per user (PST timezone)
+    // Get today's leaderboard - only best score per user
     async getTodayLeaderboard() {
         try {
-            // Get today's date in PST timezone
-            const now = new Date();
-            const pstDate = new Date(now.toLocaleString("en-US", {timeZone: "America/Los_Angeles"}));
-            const today = pstDate.toISOString().split('T')[0]; // YYYY-MM-DD format
-            
-            console.log('📅 Using PST date for leaderboard:', today);
+            const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
 
             console.log('📊 Testing database function for leaderboard...');
             

@@ -437,10 +437,18 @@ class Leaderboard {
 
     // Get current game date (for daily reset tracking) - PST timezone
     getCurrentGameDate() {
-        // Get current time in PST timezone
         const now = new Date();
-        const pstDate = new Date(now.toLocaleString("en-US", {timeZone: "America/Los_Angeles"}));
-        return pstDate.toISOString().split('T')[0]; // YYYY-MM-DD format in PST
+        
+        // Convert current time to PST (UTC-8)
+        const pstTime = new Date(now.getTime() - (8 * 60 * 60 * 1000));
+        
+        // Get PST date in YYYY-MM-DD format
+        const pstDate = pstTime.getUTCFullYear() + '-' + 
+                       String(pstTime.getUTCMonth() + 1).padStart(2, '0') + '-' + 
+                       String(pstTime.getUTCDate()).padStart(2, '0');
+        
+        console.log(`📅 PST Date: ${pstDate} (Local time: ${now.toLocaleString()})`);
+        return pstDate;
     }
 
     // Store score locally as fallback

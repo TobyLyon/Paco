@@ -282,9 +282,13 @@ class OrderTracker {
             
             if (existingScores && existingScores.length > 0) {
                 const existingScore = existingScores[0];
+                console.log(`🔍 FOUND EXISTING SCORE: ${existingScore.score} (ID: ${existingScore.id})`);
+                console.log(`🔍 NEW SCORE: ${scoreData.score}`);
+                console.log(`🔍 IS NEW SCORE HIGHER? ${scoreData.score > existingScore.score}`);
                 
                 if (scoreData.score > existingScore.score) {
                     // New score is higher - update the existing record
+                    console.log(`🚀 UPDATING RECORD ID ${existingScore.id} FROM ${existingScore.score} TO ${scoreData.score}`);
                     const updateResult = await supabase
                         .from('game_scores')
                         .update(scoreRecord)
@@ -296,6 +300,9 @@ class OrderTracker {
                     
                     if (!error) {
                         console.log('✅ Higher score updated successfully:', data);
+                        console.log('✅ Updated record details:', data[0]);
+                    } else {
+                        console.error('❌ UPDATE FAILED:', error);
                     }
                 } else {
                     // Existing score is higher or equal - don't update
@@ -389,7 +396,7 @@ class OrderTracker {
     // Get today's leaderboard - only best score per user
     async getTodayLeaderboard() {
         try {
-            const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+            const today = '2025-08-05'; // FORCE August 5th leaderboard
 
             console.log('📊 Testing database function for leaderboard...');
             
@@ -422,7 +429,7 @@ class OrderTracker {
     // Fallback method - fetch all scores and deduplicate client-side
     async getTodayLeaderboardFallback() {
         try {
-            const today = new Date().toISOString().split('T')[0];
+            const today = '2025-08-05'; // FORCE August 5th leaderboard
 
             const { data, error } = await supabase
                 .from('game_scores')

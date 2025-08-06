@@ -43,7 +43,40 @@
     
     /* Header spacing for mobile */
     .leaderboard-header {
-        margin-bottom: 8px !important;
+        margin-bottom: 12px !important;
+        padding: 0 8px !important;
+    }
+    
+    /* Countdown timer mobile positioning */
+    .reset-timer {
+        font-size: 0.6rem !important;
+        margin: 4px 0 8px 0 !important;
+        padding: 2px !important;
+        order: 2; /* Place after title */
+    }
+    
+    /* Leaderboard title mobile adjustments */
+    .leaderboard-header h3 {
+        font-size: 1rem !important;
+        margin: 0 0 2px 0 !important;
+        order: 1; /* Title first */
+    }
+    
+    /* Scrollable leaderboard list mobile optimizations */
+    .leaderboard-list {
+        max-height: 180px !important;
+        overflow-y: auto !important;
+        margin-bottom: 12px !important;
+        padding-right: 2px !important;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(251, 191, 36, 0.6) rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Leaderboard entries mobile spacing */
+    .leaderboard-container.compact .leaderboard-entry {
+        padding: 6px 8px !important;
+        margin: 2px 0 !important;
+        font-size: 0.85rem !important;
     }
     
     /* ===== RESTORE ORIGINAL MOBILE HEADER OPTIMIZATIONS ===== */

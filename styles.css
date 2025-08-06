@@ -2312,8 +2312,43 @@ body {
 .reset-timer {
     font-size: var(--font-size-xs);
     color: var(--text-secondary);
-    margin: var(--space-sm) 0;
+    margin: var(--space-md) 0;
+    padding: var(--space-xs);
     font-weight: 500;
+    /* Ensure proper spacing to prevent overlap */
+    clear: both;
+    z-index: 1;
+}
+
+/* Leaderboard header improvements for mobile */
+.leaderboard-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    margin-bottom: var(--space-sm);
+}
+
+.leaderboard-header .leaderboard-toggle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 24px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.leaderboard-header .leaderboard-toggle:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fbbf24;
 }
 
 .close-btn {

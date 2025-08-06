@@ -202,19 +202,19 @@ class GameAssets {
                 height: canvasHeight
             },
             
-            // Player settings
+            // Player settings - increased size to compensate for zoom revert
             player: {
-                width: 32,
-                height: 32,
+                width: 42,  // Increased from 32 (30% larger for better visibility)
+                height: 42, // Increased from 32 (30% larger for better visibility)
                 jumpForce: 16, // Increased from 14 to compensate for removed timing bounce (14 * 1.15 ≈ 16)
             maxSpeed: 5.5, // Further tuned for smoother control
                 gravity: 0.5
             },
             
-            // Platform settings - CONSERVATIVE FOR GUARANTEED REACHABILITY
+            // Platform settings - increased size to compensate for zoom revert
             platform: {
-                width: 60,
-                height: 12,
+                width: 78,         // Increased from 60 (30% larger for better visibility)
+                height: 16,        // Increased from 12 (30% larger for better visibility)
                 spacing: 80,
                 minGap: 20,        // Safer start gaps
                 maxGap: 50,        // Much more conservative max gap
@@ -837,8 +837,8 @@ class GameAssets {
         
         // Use taco sprite if available
         if (this.images.taco && this.loaded) {
-            // Larger taco size for better visibility and collection
-            const tacoSize = 80; // 2x bigger as requested
+            // Larger taco size for better visibility and collection - increased to compensate for zoom revert
+            const tacoSize = 104; // Increased from 80 (30% larger to match other asset scaling)
             const aspectRatio = this.images.taco.naturalWidth / this.images.taco.naturalHeight;
             const tacoWidth = tacoSize * aspectRatio;
             const tacoHeight = tacoSize;
@@ -851,16 +851,16 @@ class GameAssets {
             );
         } else {
             // Fallback: Draw procedural taco with larger size
-            const fallbackWidth = 80; // 2x bigger to match sprite size
-            const fallbackHeight = 80;
+            const fallbackWidth = 104; // Increased from 80 (30% larger to match asset scaling)
+            const fallbackHeight = 104; // Increased from 80 (30% larger to match asset scaling)
             ctx.fillStyle = '#D2691E';
             ctx.fillRect(-fallbackWidth/2, -fallbackHeight/2, fallbackWidth, fallbackHeight);
             
             // Add some taco details (scaled for larger size)
             ctx.fillStyle = '#228B22';
-            ctx.fillRect(-36, -36, 72, 8); // Green lettuce stripe (2x size)
+            ctx.fillRect(-47, -47, 94, 10); // Green lettuce stripe (scaled to match 30% increase)
             ctx.fillStyle = '#FF6347';
-            ctx.fillRect(-36, -20, 72, 6); // Red tomato stripe (2x size)
+            ctx.fillRect(-47, -26, 94, 8); // Red tomato stripe (scaled to match 30% increase)
         }
         
         // No sparkle effect - clean taco drawing
@@ -900,8 +900,8 @@ class GameAssets {
         
         // Use appropriate sprite if available
         if (assetKey && this.images[assetKey] && this.loaded) {
-            // Standard uniform size for all collectibles
-            const powerupSize = 40; // Uniform size matching tacos
+            // Standard uniform size for all collectibles - increased for better visibility
+            const powerupSize = 52; // Increased from 40 (30% larger to match asset scaling)
             const aspectRatio = this.images[assetKey].naturalWidth / this.images[assetKey].naturalHeight;
             const powerupWidth = powerupSize * aspectRatio;
             const powerupHeight = powerupSize;
@@ -916,12 +916,12 @@ class GameAssets {
             // Fallback: Draw procedural power-up based on type
             ctx.fillStyle = this.colors.powerups[powerup.type] || '#ffffff';
         ctx.beginPath();
-            ctx.arc(0, 0, 20, 0, Math.PI * 2); // Standard 40px diameter (20px radius)
+            ctx.arc(0, 0, 26, 0, Math.PI * 2); // Increased from 20 to 26 (30% larger radius)
         ctx.fill();
             
             // Add type indicator
             ctx.fillStyle = '#ffffff';
-            ctx.font = `24px Arial`; // Standard size for uniform appearance
+            ctx.font = `31px Arial`; // Increased from 24px (30% larger for better visibility)
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             const symbols = { corn: '🌽', shield: '🛡️', magnet: '🧲' };

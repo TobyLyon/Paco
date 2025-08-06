@@ -23,7 +23,7 @@ class PacoJumpGame {
         this.camera = { 
             y: 0, 
             maxY: 0,
-            zoom: 1.3  // Zoom factor for closer camera view (1.0 = normal, 1.3 = 30% closer)
+            zoom: 1.0  // Normal zoom - using larger assets instead for better gameplay feel
         };
         
         // Power-up system
@@ -416,8 +416,8 @@ class PacoJumpGame {
             this.tacos.push({
                 x: x,
                 y: y,
-                width: 20,
-                height: 20,
+                width: 26, // Increased from 20 (30% larger for better visibility)
+                height: 26, // Increased from 20 (30% larger for better visibility)
                 collected: false,
                 pulseTime: Math.random() * Math.PI * 2, // For pulsing animation
                 bobOffset: Math.random() * Math.PI * 2  // For bobbing animation
@@ -444,8 +444,8 @@ class PacoJumpGame {
             this.powerups.push({
                 x: x,
                 y: y,
-                width: 25, // Slightly larger than tacos
-                height: 25,
+                width: 33, // Increased from 25 (30% larger for better visibility)
+                height: 33, // Increased from 25 (30% larger for better visibility)
                 type: randomType,
                 collected: false,
                 pulseTime: Math.random() * Math.PI * 2, // For pulsing animation
@@ -2136,13 +2136,13 @@ class PacoJumpGame {
         }
 
         let html = `
-            <div style="text-align: center; margin-bottom: 8px;">
+            <div style="text-align: center; margin-bottom: 16px;">
                 <h3 style="color: #fbbf24; margin: 0 0 4px 0; font-size: 1.1rem;">🏆 Leaderboard</h3>
-                <div class="reset-timer" style="font-size: 0.65rem; color: #94a3b8;">
+                <div class="reset-timer" style="font-size: 0.65rem; color: #94a3b8; margin: 0 0 12px 0; text-align: center;">
                     Resets in: <strong>${leaderboard.getTimeUntilReset()}</strong>
                 </div>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 2px;">
+            <div style="display: flex; flex-direction: column; gap: 2px; max-height: 180px; overflow-y: auto; margin-bottom: 12px; padding-right: 4px;">
         `;
 
         // Show top 5 entries for compact view

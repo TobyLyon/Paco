@@ -527,7 +527,12 @@ class Leaderboard {
         // Clean, simple leaderboard HTML
         let leaderboardHTML = '<div class="leaderboard-container compact">';
         leaderboardHTML += '<div class="leaderboard-header">';
-        leaderboardHTML += '<h3 style="margin: 0; font-size: 1.1rem;">🏆 Leaderboard</h3>';
+        leaderboardHTML += '<h3 style="margin: 0 0 4px 0; font-size: 1.1rem;">🏆 Leaderboard</h3>';
+        // Add countdown timer directly under title for better mobile positioning
+        const timeUntilReset = this.getTimeUntilReset();
+        leaderboardHTML += `<div class="reset-timer" style="font-size: 0.65rem; color: #94a3b8; margin: 0 0 8px 0; text-align: center;">
+            Resets in: <strong>${timeUntilReset}</strong>
+        </div>`;
         leaderboardHTML += '<button class="leaderboard-toggle" onclick="leaderboard.showExpandedLeaderboard()" title="Expand">🔍</button>';
         leaderboardHTML += '</div>';
         
@@ -540,9 +545,10 @@ class Leaderboard {
                 </div>
             `;
         } else {
-            leaderboardHTML += '<div class="leaderboard-list" style="max-height: none; overflow: visible;">';
+            // Create scrollable container for entries to prevent overlap
+            leaderboardHTML += '<div class="leaderboard-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 12px; padding-right: 4px;">';
             
-            const maxEntries = 5; // Show top 5 instantly visible
+            const maxEntries = 5; // Show top 5 in scrollable container
             this.currentLeaderboard.slice(0, maxEntries).forEach((entry, index) => {
                 // Validate entry data
                 if (!entry || typeof entry.score !== 'number' || !entry.username) {
@@ -583,16 +589,10 @@ class Leaderboard {
             
             leaderboardHTML += '</div>';
             
-            // Compact reset timer
-            const timeUntilReset = this.getTimeUntilReset();
-            leaderboardHTML += `
-                <div class="reset-timer" style="text-align: center; margin: 4px 0; padding: 2px; font-size: 0.65rem; color: #94a3b8;">
-                    Resets in: <strong>${timeUntilReset}</strong>
-                </div>
-            `;
+            // Timer now placed in header - no duplicate needed here
         }
         
-        // Add trophy generation for current user if they're in top 5
+        // Add trophy generation for current user if they're in top 5 - with proper separation
         if (twitterAuth.authenticated) {
             const userEntry = this.currentLeaderboard.find(entry => 
                 entry.user_id === twitterAuth.currentUser.id
@@ -601,8 +601,8 @@ class Leaderboard {
                 const userRank = this.currentLeaderboard.indexOf(userEntry) + 1;
                 if (userRank <= 5) {
                     leaderboardHTML += `
-                        <div style="margin: 6px 0; padding: 6px; background: rgba(251, 191, 36, 0.1); border-radius: 6px; border: 1px solid rgba(251, 191, 36, 0.3);">
-                            <p style="color: var(--restaurant-yellow); font-size: 0.7rem; margin-bottom: 4px; text-align: center;">
+                        <div style="margin: 16px 0 8px 0; padding: 8px; background: rgba(251, 191, 36, 0.1); border-radius: 6px; border: 1px solid rgba(251, 191, 36, 0.3); clear: both;">
+                            <p style="color: var(--restaurant-yellow); font-size: 0.7rem; margin-bottom: 6px; text-align: center;">
                                 🏆 Top ${userRank <= 3 ? '3' : '5'}! Share:
                             </p>
                             <!-- UNIFIED SHARE & DOWNLOAD BUTTON -->
@@ -611,7 +611,7 @@ class Leaderboard {
                                     color: white;
                                     border: none;
                                     border-radius: 6px;
-                                padding: 6px 10px;
+                                padding: 8px 12px;
                                     font-family: var(--font-display);
                                     font-weight: 600;
                                 font-size: 0.7rem;

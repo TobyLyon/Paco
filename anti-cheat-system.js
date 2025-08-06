@@ -84,15 +84,15 @@ class AntiCheatSystem {
             validationResults.riskLevel = 'critical';
         }
         
-        // 2. Time-based validation
-        if (this.totalGameTime < this.minGameDuration && score > 100) {
+        // 2. Time-based validation (more lenient)
+        if (this.totalGameTime < 5000 && score > 1000) { // 5 seconds minimum for 1000+ scores
             validationResults.valid = false;
             validationResults.reasons.push('Score too high for game duration');
             validationResults.riskLevel = 'high';
         }
         
-        const scorePerSecond = score / (this.totalGameTime / 1000);
-        if (scorePerSecond > this.maxScorePerSecond) {
+        const scorePerSecond = score / Math.max(this.totalGameTime / 1000, 1);
+        if (scorePerSecond > this.maxScorePerSecond * 2) { // Double the limit for more leniency
             validationResults.valid = false;
             validationResults.reasons.push('Score per second exceeds realistic limits');
             validationResults.riskLevel = 'high';

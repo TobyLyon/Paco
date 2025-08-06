@@ -359,12 +359,12 @@ class OrderTracker {
             const gameTimeSeconds = scoreData.game_time / 1000;
             const scorePerSecond = score / Math.max(gameTimeSeconds, 1);
             
-            if (gameTimeSeconds < 10 && score > 100) {
+            if (gameTimeSeconds < 5 && score > 1000) { // More lenient: 5 seconds for 1000+ scores
                 validation.valid = false;
                 validation.reasons.push('Score too high for game duration');
             }
             
-            if (scorePerSecond > 500) {
+            if (scorePerSecond > 1000) { // Double the limit for more realistic gameplay
                 validation.valid = false;
                 validation.reasons.push('Score per second exceeds realistic limits');
             }

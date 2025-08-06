@@ -435,12 +435,12 @@ class Leaderboard {
         }
     }
 
-    // Get current game date (for daily reset tracking)
+    // Get current game date (for daily reset tracking) - PST timezone
     getCurrentGameDate() {
+        // Get current time in PST timezone
         const now = new Date();
-        const gameDate = new Date(now);
-        gameDate.setUTCHours(0, 0, 0, 0);
-        return gameDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+        const pstDate = new Date(now.toLocaleString("en-US", {timeZone: "America/Los_Angeles"}));
+        return pstDate.toISOString().split('T')[0]; // YYYY-MM-DD format in PST
     }
 
     // Store score locally as fallback

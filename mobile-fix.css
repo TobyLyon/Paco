@@ -225,17 +225,16 @@
     }
     
     #gameCanvas {
-        width: 100vw !important; /* Full viewport width to prevent clipping */
-        height: min(80vh, 720px) !important;
-        max-width: 100vw !important; /* Allow full width */
-        max-height: 720px !important;
-        min-width: 360px !important; /* Slightly larger minimum for zoom */
+        width: 100% !important;
+        height: min(80vh, 650px) !important;
+        max-width: 420px !important;
+        max-height: 650px !important;
+        min-width: 320px !important;
         min-height: 480px !important;
         image-rendering: pixelated !important;
         image-rendering: -moz-crisp-edges !important;
         image-rendering: crisp-edges !important;
         object-fit: contain !important;
-        border: none !important; /* Remove any borders that cause clipping */
     }
     
     /* ===== FIX BUTTONS AND CONTROLS ===== */

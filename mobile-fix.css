@@ -227,11 +227,11 @@
     }
     
     #gameCanvas {
-        width: min(100vw, 480px) !important; /* WIDER but not full screen height */
+        width: min(100vw, 600px) !important; /* MUCH WIDER mobile canvas */
         height: min(75vh, 650px) !important; /* Keep reasonable height */
-        max-width: 480px !important;
+        max-width: 600px !important;
         max-height: 650px !important;
-        min-width: 400px !important;
+        min-width: 500px !important;
         min-height: 500px !important;
         image-rendering: pixelated !important;
         image-rendering: -moz-crisp-edges !important;

@@ -2167,7 +2167,7 @@ class PacoJumpGame {
                     // Invalid date format, ignore
                 }
             }
-            const liveIndicator = isRecentScore ? ' 🔴' : '';
+            // Removed live indicator - cleaner display
             
             html += `
                 <div style="
@@ -2186,7 +2186,7 @@ class PacoJumpGame {
                             ${rankEmoji}
                         </span>
                         <span style="color: ${isCurrentUser ? '#fbbf24' : '#e2e8f0'}; font-weight: ${isCurrentUser ? 'bold' : 'normal'};">
-                            @${entry.username}${liveIndicator}
+                            @${entry.username}
                         </span>
                     </div>
                     <span style="color: #fbbf24; font-weight: bold;">

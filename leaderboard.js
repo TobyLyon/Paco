@@ -548,16 +548,7 @@ class Leaderboard {
                 const rankEmoji = this.getRankEmoji(rank);
                 const userClass = isCurrentUser ? 'current-user' : '';
                 
-                // Add live indicator for recent scores (with null check)
-                let isRecentScore = false;
-                if (entry.created_at) {
-                    try {
-                        isRecentScore = Date.now() - new Date(entry.created_at).getTime() < 300000; // 5 minutes
-                    } catch (e) {
-                        // Invalid date format, ignore
-                    }
-                }
-                const liveIndicator = isRecentScore ? ' 🔴' : '';
+                // Removed live indicator - cleaner display
                 
                 leaderboardHTML += `
                     <div class="leaderboard-entry ${userClass}" style="padding: 6px 8px; margin: 2px 0;">
@@ -565,7 +556,7 @@ class Leaderboard {
                         <span class="username" style="font-size: 0.8rem;">
                             <a href="https://twitter.com/${entry.username}" target="_blank" rel="noopener noreferrer" class="twitter-handle">
                                 @${entry.username}
-                            </a>${liveIndicator}
+                            </a>
                         </span>
                         <span class="score" style="font-size: 0.8rem;">${entry.score.toLocaleString()}</span>
                     </div>

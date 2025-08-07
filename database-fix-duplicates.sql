@@ -135,7 +135,11 @@ HAVING COUNT(*) > 1;
 
 -- If the above query returns any rows, there are still duplicates!
 
-RAISE NOTICE 'Database migration completed successfully!';
-RAISE NOTICE 'Each user can now have only ONE score per day (their highest)';
-RAISE NOTICE 'Anti-cheat columns added for enhanced security';
-RAISE NOTICE 'Leaderboard function updated to work with new schema';
+-- Final completion message
+DO $$
+BEGIN
+    RAISE NOTICE 'Database migration completed successfully!';
+    RAISE NOTICE 'Each user can now have only ONE score per day (their highest)';
+    RAISE NOTICE 'Anti-cheat columns added for enhanced security';
+    RAISE NOTICE 'Leaderboard function updated to work with new schema';
+END $$;

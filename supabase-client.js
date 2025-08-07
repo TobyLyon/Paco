@@ -476,7 +476,7 @@ class OrderTracker {
     // Get today's leaderboard - only best score per user
     async getTodayLeaderboard() {
         try {
-            const today = '2025-08-05'; // FORCE August 5th leaderboard
+            const today = new Date().toISOString().split('T')[0]; // Use actual current date
 
             console.log('📊 Testing database function for leaderboard...');
             
@@ -509,7 +509,7 @@ class OrderTracker {
     // Fallback method - fetch all scores and deduplicate client-side
     async getTodayLeaderboardFallback() {
         try {
-            const today = '2025-08-05'; // FORCE August 5th leaderboard
+            const today = new Date().toISOString().split('T')[0]; // Use actual current date
 
             const { data, error } = await supabase
                 .from('game_scores')

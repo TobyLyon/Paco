@@ -2093,10 +2093,57 @@ body {
 /* Leaderboard header container */
 .leaderboard-header {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: space-between;
     margin-bottom: 12px;
     position: relative;
+}
+
+/* Sleek tab system for leaderboard */
+.leaderboard-tabs {
+    display: flex;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 3px;
+    margin: 8px 0;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.tab-btn {
+    background: transparent;
+    border: none;
+    padding: 6px 16px;
+    border-radius: 16px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    font-family: var(--font-body);
+    min-width: 60px;
+    white-space: nowrap;
+}
+
+.tab-btn:hover {
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.tab-btn.active {
+    background: linear-gradient(135deg, var(--restaurant-yellow), var(--restaurant-orange));
+    color: var(--text-dark);
+    box-shadow: 0 2px 8px rgba(251, 191, 36, 0.4);
+    font-weight: 700;
+}
+
+.tab-btn.active:hover {
+    background: linear-gradient(135deg, var(--restaurant-yellow), var(--restaurant-orange));
+    color: var(--text-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(251, 191, 36, 0.5);
 }
 
 /* Leaderboard toggle button */

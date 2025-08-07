@@ -14,6 +14,7 @@ class Leaderboard {
         this.dailyResetTime = this.getResetTime();
         this.realtimeChannel = null;
         this.countdownInterval = null;
+        this.currentTab = 'daily'; // Default to daily leaderboard
         this.currentTimeRemaining = null; // Store current countdown state
         
         console.log('🏆 Leaderboard system initialized');
@@ -504,6 +505,110 @@ class Leaderboard {
         return 0;
     }
 
+    // Switch between daily and all-time tabs
+    async switchTab(tabType) {
+        console.log(`📊 Switching to ${tabType} leaderboard`);
+        this.currentTab = tabType || 'daily';
+        
+        // Update tab buttons
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        tabButtons.forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.tab === this.currentTab) {
+                btn.classList.add('active');
+            }
+        });
+        
+        // Show/hide countdown timer based on tab
+        const resetTimer = document.querySelector('.reset-timer');
+        if (resetTimer) {
+            resetTimer.style.display = this.currentTab === 'daily' ? 'block' : 'none';
+        }
+        
+        // Load appropriate leaderboard data
+        if (this.currentTab === 'daily') {
+            await this.loadLeaderboard();
+        } else {
+            await this.loadAllTimeLeaderboard();
+        }
+        
+        // Refresh the display
+        this.refreshLeaderboardDisplay();
+    }
+    
+    // Load all-time leaderboard
+    async loadAllTimeLeaderboard() {
+        try {
+            console.log('📊 Loading all-time leaderboard...');
+            
+            const { data, error } = await supabase
+                .from('game_scores')
+                .select('*')
+                .order('score', { ascending: false })
+                .limit(50);
+            
+            if (error) {
+                console.error('❌ All-time leaderboard load failed:', error);
+                return;
+            }
+            
+            // Deduplicate by user (keep highest score per user)
+            const uniqueUsers = new Map();
+            data.forEach(entry => {
+                if (!uniqueUsers.has(entry.user_id) || uniqueUsers.get(entry.user_id).score < entry.score) {
+                    uniqueUsers.set(entry.user_id, entry);
+                }
+            });
+            
+            this.currentLeaderboard = Array.from(uniqueUsers.values())
+                .sort((a, b) => b.score - a.score)
+                .slice(0, 10);
+            
+            console.log(`📊 Loaded ${this.currentLeaderboard.length} all-time entries`);
+        } catch (error) {
+            console.error('❌ All-time leaderboard error:', error);
+        }
+    }
+    
+    // Refresh only the leaderboard content without rebuilding header
+    refreshLeaderboardDisplay() {
+        const leaderboardContent = document.querySelector('.leaderboard-content');
+        if (!leaderboardContent) return;
+        
+        let contentHTML = '';
+        
+        if (this.currentLeaderboard.length === 0) {
+            const emptyMessage = this.currentTab === 'daily' ? 'No scores yet today!' : 'No scores recorded yet!';
+            contentHTML = `
+                <div style="text-align: center; padding: 20px; color: var(--text-secondary);">
+                    <div style="font-size: 2rem; margin-bottom: 8px;">🐔</div>
+                    <p>${emptyMessage}</p>
+                    <p style="font-size: 0.9rem; color: var(--restaurant-yellow);">Be the first Paco champion!</p>
+                </div>`;
+        } else {
+            contentHTML = '<div class="leaderboard-list">';
+            
+            this.currentLeaderboard.slice(0, 5).forEach((entry, index) => {
+                const rank = index + 1;
+                const isCurrentUser = twitterAuth.isAuthenticated && 
+                                    entry.user_id === twitterAuth.currentUser?.id;
+                
+                const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `${rank}.`;
+                
+                contentHTML += `
+                    <div class="leaderboard-entry ${isCurrentUser ? 'current-user' : ''}" data-rank="${rank}">
+                        <span class="rank">${medal}</span>
+                        <span class="username">${entry.username}</span>
+                        <span class="score">${entry.score.toLocaleString()}</span>
+                    </div>`;
+            });
+            
+            contentHTML += '</div>';
+        }
+        
+        leaderboardContent.innerHTML = contentHTML;
+    }
+
     // Display leaderboard in UI - SIMPLE AND CLEAN
     showLeaderboard(expandedMode = false) {
         try {
@@ -524,17 +629,28 @@ class Leaderboard {
             return;
         }
 
-        // Clean, simple leaderboard HTML
+        // Clean, simple leaderboard HTML with tab system
         let leaderboardHTML = '<div class="leaderboard-container compact">';
         leaderboardHTML += '<div class="leaderboard-header">';
-        leaderboardHTML += '<h3 style="margin: 0 0 4px 0; font-size: 1.1rem;">🏆 Leaderboard</h3>';
-        // Add countdown timer directly under title for better mobile positioning
+        leaderboardHTML += '<h3 style="margin: 0 0 8px 0; font-size: 1.1rem;">🏆 Leaderboard</h3>';
+        
+        // Sleek tab system
+        leaderboardHTML += `<div class="leaderboard-tabs">
+            <button class="tab-btn active" data-tab="daily" onclick="leaderboard.switchTab('daily')">Daily</button>
+            <button class="tab-btn" data-tab="alltime" onclick="leaderboard.switchTab('alltime')">All-Time</button>
+        </div>`;
+        
+        // Add countdown timer for daily tab only
         const timeUntilReset = this.getTimeUntilReset();
-        leaderboardHTML += `<div class="reset-timer" style="font-size: 0.65rem; color: #94a3b8; margin: 0 0 8px 0; text-align: center;">
+        leaderboardHTML += `<div class="reset-timer daily-only" style="font-size: 0.65rem; color: #94a3b8; margin: 4px 0 8px 0; text-align: center;">
             Resets in: <strong>${timeUntilReset}</strong>
         </div>`;
+        
         leaderboardHTML += '<button class="leaderboard-toggle" onclick="leaderboard.showExpandedLeaderboard()" title="Expand">🔍</button>';
         leaderboardHTML += '</div>';
+        
+        // Content container for dynamic updates
+        leaderboardHTML += '<div class="leaderboard-content">';
         
         if (this.currentLeaderboard.length === 0) {
             leaderboardHTML += `
@@ -635,6 +751,7 @@ class Leaderboard {
             }
         }
         
+        leaderboardHTML += '</div>'; // Close leaderboard-content
         leaderboardHTML += '<button onclick="hideLeaderboard()" class="close-btn">Close</button>';
         leaderboardHTML += '</div>';
         

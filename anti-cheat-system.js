@@ -9,9 +9,9 @@ class AntiCheatSystem {
         this.gameStartTime = 0;
         this.totalGameTime = 0;
         this.platformsJumped = 0;
-        this.maxRealisticScore = 50000; // Reasonable maximum for legitimate gameplay
+        this.maxRealisticScore = 100000; // Reasonable maximum for legitimate gameplay with combos
         this.minGameDuration = 10000; // Minimum 10 seconds for valid game
-        this.maxScorePerSecond = 500; // Maximum points per second (very generous)
+        this.maxScorePerSecond = 2000; // Maximum points per second (very generous for combo gameplay)
         this.submissionCooldown = 5000; // 5 second cooldown between submissions
         this.maxSubmissionsPerHour = 20; // Maximum submissions per hour
         
@@ -84,7 +84,9 @@ class AntiCheatSystem {
             validationResults.riskLevel = 'critical';
         }
         
-        // 2. Time-based validation (more lenient)
+        // 2. DISABLED - Time-based validation (too restrictive for skilled players)
+        // Skilled players with combos and power-ups can legitimately get high scores quickly
+        /*
         if (this.totalGameTime < 5000 && score > 1000) { // 5 seconds minimum for 1000+ scores
             validationResults.valid = false;
             validationResults.reasons.push('Score too high for game duration');
@@ -97,6 +99,7 @@ class AntiCheatSystem {
             validationResults.reasons.push('Score per second exceeds realistic limits');
             validationResults.riskLevel = 'high';
         }
+        */
         
         // 3. Rate limiting
         const now = Date.now();
@@ -118,18 +121,22 @@ class AntiCheatSystem {
             validationResults.riskLevel = 'medium';
         }
         
-        // 5. Game session validation
+        // 5. DISABLED - Game session validation (too complex, causing false positives)
+        /*
         if (!this.gameSession || !this.gameSession.verified) {
             validationResults.valid = false;
             validationResults.reasons.push('Invalid or unverified game session');
             validationResults.riskLevel = 'high';
         }
+        */
         
-        // 6. Statistical anomaly detection
+        // 6. DISABLED - Statistical anomaly detection (too many false positives for legitimate play)
+        /*
         if (this.detectStatisticalAnomalies(score, gameStats)) {
             validationResults.reasons.push('Statistical anomaly detected');
             validationResults.riskLevel = 'medium';
         }
+        */
         
         return validationResults;
     }

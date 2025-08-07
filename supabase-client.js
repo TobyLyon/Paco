@@ -366,10 +366,10 @@ class OrderTracker {
             validation.reasons.push('Warning: Suspiciously round score detected');
         }
         
-        // Detect clearly manipulated scores
-        if (score > 10000 && score % 100 === 0) {
+        // Detect clearly manipulated scores - RELAXED VALIDATION
+        if (score > 30000 && score % 1000 === 0) {
             validation.valid = false;
-            validation.reasons.push('Score pattern suggests manipulation');
+            validation.reasons.push('Score pattern suggests manipulation (round thousands)');
         }
         
         // 3. Session validation (enhanced) - TEMPORARILY RELAXED FOR DEBUGGING
@@ -384,21 +384,21 @@ class OrderTracker {
             const gameTimeSeconds = scoreData.game_time / 1000;
             const scorePerSecond = score / Math.max(gameTimeSeconds, 1);
             
-            // Stricter time validation
-            if (gameTimeSeconds < 10 && score > 1000) {
+            // Relaxed time validation - allow skilled players
+            if (gameTimeSeconds < 5 && score > 2000) {
                 validation.valid = false;
-                validation.reasons.push('Score too high for game duration (min 10s for 1000+ points)');
+                validation.reasons.push('Score too high for game duration (min 5s for 2000+ points)');
             }
             
-            if (gameTimeSeconds < 30 && score > 5000) {
+            if (gameTimeSeconds < 15 && score > 10000) {
                 validation.valid = false;
-                validation.reasons.push('Score too high for game duration (min 30s for 5000+ points)');
+                validation.reasons.push('Score too high for game duration (min 15s for 10000+ points)');
             }
             
-            // Points per second validation
-            if (scorePerSecond > 500) {
+            // Points per second validation - RELAXED for skilled players
+            if (scorePerSecond > 1000) {
                 validation.valid = false;
-                validation.reasons.push('Score per second exceeds realistic limits (500 pts/sec max)');
+                validation.reasons.push('Score per second exceeds realistic limits (1000 pts/sec max)');
             }
         } else {
             // Game time not provided - allow but warn

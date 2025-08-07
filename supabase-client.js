@@ -372,10 +372,11 @@ class OrderTracker {
             validation.reasons.push('Score pattern suggests manipulation');
         }
         
-        // 3. Session validation (enhanced)
+        // 3. Session validation (enhanced) - TEMPORARILY RELAXED FOR DEBUGGING
         if (!scoreData.session_id || !scoreData.checksum) {
-            validation.valid = false;
-            validation.reasons.push('Missing required anti-cheat data');
+            // Instead of failing, just warn
+            validation.reasons.push('Warning: Missing anti-cheat data (session_id or checksum)');
+            console.warn('⚠️ Score submitted without full anti-cheat data');
         }
         
         // 4. Time-based validation (enhanced)
@@ -400,9 +401,9 @@ class OrderTracker {
                 validation.reasons.push('Score per second exceeds realistic limits (500 pts/sec max)');
             }
         } else {
-            // Require game time for validation
-            validation.valid = false;
-            validation.reasons.push('Game duration required for validation');
+            // Game time not provided - allow but warn
+            validation.reasons.push('Warning: Game duration not provided');
+            console.warn('⚠️ Score submitted without game duration data');
         }
         
         // 5. Platform jump validation

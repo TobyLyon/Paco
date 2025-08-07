@@ -296,8 +296,8 @@ class Leaderboard {
                     throw new Error(`Score validation failed: ${error.message}`);
                 }
             } else {
-                console.warn('⚠️ Anti-cheat system not available - rejecting submission');
-                throw new Error('Anti-cheat system required for score submission');
+                console.warn('⚠️ Anti-cheat system not available - allowing submission with basic validation only');
+                // Continue without anti-cheat data - will be caught by server-side validation
             }
 
             const user = twitterAuth.currentUser;

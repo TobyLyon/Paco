@@ -71,7 +71,7 @@ const menuItems = {
         { id: 'adventure-time', name: 'Adventure Bite', description: 'Mathematical flavor for brave eaters', price: 0.50, emoji: '⚔️' },
         { id: 'viking', name: 'Norse Warrior', description: 'Savage flavor from the frozen north', price: 0.50, emoji: '⚔️' },
         { id: 'space-helmet', name: 'Galaxy Gourmet', description: 'Out-of-this-world flavor from the cosmos', price: 0.50, emoji: '🚀' },
-        { id: 'cyclone', name: 'Tornado Twist', description: 'Whirlwind of flavor that spins your taste buds', price: 0.50, emoji: '🌪️' },
+        { id: 'cyclone', name: 'Cyclops', description: 'One-eyed flavor that sees straight through to your soul', price: 0.50, emoji: '👁️' },
         { id: 'fishing-hat', name: 'Angler\'s Catch', description: 'Fresh from the stream with crispy coating', price: 0.50, emoji: '🎣' },
         { id: 'proliferation', name: 'SMP', description: 'Explosive flavor that multiplies in your mouth', price: 0.50, emoji: '🌸' }
     ],

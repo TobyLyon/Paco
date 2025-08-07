@@ -406,7 +406,8 @@ class OrderTracker {
             console.warn('⚠️ Score submitted without game duration data');
         }
         
-        // 5. Platform jump validation
+        // 5. DISABLED - Platform jump validation (too restrictive for combo/power-up gameplay)
+        /*
         if (scoreData.platforms_jumped) {
             const pointsPerPlatform = score / Math.max(scoreData.platforms_jumped, 1);
             
@@ -420,6 +421,7 @@ class OrderTracker {
                 validation.reasons.push('Too few platform jumps for score achieved');
             }
         }
+        */
         
         // 6. Enhanced rate limiting with multiple checks
         const submissionKey = `last_submission_${scoreData.user_id}`;
@@ -447,11 +449,13 @@ class OrderTracker {
             validation.reasons.push('Hourly submission limit exceeded (20 max)');
         }
         
-        // 7. User agent validation (basic bot detection)
+        // 7. DISABLED - User agent validation (browsers/extensions can modify this)
+        /*
         if (!scoreData.user_agent || scoreData.user_agent.length < 10) {
             validation.valid = false;
             validation.reasons.push('Invalid or missing user agent');
         }
+        */
         
         // Update rate limiting counters
         if (validation.valid) {

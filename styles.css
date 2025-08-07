@@ -2186,7 +2186,7 @@ body {
     .overlay-content {
         /* Keep mobile width but fit perfectly in viewport */
         max-width: 320px !important;
-        max-height: 55vh !important;
+        max-height: 52vh !important;
         overflow: visible !important;
         padding: 16px !important;
         min-width: auto !important;

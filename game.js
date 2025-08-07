@@ -1343,8 +1343,16 @@ class PacoJumpGame {
         }
     }
 
-    // Handle player touching evil flocko - causes damage/death
+    // Handle player touching evil flocko - causes damage/death unless shielded
     handleEvilFlockoDamage(platform) {
+        // Check if player has shield protection
+        if (this.player.hasShield) {
+            // Shield protects against evil flocko - defeat it instead!
+            console.log('🛡️ Shield deflected evil flocko attack!');
+            this.defeatEvilFlocko(platform, this.platforms.indexOf(platform));
+            return;
+        }
+        
         // Play evil flocko death sound
         this.playSound('evilFlockoDeath');
         
@@ -1471,9 +1479,29 @@ class PacoJumpGame {
         
         // Check if we've reached the maximum active power-ups
         if (this.activePowerups.size >= gameAssets.config.powerups.maxActive) {
-            // Remove the oldest power-up
-            const oldestKey = this.activePowerups.keys().next().value;
-            this.deactivatePowerup(oldestKey);
+            // Smart power-up replacement: prioritize keeping defensive power-ups
+            let powerupToRemove = null;
+            
+            // Priority order (least important first): magnet > corn > shield
+            for (let [powerupType, data] of this.activePowerups) {
+                if (powerupType === 'magnet') {
+                    powerupToRemove = powerupType;
+                    break; // Magnet is least important, remove it first
+                } else if (powerupType === 'corn' && !powerupToRemove) {
+                    // Only remove corn if no magnet is available and no shield is active
+                    if (!this.activePowerups.has('shield')) {
+                        powerupToRemove = powerupType;
+                    }
+                }
+            }
+            
+            // If no smart choice available, remove the oldest
+            if (!powerupToRemove) {
+                powerupToRemove = this.activePowerups.keys().next().value;
+            }
+            
+            console.log(`🔄 Replacing power-up: ${powerupToRemove} → ${type}`);
+            this.deactivatePowerup(powerupToRemove);
         }
         
         // Activate the new power-up
@@ -1561,9 +1589,13 @@ class PacoJumpGame {
             // Apply continuous effects and sync timers
             if (type === 'magnet' && this.player.hasMagnet) {
                 this.applyMagnetEffect();
-            } else if (type === 'corn' && this.player.isFlying) {
-                // Keep flying timer in sync with power-up timer
-                this.player.flyingTimeLeft = data.timeLeft;
+            } else if (type === 'corn') {
+                // Always keep corn effects synced, regardless of flying state
+                if (this.player.isFlying) {
+                    this.player.flyingTimeLeft = data.timeLeft;
+                }
+                // Corn power-up enables evil flocko killing for full duration
+                // No additional sync needed - handled by activePowerups Map
             }
         }
         
@@ -2068,7 +2100,7 @@ class PacoJumpGame {
                 font-family: var(--font-display);
                 background: linear-gradient(145deg, rgba(0, 0, 0, 0.95), rgba(20, 20, 20, 0.9));
                 border-radius: 16px;
-                padding: 12px;
+                padding: 10px;
                 backdrop-filter: blur(15px);
                 border: 2px solid rgba(220, 38, 38, 0.4);
                 box-shadow: 
@@ -2076,7 +2108,7 @@ class PacoJumpGame {
                     inset 0 1px 0 rgba(255, 255, 255, 0.1);
                 position: relative;
                 box-sizing: border-box;
-                max-height: 50vh;
+                max-height: 48vh;
                 overflow: visible;
             ">
                 <!-- Close Button -->
@@ -2099,7 +2131,7 @@ class PacoJumpGame {
                 " onmouseover="this.style.background='rgba(255, 255, 255, 0.2)'; this.style.color='white'" onmouseout="this.style.background='rgba(255, 255, 255, 0.1)'; this.style.color='rgba(255, 255, 255, 0.7)'">✕</button>
                 
                 <!-- Score Section - Compact like mobile -->
-                <div style="margin-bottom: 12px;">
+                <div style="margin-bottom: 10px;">
                     <h2 style="
                         color: #ef4444;
                         font-size: 1.2rem;
@@ -2119,13 +2151,15 @@ class PacoJumpGame {
                     ${submissionStatus}
                 </div>
 
-                <!-- Leaderboard Section - No scroll needed now -->
+                <!-- Leaderboard Section - With internal scrolling -->
                 <div style="
                     background: rgba(0, 0, 0, 0.3);
                     border-radius: 12px;
-                    padding: 10px;
-                    margin-bottom: 12px;
+                    padding: 8px;
+                    margin-bottom: 10px;
                     border: 1px solid rgba(220, 38, 38, 0.2);
+                    max-height: 155px;
+                    overflow-y: auto;
                 ">
                     ${leaderboardHTML}
                 </div>
@@ -2134,22 +2168,22 @@ class PacoJumpGame {
                 <div style="
                     display: flex;
                     gap: 8px;
-                    margin-bottom: 8px;
+                    margin-bottom: 6px;
                 ">
                     <button onclick="game.startGame()" style="
                         flex: 1;
                         background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
                         border: none;
-                        border-radius: 12px;
-                        padding: 12px;
+                        border-radius: 8px;
+                        padding: 8px;
                         color: white;
-                        font-weight: 700;
-                        font-size: 0.9rem;
+                        font-weight: 600;
+                        font-size: 0.75rem;
                         cursor: pointer;
                         text-transform: uppercase;
-                        box-shadow: 0 4px 12px rgba(249, 115, 22, 0.4);
+                        box-shadow: 0 2px 8px rgba(249, 115, 22, 0.3);
                         transition: all 0.2s ease;
-                    " onmouseover="this.style.transform='translateY(-2px)'; this.style.background='linear-gradient(135deg, #fb923c 0%, #f97316 100%)'" onmouseout="this.style.transform='translateY(0)'; this.style.background='linear-gradient(135deg, #f97316 0%, #ea580c 100%)'">
+                    " onmouseover="this.style.transform='translateY(-1px)'; this.style.background='linear-gradient(135deg, #fb923c 0%, #f97316 100%)'" onmouseout="this.style.transform='translateY(0)'; this.style.background='linear-gradient(135deg, #f97316 0%, #ea580c 100%)'">
                         🎮 Play Again
                     </button>
                     
@@ -2159,16 +2193,16 @@ class PacoJumpGame {
                             flex: 1;
                             background: linear-gradient(135deg, #1d9bf0 0%, #1a8cd8 100%);
                             border: none;
-                            border-radius: 12px;
-                            padding: 12px;
+                            border-radius: 8px;
+                            padding: 8px;
                             color: white;
-                            font-weight: 700;
-                            font-size: 0.9rem;
+                            font-weight: 600;
+                            font-size: 0.75rem;
                             cursor: pointer;
                             text-transform: uppercase;
-                            box-shadow: 0 4px 12px rgba(29, 155, 240, 0.4);
+                            box-shadow: 0 2px 8px rgba(29, 155, 240, 0.3);
                             transition: all 0.2s ease;
-                        " onmouseover="this.style.transform='translateY(-2px)'; this.style.background='linear-gradient(135deg, #2ea8ff 0%, #1d9bf0 100%)'" onmouseout="this.style.transform='translateY(0)'; this.style.background='linear-gradient(135deg, #1d9bf0 0%, #1a8cd8 100%)'">
+                        " onmouseover="this.style.transform='translateY(-1px)'; this.style.background='linear-gradient(135deg, #2ea8ff 0%, #1d9bf0 100%)'" onmouseout="this.style.transform='translateY(0)'; this.style.background='linear-gradient(135deg, #1d9bf0 0%, #1a8cd8 100%)'">
                             🐦📥 Share & Save
                         </button>
                     ` : `
@@ -2176,16 +2210,16 @@ class PacoJumpGame {
                             flex: 1;
                             background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
                             border: none;
-                            border-radius: 12px;
-                            padding: 12px;
+                            border-radius: 8px;
+                            padding: 8px;
                             color: white;
-                            font-weight: 700;
-                            font-size: 0.9rem;
+                            font-weight: 600;
+                            font-size: 0.75rem;
                             cursor: pointer;
                             text-transform: uppercase;
-                            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+                            box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
                             transition: all 0.2s ease;
-                        " onmouseover="this.style.transform='translateY(-2px)'; this.style.background='linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'" onmouseout="this.style.transform='translateY(0)'; this.style.background='linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)'">
+                        " onmouseover="this.style.transform='translateY(-1px)'; this.style.background='linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'" onmouseout="this.style.transform='translateY(0)'; this.style.background='linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)'">
                             🏆 Full Board
                         </button>
                     `}
@@ -2221,8 +2255,8 @@ class PacoJumpGame {
             <div style="display: flex; flex-direction: column; gap: 2px; overflow: visible;">
         `;
 
-        // Show top 6 entries - fits perfectly now without Twitter banner
-        const maxEntries = 6;
+        // Show top 8 entries - more entries with scrolling
+        const maxEntries = 8;
         leaderboard.currentLeaderboard.slice(0, maxEntries).forEach((entry, index) => {
             if (!entry || typeof entry.score !== 'number' || !entry.username) {
                 return;

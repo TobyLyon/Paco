@@ -242,7 +242,7 @@ class GameAssets {
                 magnetRange: 80, // Magnet collection range in pixels
                 shieldFlashInterval: 200, // Shield flash effect timing
                 glowPulseSpeed: 0.015, // Glow animation speed
-                maxActive: 2 // Maximum active power-ups at once
+                maxActive: 3 // Maximum active power-ups at once (increased for better gameplay)
             },
             
             // Visual effects

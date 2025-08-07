@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎰 PacoRocko - Crash Casino | Paco the Chicken</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/crash-casino/frontend/css/crash-casino.css">
+    
+    <!-- Web3 Libraries -->
+    <script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    
+    <!-- Meta tags -->
+    <meta name="description" content="PacoRocko - Provably fair crash casino game powered by Paco the Chicken on Abstract L2">
+    <meta property="og:title" content="🎰 PacoRocko - Crash Casino">
+    <meta property="og:description" content="Bet, watch the multiplier rise, and cash out before it crashes! Provably fair gambling on Abstract L2.">
+    <meta property="og:image" content="/PACO-BANNER.png">
+    
+    <style>
+        /* Critical CSS for loading */
+        body {
+            margin: 0;
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: #fff;
+            overflow-x: hidden;
+        }
+        
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid #333;
+            border-top: 3px solid #FFD700;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Main Game Container -->
+    <div id="gameContainer" class="game-container" style="display: none;">
+        
+        <!-- Header -->
+        <header class="game-header">
+            <div class="header-left">
+                <img src="/PACO-TEXT.png" alt="Paco" class="logo" height="40">
+                <h1 class="game-title">🎰 PacoRocko</h1>
+            </div>
+            
+            <div class="header-right">
+                <div class="connection-status" id="connectionStatus">
+                    <span class="status-indicator offline"></span>
+                    <span class="status-text">Connecting...</span>
+                </div>
+                
+                <button id="connectWalletBtn" class="connect-wallet-btn">
+                    🔗 Connect Wallet
+                </button>
+            </div>
+        </header>
+
+        <!-- Game Stats Bar -->
+        <div class="stats-bar">
+            <div class="stat">
+                <span class="stat-label">Round</span>
+                <span class="stat-value" id="currentRoundId">-</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Players</span>
+                <span class="stat-value" id="playerCount">0</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Total Bet</span>
+                <span class="stat-value" id="totalBetAmount">0 ETH</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Status</span>
+                <span class="stat-value" id="gameStatus">Waiting</span>
+            </div>
+        </div>
+
+        <!-- Main Game Area -->
+        <div class="game-main">
+            
+            <!-- Multiplier Display -->
+            <div class="multiplier-section">
+                <div class="multiplier-container">
+                    <div class="multiplier-display" id="multiplierDisplay">
+                        <span class="multiplier-value" id="multiplierValue">1.00x</span>
+                        <div class="multiplier-trail" id="multiplierTrail"></div>
+                    </div>
+                    
+                    <div class="game-state-message" id="gameStateMessage">
+                        Waiting for next round...
+                    </div>
+                    
+                    <div class="countdown-timer" id="countdownTimer" style="display: none;">
+                        Next round in: <span id="countdownValue">5</span>s
+                    </div>
+                </div>
+                
+                <!-- Cash Out Button -->
+                <button id="cashOutBtn" class="cash-out-btn" style="display: none;">
+                    💰 CASH OUT
+                </button>
+            </div>
+
+            <!-- Betting Panel -->
+            <div class="betting-panel">
+                <div class="bet-input-section">
+                    <label for="betAmount">Bet Amount (ETH)</label>
+                    <div class="bet-input-container">
+                        <input type="number" id="betAmount" class="bet-input" 
+                               placeholder="0.001" min="0.001" max="10" step="0.001" value="0.01">
+                        <div class="bet-quick-amounts">
+                            <button class="quick-bet" data-amount="0.001">Min</button>
+                            <button class="quick-bet" data-amount="0.01">0.01</button>
+                            <button class="quick-bet" data-amount="0.1">0.1</button>
+                            <button class="quick-bet" data-amount="1">1</button>
+                            <button class="quick-bet" data-amount="10">Max</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <button id="placeBetBtn" class="place-bet-btn">
+                    🎯 PLACE BET
+                </button>
+                
+                <div class="bet-status" id="betStatus" style="display: none;">
+                    <div class="current-bet-info">
+                        <span>Your bet: <strong id="yourBetAmount">-</strong></span>
+                        <span>Potential win: <strong id="potentialWin">-</strong></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Players List -->
+        <div class="players-section">
+            <h3>🎮 Active Players</h3>
+            <div class="players-list" id="playersList">
+                <!-- Players will be populated here -->
+            </div>
+        </div>
+
+        <!-- Round History -->
+        <div class="history-section">
+            <h3>📊 Recent Rounds</h3>
+            <div class="round-history" id="roundHistory">
+                <!-- Round history will be populated here -->
+            </div>
+        </div>
+
+        <!-- Provably Fair Section -->
+        <div class="fairness-section">
+            <h3>🔍 Provably Fair</h3>
+            <div class="fairness-info">
+                <div class="seed-info">
+                    <div class="seed-item">
+                        <label>Client Seed:</label>
+                        <input type="text" id="clientSeed" class="seed-input" readonly>
+                        <button id="changeClientSeed" class="change-seed-btn">Change</button>
+                    </div>
+                    <div class="seed-item">
+                        <label>Server Seed Hash:</label>
+                        <span id="serverSeedHash" class="seed-value">-</span>
+                    </div>
+                    <div class="seed-item">
+                        <label>Nonce:</label>
+                        <span id="currentNonce" class="seed-value">-</span>
+                    </div>
+                </div>
+                <button id="verifyFairnessBtn" class="verify-btn">
+                    ✅ Verify Last Round
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications -->
+    <div id="notifications" class="notifications-container"></div>
+
+    <!-- Modals -->
+    <div id="walletModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2>🔗 Connect Your Wallet</h2>
+            <p>Connect your wallet to start playing PacoRocko!</p>
+            <div class="wallet-options">
+                <button id="connectMetamask" class="wallet-option">
+                    🦊 MetaMask
+                </button>
+                <button id="connectWalletConnect" class="wallet-option">
+                    🔗 WalletConnect
+                </button>
+            </div>
+            <button class="modal-close" onclick="closeModal('walletModal')">×</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/crash-casino/frontend/js/web3-integration.js"></script>
+    <script src="/crash-casino/frontend/js/crash-client.js"></script>
+    <script src="/crash-casino/frontend/js/bet-interface.js"></script>
+    <script src="/crash-casino/frontend/js/multiplier-display.js"></script>
+    
+    <script>
+        // Initialize app when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Hide loading screen
+            setTimeout(() => {
+                document.getElementById('loadingScreen').style.display = 'none';
+                document.getElementById('gameContainer').style.display = 'block';
+                
+                // Initialize game client
+                if (window.CrashGame) {
+                    window.CrashGame.init();
+                }
+            }, 1000);
+        });
+
+        // Utility functions
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            
+            document.getElementById('notifications').appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Generate random client seed
+        function generateClientSeed() {
+            return Array.from({length: 16}, () => 
+                Math.floor(Math.random() * 16).toString(16)
+            ).join('');
+        }
+
+        // Initialize client seed
+        document.getElementById('clientSeed').value = generateClientSeed();
+        
+        // Change client seed button
+        document.getElementById('changeClientSeed').addEventListener('click', () => {
+            document.getElementById('clientSeed').value = generateClientSeed();
+            showNotification('Client seed changed! This will affect the next round.', 'success');
+        });
+    </script>
+</body>
+</html>

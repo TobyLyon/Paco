@@ -73,7 +73,7 @@ const menuItems = {
         { id: 'space-helmet', name: 'Galaxy Gourmet', description: 'Out-of-this-world flavor from the cosmos', price: 0.50, emoji: '🚀' },
         { id: 'cyclone', name: 'Tornado Twist', description: 'Whirlwind of flavor that spins your taste buds', price: 0.50, emoji: '🌪️' },
         { id: 'fishing-hat', name: 'Angler\'s Catch', description: 'Fresh from the stream with crispy coating', price: 0.50, emoji: '🎣' },
-        { id: 'proliferation', name: 'Bloom Burst', description: 'Explosive flavor that multiplies in your mouth', price: 0.50, emoji: '🌸' }
+        { id: 'proliferation', name: 'SMP', description: 'Explosive flavor that multiplies in your mouth', price: 0.50, emoji: '🌸' }
     ],
     items: [
         { id: '', name: 'No Side', description: 'Keep it simple, chicken only', price: 0.00, emoji: '🚫' },

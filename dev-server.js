@@ -342,6 +342,37 @@ app.get('/api/twitter/debug-old', (req, res) => {
     res.json(config);
 });
 
+// 🎰 CRASH CASINO ROUTES
+// Serve PacoRocko crash casino game
+app.get('/PacoRocko', (req, res) => {
+    console.log('🎰 PacoRocko crash casino accessed');
+    
+    const crashGamePath = path.join(__dirname, 'crash-casino', 'frontend', 'pacorocko.html');
+    if (fs.existsSync(crashGamePath)) {
+        res.sendFile(crashGamePath);
+    } else {
+        console.error('❌ PacoRocko game file not found');
+        res.status(404).send(`
+            <h1>🎰 PacoRocko - Coming Soon!</h1>
+            <p>The crash casino game is being developed. Check back soon!</p>
+            <a href="/">← Back to Paco the Chicken</a>
+        `);
+    }
+});
+
+// Serve crash casino static assets
+app.use('/crash-casino', express.static(path.join(__dirname, 'crash-casino')));
+
+// Crash casino API routes (placeholder for future backend integration)
+app.get('/api/crash/stats', (req, res) => {
+    res.json({
+        totalRounds: 0,
+        totalVolume: '0 ETH',
+        totalPlayers: 0,
+        status: 'development'
+    });
+});
+
 // Twitter OAuth callback - serve the actual callback.html file with injection
 app.get('/auth/callback', (req, res) => {
     console.log('📞 TWITTER CALLBACK HIT!', 'Code:', req.query.code ? 'PRESENT' : 'MISSING', 'State:', req.query.state ? 'PRESENT' : 'MISSING');
@@ -365,6 +396,19 @@ app.get('/auth/callback', (req, res) => {
     }
 });
 
+// 🎰 Initialize PacoRocko Crash Casino
+let crashCasino = null;
+try {
+    const PacoRockoServerIntegration = require('./crash-casino/integration/pacorocko-server-integration');
+    crashCasino = new PacoRockoServerIntegration(app, {
+        corsOrigin: "*"
+    });
+    console.log('🎰 PacoRocko crash casino integration loaded');
+} catch (error) {
+    console.log('⚠️  PacoRocko crash casino not available (files not found)');
+    console.log('   This is normal if you haven\'t set up the crash casino yet');
+}
+
 // Start server with automatic port fallback
 function startServer(port = PORT) {
     const server = app.listen(port, () => {
@@ -378,7 +422,17 @@ function startServer(port = PORT) {
         console.log(`🎨 Add new assets to ./assets/hat/ or ./assets/item/ - no build needed!`);
         console.log(`🔄 Changes are reflected immediately!`);
         console.log(`🐦 Twitter OAuth redirect: ${TWITTER_CONFIG.redirectUri}`);
+        console.log(`🎰 PacoRocko crash casino: http://localhost:${port}/PacoRocko`);
         console.log(`💡 To use a different port: PORT=3002 npm run dev`);
+        
+        // Start crash casino if available
+        if (crashCasino) {
+            crashCasino.start(port + 1).then((crashPort) => {
+                console.log(`🎰 PacoRocko crash casino WebSocket running on port ${crashPort}`);
+            }).catch((error) => {
+                console.error('❌ Failed to start crash casino:', error);
+            });
+        }
     });
 
     server.on('error', (err) => {

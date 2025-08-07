@@ -261,12 +261,17 @@ class GamePhysics {
         }
     }
 
-    // Generate platforms using procedural generation
+    // Generate platforms using procedural generation with pattern variety
     generatePlatforms(startY, endY, canvasWidth, existingPlatforms = []) {
         const platforms = [];
         const platformConfig = gameAssets.config.platform;
         
         let currentY = startY;
+        
+        // PATTERN SYSTEM - Create varied jumping challenges
+        let currentPattern = null;
+        let patternProgress = 0;
+        let patternLength = 0;
         
         while (currentY > endY) {
             // Progressive difficulty based on height
@@ -305,8 +310,10 @@ class GamePhysics {
             // IMPROVED X positioning - guarantee reachability based on physics
             let x;
             if (platforms.length === 0) {
-                // First platform - place reasonably centered
-                x = (canvasWidth - platformConfig.width) / 2 + (Math.random() - 0.5) * 100;
+                // First platform - place with variety to avoid center clustering
+                const startPositions = [0.3, 0.7, 0.4, 0.6, 0.5]; // Varied but accessible starting positions
+                const startIndex = Math.floor(Math.random() * startPositions.length);
+                x = (canvasWidth - platformConfig.width) * startPositions[startIndex];
             } else {
                 // Calculate actual horizontal reach based on jump physics
                 const lastPlatform = platforms[platforms.length - 1];
@@ -314,24 +321,45 @@ class GamePhysics {
                 const gravity = this.gravity;
                 const maxSpeed = gameAssets.config.player.maxSpeed;
                 
-                // Physics-based horizontal reach calculation
+                // Physics-based horizontal reach calculation - FIXED
                 // Time to fall from jump height: t = 2 * jumpForce / gravity
                 const jumpTime = (2 * jumpForce) / gravity;
                 // Horizontal distance with air control: distance = maxSpeed * jumpTime * airControlFactor
-                const maxHorizontalReach = Math.min(150, maxSpeed * jumpTime * 0.8); // 0.8 = air control factor
+                const trueHorizontalReach = maxSpeed * jumpTime * 0.8; // 0.8 = air control factor
+                // Use actual physics calculation, not arbitrary cap - this gives ~282px reach!
+                const maxHorizontalReach = Math.min(250, trueHorizontalReach); // Increased cap to 250px
                 
-                // Ensure platform is within reach, with safety margin
-                const safetyMargin = 20;
+                // Ensure platform is within reach, with reasonable safety margin
+                const safetyMargin = 15; // Reduced from 20 to allow more placement flexibility
                 const effectiveReach = maxHorizontalReach - safetyMargin;
                 
                 const minX = Math.max(0, lastPlatform.x - effectiveReach);
                 const maxX = Math.min(canvasWidth - platformConfig.width, lastPlatform.x + effectiveReach);
                 
-                // Guarantee valid range
+                // Guarantee valid range - IMPROVED FALLBACK LOGIC
                 if (minX >= maxX) {
-                    x = Math.max(0, Math.min(canvasWidth - platformConfig.width, lastPlatform.x));
+                    // If calculated range is invalid, find the closest valid position
+                    console.warn('⚠️ Invalid platform range detected, using fallback placement');
+                    const canvasCenter = canvasWidth / 2;
+                    const lastPlatformCenter = lastPlatform.x + platformConfig.width / 2;
+                    
+                    // Try to place platform as close to reachable as possible
+                    if (lastPlatformCenter < canvasWidth / 2) {
+                        // Last platform on left side, place new one slightly right but within reach
+                        x = Math.min(lastPlatform.x + effectiveReach * 0.8, canvasWidth - platformConfig.width);
+                    } else {
+                        // Last platform on right side, place new one slightly left but within reach
+                        x = Math.max(lastPlatform.x - effectiveReach * 0.8, 0);
+                    }
                 } else {
-                    x = minX + Math.random() * (maxX - minX);
+                    // PATTERN-BASED PLACEMENT SYSTEM - Create varied jumping challenges
+                    x = this.calculatePatternBasedPosition(platforms, minX, maxX, canvasWidth, height, currentPattern, patternProgress, patternLength);
+                    
+                    // Update pattern system
+                    const patternResult = this.updatePatternSystem(currentPattern, patternProgress, patternLength, height);
+                    currentPattern = patternResult.pattern;
+                    patternProgress = patternResult.progress;
+                    patternLength = patternResult.length;
                 }
             }
             
@@ -339,7 +367,7 @@ class GamePhysics {
             let type = 'normal';
             const rand = Math.random();
             
-            // Check if we need a strategic bounce platform
+            // Check if we need a strategic bounce platform - IMPROVED CALCULATIONS
             const gapFromLast = platforms.length > 0 ? Math.abs(currentY - platforms[platforms.length - 1].y) : 0;
             const horizontalDistanceFromLast = platforms.length > 0 ? Math.abs(x - platforms[platforms.length - 1].x) : 0;
             
@@ -348,7 +376,11 @@ class GamePhysics {
             const maxReachableGap = (actualJumpForce * actualJumpForce) / this.gravity; // Physics-based max height
             const isLargeGap = gapFromLast > maxReachableGap * 0.7; // 70% of max reach
             const isVeryLargeGap = gapFromLast > maxReachableGap * 0.85; // 85% of max reach
-            const isHorizontallyDifficult = horizontalDistanceFromLast > 120;
+            
+            // Use the corrected horizontal reach for difficulty assessment
+            const correctedHorizontalReach = Math.min(250, gameAssets.config.player.maxSpeed * ((2 * actualJumpForce) / this.gravity) * 0.8);
+            const isHorizontallyDifficult = horizontalDistanceFromLast > (correctedHorizontalReach * 0.6); // 60% of max horizontal reach
+            const isVeryHorizontallyDifficult = horizontalDistanceFromLast > (correctedHorizontalReach * 0.8); // 80% of max horizontal reach
             
             // Count recent spring platforms to avoid clustering
             let recentSprings = 0;
@@ -359,16 +391,19 @@ class GamePhysics {
             }
             
             // STRATEGIC PLACEMENT LOGIC - SAFETY FIRST, THEN DIFFICULTY
-            // Always prioritize reachability over difficulty level
-            if (isVeryLargeGap && recentSprings === 0) {
+            // Always prioritize reachability over difficulty level - ENHANCED WITH HORIZONTAL DIFFICULTY
+            if ((isVeryLargeGap || isVeryHorizontallyDifficult) && recentSprings === 0) {
                 // Emergency super spring for very difficult sections (ANY height)
                 type = 'superspring';
-            } else if (isLargeGap && recentSprings < 2) {
+                console.log('🟡 Placed SUPERSPRING for extreme gap:', gapFromLast, 'px vertical,', horizontalDistanceFromLast, 'px horizontal');
+            } else if ((isLargeGap || isVeryHorizontallyDifficult) && recentSprings < 2) {
                 // Regular spring for challenging sections (ANY height)
                 type = 'spring';
-            } else if (gapFromLast > maxReachableGap * 0.6 && recentSprings < 1) {
-                // Safety net for medium-large gaps at ANY height
+                console.log('🟢 Placed SPRING for large gap:', gapFromLast, 'px vertical,', horizontalDistanceFromLast, 'px horizontal');
+            } else if ((gapFromLast > maxReachableGap * 0.6 || isHorizontallyDifficult) && recentSprings < 1) {
+                // Safety net for medium-large gaps or horizontal difficulty at ANY height
                 type = Math.random() < 0.8 ? 'spring' : 'minispring';
+                console.log('🔵 Placed safety spring for moderate difficulty:', gapFromLast, 'px vertical,', horizontalDistanceFromLast, 'px horizontal');
             } else if (recentEvil >= 2) {
                 // Force a helpful platform after multiple evil platforms
                 type = Math.random() < 0.7 ? 'spring' : 'minispring';
@@ -383,7 +418,7 @@ class GamePhysics {
                 else if (rand < 0.25) type = 'moving';
             } else if (height < 1500) {
                 // Mid game - balanced challenge with strategic recovery
-                if (isHorizontallyDifficult && rand < 0.3) type = 'spring'; // Help with horizontal challenges
+                if ((isHorizontallyDifficult || isVeryHorizontallyDifficult) && rand < 0.4) type = 'spring'; // More help with horizontal challenges
                 else if (rand < 0.05) type = 'spring';
                 else if (rand < 0.15) type = 'minispring';
                 else if (rand < 0.25) type = 'moving';
@@ -391,7 +426,8 @@ class GamePhysics {
                 else if (rand < 0.42) type = 'breaking';
             } else if (height < 3000) {
                 // Advanced game - more challenge but strategic recovery
-                if (isHorizontallyDifficult && rand < 0.4) type = 'spring'; // More help for horizontal challenges
+                if (isVeryHorizontallyDifficult && rand < 0.6) type = 'spring'; // Much more help for very difficult horizontal gaps
+                else if (isHorizontallyDifficult && rand < 0.4) type = 'spring'; // More help for horizontal challenges
                 else if (rand < 0.08) type = 'spring';
                 else if (rand < 0.18) type = 'minispring';
                 else if (rand < 0.30) type = 'moving';
@@ -399,30 +435,287 @@ class GamePhysics {
                 else if (rand < 0.50) type = 'breaking';
                 else if (rand < 0.53) type = 'evil';
             } else {
-                // Expert level - maximum strategic placement with guaranteed help
-                if (isVeryLargeGap && rand < 0.8) type = 'superspring'; // Very high chance of mega help
-                else if (isLargeGap && rand < 0.6) type = 'spring'; // Higher chance of spring help
-                else if (isHorizontallyDifficult && rand < 0.7) type = 'spring'; // Much higher chance for horizontal challenges
-                else if (rand < 0.15) type = 'spring'; // More springs in general
-                else if (rand < 0.28) type = 'minispring'; // More mini springs
-                else if (rand < 0.38) type = 'moving';
+                // Expert level - maximum strategic placement with guaranteed help - ENHANCED
+                if ((isVeryLargeGap || isVeryHorizontallyDifficult) && rand < 0.85) type = 'superspring'; // Very high chance of mega help for extreme gaps
+                else if ((isLargeGap || isVeryHorizontallyDifficult) && rand < 0.7) type = 'spring'; // Higher chance of spring help
+                else if (isHorizontallyDifficult && rand < 0.8) type = 'spring'; // Much higher chance for horizontal challenges
+                else if (rand < 0.18) type = 'spring'; // More springs in general
+                else if (rand < 0.32) type = 'minispring'; // More mini springs
+                else if (rand < 0.40) type = 'moving';
                 else if (rand < 0.46) type = 'cloud';
-                else if (rand < 0.54) type = 'breaking';
-                else if (rand < 0.56) type = 'evil'; // Reduce evil platforms at expert level
+                else if (rand < 0.52) type = 'breaking';
+                else if (rand < 0.54) type = 'evil'; // Reduce evil platforms at expert level
+            }
+            
+            // FINAL REACHABILITY VALIDATION - Ensure every platform is truly reachable
+            let finalX = x;
+            let finalType = type;
+            
+            if (platforms.length > 0) {
+                const lastPlatform = platforms[platforms.length - 1];
+                const verticalGap = Math.abs(currentY - lastPlatform.y);
+                const horizontalGap = Math.abs(x - lastPlatform.x);
+                
+                // Double-check physics: Can we actually reach this platform?
+                const jumpHeight = (this.jumpForce * this.jumpForce) / this.gravity; // Max theoretical jump height
+                const jumpTime = (2 * this.jumpForce) / this.gravity;
+                const maxHorizontalDistance = gameAssets.config.player.maxSpeed * jumpTime * 0.8;
+                
+                const isVerticallyUnreachable = verticalGap > jumpHeight * 0.9; // 90% of max height
+                const isHorizontallyUnreachable = horizontalGap > maxHorizontalDistance * 0.9; // 90% of max distance
+                
+                if (isVerticallyUnreachable || isHorizontallyUnreachable) {
+                    console.warn('🚨 UNREACHABLE PLATFORM DETECTED! Adjusting...');
+                    console.log(`   Vertical gap: ${verticalGap}px (max: ${jumpHeight}px)`);
+                    console.log(`   Horizontal gap: ${horizontalGap}px (max: ${maxHorizontalDistance}px)`);
+                    
+                    // Force a spring to make it reachable
+                    if (isVerticallyUnreachable) {
+                        finalType = 'superspring';
+                        console.log('   🟡 Forced SUPERSPRING for vertical gap');
+                    } else if (isHorizontallyUnreachable) {
+                        // Move platform closer horizontally and add spring
+                        const safeHorizontalDistance = maxHorizontalDistance * 0.7;
+                        if (lastPlatform.x < canvasWidth / 2) {
+                            finalX = Math.min(lastPlatform.x + safeHorizontalDistance, canvasWidth - platformConfig.width);
+                        } else {
+                            finalX = Math.max(lastPlatform.x - safeHorizontalDistance, 0);
+                        }
+                        finalType = 'spring';
+                        console.log('   🟢 Adjusted position and added SPRING for horizontal gap');
+                    }
+                }
             }
             
             platforms.push({
-                x: x,
+                x: finalX,
                 y: currentY,
                 width: platformConfig.width,
                 height: platformConfig.height,
-                type: type,
+                type: finalType,
                 touched: false,
                 broken: false
             });
         }
         
+        // POST-GENERATION VALIDATION - Final safety check for impossible sequences
+        this.validateAndFixPlatformSequence(platforms, canvasWidth);
+        
         return platforms;
+    }
+
+    // Validate and fix platform sequences to ensure all platforms are reachable
+    validateAndFixPlatformSequence(platforms, canvasWidth) {
+        if (platforms.length < 2) return; // Need at least 2 platforms to validate
+        
+        const jumpHeight = (this.jumpForce * this.jumpForce) / this.gravity;
+        const jumpTime = (2 * this.jumpForce) / this.gravity;
+        const maxHorizontalDistance = gameAssets.config.player.maxSpeed * jumpTime * 0.8;
+        
+        let fixesApplied = 0;
+        
+        for (let i = 1; i < platforms.length; i++) {
+            const currentPlatform = platforms[i];
+            const previousPlatform = platforms[i - 1];
+            
+            const verticalGap = Math.abs(currentPlatform.y - previousPlatform.y);
+            const horizontalGap = Math.abs(currentPlatform.x - previousPlatform.x);
+            
+            const isVerticallyUnreachable = verticalGap > jumpHeight * 0.95; // Very strict check
+            const isHorizontallyUnreachable = horizontalGap > maxHorizontalDistance * 0.95;
+            
+            if (isVerticallyUnreachable || isHorizontallyUnreachable) {
+                console.warn(`🚨 POST-GEN FIX: Platform ${i} unreachable from platform ${i-1}`);
+                console.log(`   Gaps: ${verticalGap}px vertical, ${horizontalGap}px horizontal`);
+                
+                // Apply fix based on the type of unreachability
+                if (isVerticallyUnreachable) {
+                    // Make the previous platform a superspring to bridge the gap
+                    platforms[i - 1].type = 'superspring';
+                    console.log(`   🟡 Fixed: Made platform ${i-1} a SUPERSPRING`);
+                    fixesApplied++;
+                } else if (isHorizontallyUnreachable) {
+                    // Move current platform closer and make previous one a spring
+                    const safeDistance = maxHorizontalDistance * 0.7;
+                    const platformConfig = gameAssets.config.platform;
+                    
+                    if (previousPlatform.x < canvasWidth / 2) {
+                        currentPlatform.x = Math.min(previousPlatform.x + safeDistance, canvasWidth - platformConfig.width);
+                    } else {
+                        currentPlatform.x = Math.max(previousPlatform.x - safeDistance, 0);
+                    }
+                    
+                    platforms[i - 1].type = 'spring';
+                    console.log(`   🟢 Fixed: Moved platform ${i} closer and made platform ${i-1} a SPRING`);
+                    fixesApplied++;
+                }
+            }
+        }
+        
+        if (fixesApplied > 0) {
+            console.log(`✅ Post-generation validation complete: ${fixesApplied} fixes applied`);
+        }
+    }
+
+    // Pattern-based position calculation for varied jumping challenges
+    calculatePatternBasedPosition(platforms, minX, maxX, canvasWidth, height, currentPattern, patternProgress, patternLength) {
+        const lastPlatform = platforms[platforms.length - 1];
+        const range = maxX - minX;
+        const center = minX + range / 2;
+        const canvasCenter = canvasWidth / 2;
+        
+        let x = center; // Default fallback
+        
+        switch (currentPattern) {
+            case 'zigzag':
+                // Alternating left-right pattern for dynamic movement
+                const zigzagDirection = (patternProgress % 2 === 0) ? -1 : 1;
+                const zigzagIntensity = Math.min(0.8, 0.3 + (height / 5000)); // Increase intensity with height
+                x = center + (zigzagDirection * range * zigzagIntensity * 0.5);
+                break;
+                
+            case 'spiral':
+                // Circular/spiral pattern around canvas center
+                const spiralAngle = (patternProgress / patternLength) * Math.PI * 4; // 2 full rotations
+                const spiralRadius = Math.min(range * 0.4, 80 + (height / 100));
+                const spiralCenterX = Math.max(minX + 60, Math.min(maxX - 60, canvasCenter));
+                x = spiralCenterX + Math.cos(spiralAngle) * spiralRadius;
+                break;
+                
+            case 'edges':
+                // Force movement to canvas edges for challenging wall-jumps
+                const edgeChoice = patternProgress % 3;
+                if (edgeChoice === 0) {
+                    x = minX + range * 0.1; // Far left
+                } else if (edgeChoice === 1) {
+                    x = maxX - range * 0.1; // Far right
+                } else {
+                    x = center; // Occasional center relief
+                }
+                break;
+                
+            case 'cluster':
+                // Group platforms in tight clusters with gaps between clusters
+                const clusterPhase = Math.floor(patternProgress / 3);
+                if (patternProgress % 6 < 3) {
+                    // Tight cluster - stay near last platform
+                    const clusterSpread = Math.min(range * 0.2, 40);
+                    x = lastPlatform.x + (Math.random() - 0.5) * clusterSpread;
+                } else {
+                    // Gap jump to new cluster location
+                    const newClusterSide = (clusterPhase % 2 === 0) ? 0.2 : 0.8;
+                    x = minX + range * newClusterSide;
+                }
+                break;
+                
+            case 'wave':
+                // Smooth wave pattern across the screen
+                const wavePhase = (patternProgress / patternLength) * Math.PI * 2;
+                const waveAmplitude = Math.min(range * 0.4, 100);
+                x = center + Math.sin(wavePhase) * waveAmplitude;
+                break;
+                
+            case 'pendulum':
+                // Pendulum swing from side to side
+                const pendulumProgress = patternProgress / patternLength;
+                const pendulumAngle = Math.sin(pendulumProgress * Math.PI);
+                x = minX + range * (0.5 + pendulumAngle * 0.4);
+                break;
+                
+            case 'challenge':
+                // Maximum difficulty spread for expert players
+                const challengePositions = [0.1, 0.9, 0.3, 0.7, 0.5]; // Varied positions
+                const challengeIndex = patternProgress % challengePositions.length;
+                x = minX + range * challengePositions[challengeIndex];
+                break;
+                
+            default:
+                // Enhanced random with bias away from center
+                const centerBias = Math.abs((lastPlatform.x + lastPlatform.width/2) - canvasCenter) / (canvasWidth/2);
+                if (centerBias < 0.3) {
+                    // Too central - bias toward edges
+                    x = Math.random() < 0.5 ? 
+                        minX + range * (0.7 + Math.random() * 0.3) : 
+                        minX + range * (0.0 + Math.random() * 0.3);
+                } else {
+                    // Good spread - normal random
+                    x = minX + Math.random() * range;
+                }
+                break;
+        }
+        
+        // Ensure x is within valid bounds
+        return Math.max(minX, Math.min(maxX, x));
+    }
+
+    // Update pattern system - decides when to change patterns
+    updatePatternSystem(currentPattern, patternProgress, patternLength, height) {
+        // Pattern difficulty scaling
+        const difficultyFactor = Math.min(1.0, height / 10000); // 0 to 1 over 10000px
+        
+        // Start new pattern if current one is complete or null
+        if (!currentPattern || patternProgress >= patternLength) {
+            const patterns = this.getAvailablePatterns(height, difficultyFactor);
+            const newPattern = patterns[Math.floor(Math.random() * patterns.length)];
+            const newLength = this.getPatternLength(newPattern, difficultyFactor);
+            
+            console.log(`🎨 New pattern: ${newPattern} (length: ${newLength}) at height ${height}px`);
+            
+            return {
+                pattern: newPattern,
+                progress: 0,
+                length: newLength
+            };
+        }
+        
+        // Continue current pattern
+        return {
+            pattern: currentPattern,
+            progress: patternProgress + 1,
+            length: patternLength
+        };
+    }
+
+    // Get available patterns based on height/difficulty
+    getAvailablePatterns(height, difficultyFactor) {
+        const basePatterns = ['zigzag', 'wave', 'enhanced_random'];
+        
+        if (height < 500) {
+            // Early game - simple patterns only
+            return ['enhanced_random', 'zigzag'];
+        } else if (height < 1500) {
+            // Early-mid game - introduce variety
+            return ['zigzag', 'wave', 'cluster', 'enhanced_random'];
+        } else if (height < 3000) {
+            // Mid game - more complex patterns
+            return ['zigzag', 'wave', 'spiral', 'cluster', 'pendulum', 'enhanced_random'];
+        } else if (height < 6000) {
+            // Advanced - all patterns except maximum challenge
+            return ['zigzag', 'wave', 'spiral', 'cluster', 'pendulum', 'edges', 'enhanced_random'];
+        } else {
+            // Expert - all patterns including maximum challenge
+            return ['zigzag', 'wave', 'spiral', 'cluster', 'pendulum', 'edges', 'challenge', 'enhanced_random'];
+        }
+    }
+
+    // Determine pattern length based on type and difficulty
+    getPatternLength(pattern, difficultyFactor) {
+        const baseLengths = {
+            'enhanced_random': 3 + Math.floor(Math.random() * 3), // 3-5 platforms
+            'zigzag': 4 + Math.floor(Math.random() * 4), // 4-7 platforms
+            'wave': 6 + Math.floor(Math.random() * 4), // 6-9 platforms
+            'spiral': 8 + Math.floor(Math.random() * 4), // 8-11 platforms
+            'cluster': 6 + Math.floor(Math.random() * 3), // 6-8 platforms
+            'pendulum': 5 + Math.floor(Math.random() * 3), // 5-7 platforms
+            'edges': 4 + Math.floor(Math.random() * 3), // 4-6 platforms
+            'challenge': 3 + Math.floor(Math.random() * 2) // 3-4 platforms (intense!)
+        };
+        
+        const baseLength = baseLengths[pattern] || 5;
+        
+        // Slightly shorter patterns at higher difficulty for more variety
+        const difficultyAdjustment = Math.floor(difficultyFactor * 2);
+        return Math.max(3, baseLength - difficultyAdjustment);
     }
 
     // Calculate score based on height reached

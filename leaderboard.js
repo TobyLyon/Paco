@@ -767,6 +767,20 @@ class Leaderboard {
             }
         }
         
+        // Add guest message if not authenticated
+        if (!twitterAuth.isAuthenticated) {
+            leaderboardHTML += `
+                <div style="margin: 12px 0 8px 0; padding: 8px; background: rgba(59, 130, 246, 0.1); border-radius: 6px; border: 1px solid rgba(59, 130, 246, 0.3); text-align: center;">
+                    <p style="color: #60a5fa; font-size: 0.7rem; margin: 0 0 4px 0;">
+                        👀 You're viewing as a guest
+                    </p>
+                    <p style="color: #94a3b8; font-size: 0.65rem; margin: 0;">
+                        Connect Twitter to submit your high scores!
+                    </p>
+                </div>
+            `;
+        }
+        
         leaderboardHTML += '</div>'; // Close leaderboard-content
         leaderboardHTML += '<button onclick="hideLeaderboard()" class="close-btn">Close</button>';
         leaderboardHTML += '</div>';

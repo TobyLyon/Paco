@@ -593,7 +593,7 @@ class TwitterAuth {
             // Update any user display elements
             this.updateUserDisplay();
         } else {
-            // Show auth button, disable leaderboard
+            // Show auth button, but allow leaderboard viewing for guests
             if (authButton) {
                 authButton.style.display = 'block';
                 authButton.textContent = '🐦 Connect Twitter for Contest';
@@ -601,9 +601,9 @@ class TwitterAuth {
                 console.log('✅ UI: Auth button shown and enabled');
             }
             if (leaderboardButton) {
-                leaderboardButton.disabled = true;
-                leaderboardButton.textContent = '🔒 Twitter Required';
-                console.log('✅ UI: Leaderboard button disabled');
+                leaderboardButton.disabled = false; // Allow guests to view leaderboard
+                leaderboardButton.textContent = '👀 View Leaderboard';
+                console.log('✅ UI: Leaderboard button enabled for guest viewing');
             }
         }
         

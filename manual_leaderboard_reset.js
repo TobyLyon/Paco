@@ -85,6 +85,19 @@ Type one of the above commands to execute.
 
 // Method 4: COMPLETE DATABASE RESET (clears all scores!)
 async function completeLeaderboardReset() {
+    console.log('🚨 FUNCTION DISABLED - This would delete ALL historical data!');
+    console.log('❌ Historical data preservation is now ENABLED');
+    console.log('📊 Use daily/all-time tabs instead of deleting data');
+    console.log('');
+    console.log('✅ If you need to start fresh, only delete TODAY\'s scores:');
+    console.log('   DELETE FROM game_scores WHERE game_date = CURRENT_DATE;');
+    console.log('');
+    console.log('🏆 This preserves all-time leaderboard history!');
+    
+    return; // Exit immediately
+    
+    // DISABLED - This was deleting all historical data
+    /*
     console.log('💥 COMPLETE LEADERBOARD RESET - CLEARING ALL DATA!');
     console.log('⚠️  WARNING: This will delete ALL scores from the database!');
     
@@ -121,6 +134,7 @@ async function completeLeaderboardReset() {
             console.log('📝 Run this SQL in your Supabase dashboard:');
             console.log('   DELETE FROM game_scores;');
         }
+    */
         
         // Step 3: Reset timer to immediate
         const resetData = {

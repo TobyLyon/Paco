@@ -73,7 +73,8 @@ const menuItems = {
         { id: 'space-helmet', name: 'Galaxy Gourmet', description: 'Out-of-this-world flavor from the cosmos', price: 0.50, emoji: '🚀' },
         { id: 'cyclone', name: 'Cyclops', description: 'One-eyed flavor that sees straight through to your soul', price: 0.50, emoji: '👁️' },
         { id: 'fishing-hat', name: 'Angler\'s Catch', description: 'Fresh from the stream with crispy coating', price: 0.50, emoji: '🎣' },
-        { id: 'proliferation', name: 'SMP', description: 'Explosive flavor that multiplies in your mouth', price: 0.50, emoji: '🌸' }
+        { id: 'proliferation', name: 'SMP', description: 'Explosive flavor that multiplies in your mouth', price: 0.50, emoji: '🟢' },
+        { id: 'ibiza-boss', name: 'Ibiza Boss', description: 'VIP flavor from the Mediterranean party scene', price: 0.50, emoji: '🏖️' }
     ],
     items: [
         { id: '', name: 'No Side', description: 'Keep it simple, chicken only', price: 0.00, emoji: '🚫' },
@@ -93,7 +94,8 @@ const menuItems = {
         { id: 'pyn', name: 'Paco Zyns', description: 'High-speed flavor express', price: 1.00, emoji: '🚂' },
         { id: 'psp', name: 'Portable Gaming', description: 'Retro gaming fuel for chicken champions', price: 1.00, emoji: '🎮' },
         { id: '40-oz', name: 'Forty Ounce', description: 'Big bottle, bigger flavor', price: 1.00, emoji: '🍺' },
-        { id: 'purse', name: 'Designer Bag', description: 'Stylish storage for leftover nuggets', price: 1.00, emoji: '👜' }
+        { id: 'purse', name: 'Designer Bag', description: 'Stylish storage for leftover nuggets', price: 1.00, emoji: '👜' },
+        { id: 'ibiza cup', name: 'Ibiza Cup', description: 'Premium party beverage for the ultimate experience', price: 1.00, emoji: '🥂' }
     ]
 };
 

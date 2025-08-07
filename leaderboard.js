@@ -281,7 +281,7 @@ class Leaderboard {
     async submitScore(score) {
         try {
             // Check if user is authenticated
-            if (!twitterAuth.authenticated) {
+            if (!twitterAuth.isAuthenticated) {
                 throw new Error('Twitter authentication required for leaderboard');
             }
 
@@ -557,7 +557,7 @@ class Leaderboard {
                 }
                 
                 const rank = index + 1;
-                const isCurrentUser = twitterAuth.authenticated && 
+                const isCurrentUser = twitterAuth.isAuthenticated && 
                                     entry.user_id === twitterAuth.currentUser?.id;
                 
                 const rankEmoji = this.getRankEmoji(rank);
@@ -593,7 +593,7 @@ class Leaderboard {
         }
         
         // Add trophy generation for current user if they're in top 5 - with proper separation
-        if (twitterAuth.authenticated) {
+        if (twitterAuth.isAuthenticated) {
             const userEntry = this.currentLeaderboard.find(entry => 
                 entry.user_id === twitterAuth.currentUser.id
             );
@@ -766,7 +766,7 @@ class Leaderboard {
                 }
                 
                 const rank = index + 1;
-                const isCurrentUser = twitterAuth.authenticated && 
+                const isCurrentUser = twitterAuth.isAuthenticated && 
                                     entry.user_id === twitterAuth.currentUser?.id;
                 
                 const rankEmoji = this.getRankEmoji(rank);
@@ -797,7 +797,7 @@ class Leaderboard {
         }
         
         // Add trophy generation for current user if they're in top 10
-        if (twitterAuth.authenticated) {
+        if (twitterAuth.isAuthenticated) {
             const userEntry = this.currentLeaderboard.find(entry => 
                 entry.user_id === twitterAuth.currentUser.id
             );
@@ -860,7 +860,7 @@ class Leaderboard {
 
     // Save user's best score locally
     saveBestScore() {
-        if (twitterAuth.authenticated) {
+        if (twitterAuth.isAuthenticated) {
             const key = `paco_best_score_${twitterAuth.currentUser.id}`;
             localStorage.setItem(key, this.userBestScore.toString());
         }
@@ -868,7 +868,7 @@ class Leaderboard {
 
     // Load user's best score locally
     loadBestScore() {
-        if (twitterAuth.authenticated) {
+        if (twitterAuth.isAuthenticated) {
             const key = `paco_best_score_${twitterAuth.currentUser.id}`;
             const stored = localStorage.getItem(key);
             this.userBestScore = stored ? parseInt(stored, 10) : 0;
@@ -967,7 +967,7 @@ function hideLeaderboard() {
 // Share leaderboard achievement on Twitter
 async function shareLeaderboardAchievement(score, rank) {
     try {
-        if (!twitterAuth.authenticated) {
+        if (!twitterAuth.isAuthenticated) {
             alert('❌ Please connect Twitter first');
             return;
         }
@@ -1037,7 +1037,7 @@ async function generateLeaderboardTrophy(score, username, rank) {
 // Generate trophy and share on Twitter from leaderboard
 async function generateAndShareLeaderboardTrophy(score, username, rank) {
     try {
-        if (!twitterAuth.authenticated) {
+        if (!twitterAuth.isAuthenticated) {
             alert('❌ Please connect Twitter first');
             return;
         }
@@ -1242,7 +1242,7 @@ window.checkTimerState = function() {
 
 window.debugScoreSubmission = function() {
     console.log('🔍 SCORE SUBMISSION DEBUG:');
-    console.log('Twitter authenticated:', twitterAuth.authenticated);
+    console.log('Twitter authenticated:', twitterAuth.isAuthenticated);
     console.log('Current user:', twitterAuth.currentUser);
     console.log('Current game date:', leaderboard.getCurrentGameDate());
     console.log('Leaderboard entries:', leaderboard.currentLeaderboard.length);
@@ -1261,7 +1261,7 @@ window.debugScoreSubmission = function() {
     }
     
     return {
-        authenticated: twitterAuth.authenticated,
+        authenticated: twitterAuth.isAuthenticated,
         currentUser: twitterAuth.currentUser,
         gameDate: leaderboard.getCurrentGameDate(),
         leaderboardCount: leaderboard.currentLeaderboard.length,

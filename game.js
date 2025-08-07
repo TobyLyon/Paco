@@ -2048,7 +2048,7 @@ class PacoJumpGame {
         }
 
         // Add leaderboard submission if authenticated
-        if (twitterAuth.authenticated) {
+        if (twitterAuth.isAuthenticated) {
             try {
                 await leaderboard.submitScore(this.score);
                 submissionStatus = `<div style="color: #22c55e; font-size: 0.85rem; margin: 8px 0;">✅ Score submitted!</div>`;
@@ -2082,7 +2082,7 @@ class PacoJumpGame {
 
         // Get player's rank for sharing
         let playerRank = null;
-        if (twitterAuth.authenticated && leaderboard.currentLeaderboard) {
+        if (twitterAuth.isAuthenticated && leaderboard.currentLeaderboard) {
             const playerEntry = leaderboard.currentLeaderboard.find(entry => 
                 entry.user_id === twitterAuth.currentUser?.id
             );
@@ -2263,7 +2263,7 @@ class PacoJumpGame {
             }
             
             const rank = index + 1;
-            const isCurrentUser = twitterAuth.authenticated && 
+            const isCurrentUser = twitterAuth.isAuthenticated && 
                                 entry.user_id === twitterAuth.currentUser?.id;
             
             const rankEmoji = leaderboard.getRankEmoji(rank);
@@ -2577,13 +2577,13 @@ class PacoJumpGame {
             console.log('🏆 Generating trophy preview...');
             
             // Get player information
-            const username = twitterAuth.authenticated ? twitterAuth.currentUser.username : null;
+            const username = twitterAuth.isAuthenticated ? twitterAuth.currentUser.username : null;
             
             // Try to get player's rank from leaderboard
             let rank = null;
             if (leaderboard && leaderboard.currentLeaderboard) {
                 const playerEntry = leaderboard.currentLeaderboard.find(entry => 
-                    twitterAuth.authenticated && entry.user_id === twitterAuth.currentUser.id
+                    twitterAuth.isAuthenticated && entry.user_id === twitterAuth.currentUser.id
                 );
                 if (playerEntry) {
                     rank = leaderboard.currentLeaderboard.indexOf(playerEntry) + 1;
@@ -2648,7 +2648,7 @@ class PacoJumpGame {
     // Share achievement on Twitter
     async shareOnTwitter() {
         try {
-            if (!twitterAuth.authenticated) {
+            if (!twitterAuth.isAuthenticated) {
                 this.showNotification('❌ Please connect Twitter first', 'error');
                 return;
             }
@@ -2682,7 +2682,7 @@ class PacoJumpGame {
     // Generate trophy and share on Twitter
     async generateAndShareTrophy() {
         try {
-            if (!twitterAuth.authenticated) {
+            if (!twitterAuth.isAuthenticated) {
                 this.showNotification('❌ Please connect Twitter first', 'error');
                 return;
             }

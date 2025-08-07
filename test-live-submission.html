@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Live Score Submission Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>🔍 Live Score Submission Test</h1>
+    <div id="results"></div>
+    
+    <script>
+        // Load Supabase config
+        const supabaseUrl = 'https://zdxcyztbzxjjpvqcfqex.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkeGN5enRienhqanB2cWNmcWV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY5NzA5NTUsImV4cCI6MjA1MjU0Njk1NX0.rq-TcwYVEyPe0dWfLgf8KJZZMGjZEK1RFOGkQhPjvWk';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        
+        function log(message) {
+            document.getElementById('results').innerHTML += message + '<br>';
+            console.log(message);
+        }
+        
+        async function testDirectSubmission() {
+            log('🔍 Testing direct Supabase submission...');
+            
+            const testData = {
+                user_id: 'test_user_' + Date.now(),
+                username: 'TestUser',
+                score: 1500,
+                game_date: '2025-08-05', // Using your contest date
+                game_time: 30000,
+                session_id: 'test_session',
+                checksum: 'test_checksum'
+            };
+            
+            try {
+                const { data, error } = await supabase
+                    .from('game_scores')
+                    .upsert(testData, {
+                        onConflict: 'user_id,game_date',
+                        ignoreDuplicates: false
+                    })
+                    .select();
+                
+                if (error) {
+                    log('❌ Direct submission failed: ' + error.message);
+                    log('Error details: ' + JSON.stringify(error));
+                } else {
+                    log('✅ Direct submission successful: ' + JSON.stringify(data));
+                }
+            } catch (e) {
+                log('❌ Exception during submission: ' + e.message);
+            }
+        }
+        
+        async function testLeaderboardFetch() {
+            log('🏆 Testing leaderboard fetch...');
+            
+            try {
+                const { data, error } = await supabase
+                    .from('game_scores')
+                    .select('*')
+                    .eq('game_date', '2025-08-05')
+                    .order('score', { ascending: false })
+                    .limit(10);
+                
+                if (error) {
+                    log('❌ Leaderboard fetch failed: ' + error.message);
+                } else {
+                    log('✅ Leaderboard data: ' + JSON.stringify(data, null, 2));
+                }
+            } catch (e) {
+                log('❌ Exception during leaderboard fetch: ' + e.message);
+            }
+        }
+        
+        // Run tests
+        setTimeout(async () => {
+            await testDirectSubmission();
+            await testLeaderboardFetch();
+        }, 1000);
+    </script>
+</body>
+</html>

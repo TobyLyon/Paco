@@ -405,7 +405,7 @@ class GamePhysics {
                 type = Math.random() < 0.8 ? 'spring' : 'minispring';
                 console.log('🔵 Placed safety spring for moderate difficulty:', gapFromLast, 'px vertical,', horizontalDistanceFromLast, 'px horizontal');
             } else if (recentEvil >= 2) {
-                // Force a helpful platform after multiple evil platforms
+                // Force a helpful platform after multiple evil platforms - NEVER allow 3+ evil in sequence
                 type = Math.random() < 0.7 ? 'spring' : 'minispring';
             } else if (height < 400) {
                 // Early game - mostly normal with frequent helpful springs
@@ -433,7 +433,7 @@ class GamePhysics {
                 else if (rand < 0.30) type = 'moving';
                 else if (rand < 0.40) type = 'cloud';
                 else if (rand < 0.50) type = 'breaking';
-                else if (rand < 0.53) type = 'evil';
+                else if (rand < 0.53 && this.isEvilPlatformSafe(platforms, height)) type = 'evil'; // Only if safe
             } else {
                 // Expert level - maximum strategic placement with guaranteed help - ENHANCED
                 if ((isVeryLargeGap || isVeryHorizontallyDifficult) && rand < 0.85) type = 'superspring'; // Very high chance of mega help for extreme gaps
@@ -444,7 +444,7 @@ class GamePhysics {
                 else if (rand < 0.40) type = 'moving';
                 else if (rand < 0.46) type = 'cloud';
                 else if (rand < 0.52) type = 'breaking';
-                else if (rand < 0.54) type = 'evil'; // Reduce evil platforms at expert level
+                else if (rand < 0.54 && this.isEvilPlatformSafe(platforms, height)) type = 'evil'; // Only if safe - Reduced evil at expert level
             }
             
             // FINAL REACHABILITY VALIDATION - Ensure every platform is truly reachable
@@ -716,6 +716,110 @@ class GamePhysics {
         // Slightly shorter patterns at higher difficulty for more variety
         const difficultyAdjustment = Math.floor(difficultyFactor * 2);
         return Math.max(3, baseLength - difficultyAdjustment);
+    }
+
+    // Validate if placing an Evil platform is safe (ensures alternative paths exist)
+    isEvilPlatformSafe(platforms, currentHeight) {
+        // NEVER place evil platforms in very early game
+        if (currentHeight < 800) {
+            return false;
+        }
+        
+        // Check recent evil platform density
+        let recentEvil = 0;
+        let recentNormal = 0;
+        const checkRange = 5; // Check last 5 platforms
+        
+        for (let i = Math.max(0, platforms.length - checkRange); i < platforms.length; i++) {
+            if (platforms[i].type === 'evil') {
+                recentEvil++;
+            } else if (['normal', 'spring', 'minispring', 'superspring'].includes(platforms[i].type)) {
+                recentNormal++;
+            }
+        }
+        
+        // SAFETY RULES:
+        // 1. Never allow more than 1 evil in last 5 platforms
+        if (recentEvil >= 1) {
+            console.log('🚫 Evil platform blocked: Recent evil detected');
+            return false;
+        }
+        
+        // 2. Must have at least 2 normal/spring platforms in recent history
+        if (recentNormal < 2) {
+            console.log('🚫 Evil platform blocked: Not enough safe platforms recently');
+            return false;
+        }
+        
+        // 3. CRITICAL: Check if current pattern could create isolation
+        // If we're in a challenging pattern, avoid evil platforms
+        const patternBasedRisk = this.assessPatternRisk(platforms, currentHeight);
+        if (patternBasedRisk) {
+            console.log('🚫 Evil platform blocked: Pattern-based risk detected');
+            return false;
+        }
+        
+        // 4. Probabilistic safety - reduce evil chance at higher difficulties
+        const difficultyFactor = Math.min(1.0, currentHeight / 10000);
+        const safetyChance = 0.7 - (difficultyFactor * 0.3); // 70% to 40% chance allowed
+        
+        if (Math.random() > safetyChance) {
+            console.log('🚫 Evil platform blocked: Safety probability check');
+            return false;
+        }
+        
+        console.log('✅ Evil platform approved: Safe placement conditions met');
+        return true;
+    }
+
+    // Assess if current pattern creates risk for evil platform placement
+    assessPatternRisk(platforms, currentHeight) {
+        if (platforms.length < 3) return false;
+        
+        const last3 = platforms.slice(-3);
+        
+        // Check for risky patterns:
+        // 1. All platforms are at canvas edges (pattern: edges)
+        const canvasWidth = gameAssets.config.canvas.width;
+        const edgeThreshold = 60; // pixels from edge
+        
+        let edgePlatforms = 0;
+        for (const platform of last3) {
+            if (platform.x < edgeThreshold || platform.x > (canvasWidth - platform.width - edgeThreshold)) {
+                edgePlatforms++;
+            }
+        }
+        
+        if (edgePlatforms >= 2) {
+            return true; // Risky - platforms at edges make evil dangerous
+        }
+        
+        // 2. Large horizontal distances (pattern: challenge, spiral)
+        let largeGaps = 0;
+        for (let i = 1; i < last3.length; i++) {
+            const horizontalGap = Math.abs(last3[i].x - last3[i-1].x);
+            if (horizontalGap > 100) {
+                largeGaps++;
+            }
+        }
+        
+        if (largeGaps >= 2) {
+            return true; // Risky - large gaps make evil dangerous
+        }
+        
+        // 3. Moving or breaking platform clusters
+        let unstablePlatforms = 0;
+        for (const platform of last3) {
+            if (['moving', 'breaking'].includes(platform.type)) {
+                unstablePlatforms++;
+            }
+        }
+        
+        if (unstablePlatforms >= 2) {
+            return true; // Risky - unstable platforms make evil dangerous
+        }
+        
+        return false; // Pattern looks safe for evil placement
     }
 
     // Calculate score based on height reached

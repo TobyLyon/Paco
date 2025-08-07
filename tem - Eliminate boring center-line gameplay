@@ -1,0 +1,279 @@
+[1mdiff --git a/game-physics.js b/game-physics.js[m
+[1mindex 7ac3e69..cdf2101 100644[m
+[1m--- a/game-physics.js[m
+[1m+++ b/game-physics.js[m
+[36m@@ -261,13 +261,18 @@[m [mclass GamePhysics {[m
+         }[m
+     }[m
+ [m
+[31m-    // Generate platforms using procedural generation[m
+[32m+[m[32m    // Generate platforms using procedural generation with pattern variety[m
+     generatePlatforms(startY, endY, canvasWidth, existingPlatforms = []) {[m
+         const platforms = [];[m
+         const platformConfig = gameAssets.config.platform;[m
+         [m
+         let currentY = startY;[m
+         [m
+[32m+[m[32m        // PATTERN SYSTEM - Create varied jumping challenges[m
+[32m+[m[32m        let currentPattern = null;[m
+[32m+[m[32m        let patternProgress = 0;[m
+[32m+[m[32m        let patternLength = 0;[m
+[32m+[m[41m        [m
+         while (currentY > endY) {[m
+             // Progressive difficulty based on height[m
+             const height = Math.abs(currentY);[m
+[36m@@ -305,8 +310,10 @@[m [mclass GamePhysics {[m
+             // IMPROVED X positioning - guarantee reachability based on physics[m
+             let x;[m
+             if (platforms.length === 0) {[m
+[31m-                // First platform - place reasonably centered[m
+[31m-                x = (canvasWidth - platformConfig.width) / 2 + (Math.random() - 0.5) * 100;[m
+[32m+[m[32m                // First platform - place with variety to avoid center clustering[m
+[32m+[m[32m                const startPositions = [0.3, 0.7, 0.4, 0.6, 0.5]; // Varied but accessible starting positions[m
+[32m+[m[32m                const startIndex = Math.floor(Math.random() * startPositions.length);[m
+[32m+[m[32m                x = (canvasWidth - platformConfig.width) * startPositions[startIndex];[m
+             } else {[m
+                 // Calculate actual horizontal reach based on jump physics[m
+                 const lastPlatform = platforms[platforms.length - 1];[m
+[36m@@ -314,24 +321,45 @@[m [mclass GamePhysics {[m
+                 const gravity = this.gravity;[m
+                 const maxSpeed = gameAssets.config.player.maxSpeed;[m
+                 [m
+[31m-                // Physics-based horizontal reach calculation[m
+[32m+[m[32m                // Physics-based horizontal reach calculation - FIXED[m
+                 // Time to fall from jump height: t = 2 * jumpForce / gravity[m
+                 const jumpTime = (2 * jumpForce) / gravity;[m
+                 // Horizontal distance with air control: distance = maxSpeed * jumpTime * airControlFactor[m
+[31m-                const maxHorizontalReach = Math.min(150, maxSpeed * jumpTime * 0.8); // 0.8 = air control factor[m
+[32m+[m[32m                const trueHorizontalReach = maxSpeed * jumpTime * 0.8; // 0.8 = air control factor[m
+[32m+[m[32m                // Use actual physics calculation, not arbitrary cap - this gives ~282px reach![m
+[32m+[m[32m                const maxHorizontalReach = Math.min(250, trueHorizontalReach); // Increased cap to 250px[m
+                 [m
+[31m-                // Ensure platform is within reach, with safety margin[m
+[31m-                const safetyMargin = 20;[m
+[32m+[m[32m                // Ensure platform is within reach, with reasonable safety margin[m
+[32m+[m[32m                const safetyMargin = 15; // Reduced from 20 to allow more placement flexibility[m
+                 const effectiveReach = maxHorizontalReach - safetyMargin;[m
+                 [m
+                 const minX = Math.max(0, lastPlatform.x - effectiveReach);[m
+                 const maxX = Math.min(canvasWidth - platformConfig.width, lastPlatform.x + effectiveReach);[m
+                 [m
+[31m-                // Guarantee valid range[m
+[32m+[m[32m                // Guarantee valid range - IMPROVED FALLBACK LOGIC[m
+                 if (minX >= maxX) {[m
+[31m-                    x = Math.max(0, Math.min(canvasWidth - platformConfig.width, lastPlatform.x));[m
+[32m+[m[32m                    // If calculated range is invalid, find the closest valid position[m
+[32m+[m[32m                    console.warn('⚠️ Invalid platform range detected, using fallback placement');[m
+[32m+[m[32m                    const canvasCenter = canvasWidth / 2;[m
+[32m+[m[32m                    const lastPlatformCenter = lastPlatform.x + platformConfig.width / 2;[m
+[32m+[m[41m                    [m
+[32m+[m[32m                    // Try to place platform as close to reachable as possible[m
+[32m+[m[32m                    if (lastPlatformCenter < canvasWidth / 2) {[m
+[32m+[m[32m                        // Last platform on left side, place new one slightly right but within reach[m
+[32m+[m[32m                        x = Math.min(lastPlatform.x + effectiveReach * 0.8, canvasWidth - platformConfig.width);[m
+[32m+[m[32m                    } else {[m
+[32m+[m[32m                        // Last platform on right side, place new one slightly left but within reach[m
+[32m+[m[32m                        x = Math.max(lastPlatform.x - effectiveReach * 0.8, 0);[m
+[32m+[m[32m                    }[m
+                 } else {[m
+[31m-                    x = minX + Math.random() * (maxX - minX);[m
+[32m+[m[32m                    // PATTERN-BASED PLACEMENT SYSTEM - Create varied jumping challenges[m
+[32m+[m[32m                    x = this.calculatePatternBasedPosition(platforms, minX, maxX, canvasWidth, height, currentPattern, patternProgress, patternLength);[m
+[32m+[m[41m                    [m
+[32m+[m[32m                    // Update pattern system[m
+[32m+[m[32m                    const patternResult = this.updatePatternSystem(currentPattern, patternProgress, patternLength, height);[m
+[32m+[m[32m                    currentPattern = patternResult.pattern;[m
+[32m+[m[32m                    patternProgress = patternResult.progress;[m
+[32m+[m[32m                    patternLength = patternResult.length;[m
+                 }[m
+             }[m
+             [m
+[36m@@ -339,7 +367,7 @@[m [mclass GamePhysics {[m
+             let type = 'normal';[m
+             const rand = Math.random();[m
+             [m
+[31m-            // Check if we need a strategic bounce platform[m
+[32m+[m[32m            // Check if we need a strategic bounce platform - IMPROVED CALCULATIONS[m
+             const gapFromLast = platforms.length > 0 ? Math.abs(currentY - platforms[platforms.length - 1].y) : 0;[m
+             const horizontalDistanceFromLast = platforms.length > 0 ? Math.abs(x - platforms[platforms.length - 1].x) : 0;[m
+             [m
+[36m@@ -348,7 +376,11 @@[m [mclass GamePhysics {[m
+             const maxReachableGap = (actualJumpForce * actualJumpForce) / this.gravity; // Physics-based max height[m
+             const isLargeGap = gapFromLast > maxReachableGap * 0.7; // 70% of max reach[m
+             const isVeryLargeGap = gapFromLast > maxReachableGap * 0.85; // 85% of max reach[m
+[31m-            const isHorizontallyDifficult = horizontalDistanceFromLast > 120;[m
+[32m+[m[41m            [m
+[32m+[m[32m            // Use the corrected horizontal reach for difficulty assessment[m
+[32m+[m[32m            const correctedHorizontalReach = Math.min(250, gameAssets.config.player.maxSpeed * ((2 * actualJumpForce) / this.gravity) * 0.8);[m
+[32m+[m[32m            const isHorizontallyDifficult = horizontalDistanceFromLast > (correctedHorizontalReach * 0.6); // 60% of max horizontal reach[m
+[32m+[m[32m            const isVeryHorizontallyDifficult = horizontalDistanceFromLast > (correctedHorizontalReach * 0.8); // 80% of max horizontal reach[m
+             [m
+             // Count recent spring platforms to avoid clustering[m
+             let recentSprings = 0;[m
+[36m@@ -359,16 +391,19 @@[m [mclass GamePhysics {[m
+             }[m
+             [m
+             // STRATEGIC PLACEMENT LOGIC - SAFETY FIRST, THEN DIFFICULTY[m
+[31m-            // Always prioritize reachability over difficulty level[m
+[31m-            if (isVeryLargeGap && recentSprings === 0) {[m
+[32m+[m[32m            // Always prioritize reachability over difficulty level - ENHANCED WITH HORIZONTAL DIFFICULTY[m
+[32m+[m[32m            if ((isVeryLargeGap || isVeryHorizontallyDifficult) && recentSprings === 0) {[m
+                 // Emergency super spring for very difficult sections (ANY height)[m
+                 type = 'superspring';[m
+[31m-            } else if (isLargeGap && recentSprings < 2) {[m
+[32m+[m[32m                console.log('🟡 Placed SUPERSPRING for extreme gap:', gapFromLast, 'px vertical,', horizontalDistanceFromLast, 'px horizontal');[m
+[32m+[m[32m            } else if ((isLargeGap || isVeryHorizontallyDifficult) && recentSprings < 2) {[m
+                 // Regular spring for challenging sections (ANY height)[m
+                 type = 'spring';[m
+[31m-            } else if (gapFromLast > maxReachableGap * 0.6 && recentSprings < 1) {[m
+[31m-                // Safety net for medium-large gaps at ANY height[m
+[32m+[m[32m                console.log('🟢 Placed SPRING for large gap:', gapFromLast, 'px vertical,', horizontalDistanceFromLast, 'px horizontal');[m
+[32m+[m[32m            } else if ((gapFromLast > maxReachableGap * 0.6 || isHorizontallyDifficult) && recentSprings < 1) {[m
+[32m+[m[32m                // Safety net for medium-large gaps or horizontal difficulty at ANY height[m
+                 type = Math.random() < 0.8 ? 'spring' : 'minispring';[m
+[32m+[m[32m                console.log('🔵 Placed safety spring for moderate difficulty:', gapFromLast, 'px vertical,', horizontalDistanceFromLast, 'px horizontal');[m
+             } else if (recentEvil >= 2) {[m
+                 // Force a helpful platform after multiple evil platforms[m
+                 type = Math.random() < 0.7 ? 'spring' : 'minispring';[m
+[36m@@ -383,7 +418,7 @@[m [mclass GamePhysics {[m
+                 else if (rand < 0.25) type = 'moving';[m
+             } else if (height < 1500) {[m
+                 // Mid game - balanced challenge with strategic recovery[m
+[31m-                if (isHorizontallyDifficult && rand < 0.3) type = 'spring'; // Help with horizontal challenges[m
+[32m+[m[32m                if ((isHorizontallyDifficult || isVeryHorizontallyDifficult) && rand < 0.4) type = 'spring'; // More help with horizontal challenges[m
+                 else if (rand < 0.05) type = 'spring';[m
+                 else if (rand < 0.15) type = 'minispring';[m
+                 else if (rand < 0.25) type = 'moving';[m
+[36m@@ -391,7 +426,8 @@[m [mclass GamePhysics {[m
+                 else if (rand < 0.42) type = 'breaking';[m
+             } else if (height < 3000) {[m
+                 // Advanced game - more challenge but strategic recovery[m
+[31m-                if (isHorizontallyDifficult && rand < 0.4) type = 'spring'; // More help for horizontal challenges[m
+[32m+[m[32m                if (isVeryHorizontallyDifficult && rand < 0.6) type = 'spring'; // Much more help for very difficult horizontal gaps[m
+[32m+[m[32m                else if (isHorizontallyDifficult && rand < 0.4) type = 'spring'; // More help for horizontal challenges[m
+                 else if (rand < 0.08) type = 'spring';[m
+                 else if (rand < 0.18) type = 'minispring';[m
+                 else if (rand < 0.30) type = 'moving';[m
+[36m@@ -399,32 +435,289 @@[m [mclass GamePhysics {[m
+                 else if (rand < 0.50) type = 'breaking';[m
+                 else if (rand < 0.53) type = 'evil';[m
+             } else {[m
+[31m-                // Expert level - maximum strategic placement with guaranteed help[m
+[31m-                if (isVeryLargeGap && rand < 0.8) type = 'superspring'; // Very high chance of mega help[m
+[31m-                else if (isLargeGap && rand < 0.6) type = 'spring'; // Higher chance of spring help[m
+[31m-                else if (isHorizontallyDifficult && rand < 0.7) type = 'spring'; // Much higher chance for horizontal challenges[m
+[31m-                else if (rand < 0.15) type = 'spring'; // More springs in general[m
+[31m-                else if (rand < 0.28) type = 'minispring'; // More mini springs[m
+[31m-                else if (rand < 0.38) type = 'moving';[m
+[32m+[m[32m                // Expert level - maximum strategic placement with guaranteed help - ENHANCED[m
+[32m+[m[32m                if ((isVeryLargeGap || isVeryHorizontallyDifficult) && rand < 0.85) type = 'superspring'; // Very high chance of mega help for extreme gaps[m
+[32m+[m[32m                else if ((isLargeGap || isVeryHorizontallyDifficult) && rand < 0.7) type = 'spring'; // Higher chance of spring help[m
+[32m+[m[32m                else if (isHorizontallyDifficult && rand < 0.8) type = 'spring'; // Much higher chance for horizontal challenges[m
+[32m+[m[32m                else if (rand < 0.18) type = 'spring'; // More springs in general[m
+[32m+[m[32m                else if (rand < 0.32) type = 'minispring'; // More mini springs[m
+[32m+[m[32m                else if (rand < 0.40) type = 'moving';[m
+                 else if (rand < 0.46) type = 'cloud';[m
+[31m-                else if (rand < 0.54) type = 'breaking';[m
+[31m-                else if (rand < 0.56) type = 'evil'; // Reduce evil platforms at expert level[m
+[32m+[m[32m                else if (rand < 0.52) type = 'breaking';[m
+[32m+[m[32m                else if (rand < 0.54) type = 'evil'; // Reduce evil platforms at expert level[m
+[32m+[m[32m            }[m
+[32m+[m[41m            [m
+[32m+[m[32m            // FINAL REACHABILITY VALIDATION - Ensure every platform is truly reachable[m
+[32m+[m[32m            let finalX = x;[m
+[32m+[m[32m            let finalType = type;[m
+[32m+[m[41m            [m
+[32m+[m[32m            if (platforms.length > 0) {[m
+[32m+[m[32m                const lastPlatform = platforms[platforms.length - 1];[m
+[32m+[m[32m                const verticalGap = Math.abs(currentY - lastPlatform.y);[m
+[32m+[m[32m                const horizontalGap = Math.abs(x - lastPlatform.x);[m
+[32m+[m[41m                [m
+[32m+[m[32m                // Double-check physics: Can we actually reach this platform?[m
+[32m+[m[32m                const jumpHeight = (this.jumpForce * this.jumpForce) / this.gravity; // Max theoretical jump height[m
+[32m+[m[32m                const jumpTime = (2 * this.jumpForce) / this.gravity;[m
+[32m+[m[32m                const maxHorizontalDistance = gameAssets.config.player.maxSpeed * jumpTime * 0.8;[m
+[32m+[m[41m                [m
+[32m+[m[32m                const isVerticallyUnreachable = verticalGap > jumpHeight * 0.9; // 90% of max height[m
+[32m+[m[32m                const isHorizontallyUnreachable = horizontalGap > maxHorizontalDistance * 0.9; // 90% of max distance[m
+[32m+[m[41m                [m
+[32m+[m[32m                if (isVerticallyUnreachable || isHorizontallyUnreachable) {[m
+[32m+[m[32m                    console.warn('🚨 UNREACHABLE PLATFORM DETECTED! Adjusting...');[m
+[32m+[m[32m                    console.log(`   Vertical gap: ${verticalGap}px (max: ${jumpHeight}px)`);[m
+[32m+[m[32m                    console.log(`   Horizontal gap: ${horizontalGap}px (max: ${maxHorizontalDistance}px)`);[m
+[32m+[m[41m                    [m
+[32m+[m[32m                    // Force a spring to make it reachable[m
+[32m+[m[32m                    if (isVerticallyUnreachable) {[m
+[32m+[m[32m                        finalType = 'superspring';[m
+[32m+[m[32m                        console.log('   🟡 Forced SUPERSPRING for vertical gap');[m
+[32m+[m[32m                    } else if (isHorizontallyUnreachable) {[m
+[32m+[m[32m                        // Move platform closer horizontally and add spring[m
+[32m+[m[32m                        const safeHorizontalDistance = maxHorizontalDistance * 0.7;[m
+[32m+[m[32m                        if (lastPlatform.x < canvasWidth / 2) {[m
+[32m+[m[32m                            finalX = Math.min(lastPlatform.x + safeHorizontalDistance, canvasWidth - platformConfig.width);[m
+[32m+[m[32m                        } else {[m
+[32m+[m[32m                            finalX = Math.max(lastPlatform.x - safeHorizontalDistance, 0);[m
+[32m+[m[32m                        }[m
+[32m+[m[32m                        finalType = 'spring';[m
+[32m+[m[32m                        console.log('   🟢 Adjusted position and added SPRING for horizontal gap');[m
+[32m+[m[32m                    }[m
+[32m+[m[32m                }[m
+             }[m
+             [m
+             platforms.push({[m
+[31m-                x: x,[m
+[32m+[m[32m                x: finalX,[m
+                 y: currentY,[m
+                 width: platformConfig.width,[m
+                 height: platformConfig.height,[m
+[31m-                type: type,[m
+[32m+[m[32m                type: finalType,[m
+                 touched: false,[m
+                 broken: false[m
+             });[m
+         }[m
+         [m
+[32m+[m[32m        // POST-GENERATION VALIDATION - Final safety check for impossible sequences[m
+[32m+[m[32m        this.validateAndFixPlatformSequence(platforms, canvasWidth);[m
+[32m+[m[41m        [m
+         return platforms;[m
+     }[m
+ [m
+[32m+[m[32m    // Validate and fix platform sequences to ensure all platforms are reachable[m
+[32m+[m[32m    validateAndFixPlatformSequence(platforms, canvasWidth) {[m
+[32m+[m[32m        if (platforms.length < 2) return; // Need at least 2 platforms to validate[m
+[32m+[m[41m        [m
+[32m+[m[32m        const jumpHeight = (this.jumpForce * this.jumpForce) / this.gravity;[m
+[32m+[m[32m        const jumpTime = (2 * this.jumpForce) / this.gravity;[m
+[32m+[m[32m        const maxHorizontalDistance = gameAssets.config.player.maxSpeed * jumpTime * 0.8;[m
+[32m+[m[41m        [m
+[32m+[m[32m        let fixesApplied = 0;[m
+[32m+[m[41m        [m
+[32m+[m[32m        for (let i = 1; i < platforms.length; i++) {[m
+[32m+[m[32m            const currentPlatform = platforms[i];[m
+[32m+[m[32m            const previousPlatform = platforms[i - 1];[m
+[32m+[m[41m            [m
+[32m+[m[32m            const verticalGap = Math.abs(currentPlatform.y - previousPlatform.y);[m
+[32m+[m[32m            const horizontalGap = Math.abs(currentPlatform.x - previousPlatform.x);[m
+[32m+[m[41m            [m
+[32m+[m[32m            const isVerticallyUnreachable = verticalGap > jumpHeight * 0.95; // Very strict check[m
+[32m+[m[32m            const isHorizontallyUnreachable = horizontalGap > maxHorizontalDistance * 0.95;[m
+[32m+[m[41m            [m
+[32m+[m[32m            if (isVerticallyUnreachable || isHorizontallyUnreachable) {[m
+[32m+[m[32m                console.warn(`🚨 POST-GEN FIX: Platform ${i} unreachable from platform ${i-1}`);[m
+[32m+[m[32m                console.log(`   Gaps: ${verticalGap}px vertical, ${horizontalGap}px horizontal`);[m
+[32m+[m[41m                [m
+[32m+[m[32m                // Apply fix based on the type of unreachability[m
+[32m+[m[32m                if (isVerticallyUnreachable) {[m
+[32m+[m[32m                    // Make the previous platform a superspring to bridge the gap[m
+[32m+[m[32m                    platforms[i - 1].type = 'superspring';[m
+[32m+[m[32m                    console.log(`   🟡 Fixed: Made platform ${i-1} a SUPERSPRING`);[m
+[32m+[m[32m                    fixesApplied++;[m
+[32m+[m[32m                } else if (isHorizontallyUnreachable) {[m
+[32m+[m[32m                    // Move current platform closer and make previous one a spring[m
+[32m+[m[32m                    const safeDistance = maxHorizontalDistance * 0.7;[m
+[32m+[m[32m                    const platformConfig = gameAssets.config.platform;[m
+[32m+[m[41m                    [m
+[32m+[m[32m                    if (previousPlatform.x < canvasWidth / 2) {[m
+[32m+[m[32m                        currentPlatform.x = Math.min(previousPlatform.x + safeDistance, canvasWidth - platformConfig.width);[m
+[32m+[m[32m                    } else {[m
+[32m+[m[32m     

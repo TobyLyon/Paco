@@ -234,19 +234,19 @@ class OrderTracker {
     // Record game score
     async recordGameScore(scoreData) {
         try {
-            // Server-side validation - TEMPORARILY DISABLED FOR TESTING
-            console.log('🔍 Score submission (validation disabled):', scoreData);
-            // const validation = this.validateScoreSubmission(scoreData);
-            // console.log('🔍 Validation result:', validation);
+            // Server-side validation - ENABLED FOR SECURITY
+            console.log('🔍 Score submission with validation enabled:', scoreData);
+            const validation = this.validateScoreSubmission(scoreData);
+            console.log('🔍 Validation result:', validation);
             
-            // if (!validation.valid) {
-            //     console.error('🚨 VALIDATION FAILED - SCORE REJECTED:');
-            //     console.error('🚨 User:', scoreData.username, '(', scoreData.user_id, ')');
-            //     console.error('🚨 Score:', scoreData.score);
-            //     console.error('🚨 Reasons:', validation.reasons);
-            //     console.error('🚨 Full data:', scoreData);
-            //     return { success: false, error: `Validation failed: ${validation.reasons.join(', ')}` };
-            // }
+            if (!validation.valid) {
+                console.error('🚨 VALIDATION FAILED - SCORE REJECTED:');
+                console.error('🚨 User:', scoreData.username, '(', scoreData.user_id, ')');
+                console.error('🚨 Score:', scoreData.score);
+                console.error('🚨 Reasons:', validation.reasons);
+                console.error('🚨 Full data:', scoreData);
+                return { success: false, error: `Validation failed: ${validation.reasons.join(', ')}` };
+            }
 
             const scoreRecord = {
                 user_id: scoreData.user_id,
@@ -344,55 +344,130 @@ class OrderTracker {
         }
     }
 
-    // Server-side score validation
+    // Server-side score validation - ENHANCED SECURITY
     validateScoreSubmission(scoreData) {
         const validation = { valid: true, reasons: [] };
         const score = scoreData.score;
+        const now = Date.now();
         
-        // Basic validation
-        if (typeof score !== 'number' || score < 0) {
+        // 1. Basic validation
+        if (typeof score !== 'number' || score < 0 || !Number.isFinite(score)) {
             validation.valid = false;
             validation.reasons.push('Invalid score value');
         }
         
         if (score > 50000) { // Maximum realistic score
             validation.valid = false;
-            validation.reasons.push('Score exceeds maximum realistic limit');
+            validation.reasons.push('Score exceeds maximum realistic limit (50,000)');
         }
         
-        // Check for suspicious patterns
+        // 2. Suspicious pattern detection
         if (score > 1000 && score % 1000 === 0) {
-            validation.reasons.push('Suspiciously round score detected');
+            validation.reasons.push('Warning: Suspiciously round score detected');
         }
         
-        // Validate game time if provided
+        // Detect clearly manipulated scores
+        if (score > 10000 && score % 100 === 0) {
+            validation.valid = false;
+            validation.reasons.push('Score pattern suggests manipulation');
+        }
+        
+        // 3. Session validation (enhanced)
+        if (!scoreData.session_id || !scoreData.checksum) {
+            validation.valid = false;
+            validation.reasons.push('Missing required anti-cheat data');
+        }
+        
+        // 4. Time-based validation (enhanced)
         if (scoreData.game_time) {
             const gameTimeSeconds = scoreData.game_time / 1000;
             const scorePerSecond = score / Math.max(gameTimeSeconds, 1);
             
-            if (gameTimeSeconds < 5 && score > 1000) { // More lenient: 5 seconds for 1000+ scores
+            // Stricter time validation
+            if (gameTimeSeconds < 10 && score > 1000) {
                 validation.valid = false;
-                validation.reasons.push('Score too high for game duration');
+                validation.reasons.push('Score too high for game duration (min 10s for 1000+ points)');
             }
             
-            if (scorePerSecond > 1000) { // Double the limit for more realistic gameplay
+            if (gameTimeSeconds < 30 && score > 5000) {
                 validation.valid = false;
-                validation.reasons.push('Score per second exceeds realistic limits');
+                validation.reasons.push('Score too high for game duration (min 30s for 5000+ points)');
+            }
+            
+            // Points per second validation
+            if (scorePerSecond > 500) {
+                validation.valid = false;
+                validation.reasons.push('Score per second exceeds realistic limits (500 pts/sec max)');
+            }
+        } else {
+            // Require game time for validation
+            validation.valid = false;
+            validation.reasons.push('Game duration required for validation');
+        }
+        
+        // 5. Platform jump validation
+        if (scoreData.platforms_jumped) {
+            const pointsPerPlatform = score / Math.max(scoreData.platforms_jumped, 1);
+            
+            if (pointsPerPlatform > 200) { // Maximum 200 points per platform jump
+                validation.valid = false;
+                validation.reasons.push('Points per platform jump exceeds realistic limits');
+            }
+            
+            if (scoreData.platforms_jumped < 5 && score > 500) {
+                validation.valid = false;
+                validation.reasons.push('Too few platform jumps for score achieved');
             }
         }
         
-        // Rate limiting check
+        // 6. Enhanced rate limiting with multiple checks
         const submissionKey = `last_submission_${scoreData.user_id}`;
-        const lastSubmission = localStorage.getItem(submissionKey);
-        const now = Date.now();
+        const dailyCountKey = `daily_submissions_${scoreData.user_id}_${scoreData.game_date}`;
+        const hourlyCountKey = `hourly_submissions_${scoreData.user_id}_${Math.floor(now / (60 * 60 * 1000))}`;
         
+        // Check last submission time
+        const lastSubmission = localStorage.getItem(submissionKey);
         if (lastSubmission && (now - parseInt(lastSubmission)) < 5000) {
             validation.valid = false;
-            validation.reasons.push('Submission rate limit exceeded');
+            validation.reasons.push('Submission rate limit exceeded (5 second cooldown)');
         }
         
-        // Update last submission time
-        localStorage.setItem(submissionKey, now.toString());
+        // Check daily submissions
+        const dailyCount = parseInt(localStorage.getItem(dailyCountKey) || '0');
+        if (dailyCount >= 100) { // Maximum 100 submissions per day
+            validation.valid = false;
+            validation.reasons.push('Daily submission limit exceeded (100 max)');
+        }
+        
+        // Check hourly submissions
+        const hourlyCount = parseInt(localStorage.getItem(hourlyCountKey) || '0');
+        if (hourlyCount >= 20) { // Maximum 20 submissions per hour
+            validation.valid = false;
+            validation.reasons.push('Hourly submission limit exceeded (20 max)');
+        }
+        
+        // 7. User agent validation (basic bot detection)
+        if (!scoreData.user_agent || scoreData.user_agent.length < 10) {
+            validation.valid = false;
+            validation.reasons.push('Invalid or missing user agent');
+        }
+        
+        // Update rate limiting counters
+        if (validation.valid) {
+            localStorage.setItem(submissionKey, now.toString());
+            localStorage.setItem(dailyCountKey, (dailyCount + 1).toString());
+            localStorage.setItem(hourlyCountKey, (hourlyCount + 1).toString());
+        }
+        
+        // 8. Log validation results for monitoring
+        console.log(`🔍 Score validation for ${scoreData.username}:`, {
+            score: score,
+            valid: validation.valid,
+            reasons: validation.reasons,
+            gameTime: scoreData.game_time,
+            platformsJumped: scoreData.platforms_jumped,
+            sessionId: scoreData.session_id ? 'present' : 'missing'
+        });
         
         return validation;
     }

@@ -1,7 +1,7 @@
 /* ===== RESTORED ORIGINAL MOBILE OPTIMIZATIONS ===== */
 /* Your custom mobile layout that excludes elements for better space and orientation */
 
-@media (max-width: 768px) {
+@media (max-width: 768px) and (max-device-width: 768px) {
     /* ===== MOBILE LEADERBOARD IMPROVEMENTS ===== */
     
     /* Make expanded leaderboard more mobile-friendly */

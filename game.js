@@ -30,12 +30,16 @@ class PacoJumpGame {
         this.powerups = [];
         this.activePowerups = new Map(); // Track active power-up effects
         
-        // Game state
-        this.score = 0;
+        // Game state with anti-cheat protection
+        this._score = 0; // Private score variable
         this.bestScore = 0;
         this.gameStartY = 0;
         this.isGameRunning = false;
         this.isPaused = false;
+        
+        // Score protection against console manipulation
+        this._scoreHistory = [];
+        this._lastScoreUpdate = 0;
         
         // Scoring enhancements for competition
         this.comboCount = 0;
@@ -72,6 +76,80 @@ class PacoJumpGame {
         this.musicEnabled = true;
         
         console.log('🎮 Paco Jump game engine initialized with enhanced audio! 🎵');
+        
+        // Create protected score property
+        this.setupScoreProtection();
+    }
+
+    // Setup score protection against console manipulation
+    setupScoreProtection() {
+        // Create protected score property with getter/setter
+        Object.defineProperty(this, 'score', {
+            get: function() {
+                return this._score;
+            },
+            set: function(value) {
+                // Validate score changes for anti-cheat
+                if (typeof value !== 'number' || value < 0 || !Number.isFinite(value)) {
+                    console.error('🚨 INVALID SCORE MANIPULATION DETECTED:', value);
+                    if (typeof antiCheat !== 'undefined') {
+                        antiCheat.trackGameEvent('score_manipulation_attempt', { 
+                            attempted: value, 
+                            current: this._score 
+                        });
+                    }
+                    return; // Reject invalid score
+                }
+                
+                // Track score increases for validation
+                if (value > this._score) {
+                    const increase = value - this._score;
+                    const now = Date.now();
+                    
+                    // Anti-cheat: Check for suspicious large increases
+                    if (increase > 1000 && (now - this._lastScoreUpdate) < 100) {
+                        console.error('🚨 SUSPICIOUS SCORE INCREASE DETECTED:', increase);
+                        if (typeof antiCheat !== 'undefined') {
+                            antiCheat.trackGameEvent('suspicious_score_increase', {
+                                increase: increase,
+                                timeGap: now - this._lastScoreUpdate,
+                                from: this._score,
+                                to: value
+                            });
+                        }
+                        return; // Reject suspicious increase
+                    }
+                    
+                    // Record legitimate score increases
+                    this._scoreHistory.push({
+                        score: value,
+                        timestamp: now,
+                        increase: increase
+                    });
+                    
+                    // Keep only recent history (last 50 entries)
+                    if (this._scoreHistory.length > 50) {
+                        this._scoreHistory.shift();
+                    }
+                    
+                    this._lastScoreUpdate = now;
+                }
+                
+                this._score = value;
+                this.updateScoreDisplay();
+            },
+            enumerable: true,
+            configurable: false // Prevent redefinition
+        });
+        
+        // Protect against direct property access
+        Object.defineProperty(this, '_score', {
+            writable: true,
+            enumerable: false,
+            configurable: false
+        });
+        
+        console.log('🛡️ Score protection system enabled');
     }
 
     // Detect mobile device for performance optimizations
@@ -493,6 +571,10 @@ class PacoJumpGame {
         if (typeof antiCheat !== 'undefined') {
             antiCheat.resetSession();
             antiCheat.trackGameEvent('game_start');
+            antiCheat.gameStartTime = Date.now();
+            console.log('🛡️ Anti-cheat session initialized for new game');
+        } else {
+            console.error('🚨 Anti-cheat system not loaded - security compromised!');
         }
         
         // Reset if coming from game over
@@ -717,8 +799,11 @@ class PacoJumpGame {
                     antiCheat.trackGameEvent('platform_jump', {
                         platformType: platform.type,
                         score: this.score,
-                        height: Math.abs(this.player.y)
+                        height: Math.abs(this.player.y),
+                        timestamp: Date.now(),
+                        playerPosition: { x: this.player.x, y: this.player.y }
                     });
+                    antiCheat.platformsJumped++;
                 }
                 
                 // Mark platform as touched
@@ -1920,6 +2005,16 @@ class PacoJumpGame {
             bestScoreDisplay = `<div style="color: #94a3b8; font-size: 0.9rem; margin: 8px 0;">Best: ${this.bestScore.toLocaleString()}</div>`;
         }
         
+        // Track game over for anti-cheat
+        if (typeof antiCheat !== 'undefined') {
+            antiCheat.trackGameEvent('game_over', {
+                finalScore: this.score,
+                gameTime: Date.now() - antiCheat.gameStartTime,
+                platformsJumped: antiCheat.platformsJumped
+            });
+            antiCheat.totalGameTime = Date.now() - antiCheat.gameStartTime;
+        }
+
         // Add leaderboard submission if authenticated
         if (twitterAuth.authenticated) {
             try {
@@ -1927,7 +2022,11 @@ class PacoJumpGame {
                 submissionStatus = `<div style="color: #22c55e; font-size: 0.85rem; margin: 8px 0;">✅ Score submitted!</div>`;
             } catch (error) {
                 console.error('Score submission failed:', error);
-                submissionStatus = `<div style="color: #ef4444; font-size: 0.85rem; margin: 8px 0;">⚠️ Submit failed</div>`;
+                if (error.message.includes('validation failed') || error.message.includes('Anti-cheat')) {
+                    submissionStatus = `<div style="color: #ef4444; font-size: 0.85rem; margin: 8px 0;">🚨 Security check failed</div>`;
+                } else {
+                    submissionStatus = `<div style="color: #ef4444; font-size: 0.85rem; margin: 8px 0;">⚠️ Submit failed</div>`;
+                }
             }
         } else {
             submissionStatus = `<div style="color: #60a5fa; font-size: 0.85rem; margin: 8px 0;">🐦 Connect Twitter to compete!</div>`;
@@ -1962,14 +2061,14 @@ class PacoJumpGame {
         
         const content = `
             <div style="
-                max-width: min(480px, 95vw); 
+                max-width: 320px; 
                 width: 100%;
                 margin: 0 auto; 
                 text-align: center;
                 font-family: var(--font-display);
                 background: linear-gradient(145deg, rgba(0, 0, 0, 0.95), rgba(20, 20, 20, 0.9));
                 border-radius: 16px;
-                padding: min(15px, 3vw);
+                padding: 12px;
                 backdrop-filter: blur(15px);
                 border: 2px solid rgba(220, 38, 38, 0.4);
                 box-shadow: 
@@ -1977,8 +2076,8 @@ class PacoJumpGame {
                     inset 0 1px 0 rgba(255, 255, 255, 0.1);
                 position: relative;
                 box-sizing: border-box;
-                max-height: 65vh;
-                overflow-y: auto;
+                max-height: 50vh;
+                overflow: visible;
             ">
                 <!-- Close Button -->
                 <button onclick="game.hideOverlay()" style="
@@ -1999,11 +2098,11 @@ class PacoJumpGame {
                     transition: all 0.2s ease;
                 " onmouseover="this.style.background='rgba(255, 255, 255, 0.2)'; this.style.color='white'" onmouseout="this.style.background='rgba(255, 255, 255, 0.1)'; this.style.color='rgba(255, 255, 255, 0.7)'">✕</button>
                 
-                <!-- Score Section - Compact -->
-                <div style="margin-bottom: 20px;">
+                <!-- Score Section - Compact like mobile -->
+                <div style="margin-bottom: 12px;">
                     <h2 style="
                         color: #ef4444;
-                        font-size: 1.3rem;
+                        font-size: 1.2rem;
                         font-weight: 900;
                         margin: 0 0 8px 0;
                         text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
@@ -2011,7 +2110,7 @@ class PacoJumpGame {
                     ">💀 GAME OVER</h2>
                     <div style="
                         color: #fbbf24;
-                        font-size: 1.8rem;
+                        font-size: 1.6rem;
                         font-weight: 900;
                         margin-bottom: 4px;
                         text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
@@ -2020,24 +2119,22 @@ class PacoJumpGame {
                     ${submissionStatus}
                 </div>
 
-                <!-- FOCAL PRIORITY: INTEGRATED LEADERBOARD -->
+                <!-- Leaderboard Section - No scroll needed now -->
                 <div style="
                     background: rgba(0, 0, 0, 0.3);
                     border-radius: 12px;
-                    padding: 16px;
-                    margin-bottom: 20px;
+                    padding: 10px;
+                    margin-bottom: 12px;
                     border: 1px solid rgba(220, 38, 38, 0.2);
-                    max-height: 300px;
-                    overflow-y: auto;
                 ">
                     ${leaderboardHTML}
                 </div>
                 
-                <!-- Simplified Action Buttons -->
+                <!-- Action Buttons - Mobile style -->
                 <div style="
                     display: flex;
-                    gap: 12px;
-                    margin-bottom: 12px;
+                    gap: 8px;
+                    margin-bottom: 8px;
                 ">
                     <button onclick="game.startGame()" style="
                         flex: 1;
@@ -2094,59 +2191,38 @@ class PacoJumpGame {
                     `}
                 </div>
 
-                ${!twitterAuth.authenticated ? `
-                    <div style="
-                        background: rgba(29, 155, 240, 0.1);
-                        border-radius: 8px;
-                        padding: 8px;
-                        border: 1px solid rgba(29, 155, 240, 0.3);
-                        font-size: 0.8rem;
-                        color: #60a5fa;
-                    ">
-                        🐦 Connect Twitter to join the leaderboard contest!
-                        <button onclick="twitterAuth.initiateAuth()" style="
-                            background: #1d9bf0;
-                            color: white;
-                            border: none;
-                            border-radius: 4px;
-                            padding: 4px 8px;
-                            margin-left: 8px;
-                            cursor: pointer;
-                            font-size: 0.75rem;
-                        ">Connect</button>
-                    </div>
-                ` : ''}
+
             </div>
         `;
         
         this.showOverlay(content, true); // Make game over screen persistent
     }
 
-    // Generate integrated leaderboard HTML for game over screen
+    // Generate compact leaderboard HTML - mobile style for desktop
     generateIntegratedLeaderboard() {
         if (!leaderboard.currentLeaderboard || leaderboard.currentLeaderboard.length === 0) {
             return `
-                <div style="text-align: center; padding: 20px; color: var(--text-secondary);">
+                <div style="text-align: center; padding: 16px; color: #94a3b8;">
                     <div style="font-size: 2rem; margin-bottom: 8px;">🐔</div>
-                    <h3 style="color: #fbbf24; margin: 0 0 8px 0;">🏆 Daily Leaderboard</h3>
+                    <h3 style="color: #fbbf24; margin: 0 0 8px 0; font-size: 1.1rem;">🏆 Daily Leaderboard</h3>
                     <p style="margin: 0; font-size: 0.9rem;">No scores yet today!</p>
-                    <p style="font-size: 0.8rem; color: var(--restaurant-yellow); margin: 4px 0 0 0;">Be the first Paco champion!</p>
+                    <p style="font-size: 0.8rem; color: #fbbf24; margin: 4px 0 0 0;">Be the first Paco champion!</p>
                 </div>
             `;
         }
 
         let html = `
-            <div style="text-align: center; margin-bottom: 16px;">
+            <div style="text-align: center; margin-bottom: 12px;">
                 <h3 style="color: #fbbf24; margin: 0 0 4px 0; font-size: 1.1rem;">🏆 Leaderboard</h3>
-                <div class="reset-timer" style="font-size: 0.65rem; color: #94a3b8; margin: 0 0 12px 0; text-align: center;">
-                    Resets in: <strong>${leaderboard.getTimeUntilReset()}</strong>
+                <div style="font-size: 0.65rem; color: #94a3b8; margin: 0;">
+                    Resets in: <strong style="color: #fbbf24;">${leaderboard.getTimeUntilReset()}</strong>
                 </div>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 2px; max-height: 180px; overflow-y: auto; margin-bottom: 12px; padding-right: 4px;">
+            <div style="display: flex; flex-direction: column; gap: 2px; overflow: visible;">
         `;
 
-        // Show top 5 entries for compact view
-        const maxEntries = 5;
+        // Show top 6 entries - fits perfectly now without Twitter banner
+        const maxEntries = 6;
         leaderboard.currentLeaderboard.slice(0, maxEntries).forEach((entry, index) => {
             if (!entry || typeof entry.score !== 'number' || !entry.username) {
                 return;
@@ -2175,21 +2251,19 @@ class PacoJumpGame {
                     align-items: center;
                     justify-content: space-between;
                     padding: 6px 8px;
-                    margin: 2px 0;
-                    background: ${isCurrentUser ? 'rgba(251, 191, 36, 0.15)' : 'rgba(255, 255, 255, 0.05)'};
+                    background: ${isCurrentUser ? 'rgba(251, 191, 36, 0.1)' : 'rgba(255, 255, 255, 0.05)'};
                     border-radius: 6px;
                     border: ${isCurrentUser ? '1px solid rgba(251, 191, 36, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)'};
                     font-size: 0.8rem;
                 ">
-                    <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
-                        <span style="color: ${rank <= 3 ? '#fbbf24' : '#94a3b8'}; font-weight: bold; min-width: 20px;">
-                            ${rankEmoji}
-                        </span>
-                        <span style="color: ${isCurrentUser ? '#fbbf24' : '#e2e8f0'}; font-weight: ${isCurrentUser ? 'bold' : 'normal'};">
-                            @${entry.username}${liveIndicator}
-                        </span>
-                    </div>
-                    <span style="color: #fbbf24; font-weight: bold;">
+                    <span style="color: #f97316; font-weight: 700; min-width: 24px;">${rankEmoji}</span>
+                    <span style="flex: 1; text-align: left; margin-left: 8px; font-weight: 600; color: ${isCurrentUser ? '#fbbf24' : '#e2e8f0'};">
+                        <a href="https://twitter.com/${entry.username}" target="_blank" rel="noopener noreferrer" 
+                           style="color: inherit; text-decoration: none;">
+                            @${entry.username}
+                        </a>${liveIndicator}
+                    </span>
+                    <span style="color: #fbbf24; font-weight: 700; text-shadow: 1px 1px 0px #dc2626;">
                         ${entry.score.toLocaleString()}
                     </span>
                 </div>

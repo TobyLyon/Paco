@@ -39,7 +39,7 @@ class GameAssets {
                 description: 'Super jump power!',
                 duration: 3000, // 3 seconds (reduced from 5)
                 asset: 'corn', // Use corn sprite
-                rarity: 0.25 // Reduced spawn rate (was 0.4)
+                rarity: 0.4 // Increased back to 40% to counter evil platforms
             },
             shield: {
                 name: 'Shield Power', 
@@ -238,7 +238,7 @@ class GameAssets {
             
             // Power-up system
             powerups: {
-                spawnChance: 0.04, // Reduced to 4% chance per platform area
+                spawnChance: 0.06, // Increased to 6% chance per platform area to improve corn availability
                 magnetRange: 80, // Magnet collection range in pixels
                 shieldFlashInterval: 200, // Shield flash effect timing
                 glowPulseSpeed: 0.015, // Glow animation speed

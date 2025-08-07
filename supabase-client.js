@@ -344,135 +344,51 @@ class OrderTracker {
         }
     }
 
-    // Server-side score validation - ENHANCED SECURITY
+    // Minimal validation - only protect against code injection and obvious manipulation
     validateScoreSubmission(scoreData) {
         const validation = { valid: true, reasons: [] };
         const score = scoreData.score;
         const now = Date.now();
         
-        // 1. Basic validation
-        if (typeof score !== 'number' || score < 0 || !Number.isFinite(score)) {
+        // 1. Basic data type validation (prevent code injection)
+        if (typeof score !== 'number' || score < 0 || !Number.isFinite(score) || isNaN(score)) {
             validation.valid = false;
-            validation.reasons.push('Invalid score value');
+            validation.reasons.push('Invalid score data type');
         }
         
-        if (score > 50000) { // Maximum realistic score
+        // 2. Extreme value protection (prevent obvious manipulation/overflow)
+        if (score > 10000000) { // 10 million - way beyond any realistic gameplay
             validation.valid = false;
-            validation.reasons.push('Score exceeds maximum realistic limit (50,000)');
+            validation.reasons.push('Score exceeds maximum possible value');
         }
         
-        // 2. Suspicious pattern detection
-        if (score > 1000 && score % 1000 === 0) {
-            validation.reasons.push('Warning: Suspiciously round score detected');
-        }
-        
-        // Detect clearly manipulated scores - RELAXED VALIDATION
-        if (score > 30000 && score % 1000 === 0) {
-            validation.valid = false;
-            validation.reasons.push('Score pattern suggests manipulation (round thousands)');
-        }
-        
-        // 3. Session validation (enhanced) - TEMPORARILY RELAXED FOR DEBUGGING
-        if (!scoreData.session_id || !scoreData.checksum) {
-            // Instead of failing, just warn
-            validation.reasons.push('Warning: Missing anti-cheat data (session_id or checksum)');
-            console.warn('⚠️ Score submitted without full anti-cheat data');
-        }
-        
-        // 4. Time-based validation (enhanced)
-        if (scoreData.game_time) {
-            const gameTimeSeconds = scoreData.game_time / 1000;
-            const scorePerSecond = score / Math.max(gameTimeSeconds, 1);
-            
-            // Relaxed time validation - allow skilled players
-            if (gameTimeSeconds < 5 && score > 2000) {
-                validation.valid = false;
-                validation.reasons.push('Score too high for game duration (min 5s for 2000+ points)');
-            }
-            
-            if (gameTimeSeconds < 15 && score > 10000) {
-                validation.valid = false;
-                validation.reasons.push('Score too high for game duration (min 15s for 10000+ points)');
-            }
-            
-            // Points per second validation - RELAXED for skilled players
-            if (scorePerSecond > 1000) {
-                validation.valid = false;
-                validation.reasons.push('Score per second exceeds realistic limits (1000 pts/sec max)');
-            }
-        } else {
-            // Game time not provided - allow but warn
-            validation.reasons.push('Warning: Game duration not provided');
-            console.warn('⚠️ Score submitted without game duration data');
-        }
-        
-        // 5. DISABLED - Platform jump validation (too restrictive for combo/power-up gameplay)
-        /*
-        if (scoreData.platforms_jumped) {
-            const pointsPerPlatform = score / Math.max(scoreData.platforms_jumped, 1);
-            
-            if (pointsPerPlatform > 200) { // Maximum 200 points per platform jump
-                validation.valid = false;
-                validation.reasons.push('Points per platform jump exceeds realistic limits');
-            }
-            
-            if (scoreData.platforms_jumped < 5 && score > 500) {
-                validation.valid = false;
-                validation.reasons.push('Too few platform jumps for score achieved');
-            }
-        }
-        */
-        
-        // 6. Enhanced rate limiting with multiple checks
+        // 3. Basic rate limiting (prevent spam/DOS)
         const submissionKey = `last_submission_${scoreData.user_id}`;
-        const dailyCountKey = `daily_submissions_${scoreData.user_id}_${scoreData.game_date}`;
-        const hourlyCountKey = `hourly_submissions_${scoreData.user_id}_${Math.floor(now / (60 * 60 * 1000))}`;
-        
-        // Check last submission time
         const lastSubmission = localStorage.getItem(submissionKey);
-        if (lastSubmission && (now - parseInt(lastSubmission)) < 5000) {
+        if (lastSubmission && (now - parseInt(lastSubmission)) < 3000) { // 3 second cooldown
             validation.valid = false;
-            validation.reasons.push('Submission rate limit exceeded (5 second cooldown)');
+            validation.reasons.push('Please wait before submitting another score');
         }
         
-        // Check daily submissions
+        // 4. Daily submission limit (prevent abuse)
+        const dailyCountKey = `daily_submissions_${scoreData.user_id}_${scoreData.game_date}`;
         const dailyCount = parseInt(localStorage.getItem(dailyCountKey) || '0');
-        if (dailyCount >= 100) { // Maximum 100 submissions per day
+        if (dailyCount >= 200) { // Very generous limit
             validation.valid = false;
-            validation.reasons.push('Daily submission limit exceeded (100 max)');
+            validation.reasons.push('Daily submission limit reached');
         }
-        
-        // Check hourly submissions
-        const hourlyCount = parseInt(localStorage.getItem(hourlyCountKey) || '0');
-        if (hourlyCount >= 20) { // Maximum 20 submissions per hour
-            validation.valid = false;
-            validation.reasons.push('Hourly submission limit exceeded (20 max)');
-        }
-        
-        // 7. DISABLED - User agent validation (browsers/extensions can modify this)
-        /*
-        if (!scoreData.user_agent || scoreData.user_agent.length < 10) {
-            validation.valid = false;
-            validation.reasons.push('Invalid or missing user agent');
-        }
-        */
         
         // Update rate limiting counters
         if (validation.valid) {
             localStorage.setItem(submissionKey, now.toString());
             localStorage.setItem(dailyCountKey, (dailyCount + 1).toString());
-            localStorage.setItem(hourlyCountKey, (hourlyCount + 1).toString());
         }
         
-        // 8. Log validation results for monitoring
-        console.log(`🔍 Score validation for ${scoreData.username}:`, {
-            score: score,
-            valid: validation.valid,
-            reasons: validation.reasons,
-            gameTime: scoreData.game_time,
-            platformsJumped: scoreData.platforms_jumped,
-            sessionId: scoreData.session_id ? 'present' : 'missing'
-        });
+        // 5. Log validation results for monitoring
+        console.log(`🔍 Minimal validation for ${scoreData.username}: Score ${score} - ${validation.valid ? 'ACCEPTED' : 'REJECTED'}`);
+        if (validation.reasons.length > 0) {
+            console.log('📝 Validation notes:', validation.reasons);
+        }
         
         return validation;
     }

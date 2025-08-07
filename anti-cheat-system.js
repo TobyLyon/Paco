@@ -63,7 +63,7 @@ class AntiCheatSystem {
         }
     }
     
-    // Validate score before submission
+    // Minimal validation - only basic protection against obvious manipulation
     validateScore(score, gameStats = {}) {
         const validationResults = {
             valid: true,
@@ -71,72 +71,29 @@ class AntiCheatSystem {
             riskLevel: 'low'
         };
         
-        // 1. Basic score validation
-        if (score < 0) {
+        // 1. Basic data type validation (prevent code injection)
+        if (typeof score !== 'number' || score < 0 || !Number.isFinite(score) || isNaN(score)) {
             validationResults.valid = false;
-            validationResults.reasons.push('Negative score detected');
+            validationResults.reasons.push('Invalid score data type');
             validationResults.riskLevel = 'critical';
         }
         
-        if (score > this.maxRealisticScore) {
+        // 2. Extreme value protection (prevent obvious overflow)
+        if (score > 10000000) { // 10 million - way beyond realistic gameplay
             validationResults.valid = false;
-            validationResults.reasons.push(`Score exceeds maximum realistic limit (${this.maxRealisticScore})`);
+            validationResults.reasons.push('Score exceeds maximum possible value');
             validationResults.riskLevel = 'critical';
         }
         
-        // 2. DISABLED - Time-based validation (too restrictive for skilled players)
-        // Skilled players with combos and power-ups can legitimately get high scores quickly
-        /*
-        if (this.totalGameTime < 5000 && score > 1000) { // 5 seconds minimum for 1000+ scores
-            validationResults.valid = false;
-            validationResults.reasons.push('Score too high for game duration');
-            validationResults.riskLevel = 'high';
-        }
-        
-        const scorePerSecond = score / Math.max(this.totalGameTime / 1000, 1);
-        if (scorePerSecond > this.maxScorePerSecond * 2) { // Double the limit for more leniency
-            validationResults.valid = false;
-            validationResults.reasons.push('Score per second exceeds realistic limits');
-            validationResults.riskLevel = 'high';
-        }
-        */
-        
-        // 3. Rate limiting
+        // 3. Basic rate limiting only
         const now = Date.now();
-        if (now - this.lastSubmissionTime < this.submissionCooldown) {
+        if (now - this.lastSubmissionTime < 2000) { // 2 second cooldown (very lenient)
             validationResults.valid = false;
-            validationResults.reasons.push('Submission too frequent (rate limited)');
+            validationResults.reasons.push('Please wait before submitting another score');
             validationResults.riskLevel = 'medium';
         }
         
-        // 4. Hourly submission limit
-        const oneHourAgo = now - (60 * 60 * 1000);
-        const recentSubmissions = this.getSubmissionHistory().filter(
-            time => time > oneHourAgo
-        ).length;
-        
-        if (recentSubmissions >= this.maxSubmissionsPerHour) {
-            validationResults.valid = false;
-            validationResults.reasons.push('Too many submissions in the last hour');
-            validationResults.riskLevel = 'medium';
-        }
-        
-        // 5. DISABLED - Game session validation (too complex, causing false positives)
-        /*
-        if (!this.gameSession || !this.gameSession.verified) {
-            validationResults.valid = false;
-            validationResults.reasons.push('Invalid or unverified game session');
-            validationResults.riskLevel = 'high';
-        }
-        */
-        
-        // 6. DISABLED - Statistical anomaly detection (too many false positives for legitimate play)
-        /*
-        if (this.detectStatisticalAnomalies(score, gameStats)) {
-            validationResults.reasons.push('Statistical anomaly detected');
-            validationResults.riskLevel = 'medium';
-        }
-        */
+        // That's it! No more gameplay-based restrictions that cause false positives
         
         return validationResults;
     }

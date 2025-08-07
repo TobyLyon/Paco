@@ -539,20 +539,30 @@ class Leaderboard {
     // Load all-time leaderboard
     async loadAllTimeLeaderboard() {
         try {
-            console.log('📊 Loading all-time leaderboard...');
+            console.log('📊 Loading all-time leaderboard from ALL dates...');
             
+            // Get ALL scores from database (no date filter)
             const { data, error } = await supabase
                 .from('game_scores')
                 .select('*')
                 .order('score', { ascending: false })
-                .limit(50);
+                .limit(200); // Increased limit to ensure we get all high scores
             
             if (error) {
                 console.error('❌ All-time leaderboard load failed:', error);
                 return;
             }
             
-            // Deduplicate by user (keep highest score per user)
+            console.log(`📊 Raw data retrieved: ${data.length} total scores from all dates`);
+            
+            // Log the date range we're working with
+            if (data.length > 0) {
+                const dates = [...new Set(data.map(entry => entry.game_date))].sort();
+                console.log(`📅 Score dates found: ${dates.join(', ')}`);
+                console.log(`📊 Date range: ${dates[0]} to ${dates[dates.length - 1]}`);
+            }
+            
+            // Deduplicate by user (keep highest score per user across ALL time)
             const uniqueUsers = new Map();
             data.forEach(entry => {
                 if (!uniqueUsers.has(entry.user_id) || uniqueUsers.get(entry.user_id).score < entry.score) {
@@ -560,11 +570,17 @@ class Leaderboard {
                 }
             });
             
+            console.log(`📊 After deduplication: ${uniqueUsers.size} unique users`);
+            
             this.currentLeaderboard = Array.from(uniqueUsers.values())
                 .sort((a, b) => b.score - a.score)
                 .slice(0, 10);
             
-            console.log(`📊 Loaded ${this.currentLeaderboard.length} all-time entries`);
+            console.log(`📊 Final all-time leaderboard: ${this.currentLeaderboard.length} entries`);
+            console.log('🏆 Top 3 all-time scores:', this.currentLeaderboard.slice(0, 3).map(entry => 
+                `${entry.username}: ${entry.score} (${entry.game_date})`
+            ));
+            
         } catch (error) {
             console.error('❌ All-time leaderboard error:', error);
         }
@@ -1074,6 +1090,49 @@ function showLeaderboard() {
         leaderboard.showLeaderboard();
     }
 }
+
+// Debug function to test all-time leaderboard
+window.testAllTimeLeaderboard = async function() {
+    console.log('🧪 TESTING ALL-TIME LEADERBOARD...');
+    
+    try {
+        // Direct query to see what's in the database
+        const { data, error } = await supabase
+            .from('game_scores')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(50);
+        
+        if (error) {
+            console.error('❌ Database query failed:', error);
+            return;
+        }
+        
+        console.log('📊 Total scores in database:', data.length);
+        
+        // Group by date
+        const scoresByDate = {};
+        data.forEach(entry => {
+            if (!scoresByDate[entry.game_date]) {
+                scoresByDate[entry.game_date] = [];
+            }
+            scoresByDate[entry.game_date].push(entry);
+        });
+        
+        console.log('📅 Scores by date:');
+        Object.keys(scoresByDate).sort().forEach(date => {
+            const scores = scoresByDate[date];
+            const topScore = Math.max(...scores.map(s => s.score));
+            console.log(`  ${date}: ${scores.length} scores (top: ${topScore})`);
+        });
+        
+        // Test the all-time leaderboard function
+        await leaderboard.loadAllTimeLeaderboard();
+        
+    } catch (error) {
+        console.error('❌ Test failed:', error);
+    }
+};
 
 function hideLeaderboard() {
     if (leaderboard) {

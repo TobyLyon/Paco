@@ -514,6 +514,39 @@ class OrderTracker {
         }
     }
 
+    // Get ALL-TIME leaderboard - all scores from all dates
+    async getAllTimeLeaderboard() {
+        try {
+            console.log('📊 Loading ALL-TIME leaderboard from ALL dates...');
+            
+            const { data, error } = await supabase
+                .from('game_scores')
+                .select('*')
+                .order('score', { ascending: false })
+                .limit(500); // Large limit to get all historical scores
+            
+            if (error) {
+                console.error('❌ All-time leaderboard query failed:', error);
+                return { success: false, data: [], error };
+            }
+            
+            console.log(`📊 Retrieved ${data.length} total scores from database`);
+            
+            // Log date range for debugging
+            if (data.length > 0) {
+                const dates = [...new Set(data.map(entry => entry.game_date))].sort();
+                console.log(`📅 Date range in database: ${dates[0]} to ${dates[dates.length - 1]}`);
+                console.log(`📅 All dates found: ${dates.join(', ')}`);
+            }
+            
+            return { success: true, data: data || [] };
+            
+        } catch (error) {
+            console.error('Exception getting all-time leaderboard:', error);
+            return { success: false, data: [], error: error.message };
+        }
+    }
+
     // Get leaderboard stats
     async getLeaderboardStats() {
         try {

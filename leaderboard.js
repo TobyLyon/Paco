@@ -571,17 +571,20 @@ class Leaderboard {
         try {
             console.log('📊 Loading all-time leaderboard from ALL dates...');
             
-            // Get ALL scores from database (no date filter)
-            const { data, error } = await supabase
-                .from('game_scores')
-                .select('*')
-                .order('score', { ascending: false })
-                .limit(200); // Increased limit to ensure we get all high scores
-            
-            if (error) {
-                console.error('❌ All-time leaderboard load failed:', error);
+            // Use orderTracker to get ALL scores from database (no date filter)
+            if (!orderTracker || typeof orderTracker.getAllTimeLeaderboard !== 'function') {
+                console.error('❌ OrderTracker not available for all-time leaderboard');
                 return;
             }
+            
+            const result = await orderTracker.getAllTimeLeaderboard();
+            
+            if (!result.success) {
+                console.error('❌ All-time leaderboard load failed:', result.error);
+                return;
+            }
+            
+            const data = result.data || [];
             
             console.log(`📊 Raw data retrieved: ${data.length} total scores from all dates`);
             

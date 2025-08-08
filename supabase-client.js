@@ -393,10 +393,31 @@ class OrderTracker {
         return validation;
     }
 
+    // Get current PST date (matches leaderboard.js getCurrentGameDate)
+    getCurrentPSTDate() {
+        // Get current PST date (Pacific Standard Time - UTC-8)
+        const now = new Date();
+        
+        // Convert to PST by subtracting 8 hours from UTC
+        const pstOffset = -8 * 60; // PST is UTC-8 (in minutes)
+        const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+        const pstTime = new Date(utc + (pstOffset * 60000));
+        
+        // Format as YYYY-MM-DD
+        const year = pstTime.getFullYear();
+        const month = String(pstTime.getMonth() + 1).padStart(2, '0');
+        const day = String(pstTime.getDate()).padStart(2, '0');
+        const gameDate = `${year}-${month}-${day}`;
+        
+        console.log(`📅 Supabase using PST date: ${gameDate} (PST time: ${pstTime.toLocaleString()})`);
+        return gameDate;
+    }
+
     // Get today's leaderboard - only best score per user
     async getTodayLeaderboard() {
         try {
-            const today = '2025-08-05'; // FORCE August 5th leaderboard
+            // Get current PST date to match leaderboard.js
+            const today = this.getCurrentPSTDate();
 
             console.log('📊 Testing database function for leaderboard...');
             
@@ -429,7 +450,8 @@ class OrderTracker {
     // Fallback method - fetch all scores and deduplicate client-side
     async getTodayLeaderboardFallback() {
         try {
-            const today = '2025-08-05'; // FORCE August 5th leaderboard
+            // Get current PST date to match leaderboard.js
+            const today = this.getCurrentPSTDate();
 
             const { data, error } = await supabase
                 .from('game_scores')
@@ -468,7 +490,8 @@ class OrderTracker {
     // Get user's best score for today
     async getUserBestScore(userId) {
         try {
-            const today = '2025-08-05'; // FORCE August 5th
+            // Get current PST date to match leaderboard.js
+            const today = this.getCurrentPSTDate();
 
             const { data, error } = await supabase
                 .from('game_scores')

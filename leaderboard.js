@@ -65,6 +65,7 @@ class Leaderboard {
             resetTime.setUTCDate(resetTime.getUTCDate() + 1);
         }
         
+        console.log(`🌅 Next PST midnight: ${resetTime.toLocaleString()} (${resetTime.toUTCString()})`);
         return resetTime;
     }
 
@@ -150,15 +151,26 @@ class Leaderboard {
         const resetTime = this.dailyResetTime.getTime();
         let diff = resetTime - now;
         
-        // Check if contest ended
+        // Check if contest ended - AUTO DAY SWITCH
         if (diff <= 0) {
-            console.log('⏰ Contest ended! Reset time:', new Date(resetTime).toLocaleString(), 'Current time:', new Date(now).toLocaleString());
-            // Auto-reset to next day if contest ended
+            console.log('🌅 Daily reset triggered! Previous day:', new Date(resetTime).toLocaleString());
+            console.log('📅 Switching to new day automatically...');
+            
+            // Auto-reset to next day - this preserves all historical data
             this.dailyResetTime = this.getTodayResetTime();
             localStorage.removeItem('leaderboard_reset_time');
             localStorage.removeItem('timer_display_state');
             this.currentTimeRemaining = null;
-            return 'Contest ended!';
+            
+            // Refresh leaderboard to show new day's scores (preserves all-time data)
+            if (this.currentTab === 'daily') {
+                console.log('🔄 Refreshing daily leaderboard for new day...');
+                this.fetchTodayLeaderboard().then(() => {
+                    this.refreshLeaderboardDisplay();
+                });
+            }
+            
+            return 'New day started!';
         }
         
         // Initialize timer state if not already set
@@ -240,18 +252,25 @@ class Leaderboard {
                     timerElements.forEach(timerElement => {
                     timerElement.textContent = timeRemaining;
                     
-                    // Check if contest ended
-                    if (timeRemaining === 'Contest ended!') {
-                        timerElement.style.color = '#ef4444'; // Red color
-                        timerElement.parentElement.innerHTML = '🏁 Contest ended! New contest starts soon...';
+                    // Check if day switched
+                    if (timeRemaining === 'New day started!') {
+                        timerElement.style.color = '#10b981'; // Green color
+                        timerElement.parentElement.innerHTML = '🌅 New day started! Fresh leaderboard ready!';
+                        
+                        // Restart timer for new day after showing message briefly
+                        setTimeout(() => {
+                            this.dailyResetTime = this.getTodayResetTime();
+                            this.currentTimeRemaining = null;
+                            this.startCountdownTimer();
+                        }, 3000);
                         }
                     });
                     
-                    // Stop timer if contest ended
-                    if (timeRemaining === 'Contest ended!') {
+                    // Stop timer if day ended, will restart for new day
+                    if (timeRemaining === 'New day started!') {
                         clearInterval(this.countdownInterval);
                         this.countdownInterval = null;
-                        console.log('⏰ Contest ended, timer stopped');
+                        console.log('🌅 Day switched, timer will restart for new day');
                     }
                 } else {
                     // Fallback to recalculated time if state is lost
@@ -439,10 +458,21 @@ class Leaderboard {
 
     // Get current game date (for daily reset tracking) - PST timezone
     getCurrentGameDate() {
-        // FORCE August 5th until we're 100% sure everything works
-        const gameDate = '2025-08-05';
+        // Get current PST date (Pacific Standard Time - UTC-8)
+        const now = new Date();
         
-        console.log(`📅 FORCED August 5th leaderboard (keeping your original scores)`);
+        // Convert to PST by subtracting 8 hours from UTC
+        const pstOffset = -8 * 60; // PST is UTC-8 (in minutes)
+        const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+        const pstTime = new Date(utc + (pstOffset * 60000));
+        
+        // Format as YYYY-MM-DD
+        const year = pstTime.getFullYear();
+        const month = String(pstTime.getMonth() + 1).padStart(2, '0');
+        const day = String(pstTime.getDate()).padStart(2, '0');
+        const gameDate = `${year}-${month}-${day}`;
+        
+        console.log(`📅 Current PST date: ${gameDate} (PST time: ${pstTime.toLocaleString()})`);
         return gameDate;
     }
 
@@ -527,7 +557,7 @@ class Leaderboard {
         
         // Load appropriate leaderboard data
         if (this.currentTab === 'daily') {
-            await this.loadLeaderboard();
+            await this.fetchTodayLeaderboard();
         } else {
             await this.loadAllTimeLeaderboard();
         }

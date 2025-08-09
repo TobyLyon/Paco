@@ -1,205 +1,118 @@
-# 🚀 Deployment Guide - Paco the Chicken
+# 🚀 **DEPLOYMENT GUIDE**
 
-This guide covers how to deploy your Paco the Chicken landing page to various hosting platforms.
+## 🌐 **FRONTEND DEPLOYMENT** 
 
-## 📋 Pre-Deployment Checklist
+### **Vercel (Current Setup)**
+- **Auto-deploys** from GitHub main branch
+- **Domain**: https://pacothechicken.xyz
+- **Build**: Static files from root directory
 
-- [ ] Test all features locally with `npm start`
-- [ ] Update contract address in `script.js`
-- [ ] Update social media links
-- [ ] Verify all images load correctly
-- [ ] Test PFP generator functionality
-- [ ] Check responsive design on mobile
-
-## 🌟 Recommended Hosting Platforms
-
-### 1. Netlify (Recommended)
-
-**Why Netlify?**
-- Free SSL certificates
-- Global CDN
-- Easy custom domain setup
-- Great for static sites
-
-**Steps:**
-1. Create account at [netlify.com](https://netlify.com)
-2. Connect your GitHub repository
-3. Build settings:
-   - Build command: `npm run build` (optional)
-   - Publish directory: `.` (root directory)
-4. Deploy!
-
-**Custom Domain:**
-- Add your domain in Site Settings > Domain Management
-- Update DNS records as instructed
-
-### 2. Vercel
-
-**Steps:**
-1. Install Vercel CLI: `npm i -g vercel`
-2. Run `vercel` in project directory
-3. Follow prompts to deploy
-
-### 3. GitHub Pages
-
-**Steps:**
-1. Push code to GitHub repository
-2. Go to Settings > Pages
-3. Select source branch (usually `main`)
-4. Your site will be at `https://yourusername.github.io/repository-name`
-
-### 4. Traditional Web Hosting
-
-**For shared hosting (GoDaddy, Bluehost, etc.):**
-1. Upload all files via FTP
-2. Ensure `index.html` is in the root directory
-3. Test all paths are correct
-
-## 🔧 Production Optimizations
-
-### 1. Image Optimization
+### **Environment Variables in Vercel**
 ```bash
-# Install optimization tools
-npm install -g imagemin-cli imagemin-pngquant
-
-# Optimize images
-imagemin Public/**/*.png --out-dir=optimized --plugin=pngquant
+TWITTER_CLIENT_ID=N3BYdkxPZFJIS1lmSzkyRUJkcUM6MTpjaQ
+TWITTER_CLIENT_SECRET=W9nOOIEQ5XOG-08XKGCLa5xj2gtLEJO9yZIC-z9_FXnrTmEw_-
+TWITTER_REDIRECT_URI=https://pacothechicken.xyz/auth/callback
+NEXT_PUBLIC_SUPABASE_URL=https://tbowrsbjoijdtpdgnoio.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+WALLETCONNECT_PROJECT_ID=1e3c0a8da83dc6e1810db1a0637970ad
 ```
 
-### 2. Code Minification
+## 🖥️ **BACKEND DEPLOYMENT**
+
+### **Render (Current Setup)**
+- **Service**: Web Service
+- **Repo**: GitHub auto-deploy
+- **Start Command**: `node server.js`
+- **URL**: https://paco-x57j.onrender.com
+
+### **Environment Variables in Render**
 ```bash
-# Minify HTML (optional)
-npm install -g html-minifier
-html-minifier --collapse-whitespace --remove-comments index.html -o index.min.html
+# All frontend vars above PLUS:
+CORS_ORIGIN=https://pacothechicken.xyz
+HOUSE_WALLET_ADDRESS=0x1f8B1c4D05eF17Ebaa1E572426110146691e6C5a
+HOUSE_WALLET_PRIVATE_KEY=07ddef36f9e1b64485acf5d9ae86c9120efb031aec27905869388a124205a4d5
+ABSTRACT_NETWORK=mainnet
+JWT_SECRET=paco-super-secret-jwt-key-2025
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
 ```
 
-### 3. Performance Tips
-- Enable gzip compression on your server
-- Set proper cache headers for static assets
-- Consider using a CDN for global distribution
+## 🗄️ **DATABASE SETUP**
 
-## 🌍 Custom Domain Setup
+### **Supabase Configuration**
+1. **Create project** at https://supabase.com
+2. **Copy Project URL** and **anon key** 
+3. **Get service role key** from Settings → API
+4. **Run SQL schema**:
+   ```sql
+   -- Copy entire contents of crash-casino-database-schema-abstract.sql
+   -- Paste in Supabase SQL Editor and run
+   ```
 
-### 1. DNS Configuration
-Create these DNS records:
+### **Required Tables**
+- `game_scores` - Jump game leaderboards
+- `crash_bets` - Casino betting history  
+- `crash_rounds` - Casino game rounds
+- `chat_messages` - Real-time chat
+- `user_profiles` - Twitter-linked profiles
 
+## 🔧 **CRASH CASINO SPECIFIC**
+
+### **WebSocket Connection**
+- **Frontend connects to**: `https://paco-x57j.onrender.com`
+- **Protocol**: WebSocket over HTTPS (wss://)
+- **Path**: `/crash-ws`
+
+### **Wallet Integration**
+- **Network**: Abstract L2 mainnet
+- **House Wallet**: Real ETH transactions
+- **Supported**: MetaMask, WalletConnect, Abstract Global Wallet
+
+### **Testing Real Transactions**
+1. **Connect wallet** with Abstract ETH
+2. **Place small bet** (0.001 ETH minimum)
+3. **Verify transaction** on Abstract explorer
+4. **Check house wallet** receives funds
+
+## 🚨 **TROUBLESHOOTING**
+
+### **Common Issues**
+| Problem | Solution |
+|---------|----------|
+| WebSocket fails | Check Render backend is running |
+| Wallet won't connect | Verify WalletConnect Project ID |
+| Database errors | Check Supabase service role key |
+| Twitter auth fails | Verify client secret and redirect URI |
+| Crash casino 404 | Ensure path: `/crash-casino/frontend/pacorocko.html` |
+
+### **Health Checks**
+- **Backend**: https://paco-x57j.onrender.com/health
+- **Database**: Supabase dashboard → Table Editor
+- **Frontend**: https://pacothechicken.xyz
+
+### **Logs**
+- **Render**: Dashboard → Logs tab
+- **Vercel**: Dashboard → Functions tab
+- **Browser**: F12 → Console tab
+
+## 🔄 **DEPLOYMENT FLOW**
+
+### **For Code Changes**
+```bash
+git add .
+git commit -m "Your changes"
+git push origin main
 ```
-Type    Name    Value
-A       @       [Your hosting IP]
-CNAME   www     yourdomain.com
-```
+- **Vercel** auto-deploys frontend
+- **Render** auto-deploys backend
 
-### 2. SSL Certificate
-Most modern hosts provide free SSL. Ensure HTTPS is enabled.
+### **For Environment Variables**
+- **Vercel**: Settings → Environment Variables
+- **Render**: Settings → Environment
 
-## 📊 Analytics Setup
-
-### Google Analytics
-1. Create GA4 property
-2. Add tracking code to `index.html`:
-
-```html
-<!-- Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'GA_MEASUREMENT_ID');
-</script>
-```
-
-## 🔐 Security Headers
-
-Add these headers for security:
-
-```
-Content-Security-Policy: default-src 'self' 'unsafe-inline' data: https:
-X-Frame-Options: DENY
-X-Content-Type-Options: nosniff
-Referrer-Policy: strict-origin-when-cross-origin
-```
-
-## 🎯 SEO Optimization
-
-### 1. Sitemap
-Create `sitemap.xml`:
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://yourdomain.com/</loc>
-    <lastmod>2025-01-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-  </url>
-</urlset>
-```
-
-### 2. Robots.txt
-```
-User-agent: *
-Allow: /
-Sitemap: https://yourdomain.com/sitemap.xml
-```
-
-## 🔗 Social Media Integration
-
-### 1. Update Contract Address
-Replace placeholder in `script.js`:
-```javascript
-const contractAddress = 'YOUR_ACTUAL_CONTRACT_ADDRESS';
-```
-
-### 2. Update Social Links
-Update these functions in `script.js`:
-```javascript
-function openTelegram() {
-    window.open('https://t.me/your-telegram-channel', '_blank');
-}
-
-function openTwitter() {
-    window.open('https://twitter.com/your-twitter-handle', '_blank');
-}
-
-function openDEX() {
-    window.open('https://your-dex-link.com', '_blank');
-}
-```
-
-## 🚨 Troubleshooting
-
-### Common Issues:
-
-1. **Images not loading**
-   - Check file paths are correct
-   - Ensure images are uploaded
-   - Verify case sensitivity
-
-2. **PFP generator not working**
-   - Check browser console for errors
-   - Verify all asset files are present
-   - Test locally first
-
-3. **Sounds not playing**
-   - Modern browsers require user interaction before audio
-   - Check browser console for audio errors
-
-## 📱 Mobile Optimization
-
-- Test on actual devices
-- Use Chrome DevTools mobile emulation
-- Verify touch interactions work properly
-- Check loading times on slower connections
-
-## 🎉 Post-Deployment
-
-1. Test all functionality on live site
-2. Submit to search engines
-3. Share on social media
-4. Monitor analytics and user feedback
-5. Keep contract address and links updated
+### **For Database Changes**
+- **Run SQL** in Supabase SQL Editor
+- **Test** with health check endpoints
 
 ---
 
-**Need help?** Check the [README.md](README.md) for more information or create an issue on GitHub. 
+**🎯 Current Status: Production Ready**

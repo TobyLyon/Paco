@@ -97,8 +97,14 @@ class EnhancedGlobalChat {
             // Check if Supabase is available globally
             if (typeof supabase !== 'undefined') {
                 // Use environment variables or fallback to known values
-                const supabaseUrl = 'https://tbowrsbjoijdtpdgnoio.supabase.co';
-                const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRib3dyc2Jqb2lqZHRwZGdub2lvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM4NTM5NDQsImV4cCI6MjA2OTQyOTk0NH0.-A1uzl0uuzS5ZyHhRAffLEPo10PH1K7dwNPHNW5r1FQ';
+                // Use environment variables instead of hardcoded keys
+                const supabaseUrl = window.SUPABASE_CONFIG?.url || 'https://tbowrsbjoijdtpdgnoio.supabase.co';
+                const supabaseKey = window.SUPABASE_CONFIG?.anonKey || null;
+                
+                if (!supabaseKey) {
+                    console.error('❌ Supabase key not configured! Check your environment setup.');
+                    return;
+                }
                 
                 this.supabase = supabase.createClient(supabaseUrl, supabaseKey);
                 console.log('✅ Created new Supabase client for chat');

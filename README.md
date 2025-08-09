@@ -1,143 +1,104 @@
-# 🍗 Paco's Chicken Palace
+# 🐔 **PACO THE CHICKEN** - Complete Ecosystem
 
-> The most clucking awesome memecoin restaurant on Abstract! 
+> **Paco memecoin ecosystem on Abstract L2 with PFP generator, jump game, and crash casino**
 
-Welcome to **Paco's Chicken Palace** - where crypto meets crispy! This is a fun, interactive single-page restaurant experience that doubles as a PFP (Profile Picture) generator for the $PACO memecoin community.
+## 🚀 **QUICK START**
 
-## 🎮 Features
-
-- **🍗 Interactive Restaurant Menu** - Order your custom chicken like you're at KFC!
-- **🎨 PFP Generator** - Create unique chicken avatars with layered assets
-- **🔊 Restaurant Sounds** - Full audio experience with ordering sounds
-- **📱 Fully Responsive** - Works perfectly on mobile, tablet, and desktop
-- **🎯 No Scroll Design** - Everything fits in one viewport
-- **🎪 Easter Eggs** - Hidden interactions and fun surprises
-- **💾 Persistent Orders** - Your preferences are saved locally
-
-## 🚀 Quick Deploy
-
-### Vercel (Recommended)
-1. Fork this repository
-2. Connect to Vercel
-3. Deploy automatically - no configuration needed!
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/TobyLyon/Paco)
-
-### Netlify
-1. Fork this repository
-2. Connect to Netlify
-3. Build command: `npm run build`
-4. Publish directory: `public`
-
-### GitHub Pages
-1. Enable GitHub Pages in repository settings
-2. Run `npm run deploy-pages`
-3. Set source to `public` branch
-
-## 🛠️ Local Development
-
+### **Development**
 ```bash
-# Install dependencies (optional - for linting/formatting)
 npm install
-
-# Start development server
-npm start
-# or
-npm run dev
-
-# Build for production
-npm run build
-
-# Preview built site
-npm run preview
+npm start                    # Start main site (localhost:3000)
 ```
 
-## 📁 Project Structure
+### **Production**
+- **Frontend**: Auto-deploys to Vercel from GitHub
+- **Backend**: Deployed on Render at `https://paco-x57j.onrender.com`
+
+## 🎮 **APPLICATIONS**
+
+### **1. PFP Generator & Restaurant** 
+- **File**: `index.html` + `script.js`
+- **Features**: Interactive chicken customization with 20+ hats and items
+- **Theme**: Restaurant ordering system
+
+### **2. Paco Jump Game**
+- **File**: `game.js` + `game-physics.js`  
+- **Features**: Doodle Jump-style platformer with Twitter leaderboards
+- **Controls**: Arrow keys (desktop) or tap (mobile)
+
+### **3. PacoRocko Crash Casino**
+- **Location**: `crash-casino/frontend/pacorocko.html`
+- **Backend**: Node.js + Socket.IO + Abstract wallet integration
+- **Features**: Provably fair multiplayer crash gambling
+
+### **4. NFT-Gated Farm Game**
+- **Files**: `src/App.jsx` + Phaser.js scenes
+- **Features**: React + Phaser.js chicken farming simulation
+
+## 🔧 **TECHNICAL SETUP**
+
+### **Environment Variables**
+```bash
+# Twitter OAuth
+TWITTER_CLIENT_ID=your_client_id
+TWITTER_CLIENT_SECRET=your_client_secret
+
+# Supabase Database  
+NEXT_PUBLIC_SUPABASE_URL=https://tbowrsbjoijdtpdgnoio.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_key
+
+# Abstract L2 Wallet
+HOUSE_WALLET_ADDRESS=0x1f8B1c4D05eF17Ebaa1E572426110146691e6C5a
+HOUSE_WALLET_PRIVATE_KEY=your_private_key
+ABSTRACT_NETWORK=mainnet
+WALLETCONNECT_PROJECT_ID=your_project_id
+```
+
+### **Database Setup**
+1. Create Supabase project
+2. Run `crash-casino-database-schema-abstract.sql` in SQL Editor
+3. Configure Row Level Security policies
+
+### **Crash Casino Deployment**
+1. Deploy `server.js` to Render with environment variables
+2. Update WebSocket URL in `crash-casino/frontend/js/crash-client.js`
+3. Test at your domain + `/crash-casino/frontend/pacorocko.html`
+
+## 📁 **PROJECT STRUCTURE**
 
 ```
 PACOTHECHICKEN/
-├── index.html          # Main restaurant page
-├── styles.css          # All styling and animations  
-├── script.js          # Interactive functionality
-├── abstract.png       # Abstract blockchain logo
-├── Public/            # All brand assets
-│   ├── ASSETS/        # PFP generator layers
-│   │   ├── base/      # Base chicken images
-│   │   ├── hat/       # Hat/topping overlays
-│   │   └── item/      # Item/side overlays
-│   └── *.png          # Brand logos and banners
-├── package.json       # Build scripts and metadata
-├── vercel.json        # Vercel deployment config
-├── build.js           # Build script for deployment
-└── README.md          # This file
+├── index.html              # Main PFP generator
+├── script.js               # PFP logic  
+├── game.js                 # Jump game engine
+├── server.js               # Production backend entry
+├── assets/                 # Game assets (hats, items)
+├── crash-casino/           # Crash gambling game
+│   ├── frontend/pacorocko.html
+│   ├── backend/src/        # TypeScript game engine
+│   └── production-integration.js
+├── src/                    # React farm game
+│   ├── App.jsx
+│   └── components/
+└── api/twitter/            # Twitter OAuth handlers
 ```
 
-## 🎨 Customization
+## 🛡️ **SECURITY**
 
-### Adding New Menu Items
-1. Add PNG files to appropriate subfolder:
-   - Hats/Toppings: `assets/hat/yourhat.png`
-   - Items/Sides: `assets/item/youritem.png`
-2. Update the `menuItems` object in `script.js`
-3. Add corresponding emoji and pricing
-4. Refresh browser - changes appear immediately! (No build needed)
+- ✅ **Private keys**: Secured in environment variables only
+- ✅ **No hardcoded credentials**: All sensitive data uses env vars
+- ✅ **Provably fair**: Crash casino uses verifiable randomness
+- ✅ **Real transactions**: Direct ETH transfers on Abstract L2
 
-### Styling Changes
-- All styles are in `styles.css` with CSS custom properties
-- Color scheme uses `--restaurant-*` variables
-- Responsive breakpoints at 1200px and 768px
+## 🎯 **LIVE URLS**
 
-### Brand Assets
-- Replace logos in the `Public/` directory
-- Update meta tags and titles in `index.html`
-- Modify the contract address in `script.js`
-
-## 🔧 Development & Build
-
-### Development (Dynamic Assets)
-```bash
-npm start    # Serves assets directly from source - instant updates!
-npm run dev  # Same as npm start
-```
-
-### Production Build
-```bash
-npm run build    # Creates optimized build in public/ directory
-npm run preview  # Preview production build locally
-```
-
-**Key Benefit**: During development, assets load directly from organized `assets/` subfolders - add files to correct category and refresh! No build steps needed!
-
-## 🌐 Deployment Troubleshooting
-
-### Vercel Issues
-- Ensure `vercel.json` is present
-- Check that build command outputs to `public/` directory
-- Verify all assets are properly copied
-
-### Asset Loading Issues
-- For development: Ensure assets are in correct subfolders (`assets/hat/`, `assets/item/`, `assets/base/`)
-- For production: Run `npm run build` to copy organized assets to `public/`
-- Check browser console for 404 errors if images don't load
-- Verify CORS settings for cross-origin requests
-
-### Canvas/PFP Generator Issues
-- Ensure all image files are in the correct directories
-- Check browser console for loading errors
-- Verify canvas dimensions and image sizing
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test the build process: `npm run build && npm run preview`
-5. Submit a pull request
-
-## 📄 License
-
-MIT License - feel free to fork and customize for your own memecoin project!
+- **Main Site**: https://pacothechicken.xyz
+- **PFP Generator**: https://pacothechicken.xyz (default tab)
+- **Jump Game**: https://pacothechicken.xyz (game tab)  
+- **Crash Casino**: https://pacothechicken.xyz/crash-casino/frontend/pacorocko.html
+- **Backend API**: https://paco-x57j.onrender.com
 
 ---
 
-**Built with ❤️ for the $PACO community on Abstract** 🐔✨ 
+**Built with 🐔 by the Paco team on Abstract L2**

@@ -13,6 +13,10 @@
     {
       "source": "/auth/callback",
       "destination": "/auth/callback.html"
+    },
+    {
+      "source": "/pacorocko",
+      "destination": "/crash-casino/frontend/pacorocko.html"
     }
   ],
   "headers": [

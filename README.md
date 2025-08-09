@@ -96,7 +96,7 @@ PACOTHECHICKEN/
 - **Main Site**: https://pacothechicken.xyz
 - **PFP Generator**: https://pacothechicken.xyz (default tab)
 - **Jump Game**: https://pacothechicken.xyz (game tab)  
-- **Crash Casino**: https://pacothechicken.xyz/crash-casino/frontend/pacorocko.html
+- **Crash Casino**: https://pacothechicken.xyz/pacorocko
 - **Backend API**: https://paco-x57j.onrender.com
 
 ---

@@ -82,7 +82,7 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
 | Wallet won't connect | Verify WalletConnect Project ID |
 | Database errors | Check Supabase service role key |
 | Twitter auth fails | Verify client secret and redirect URI |
-| Crash casino 404 | Ensure path: `/crash-casino/frontend/pacorocko.html` |
+| Crash casino 404 | Ensure path: `/pacorocko` or `/crash-casino/frontend/pacorocko.html` |
 
 ### **Health Checks**
 - **Backend**: https://paco-x57j.onrender.com/health

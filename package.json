@@ -4,7 +4,7 @@
     "description": "Paco's Chicken Palace - The most clucking awesome memecoin restaurant on Abstract",
     "main": "index.html",
     "scripts": {
-        "start": "node dev-server.js",
+        "start": "node server.js",
         "dev": "node dev-server.js",
         "serve": "npx serve --cors -s . -l 3000",
         "build": "node build.js",

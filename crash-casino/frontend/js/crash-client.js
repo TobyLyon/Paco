@@ -33,11 +33,21 @@ class CrashGameClient {
         console.log('🎰 Initializing crash game client...');
         
         try {
-            // Connect to WebSocket server  
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const host = window.location.hostname;
-            const port = parseInt(window.location.port) + 1; // Crash server runs on port + 1
-            const wsUrl = `${protocol}//${host}:${port}`;
+            // Connect to WebSocket server - Use production backend URL
+            let wsUrl;
+            
+            // Check if we're running locally (for development)
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const host = window.location.hostname;
+                const port = parseInt(window.location.port) + 1; // Local dev server
+                wsUrl = `${protocol}//${host}:${port}`;
+            } else {
+                // Production: Connect to your Render backend
+                wsUrl = 'https://paco-x57j.onrender.com'; // Your live Render backend
+            }
+            
+            console.log('🔗 Connecting to:', wsUrl);
             
             this.socket = io(wsUrl, {
                 transports: ['websocket', 'polling'],

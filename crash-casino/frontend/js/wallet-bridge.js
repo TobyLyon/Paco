@@ -331,7 +331,7 @@ class WalletBridge {
                                 <span>MetaMask</span>
                             </button>
                             <button class="wb-wallet-option walletconnect" data-wallet="walletconnect">
-                                <img class="wb-wallet-icon" src="https://cryptologos.cc/logos/walletconnect-wc-logo.png" alt="WalletConnect" onerror="this.src='https://logo.clearbit.com/walletconnect.com';">
+                                <img class="wb-wallet-icon" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiMzQjk5RkMiLz4KPHBhdGggZD0iTTcgMTguNWMwLTYuNDUgNS4yMy0xMS42OCAxMS42OC0xMS42OHMxMS42OCA1LjIzIDExLjY4IDExLjY4aC00Ljg0YzAtMy43Ny0zLjA3LTYuODQtNi44NC02Ljg0LTMuNzcgMC02Ljg0IDMuMDctNi44NCA2Ljg0SDd6IiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K" alt="WalletConnect">
                                 <span>WalletConnect</span>
                             </button>
                             <button class="wb-wallet-option coinbase" data-wallet="coinbase">
@@ -339,7 +339,7 @@ class WalletBridge {
                                 <span>Coinbase Wallet</span>
                             </button>
                             <button class="wb-wallet-option injected" data-wallet="injected">
-                                <img class="wb-wallet-icon" src="https://cryptologos.cc/logos/injected-protocol-inj-logo.png" alt="Injected" onerror="this.src='https://logo.clearbit.com/brave.com';">
+                                <img class="wb-wallet-icon" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiM2MzM2QzciLz4KPHBhdGggZD0iTTEyIDIwaDEybS02LTZsNiA2LTYgNiIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+Cg==" alt="Browser Wallet">
                                 <span>Browser Wallet</span>
                             </button>
                         </div>

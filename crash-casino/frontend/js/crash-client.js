@@ -254,18 +254,15 @@ class CrashGameClient {
     handleMultiplierUpdate(data) {
         this.currentMultiplier = data.multiplier;
         
-        // Only update multiplier display if game is actually running
-        // Don't override during countdown/waiting phases
-        if (this.gameState === 'running' || (window.liveGameSystem && window.liveGameSystem.gameState === 'running')) {
+        // Update multiplier display more reliably - allow during running phase
+        if (data.multiplier >= 1.0) {
             const multiplierElement = document.getElementById('multiplierValue');
             if (multiplierElement) {
                 multiplierElement.textContent = data.multiplier.toFixed(2) + 'x';
-                console.log(`📡 WebSocket updated multiplier to: ${data.multiplier.toFixed(2)}x (game running)`);
-            }
-        } else {
-            // Only log if multiplier is significant (reduces console spam)
-            if (data.multiplier > 2.0) {
-                console.log(`🚫 Ignoring WebSocket multiplier update (${data.multiplier.toFixed(2)}x) - game state: ${this.gameState}`);
+                // Only log occasionally to reduce spam
+                if (Math.random() < 0.01) { // 1% chance to log
+                    console.log(`📡 Multiplier: ${data.multiplier.toFixed(2)}x (${this.gameState})`);
+                }
             }
         }
         
@@ -389,10 +386,10 @@ class CrashGameClient {
             return false;
         }
 
-        // Check if we can place bets (during betting/waiting phase)
-        if (this.gameState !== 'pending' && this.gameState !== 'waiting' && this.gameState !== 'betting') {
-            this.showError(`Cannot place bet - round not accepting bets (current state: ${this.gameState})`);
-            console.log(`🚫 Bet rejected - Game state: ${this.gameState}, Round: ${this.currentRound}`);
+        // Check if we can place bets (during betting phase only)
+        if (this.gameState !== 'betting') {
+            this.showError(`Wait for betting phase - current: ${this.gameState}`);
+            console.log(`🚫 Bet rejected - Game state: ${this.gameState}, Wait for "betting" phase`);
             return false;
         }
 

@@ -18,6 +18,8 @@ try {
     projectId: '1e3c0a8da83dc6e1810db1a0637970ad', // Real WalletConnect project ID
     chains: [abstractTestnet],
     ssr: false,
+    // Prevent auto-connecting to the last used wallet (e.g., MetaMask)
+    autoConnect: false,
   })
 } catch (error) {
   console.error('Web3 config error:', error)

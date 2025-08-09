@@ -1,0 +1,57 @@
+# 🎰 PacoRocko Production Environment Configuration
+# Copy this file to .env and configure with your production values
+
+# 🌐 Server Configuration
+NODE_ENV=production
+PORT=3000
+HOST=0.0.0.0
+
+# 🔐 Security
+JWT_SECRET=your-super-secure-jwt-secret-key-here
+CORS_ORIGIN=https://yourdomain.com
+
+# 🗄️ Supabase Configuration
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key-here
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
+
+# 💰 Wallet Configuration
+MIN_BET=0.001
+MAX_BET=10.0
+HOUSE_EDGE=0.02
+HOUSE_BANK_WALLET=0x0000000000000000000000000000000000000001
+
+# 🎮 Game Configuration
+BETTING_PHASE_DURATION=5000
+ROUND_DURATION=60
+TICK_RATE=20
+MAX_MULTIPLIER=1000.0
+
+# 🐦 Twitter OAuth (Optional)
+TWITTER_CLIENT_ID=your-twitter-client-id
+TWITTER_CLIENT_SECRET=your-twitter-client-secret
+TWITTER_REDIRECT_URI=https://yourdomain.com/auth/callback
+
+# 📊 Analytics & Monitoring
+ENABLE_ANALYTICS=true
+LOG_LEVEL=info
+
+# 🔒 Admin Configuration
+ADMIN_WALLETS=0xYourAdminWallet1,0xYourAdminWallet2
+
+# 💳 Smart Contract (if using on-chain)
+CRASH_CONTRACT_ADDRESS=
+ABSTRACT_RPC_URL=https://node.abs.xyz
+ABSTRACT_CHAIN_ID=0xAA37
+
+# 🚨 Rate Limiting
+RATE_LIMIT_WINDOW=900000
+RATE_LIMIT_MAX=100
+
+# 📧 Notifications
+DISCORD_WEBHOOK_URL=
+SLACK_WEBHOOK_URL=
+
+# 🔍 Monitoring
+SENTRY_DSN=
+NEW_RELIC_LICENSE_KEY=

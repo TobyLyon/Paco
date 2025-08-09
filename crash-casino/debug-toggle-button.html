@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🐛 Toggle Button Debug</title>
+    <style>
+        body { 
+            background: #1a1a1a; 
+            color: white; 
+            font-family: Arial; 
+            padding: 20px; 
+        }
+        .game-info-container {
+            margin: 20px;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+        .debug-log {
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            height: 200px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🐛 Toggle Button Debug Test</h1>
+    
+    <div class="game-info-container">
+        <p>This container will get the toggle button:</p>
+        <!-- Toggle button will be inserted here -->
+    </div>
+    
+    <div class="debug-log" id="debugLog">
+        <div>Debug Log:</div>
+    </div>
+    
+    <button onclick="manualToggle()">🔧 Manual Toggle Test</button>
+    <button onclick="clearLog()">🗑️ Clear Log</button>
+
+    <!-- Load dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="/crash-casino/frontend/js/crash-chart.js"></script>
+    <script src="/crash-casino/frontend/js/crash-rocket.js"></script>
+    <script src="/crash-casino/frontend/js/crash-visualizer.js"></script>
+
+    <script>
+        let visualizer = null;
+        
+        function log(message) {
+            const logEl = document.getElementById('debugLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.textContent = `[${timestamp}] ${message}`;
+            logEl.appendChild(entry);
+            logEl.scrollTop = logEl.scrollHeight;
+            console.log(message);
+        }
+        
+        function clearLog() {
+            document.getElementById('debugLog').innerHTML = '<div>Debug Log:</div>';
+        }
+        
+        function manualToggle() {
+            log('🔧 Manual toggle triggered');
+            if (visualizer) {
+                visualizer.toggle();
+            } else {
+                log('❌ Visualizer not initialized');
+            }
+        }
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Page loaded, initializing...');
+            
+            // Check dependencies
+            log('Chart.js available: ' + (typeof Chart !== 'undefined'));
+            log('CrashChart available: ' + (typeof CrashChart !== 'undefined'));
+            log('CrashRocket available: ' + (typeof CrashRocket !== 'undefined'));
+            log('CrashVisualizer available: ' + (typeof CrashVisualizer !== 'undefined'));
+            
+            // Initialize visualizer
+            try {
+                log('🎮 Creating CrashVisualizer...');
+                visualizer = new CrashVisualizer();
+                log('✅ Visualizer created successfully');
+                
+                // Check if toggle button was created
+                setTimeout(() => {
+                    const toggleBtn = document.querySelector('.visualizer-toggle-btn');
+                    if (toggleBtn) {
+                        log('✅ Toggle button found: ' + toggleBtn.textContent);
+                        log('Button onclick: ' + (toggleBtn.onclick ? 'set' : 'not set'));
+                        
+                        // Add additional click handler for testing
+                        toggleBtn.addEventListener('click', function() {
+                            log('🎯 Button click event fired!');
+                        });
+                        
+                    } else {
+                        log('❌ Toggle button not found');
+                    }
+                }, 500);
+                
+            } catch (error) {
+                log('❌ Error creating visualizer: ' + error.message);
+                console.error(error);
+            }
+        });
+        
+        // Monitor for button creation
+        let checkCount = 0;
+        const checkInterval = setInterval(() => {
+            checkCount++;
+            const btn = document.querySelector('.visualizer-toggle-btn');
+            if (btn) {
+                log(`✅ Button check ${checkCount}: Found button with text "${btn.textContent}"`);
+                clearInterval(checkInterval);
+            } else if (checkCount > 10) {
+                log(`❌ Button check ${checkCount}: Still no button found, stopping checks`);
+                clearInterval(checkInterval);
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

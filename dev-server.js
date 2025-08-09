@@ -396,17 +396,32 @@ app.get('/auth/callback', (req, res) => {
     }
 });
 
-// 🎰 Initialize PacoRocko Crash Casino
+// 🎰 Initialize PacoRocko Crash Casino Production System
 let crashCasino = null;
 try {
-    const PacoRockoServerIntegration = require('./crash-casino/integration/pacorocko-server-integration');
-    crashCasino = new PacoRockoServerIntegration(app, {
-        corsOrigin: "*"
+    const PacoRockoProduction = require('./crash-casino/production-integration');
+    crashCasino = new PacoRockoProduction(app, {
+        jwtSecret: process.env.JWT_SECRET || 'paco-crash-production-key',
+        corsOrigin: process.env.CORS_ORIGIN || "*",
+        enableDatabase: true,
+        enableSmartContracts: process.env.NODE_ENV === 'production'
     });
-    console.log('🎰 PacoRocko crash casino integration loaded');
+    console.log('🎰 PacoRocko crash casino PRODUCTION system loaded');
 } catch (error) {
-    console.log('⚠️  PacoRocko crash casino not available (files not found)');
-    console.log('   This is normal if you haven\'t set up the crash casino yet');
+    console.error('❌ Failed to load crash casino production system:', error.message);
+    console.log('🔧 Falling back to basic integration...');
+    
+    // Fallback to basic integration
+    try {
+        const PacoRockoServerIntegration = require('./crash-casino/integration/pacorocko-server-integration');
+        crashCasino = new PacoRockoServerIntegration(app, {
+            corsOrigin: "*"
+        });
+        console.log('🎰 PacoRocko crash casino basic integration loaded');
+    } catch (fallbackError) {
+        console.log('⚠️  PacoRocko crash casino not available (files not found)');
+        console.log('   This is normal if you haven\'t set up the crash casino yet');
+    }
 }
 
 // Start server with automatic port fallback

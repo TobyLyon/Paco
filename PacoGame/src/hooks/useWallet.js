@@ -14,15 +14,8 @@ export default function useWallet() {
   }, [isConnected, address])
 
   // Auto-reconnect if previously connected
-  useEffect(() => {
-    const lastConnector = localStorage.getItem('wagmi.wallet')
-    if (lastConnector && !isConnected && !isConnecting) {
-      const connector = connectors.find(c => c.name === lastConnector)
-      if (connector) {
-        connect({ connector })
-      }
-    }
-  }, [connect, connectors, isConnected, isConnecting])
+  // Disabled eager auto-reconnect to avoid forcing MetaMask or a saved connector.
+  // Users will choose their wallet brand via the connect modal instead.
 
   return {
     address,

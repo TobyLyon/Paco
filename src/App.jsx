@@ -50,6 +50,7 @@ function App() {
               gameState={gameState}
             />
           } />
+
           <Route path="*" element={<Navigate to="/" replace />} />  
         </Routes>
         

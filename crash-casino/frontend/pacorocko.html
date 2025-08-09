@@ -9,12 +9,34 @@
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     
-    <!-- Styles -->
-    <link rel="stylesheet" href="/crash-casino/frontend/css/crash-casino.css">
+    <!-- PACO Brand Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Web3 Libraries -->
-    <script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"></script>
+    <!-- Styles - Compact Layout v2.0 -->
+    <link rel="stylesheet" href="/crash-casino/frontend/css/crash-casino.css?v=compact-2025-01-08">
+    
+    <!-- Essential Libraries -->
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    
+    <!-- Ethers v6 (ONLY ONE VERSION) -->
+    <script src="https://unpkg.com/ethers@6.13.0/dist/ethers.umd.min.js"></script>
+    
+    <!-- Abstract Global Wallet (AGW) - Official Integration -->
+    <!-- AGW will be loaded from node_modules via our integration script -->
+    
+    <!-- Chart.js for multiplier graph -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        // Verify Chart.js loaded
+        window.addEventListener('load', function() {
+            console.log('🔍 Chart.js version check:', typeof Chart !== 'undefined' ? Chart.version || 'Available' : 'NOT LOADED');
+            if (typeof Chart !== 'undefined') {
+                console.log('✅ Chart.js is ready');
+            } else {
+                console.error('❌ Chart.js failed to load');
+            }
+        });
+    </script>
     
     <!-- Meta tags -->
     <meta name="description" content="PacoRocko - Provably fair crash casino game powered by Paco the Chicken on Abstract L2">
@@ -26,8 +48,7 @@
         /* Critical CSS for loading */
         body {
             margin: 0;
-            font-family: 'Courier New', monospace;
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            font-family: 'Poppins', sans-serif;
             color: #fff;
             overflow-x: hidden;
         }
@@ -38,7 +59,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            background: rgba(0, 0, 0, 0.9);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -72,8 +93,9 @@
         <!-- Header -->
         <header class="game-header">
             <div class="header-left">
-                <img src="/PACO-TEXT.png" alt="Paco" class="logo" height="40">
-                <h1 class="game-title">🎰 PacoRocko</h1>
+                <img src="/game/rocket.gif" alt="Paco Rocket" class="logo rocket-logo" height="50">
+                <h1 class="game-title">PacoRocko</h1>
+                <div class="subtitle">Crash Casino</div>
             </div>
             
             <div class="header-right">
@@ -82,8 +104,8 @@
                     <span class="status-text">Connecting...</span>
                 </div>
                 
-                <button id="connectWalletBtn" class="connect-wallet-btn">
-                    🔗 Connect Wallet
+                <button id="connectWalletBtn">
+                    Connect Wallet
                 </button>
             </div>
         </header>
@@ -104,7 +126,7 @@
             </div>
             <div class="stat">
                 <span class="stat-label">Status</span>
-                <span class="stat-value" id="gameStatus">Waiting</span>
+                <span class="stat-value" id="gameStatus">Demo Mode</span>
             </div>
         </div>
 
@@ -113,18 +135,23 @@
             
             <!-- Multiplier Display -->
             <div class="multiplier-section">
-                <div class="multiplier-container">
-                    <div class="multiplier-display" id="multiplierDisplay">
-                        <span class="multiplier-value" id="multiplierValue">1.00x</span>
-                        <div class="multiplier-trail" id="multiplierTrail"></div>
+                <!-- Chart Container - Structure copied from original working game -->
+                <div class="effects-box">
+                    <div class="basically-the-graph">
+                        <canvas id="multiplierChart"></canvas>
                     </div>
-                    
+                    <div class="multiplier-overlay">
+                        <span class="multiplier-value" id="multiplierValue">1.00x</span>
+                    </div>
+                </div>
+                
+                <div class="game-info-container">
                     <div class="game-state-message" id="gameStateMessage">
                         Waiting for next round...
                     </div>
                     
                     <div class="countdown-timer" id="countdownTimer" style="display: none;">
-                        Next round in: <span id="countdownValue">5</span>s
+                        🎰 <span id="countdownValue">5</span>s - Place Your Bets!
                     </div>
                 </div>
                 
@@ -164,44 +191,125 @@
             </div>
         </div>
 
-        <!-- Players List -->
+        <!-- Players & Chat Section - Subdivided -->
         <div class="players-section">
-            <h3>🎮 Active Players</h3>
-            <div class="players-list" id="playersList">
-                <!-- Players will be populated here -->
-            </div>
-        </div>
-
-        <!-- Round History -->
-        <div class="history-section">
-            <h3>📊 Recent Rounds</h3>
-            <div class="round-history" id="roundHistory">
-                <!-- Round history will be populated here -->
-            </div>
-        </div>
-
-        <!-- Provably Fair Section -->
-        <div class="fairness-section">
-            <h3>🔍 Provably Fair</h3>
-            <div class="fairness-info">
-                <div class="seed-info">
-                    <div class="seed-item">
-                        <label>Client Seed:</label>
-                        <input type="text" id="clientSeed" class="seed-input" readonly>
-                        <button id="changeClientSeed" class="change-seed-btn">Change</button>
+            <!-- Current Orders (Top Half) -->
+            <div class="orders-container">
+                <h3>🍗 Current Orders</h3>
+                <div class="orders-feed" id="ordersFeed">
+                    <!-- Empty state when no orders -->
+                    <div class="orders-empty-state">
+                        <div class="orders-empty-content">
+                            <span class="orders-empty-icon">🍗</span>
+                            <div class="orders-empty-message">No orders yet</div>
+                            <div class="orders-empty-hint">Waiting for players to place bets...</div>
+                        </div>
                     </div>
-                    <div class="seed-item">
-                        <label>Server Seed Hash:</label>
-                        <span id="serverSeedHash" class="seed-value">-</span>
+                    
+                    <!-- Sample orders (will be replaced by JavaScript) -->
+                    <!-- 
+                    <div class="order-item pending">
+                        <span class="order-player">Player1</span>
+                        <span class="order-amount">0.05 ETH</span>
+                        <span class="order-multiplier">Waiting...</span>
                     </div>
-                    <div class="seed-item">
-                        <label>Nonce:</label>
-                        <span id="currentNonce" class="seed-value">-</span>
+                    <div class="order-item cashed-out">
+                        <span class="order-player">Player2</span>
+                        <span class="order-amount">0.1 ETH</span>
+                        <span class="order-multiplier">2.5x</span>
+                    </div>
+                    <div class="order-item crashed">
+                        <span class="order-player">Player3</span>
+                        <span class="order-amount">0.03 ETH</span>
+                        <span class="order-multiplier">Crashed</span>
+                    </div>
+                    -->
+                </div>
+            </div>
+            
+                            <!-- Global Chat (Bottom Half) -->
+                <div class="chat-container">
+                    <div class="chat-header">
+                        <h3>💬 Global Chat</h3>
+                        <div class="chat-auth-container" id="chatAuthContainer">
+                            <!-- Twitter sign-in button (shown when not authenticated) -->
+                            <button id="twitterSignInBtn" class="twitter-signin-btn" style="display: block;">
+                                🐦 Sign in with Twitter
+                            </button>
+                            
+                            <!-- User info (shown when authenticated) -->
+                            <div class="chat-user-info" id="chatUserInfo" style="display: none;">
+                                <img class="user-avatar" id="userAvatar" src="" alt="">
+                                <span class="user-name" id="userName"></span>
+                                <button id="signOutBtn" class="signout-btn">🚪</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-messages" id="chatMessages">
+                        <!-- Messages will be populated by JavaScript when user is authenticated -->
+                        <div class="chat-empty-state" id="chatEmptyState">
+                            <div class="empty-state-content">
+                                <span class="empty-icon">💬</span>
+                                <p class="empty-message">Chat is quiet right now...</p>
+                                <small class="empty-hint">Sign in with Twitter above to start chatting!</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-input-container">
+                        <input 
+                            type="text" 
+                            id="chatInput" 
+                            class="chat-input" 
+                            placeholder="Connect Twitter to join the conversation..." 
+                            maxlength="200"
+                            disabled
+                        >
+                        <button id="chatSendBtn" class="chat-send-btn" disabled>
+                            📤
+                        </button>
                     </div>
                 </div>
-                <button id="verifyFairnessBtn" class="verify-btn">
-                    ✅ Verify Last Round
-                </button>
+        </div>
+
+        <!-- Sidebar: Combined History & Fairness -->
+        <div class="sidebar-section">
+            <!-- Round History -->
+            <div class="history-section compact">
+                <h4>📊 Recent Rounds</h4>
+                <div class="round-history" id="roundHistory">
+                    <!-- Round history will be populated here -->
+                </div>
+            </div>
+
+            <!-- Provably Fair Section -->
+            <div class="fairness-section compact">
+                <h4>🔍 Provably Fair</h4>
+                <div class="paco-guarantee">
+                    <img src="/PACO-pfp.png" alt="PACO Guarantee" class="guarantee-seal">
+                    <span>PACO Certified</span>
+                </div>
+                <div class="fairness-info">
+                    <div class="seed-info">
+                        <div class="seed-item">
+                            <label>Client Seed:</label>
+                            <input type="text" id="clientSeed" class="seed-input" readonly>
+                            <button id="changeClientSeed" class="change-seed-btn">Change</button>
+                        </div>
+                        <div class="seed-item">
+                            <label>Server Seed Hash:</label>
+                            <span id="serverSeedHash" class="seed-value">-</span>
+                        </div>
+                        <div class="seed-item">
+                            <label>Nonce:</label>
+                            <span id="currentNonce" class="seed-value">-</span>
+                        </div>
+                    </div>
+                    <button id="verifyFairnessBtn" class="verify-btn">
+                        ✅ Verify Last Round
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -209,30 +317,325 @@
     <!-- Notifications -->
     <div id="notifications" class="notifications-container"></div>
 
-    <!-- Modals -->
-    <div id="walletModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <h2>🔗 Connect Your Wallet</h2>
-            <p>Connect your wallet to start playing PacoRocko!</p>
-            <div class="wallet-options">
-                <button id="connectMetamask" class="wallet-option">
-                    🦊 MetaMask
-                </button>
-                <button id="connectWalletConnect" class="wallet-option">
-                    🔗 WalletConnect
-                </button>
-            </div>
-            <button class="modal-close" onclick="closeModal('walletModal')">×</button>
-        </div>
-    </div>
+    <!-- Web3Modal will be injected here automatically -->
 
+    <!-- Supabase for Database Integration -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
     <!-- Scripts -->
-    <script src="/crash-casino/frontend/js/web3-integration.js"></script>
+    <script>
+        // Global utility functions
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+        
+        // Close modal when clicking overlay
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('wallet-modal-overlay')) {
+                closeModal('walletModal');
+            }
+        });
+    </script>
+    <!-- Load wallet integration after DOM is ready -->
+    <script>
+        // Wait for DOM and libraries before initializing wallet
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔗 DOM ready, using new RainbowKit wallet integration...');
+            console.log('ethers available:', typeof ethers !== 'undefined');
+            // Old Web3Modal integration removed - now using RainbowKit
+        });
+    </script>
+    <!-- Abstract Global Wallet (AGW) Integration - Vanilla JS Client -->
+    <script src="https://unpkg.com/@abstract-foundation/agw-client@latest/dist/index.umd.js"></script>
+    <script>
+        // Initialize AGW client globally when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            if (typeof AbstractWalletClient !== 'undefined') {
+                console.log('🌟 AGW Client SDK loaded successfully');
+                window.agwClient = new AbstractWalletClient({
+                    chain: 'abstract-testnet', // Change to 'abstract' for mainnet
+                    rpcUrl: 'https://api.testnet.abs.xyz', // Change for mainnet
+                });
+                console.log('🌟 AGW Client initialized');
+            } else {
+                console.log('⚠️ AGW Client SDK not found');
+            }
+        });
+    </script>
+    
+    <!-- New RainbowKit wallet integration -->
+    <!-- Wallet integration now handled by React app with RainbowKit -->
+    <script src="/crash-casino/frontend/js/wallet-bridge.js"></script>
     <script src="/crash-casino/frontend/js/crash-client.js"></script>
     <script src="/crash-casino/frontend/js/bet-interface.js"></script>
     <script src="/crash-casino/frontend/js/multiplier-display.js"></script>
+    <script src="/crash-casino/frontend/js/crash-chart.js"></script>
+    <script src="/crash-casino/frontend/js/crash-rocket.js"></script>
+    <script src="/crash-casino/frontend/js/crash-visualizer.js"></script>
+    <script src="/crash-casino/frontend/js/twitter-auth-chat.js"></script>
+    <script src="/crash-casino/frontend/js/global-chat-enhanced.js"></script>
     
     <script>
+        // Live Game System - runs continuous rounds with countdown timer
+        let liveGameSystem = {
+            isRunning: false,
+            gameState: 'waiting', // waiting, running, crashed
+            currentMultiplier: 1.0,
+            maxMultiplier: 10.0,
+            roundStartTime: 0,
+            roundDuration: 0,
+            timeElapsed: 0,
+            animationFrame: null,
+            countdownInterval: null,
+            
+            start() {
+                this.isRunning = true;
+                console.log('🚀 Starting live game system...');
+                this.startUnifiedBettingCountdown();
+            },
+            
+            stop() {
+                this.isRunning = false;
+                if (this.animationFrame) {
+                    cancelAnimationFrame(this.animationFrame);
+                }
+                if (this.countdownInterval) {
+                    clearInterval(this.countdownInterval);
+                }
+                console.log('⏹️ Live game system stopped');
+            },
+            
+            startUnifiedBettingCountdown() {
+                if (!this.isRunning) return;
+                
+                this.gameState = 'betting';
+                let countdown = 5; // Unified 5-second countdown
+                
+                // Reset multiplier display
+                const multiplierElement = document.getElementById('multiplierValue');
+                if (multiplierElement) {
+                    multiplierElement.textContent = '1.00x';
+                    multiplierElement.classList.remove('crashed');
+                    console.log('🔄 Reset to 1.00x for new round');
+                }
+                
+                // Show unified countdown UI
+                document.getElementById('gameStatus').textContent = 'Place Your Bets';
+                document.getElementById('countdownTimer').style.display = 'block';
+                document.getElementById('countdownValue').textContent = countdown;
+                document.getElementById('gameStateMessage').textContent = `🎰 Next round starting in ${countdown}s - Place your bets now!`;
+                
+                console.log('💰 Starting unified 5-second betting countdown...');
+                
+                this.countdownInterval = setInterval(() => {
+                    countdown--;
+                    document.getElementById('countdownValue').textContent = countdown;
+                    
+                    if (countdown > 0) {
+                        document.getElementById('gameStateMessage').textContent = `🎰 Next round starting in ${countdown}s - Place your bets now!`;
+                    } else {
+                        document.getElementById('gameStateMessage').textContent = `🚀 Round starting...`;
+                    }
+                    
+                    if (countdown <= 0) {
+                        clearInterval(this.countdownInterval);
+                        this.countdownInterval = null;
+                        document.getElementById('countdownTimer').style.display = 'none';
+                        this.startNewRound();
+                    }
+                }, 1000);
+            },
+            
+            startNewRound() {
+                if (!this.isRunning) return;
+                
+                this.gameState = 'running';
+                
+                // Generate crash point using INDUSTRY STANDARD algorithm
+                // Matches the original wbrandon25/Online-Crash-Gambling-Simulator exactly
+                const randomInt = Math.floor(Math.random() * (9999999999 - 0 + 1) + 0);
+                
+                if (randomInt % 33 === 0) {
+                    this.maxMultiplier = 1.00; // 3% chance instant crash
+                } else {
+                    let randomFloat = Math.random();
+                    
+                    // Ensure not zero (exact original logic)
+                    while (randomFloat === 0) {
+                        randomFloat = Math.random();
+                    }
+                    
+                    // EXACT original formula: 0.01 + (0.99 / randomFloat)
+                    this.maxMultiplier = 0.01 + (0.99 / randomFloat);
+                    
+                    // Apply safety cap and round to 2 decimal places
+                    this.maxMultiplier = Math.min(this.maxMultiplier, 100.0); // Cap at 100x for demo
+                    this.maxMultiplier = Math.round(this.maxMultiplier * 100) / 100;
+                }
+                
+                // Calculate round duration based on multiplier (more realistic timing)
+                this.roundDuration = Math.min(20000, 2000 + (this.maxMultiplier * 300));
+                
+                this.currentMultiplier = 1.0;
+                this.roundStartTime = Date.now();
+                this.timeElapsed = 0;
+                
+                // Update UI
+                document.getElementById('gameStatus').textContent = 'Running';
+                document.getElementById('gameStateMessage').textContent = 'Round in progress...';
+                const multiplierElement = document.getElementById('multiplierValue');
+                if (multiplierElement) {
+                    multiplierElement.classList.remove('crashed');
+                    multiplierElement.textContent = '1.00x';
+                }
+                
+                // Start chart with fresh data - Make sure chart is ready
+                if (window.crashChart && window.crashChart.chart) {
+                    console.log('📈 Starting new chart round...');
+                    window.crashChart.startNewRound();
+                } else {
+                    console.warn('📈 Chart not ready, initializing...');
+                    // Try to initialize chart if not ready
+                    setTimeout(() => {
+                        if (window.CrashChart && !window.crashChart) {
+                            window.crashChart = new CrashChart();
+                        }
+                        if (window.crashChart && window.crashChart.chart) {
+                            window.crashChart.startNewRound();
+                        }
+                    }, 100);
+                }
+                
+                // Start multiplier display
+                if (window.multiplierDisplay) {
+                    console.log('🎮 Starting multiplier display for new round');
+                    window.multiplierDisplay.onRoundStart();
+                }
+                
+                // Start the round animation
+                this.animate();
+                
+                console.log(`🚀 Live round started - will crash at ${this.maxMultiplier.toFixed(2)}x in ${(this.roundDuration/1000).toFixed(1)}s`);
+            },
+            
+            animate() {
+                if (!this.isRunning || this.gameState !== 'running') return;
+                
+                const elapsed = Date.now() - this.roundStartTime;
+                this.timeElapsed = elapsed / 1000; // Convert to seconds for chart
+                
+                // Use the exact multiplier formula from the original working game
+                this.currentMultiplier = 1.0024 * Math.pow(1.0718, this.timeElapsed);
+                
+                // Check if round should crash AFTER calculating the real multiplier
+                if (this.currentMultiplier >= this.maxMultiplier) {
+                    // Round crashed at the actual calculated multiplier
+                    this.gameState = 'crashed'; // Set state immediately to prevent further updates
+                    this.crash();
+                    return;
+                }
+                
+                // Update display safely - SIMPLIFIED like original
+                try {
+                    const multiplierElement = document.getElementById('multiplierValue');
+                    if (multiplierElement) {
+                        multiplierElement.textContent = this.currentMultiplier.toFixed(2) + 'x';
+                    }
+                    
+                    // Update chart with time and multiplier data
+                    if (window.crashChart && window.crashChart.chart) {
+                        window.crashChart.addDataPoint(this.timeElapsed, this.currentMultiplier);
+                    }
+                    
+                    // Skip multiplier display system - let main game handle it directly
+                    
+                    // Update animations
+                    updatePacoMood(this.currentMultiplier, true, false);
+                } catch (error) {
+                    console.log('Update error:', error);
+                }
+                
+                // Continue animation
+                this.animationFrame = requestAnimationFrame(() => this.animate());
+            },
+            
+            crash() {
+                this.gameState = 'crashed';
+                
+                // Skip multiplier display system interference
+                
+                // Cancel animation
+                if (this.animationFrame) {
+                    cancelAnimationFrame(this.animationFrame);
+                    this.animationFrame = null;
+                }
+                
+                // Set crash display directly like the original - SIMPLE AND DIRECT
+                const multiplierElement = document.getElementById('multiplierValue');
+                if (multiplierElement) {
+                    multiplierElement.textContent = this.currentMultiplier.toFixed(2) + 'x';
+                    multiplierElement.classList.add('crashed');
+                    console.log(`💥 Direct crash display set to: ${this.currentMultiplier.toFixed(2)}x`);
+                }
+                
+                // Update other UI elements
+                document.getElementById('gameStatus').textContent = 'Crashed';
+                document.getElementById('gameStateMessage').textContent = `💥 Crashed at ${this.currentMultiplier.toFixed(2)}x`;
+                
+                // Update chart
+                if (window.crashChart && window.crashChart.chart) {
+                    window.crashChart.crashRound(this.currentMultiplier);
+                }
+                
+                // Update animations
+                updatePacoMood(this.currentMultiplier, false, true);
+                
+                // Add to round history with the exact same value
+                this.addToHistory(this.currentMultiplier);
+                
+                console.log(`💥 Live round crashed at ${this.currentMultiplier.toFixed(2)}x (target was ${this.maxMultiplier.toFixed(2)}x)`);
+                console.log(`🔍 Crash Debug - Display value: ${this.currentMultiplier.toFixed(2)}x, History value: ${this.currentMultiplier.toFixed(2)}x`);
+                
+                // Wait 3 seconds then start countdown for next round
+                setTimeout(() => {
+                    if (this.isRunning) {
+                        // Clear crashed class before starting new round
+                        const multiplierElement = document.getElementById('multiplierValue');
+                        if (multiplierElement) {
+                            multiplierElement.classList.remove('crashed');
+                        }
+                        this.startUnifiedBettingCountdown();
+                    }
+                }, 3000);
+            },
+            
+            addToHistory(crashPoint) {
+                const historyContainer = document.getElementById('roundHistory');
+                if (!historyContainer) return;
+                
+                const item = document.createElement('div');
+                item.className = 'round-item';
+                item.textContent = crashPoint.toFixed(2) + 'x';
+                
+                // Color based on multiplier
+                if (crashPoint < 2) {
+                    item.classList.add('low');
+                } else if (crashPoint < 10) {
+                    item.classList.add('medium');
+                } else {
+                    item.classList.add('high');
+                }
+                
+                // Add to beginning
+                historyContainer.insertBefore(item, historyContainer.firstChild);
+                
+                // Keep only last 20 rounds
+                while (historyContainer.children.length > 20) {
+                    historyContainer.removeChild(historyContainer.lastChild);
+                }
+            }
+        };
+
         // Initialize app when page loads
         document.addEventListener('DOMContentLoaded', function() {
             // Hide loading screen
@@ -240,9 +643,47 @@
                 document.getElementById('loadingScreen').style.display = 'none';
                 document.getElementById('gameContainer').style.display = 'block';
                 
-                // Initialize game client
-                if (window.CrashGame) {
-                    window.CrashGame.init();
+                // Initialize crash visualizer (supports both chart and rocket)
+                console.log('🎮 Initializing crash visualizer...');
+                if (typeof CrashVisualizer !== 'undefined') {
+                    window.crashChart = new CrashVisualizer();
+                    console.log('✅ Crash visualizer initialized');
+                } else {
+                    console.error('❌ CrashVisualizer not loaded, falling back to chart');
+                    if (typeof Chart !== 'undefined' && typeof CrashChart !== 'undefined') {
+                        window.crashChart = new CrashChart();
+                        console.log('✅ Crash chart fallback initialized');
+                    }
+                }
+                
+                // Check current value before initializing
+                const multiplierEl = document.getElementById('multiplierValue');
+                console.log(`🔍 Multiplier value BEFORE init: ${multiplierEl ? multiplierEl.textContent : 'element not found'}`);
+                
+                // WebSocket multiplier update issue fixed - no more debugging needed
+                console.log('✅ MultiplierDisplay enabled - WebSocket issue resolved');
+                window.multiplierDisplay = new MultiplierDisplay();
+                
+                // Enhanced global chat with database integration will auto-initialize
+                
+                // Start live game system
+                console.log('🎮 Starting live game system...');
+                liveGameSystem.start();
+                
+                // Initialize crash game client
+                if (typeof CrashGameClient !== 'undefined') {
+                    console.log('🎰 Initializing real crash game client...');
+                    window.crashGameClient = new CrashGameClient();
+                    
+                    // Stop live game system when real client connects (optional)
+                    window.crashGameClient.onGameStateUpdate = (state) => {
+                        if (state.connected) {
+                            // Keep live game running even with real client
+                            console.log('🔌 Connected to real server, live game continues');
+                        }
+                    };
+                } else {
+                    console.log('⚠️ CrashGameClient not available, running live game system only');
                 }
             }, 1000);
         });
@@ -279,6 +720,54 @@
             document.getElementById('clientSeed').value = generateClientSeed();
             showNotification('Client seed changed! This will affect the next round.', 'success');
         });
+
+
+
+        // PACO Mascot Animation System
+        function updatePacoMood(multiplier, isRunning, crashed) {
+            try {
+                const pacoMascot = document.getElementById('pacoMascot');
+                
+                // Remove all existing mood classes safely
+                if (pacoMascot) {
+                    pacoMascot.classList.remove('excited', 'crashed');
+                    
+                    if (crashed) {
+                        pacoMascot.classList.add('crashed');
+                    } else if (isRunning && multiplier > 2.0) {
+                        pacoMascot.classList.add('excited');
+                    }
+                }
+            } catch (error) {
+                console.log('Animation update error:', error);
+            }
+        }
+
+        // Watch for multiplier changes
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.target.id === 'multiplierValue') {
+                    const multiplierText = mutation.target.textContent;
+                    const multiplier = parseFloat(multiplierText.replace('x', ''));
+                    const isRunning = !mutation.target.classList.contains('crashed');
+                    const crashed = mutation.target.classList.contains('crashed');
+                    
+                    updatePacoMood(multiplier, isRunning, crashed);
+                }
+            });
+        });
+
+        // Start observing
+        const multiplierElement = document.getElementById('multiplierValue');
+        if (multiplierElement) {
+            observer.observe(multiplierElement, { 
+                childList: true, 
+                subtree: true, 
+                characterData: true,
+                attributes: true,
+                attributeFilter: ['class']
+            });
+        }
     </script>
 </body>
 </html>

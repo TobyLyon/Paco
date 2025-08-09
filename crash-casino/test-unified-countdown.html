@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎰 Unified Countdown Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: white;
+            text-align: center;
+            padding: 50px;
+        }
+        
+        .countdown-timer {
+            font-size: 2em;
+            background: linear-gradient(45deg, #fbbf24, #f97316);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px auto;
+            max-width: 400px;
+            font-weight: bold;
+            color: #000;
+            box-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
+        }
+        
+        .game-state-message {
+            font-size: 1.2em;
+            margin: 20px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+        }
+        
+        button {
+            background: #fbbf24;
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 5px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px;
+        }
+        
+        button:hover {
+            background: #f97316;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎰 Unified Countdown System Test</h1>
+    
+    <div class="game-state-message" id="gameStateMessage">
+        Click "Start Test" to see the unified countdown
+    </div>
+    
+    <div class="countdown-timer" id="countdownTimer" style="display: none;">
+        🎰 <span id="countdownValue">5</span>s - Place Your Bets!
+    </div>
+    
+    <div id="gameStatus" style="font-size: 1.5em; margin: 20px;">Ready</div>
+    
+    <button onclick="startUnifiedCountdown()">🚀 Start Test</button>
+    <button onclick="resetTest()">🔄 Reset</button>
+    
+    <div style="margin-top: 30px; padding: 20px; background: rgba(255, 255, 255, 0.1); border-radius: 10px;">
+        <h3>✅ What This Tests:</h3>
+        <ul style="text-align: left; max-width: 600px; margin: 0 auto;">
+            <li><strong>Unified 5-second countdown</strong> - No more separate countdown and betting phases</li>
+            <li><strong>Clear messaging</strong> - Shows exactly what players should do</li>
+            <li><strong>Visual feedback</strong> - Prominent countdown timer with betting message</li>
+            <li><strong>Smooth transitions</strong> - From countdown to round start</li>
+        </ul>
+    </div>
+
+    <script>
+        let countdownInterval = null;
+
+        function startUnifiedCountdown() {
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+            }
+
+            let countdown = 5; // Unified 5-second countdown
+
+            // Show countdown UI
+            document.getElementById('gameStatus').textContent = 'Place Your Bets';
+            document.getElementById('countdownTimer').style.display = 'block';
+            document.getElementById('countdownValue').textContent = countdown;
+            document.getElementById('gameStateMessage').textContent = `🎰 Next round starting in ${countdown}s - Place your bets now!`;
+
+            console.log('💰 Starting unified 5-second betting countdown...');
+
+            countdownInterval = setInterval(() => {
+                countdown--;
+                document.getElementById('countdownValue').textContent = countdown;
+
+                if (countdown > 0) {
+                    document.getElementById('gameStateMessage').textContent = `🎰 Next round starting in ${countdown}s - Place your bets now!`;
+                } else {
+                    document.getElementById('gameStateMessage').textContent = `🚀 Round starting...`;
+                }
+
+                if (countdown <= 0) {
+                    clearInterval(countdownInterval);
+                    countdownInterval = null;
+                    document.getElementById('countdownTimer').style.display = 'none';
+                    document.getElementById('gameStatus').textContent = 'Round Started!';
+                    document.getElementById('gameStateMessage').textContent = `🎮 Round in progress - multiplier climbing!`;
+                    
+                    // Simulate round completion after 3 seconds
+                    setTimeout(() => {
+                        document.getElementById('gameStatus').textContent = 'Round Finished';
+                        document.getElementById('gameStateMessage').textContent = `💥 Round crashed! Ready for next round.`;
+                        
+                        // Auto-start next countdown after 2 seconds
+                        setTimeout(() => {
+                            startUnifiedCountdown();
+                        }, 2000);
+                    }, 3000);
+                }
+            }, 1000);
+        }
+
+        function resetTest() {
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+            }
+            
+            document.getElementById('countdownTimer').style.display = 'none';
+            document.getElementById('gameStatus').textContent = 'Ready';
+            document.getElementById('gameStateMessage').textContent = 'Click "Start Test" to see the unified countdown';
+        }
+
+        // Auto-start demo after page load
+        setTimeout(() => {
+            startUnifiedCountdown();
+        }, 1000);
+    </script>
+</body>
+</html>

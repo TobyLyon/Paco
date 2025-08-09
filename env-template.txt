@@ -17,3 +17,30 @@ TWITTER_REDIRECT_URI=https://pacothechicken.xyz/auth/callback
 # 4. Run npm run build to inject these values into your HTML files
 
 # Note: The .env file is ignored by git for security
+
+# Supabase Configuration (for leaderboard)
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+
+# Crash Casino House Wallet (Abstract Network)
+# CRITICAL: Never commit private keys!
+HOUSE_WALLET_ADDRESS=your_house_wallet_address
+HOUSE_WALLET_PRIVATE_KEY=your_house_wallet_private_key_do_not_commit
+ABSTRACT_NETWORK=mainnet  # Using mainnet for production
+
+# WalletConnect Configuration
+WALLETCONNECT_PROJECT_ID=1e3c0a8da83dc6e1810db1a0637970ad
+
+# Crash Casino Contracts (Abstract Network) - to be deployed
+CRASH_CASINO_CONTRACT=
+ESCROW_CONTRACT=
+
+# JWT Secret for crash casino sessions
+JWT_SECRET=your_random_jwt_secret_key
+
+# CORS Configuration
+CORS_ORIGIN=http://localhost:3000  # Update for production
+
+# Optional: Custom port
+PORT=3000

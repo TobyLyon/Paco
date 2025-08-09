@@ -62,6 +62,11 @@ class CrashGameClient {
             console.log('✅ Connected to crash game server');
             this.isConnected = true;
             this.updateConnectionStatus(true);
+            
+            // Notify connection callback
+            if (this.onGameStateUpdate) {
+                this.onGameStateUpdate({ connected: true, isConnected: true });
+            }
         });
 
         this.socket.on('disconnect', () => {
@@ -75,20 +80,25 @@ class CrashGameClient {
             this.handleGameState(data);
         });
 
-        this.socket.on('new_round_started', (data) => {
-            this.handleRoundStart(data);
+        // Enhanced server event names
+        this.socket.on('round_started', (data) => {
+            this.handleRoundStart({ roundId: data.roundId });
         });
 
         this.socket.on('multiplier_update', (data) => {
             this.handleMultiplierUpdate(data);
         });
 
-        this.socket.on('game_crashed', (data) => {
-            this.handleRoundCrash(data);
+        this.socket.on('round_crashed', (data) => {
+            this.handleRoundCrash({ crashPoint: data.crashPoint });
         });
 
         this.socket.on('bet_placed', (data) => {
             this.handleBetPlaced(data);
+        });
+
+        this.socket.on('bet_placed_global', (data) => {
+            // Update players list / stats if needed
         });
 
         this.socket.on('cashout_success', (data) => {
@@ -174,7 +184,9 @@ class CrashGameClient {
      * 🎮 Handle game state updates
      */
     handleGameState(data) {
-        this.gameState = data.status || 'waiting';
+        // Support both legacy and enhanced payloads
+        const phase = data.status || data.currentPhase || 'waiting';
+        this.gameState = (phase === 'betting' || phase === 'waiting') ? 'pending' : (phase === 'running' ? 'running' : (phase === 'crashed' ? 'crashed' : phase));
         this.currentMultiplier = data.currentMultiplier || 1.0;
         this.currentRound = data.roundId;
         
@@ -219,9 +231,17 @@ class CrashGameClient {
     handleMultiplierUpdate(data) {
         this.currentMultiplier = data.multiplier;
         
-        // Update multiplier display
-        const multiplierElement = document.getElementById('multiplierValue');
-        multiplierElement.textContent = data.multiplier.toFixed(2) + 'x';
+        // Only update multiplier display if game is actually running
+        // Don't override during countdown/waiting phases
+        if (window.liveGameSystem && window.liveGameSystem.gameState === 'running') {
+            const multiplierElement = document.getElementById('multiplierValue');
+            if (multiplierElement) {
+                multiplierElement.textContent = data.multiplier.toFixed(2) + 'x';
+                console.log(`📡 WebSocket updated multiplier to: ${data.multiplier.toFixed(2)}x (game running)`);
+            }
+        } else {
+            console.log(`🚫 Ignoring WebSocket multiplier update (${data.multiplier.toFixed(2)}x) - game not running`);
+        }
         
         // Update potential winnings
         if (this.playerBet && !this.playerBet.cashedOut) {
@@ -343,25 +363,54 @@ class CrashGameClient {
             return false;
         }
 
-        if (this.gameState !== 'pending') {
+        if (this.gameState !== 'pending' && this.gameState !== 'waiting') {
             this.showError('Cannot place bet - round not accepting bets');
             return false;
         }
 
         try {
-            // In a real implementation, this would interact with the smart contract first
-            // For now, we'll simulate the transaction
-            const txHash = '0x' + Math.random().toString(16).substring(2, 66);
+            // Check if wallet is connected
+            if (!window.realWeb3Modal || !window.realWeb3Modal.isWalletConnected()) {
+                this.showError('Please connect your wallet first');
+                return false;
+            }
+
+            this.showNotification('🎰 Processing bet transaction...', 'info');
             
+            // Send transaction to Abstract L2
+            const txResult = await window.realWeb3Modal.sendTransaction(
+                this.config.houseWallet || '0x742d35Cc6634C0532925a3b8D5Bc9d65F62ce4AA', 
+                amount
+            );
+            
+            // Verify transaction was successful
+            if (!txResult || !txResult.hash) {
+                throw new Error('Transaction failed');
+            }
+            
+            // Wait for confirmation
+            const receipt = await txResult.wait();
+            
+            if (receipt.status !== 1) {
+                throw new Error('Transaction failed on blockchain');
+            }
+            
+            this.showNotification('✅ Transaction confirmed! Placing bet...', 'success');
+            
+            // Now notify the game server with verified transaction
             this.socket.emit('place_bet', {
                 betAmount: amount,
-                autoPayoutMultiplier: null // Can be set for auto-cashout
+                autoPayoutMultiplier: null, // Can be set for auto-cashout
+                txHash: receipt.transactionHash,
+                blockNumber: receipt.blockNumber,
+                playerAddress: window.realWeb3Modal?.address
             });
 
             this.playerBet = {
                 amount: amount,
                 cashedOut: false,
-                txHash: txHash
+                txHash: receipt.transactionHash,
+                blockNumber: receipt.blockNumber
             };
 
             // Update UI
@@ -374,7 +423,20 @@ class CrashGameClient {
 
         } catch (error) {
             console.error('❌ Failed to place bet:', error);
-            this.showError('Failed to place bet: ' + error.message);
+            
+            // Handle specific error types
+            let errorMessage = 'Failed to place bet';
+            if (error.message.includes('insufficient funds')) {
+                errorMessage = 'Insufficient ETH balance';
+            } else if (error.message.includes('user rejected')) {
+                errorMessage = 'Transaction cancelled';
+            } else if (error.message.includes('House wallet not configured')) {
+                errorMessage = 'Game temporarily unavailable';
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+            
+            this.showError(errorMessage);
             return false;
         }
     }
@@ -411,8 +473,9 @@ class CrashGameClient {
         }
 
         this.socket.emit('authenticate', {
-            walletAddress: walletAddress,
-            token: token
+            address: walletAddress,
+            signature: token.signature || token, // compatibility if we pass a signed message
+            message: token.message || `Login to PacoRocko at ${new Date().toISOString()}`
         });
     }
 
@@ -432,17 +495,25 @@ class CrashGameClient {
     }
 
     /**
-     * ⏰ Start countdown timer
+     * ⏰ Start unified betting countdown (5 seconds)
      */
-    startCountdown(seconds) {
+    startCountdown(seconds = 5) {
         const countdownElement = document.getElementById('countdownTimer');
         const countdownValue = document.getElementById('countdownValue');
         
         countdownElement.style.display = 'block';
+        document.getElementById('gameStatus').textContent = 'Place Your Bets';
         
         let remaining = seconds;
         const interval = setInterval(() => {
             countdownValue.textContent = remaining;
+            
+            if (remaining > 0) {
+                document.getElementById('gameStateMessage').textContent = `🎰 Next round starting in ${remaining}s - Place your bets now!`;
+            } else {
+                document.getElementById('gameStateMessage').textContent = `🚀 Round starting...`;
+            }
+            
             remaining--;
             
             if (remaining < 0) {
@@ -450,7 +521,7 @@ class CrashGameClient {
                 countdownElement.style.display = 'none';
                 this.gameState = 'pending';
                 document.getElementById('gameStatus').textContent = 'Accepting Bets';
-                document.getElementById('gameStateMessage').textContent = 'Place your bets!';
+                document.getElementById('gameStateMessage').textContent = 'Bets accepted!';
             }
         }, 1000);
     }
@@ -573,11 +644,4 @@ class CrashGameClient {
 // Global instance
 window.CrashGameClient = CrashGameClient;
 
-// Initialize when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        window.crashClient = new CrashGameClient();
-    });
-} else {
-    window.crashClient = new CrashGameClient();
-}
+// Note: Initialization is handled in the HTML file to avoid conflicts

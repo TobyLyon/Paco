@@ -1,0 +1,61 @@
+# =================================================
+# PACO'S CRASH CASINO - WALLET CONFIGURATION
+# =================================================
+
+# ======================
+# WALLET INTEGRATION
+# ======================
+
+# WalletConnect Project ID (REQUIRED for production)
+# Get your free project ID at: https://cloud.walletconnect.com/
+# This enables support for 300+ wallets via WalletConnect protocol
+VITE_WALLETCONNECT_PROJECT_ID=your_walletconnect_project_id_here
+
+# ======================
+# BLOCKCHAIN CONFIGURATION
+# ======================
+
+# Abstract L2 Network Configuration (official RPCs)
+# Mainnet: https://api.mainnet.abs.xyz
+# Testnet: https://api.testnet.abs.xyz
+
+# Development mode (true = use Abstract Sepolia testnet)
+VITE_DEV_MODE=true
+
+# ======================
+# QUICK SETUP INSTRUCTIONS
+# ======================
+
+# 1. Copy this file to .env in your project root
+# 2. Get WalletConnect Project ID:
+#    - Go to https://cloud.walletconnect.com/
+#    - Create a free account
+#    - Create a new project
+#    - Copy the Project ID
+# 3. Replace "your_walletconnect_project_id_here" with your actual Project ID
+# 4. Set VITE_DEV_MODE=false for production deployment
+
+# ======================
+# SUPPORTED WALLETS
+# ======================
+
+# The configuration automatically supports:
+# ✅ MetaMask (injected + extension)
+# ✅ Rabby Wallet
+# ✅ Trust Wallet
+# ✅ Rainbow Wallet
+# ✅ OKX Wallet
+# ✅ Coinbase Wallet (Smart Wallet)
+# ✅ Ledger (via WalletConnect)
+# ✅ Argent (via WalletConnect)
+# ✅ 300+ more wallets via WalletConnect protocol
+
+# ======================
+# NETWORK AUTO-SWITCHING
+# ======================
+
+# The app automatically:
+# - Switches to Abstract Sepolia in development
+# - Switches to Abstract Mainnet in production
+# - Prompts users to switch if on wrong network
+# - Shows helpful error messages for connection issues

@@ -13,12 +13,11 @@ class EnhancedCrashEngine extends EventEmitter {
         super();
         this.io = io;
         
-        // Enhanced configuration
+        // Enhanced configuration - UNIFIED BETTING COUNTDOWN
         this.config = {
-            bettingPhaseDuration: 10000,    // 10 seconds for betting
-            cashoutPhaseDuration: 5000,     // 5 seconds for cashout
-            houseEdge: 0.02,               // 2% house edge
-            maxMultiplier: 1000.0,         // 1000x max
+            bettingPhaseDuration: 5000,     // Unified 5-second betting countdown
+            houseEdge: 0.03,               // 3% house edge (industry standard)
+            maxMultiplier: 100.0,          // Realistic 100x max
             tickRate: 50,                  // 50ms updates (20 FPS)
             ...config
         };
@@ -51,36 +50,39 @@ class EnhancedCrashEngine extends EventEmitter {
     }
 
     /**
-     * 🎲 Generate provably fair crash point
-     * Enhanced version of the basic random generator
+     * 🎲 Generate provably fair crash point - FIXED ALGORITHM
+     * Based on industry standard from original wbrandon25/Online-Crash-Gambling-Simulator
      */
     generateCrashPoint(serverSeed, clientSeed, nonce) {
         const input = `${serverSeed}:${clientSeed}:${nonce}`;
         const hash = crypto.createHash('sha256').update(input).digest('hex');
         
-        // Use first 8 characters of hash for randomness
-        const hexSubstring = hash.substring(0, 8);
-        const intValue = parseInt(hexSubstring, 16);
+        // Use first 10 characters for larger random range
+        const hexSubstring = hash.substring(0, 10);
+        const randomInt = parseInt(hexSubstring, 16);
         
-        // Apply house edge and convert to crash multiplier
-        const houseEdgeMultiplier = 1 - this.config.houseEdge;
-        
-        // Enhanced algorithm for better distribution
-        if (intValue % 33 === 0) {
-            // 3% chance of instant crash (like original)
+        // EXACT ORIGINAL ALGORITHM - 3% chance instant crash
+        if (randomInt % 33 === 0) {
             return 1.00;
         } else {
-            // More sophisticated crash point calculation
-            const randomFloat = intValue / (2 ** 32);
-            let crashPoint = 1 / (1 - randomFloat) * houseEdgeMultiplier;
+            // Generate random float [0, 1) but never exactly 0
+            let randomFloat = (randomInt % 1000000) / 1000000;
             
-            // Apply exponential curve for realistic distribution
-            crashPoint = Math.pow(crashPoint, 0.4);
+            // Ensure never exactly 0 (like original while loop)
+            while (randomFloat === 0) {
+                // Generate new value if somehow 0
+                const newHash = crypto.createHash('sha256').update(input + nonce.toString()).digest('hex');
+                const newInt = parseInt(newHash.substring(0, 6), 16);
+                randomFloat = (newInt % 1000000) / 1000000;
+            }
             
-            // Ensure minimum and maximum bounds
-            crashPoint = Math.max(1.00, Math.min(crashPoint, this.config.maxMultiplier));
+            // EXACT ORIGINAL FORMULA: 0.01 + (0.99 / randomFloat)
+            // This gives proper distribution with house edge built-in
+            let crashPoint = 0.01 + (0.99 / randomFloat);
             
-            return Math.round(crashPoint * 100) / 100; // Round to 2 decimal places
+            // Apply safety cap and round to 2 decimal places
+            crashPoint = Math.min(crashPoint, this.config.maxMultiplier);
+            return Math.round(crashPoint * 100) / 100;
         }
     }
 
@@ -137,9 +139,12 @@ class EnhancedCrashEngine extends EventEmitter {
             
             this.emit('roundStarted', this.currentRound);
         } else {
-            // Send betting countdown
+            // Send unified betting countdown
             const timeRemaining = Math.ceil(bettingDuration - timeElapsed);
-            this.io.emit('betting_countdown', timeRemaining);
+            this.io.emit('unified_betting_countdown', {
+                timeRemaining,
+                message: `🎰 Next round starting in ${timeRemaining}s - Place your bets now!`
+            });
         }
     }
 
@@ -258,8 +263,8 @@ class EnhancedCrashEngine extends EventEmitter {
      * 🎯 Place a bet
      */
     placeBet(playerId, socketId, betAmount, autoPayoutMultiplier = null) {
-        if (this.gamePhase !== 'betting') {
-            return { success: false, error: 'Not in betting phase' };
+        if (this.gamePhase !== 'betting' && this.gamePhase !== 'waiting') {
+            return { success: false, error: 'Cannot place bets during active round' };
         }
         
         if (this.currentRound.players.has(playerId)) {
@@ -387,11 +392,14 @@ class EnhancedCrashEngine extends EventEmitter {
         this.liveBettorsTable = [];
         
         // Create new round
+        const previousNonce = this.currentRound ? this.currentRound.nonce : 0;
+        const previousClientSeed = this.currentRound ? this.currentRound.clientSeed : 'paco-default-seed';
+        
         this.currentRound = {
             id: this.generateRoundId(),
             serverSeed: crypto.randomBytes(32).toString('hex'),
-            clientSeed: this.currentRound.clientSeed, // Keep same client seed
-            nonce: this.currentRound.nonce + 1,
+            clientSeed: previousClientSeed, // Keep same client seed
+            nonce: previousNonce + 1,
             startTime: Date.now(),
             players: new Map(),
             totalBets: 0,
@@ -405,7 +413,56 @@ class EnhancedCrashEngine extends EventEmitter {
         
         this.emit('newRoundStarted', this.currentRound);
         
-        console.log(`🆕 New round started: ${this.currentRound.id}`);
+        console.log(`🆕 New round started: ${this.currentRound.id} (Auto-running)`);
+        
+        // Auto-start continuous rounds even without players
+        this.ensureContinuousRounds();
+    }
+
+    /**
+     * 🔄 Ensure continuous rounds keep running
+     */
+    ensureContinuousRounds() {
+        // This ensures rounds continue even if no players are connected
+        if (!this.continuousRoundsInterval) {
+            this.continuousRoundsInterval = setInterval(() => {
+                // If we're stuck in cashout phase too long, force a new round
+                if (this.gamePhase === 'cashout') {
+                    const timeInCashout = (Date.now() - this.phaseStartTime) / 1000;
+                    if (timeInCashout > this.config.cashoutPhaseDuration / 1000 + 2) {
+                        console.log('🔄 Force-starting new round due to extended cashout phase');
+                        this.startNewRound();
+                    }
+                }
+                
+                // If we're stuck in betting phase too long, force start the round
+                if (this.gamePhase === 'betting') {
+                    const timeInBetting = (Date.now() - this.phaseStartTime) / 1000;
+                    if (timeInBetting > this.config.bettingPhaseDuration / 1000 + 2) {
+                        console.log('🔄 Force-starting running phase due to extended betting phase');
+                        this.gamePhase = 'running';
+                        this.phaseStartTime = Date.now();
+                        this.currentMultiplier = 1.0;
+                        
+                        // Generate crash point for this round
+                        this.crashPoint = this.generateCrashPoint(
+                            this.currentRound.serverSeed,
+                            this.currentRound.clientSeed,
+                            this.currentRound.nonce
+                        );
+                        
+                        console.log(`🎰 Auto-started Round ${this.currentRound.id} - Crash point: ${this.crashPoint}x`);
+                        
+                        this.io.emit('game_phase_start', {
+                            roundId: this.currentRound.id,
+                            startTime: Date.now()
+                        });
+                        
+                        this.emit('roundStarted', this.currentRound);
+                    }
+                }
+            }, 1000); // Check every second
+        }
     }
 
     /**
@@ -449,6 +506,11 @@ class EnhancedCrashEngine extends EventEmitter {
         if (this.gameTimer) {
             clearInterval(this.gameTimer);
             this.gameTimer = null;
+        }
+        
+        if (this.continuousRoundsInterval) {
+            clearInterval(this.continuousRoundsInterval);
+            this.continuousRoundsInterval = null;
         }
     }
 }

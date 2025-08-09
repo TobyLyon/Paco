@@ -29,12 +29,11 @@ class PacoRockoServerIntegration {
             path: '/crash-ws'
         });
         
-        // Initialize crash game engine
+        // Initialize crash game engine with unified countdown
         this.crashEngine = new EnhancedCrashEngine(this.io, {
-            bettingPhaseDuration: 10000,  // 10 seconds
-            cashoutPhaseDuration: 5000,   // 5 seconds  
-            houseEdge: 0.02,             // 2% house edge
-            maxMultiplier: 1000.0,       // 1000x max
+            bettingPhaseDuration: 5000,   // Unified 5-second betting countdown
+            houseEdge: 0.03,             // 3% house edge (industry standard)
+            maxMultiplier: 100.0,        // Realistic 100x max
             tickRate: 50                 // 20 FPS updates
         });
         

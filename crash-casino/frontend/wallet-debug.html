@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Wallet Debug - Abstract Network</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #1a1a2e;
+            color: #fff;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #16213e;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        h1 {
+            color: #FFD700;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            background: #0f172a;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 10px;
+            border-left: 4px solid #3b82f6;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+        .success { background: #065f46; color: #10b981; }
+        .error { background: #7f1d1d; color: #f87171; }
+        .warning { background: #78350f; color: #fbbf24; }
+        .info { background: #1e3a8a; color: #60a5fa; }
+        button {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+            font-weight: 600;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
+        }
+        .network-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .network-card {
+            background: #1e293b;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #334155;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Abstract Network Wallet Debug</h1>
+        
+        <div class="test-section">
+            <h3>🌐 Browser Environment</h3>
+            <div id="browserCheck"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🦊 MetaMask Detection</h3>
+            <div id="metamaskCheck"></div>
+            <button onclick="checkMetaMask()">Check MetaMask</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔗 Network Configuration</h3>
+            <div class="network-info">
+                <div class="network-card">
+                    <h4>Abstract Testnet</h4>
+                    <div><strong>Chain ID:</strong> 11124 (0x2B74)</div>
+                    <div><strong>RPC:</strong> https://api.testnet.abs.xyz</div>
+                    <div><strong>Explorer:</strong> https://sepolia.abscan.org</div>
+                </div>
+                <div class="network-card">
+                    <h4>Abstract Mainnet</h4>
+                    <div><strong>Chain ID:</strong> 2741 (0xAB5)</div>
+                    <div><strong>RPC:</strong> https://api.mainnet.abs.xyz</div>
+                    <div><strong>Explorer:</strong> https://abscan.org</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔌 Connection Test</h3>
+            <div id="connectionTest"></div>
+            <button onclick="testConnection()">Test Connection</button>
+            <button onclick="addAbstractTestnet()">Add Abstract Testnet</button>
+            <button onclick="switchToAbstract()">Switch to Abstract</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>🎰 Game Integration Test</h3>
+            <div id="gameTest"></div>
+            <button onclick="testGameIntegration()">Test Game Integration</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>📊 Network Status</h3>
+            <div id="networkStatus"></div>
+            <button onclick="checkNetworkStatus()">Check Network Status</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"></script>
+    <script>
+        // Abstract Network Configuration
+        const ABSTRACT_TESTNET = {
+            chainId: '0x2B74', // 11124
+            chainName: 'Abstract Testnet',
+            nativeCurrency: {
+                name: 'ETH',
+                symbol: 'ETH',
+                decimals: 18
+            },
+            rpcUrls: ['https://api.testnet.abs.xyz'],
+            blockExplorerUrls: ['https://sepolia.abscan.org']
+        };
+
+        function log(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = `${new Date().toLocaleTimeString()}: ${message}`;
+            element.appendChild(div);
+        }
+
+        function clear(elementId) {
+            document.getElementById(elementId).innerHTML = '';
+        }
+
+        // Browser Environment Check
+        function checkBrowserEnvironment() {
+            const checks = [
+                { name: 'HTTPS/Localhost', test: () => location.protocol === 'https:' || location.hostname === 'localhost' },
+                { name: 'Ethers.js Library', test: () => typeof ethers !== 'undefined' },
+                { name: 'Modern Browser', test: () => typeof Promise !== 'undefined' && typeof fetch !== 'undefined' },
+                { name: 'Local Storage', test: () => typeof localStorage !== 'undefined' }
+            ];
+
+            clear('browserCheck');
+            checks.forEach(check => {
+                const result = check.test();
+                log('browserCheck', `${check.name}: ${result ? '✅ Passed' : '❌ Failed'}`, result ? 'success' : 'error');
+            });
+        }
+
+        // MetaMask Detection
+        function checkMetaMask() {
+            clear('metamaskCheck');
+            
+            if (typeof window.ethereum === 'undefined') {
+                log('metamaskCheck', '❌ MetaMask not detected. Please install MetaMask.', 'error');
+                return false;
+            }
+            
+            log('metamaskCheck', '✅ MetaMask detected!', 'success');
+            log('metamaskCheck', `Provider: ${window.ethereum.isMetaMask ? 'MetaMask' : 'Other'}`, 'info');
+            
+            // Check if connected
+            window.ethereum.request({ method: 'eth_accounts' })
+                .then(accounts => {
+                    if (accounts.length > 0) {
+                        log('metamaskCheck', `✅ Connected: ${accounts[0]}`, 'success');
+                    } else {
+                        log('metamaskCheck', '⚠️ Not connected', 'warning');
+                    }
+                })
+                .catch(err => {
+                    log('metamaskCheck', `❌ Error checking accounts: ${err.message}`, 'error');
+                });
+            
+            return true;
+        }
+
+        // Connection Test
+        async function testConnection() {
+            clear('connectionTest');
+            
+            if (!checkMetaMask()) return;
+            
+            try {
+                log('connectionTest', '🔌 Requesting account access...', 'info');
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                
+                if (accounts.length === 0) {
+                    log('connectionTest', '❌ No accounts accessible', 'error');
+                    return;
+                }
+                
+                log('connectionTest', `✅ Connected to: ${accounts[0]}`, 'success');
+                
+                // Check network
+                const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+                log('connectionTest', `Current network: ${chainId} (${parseInt(chainId, 16)})`, 'info');
+                
+                if (chainId === ABSTRACT_TESTNET.chainId) {
+                    log('connectionTest', '✅ Already on Abstract Testnet!', 'success');
+                } else {
+                    log('connectionTest', '⚠️ Not on Abstract Testnet', 'warning');
+                }
+                
+                // Test provider
+                const provider = new ethers.providers.Web3Provider(window.ethereum);
+                const balance = await provider.getBalance(accounts[0]);
+                log('connectionTest', `Balance: ${ethers.utils.formatEther(balance)} ETH`, 'info');
+                
+            } catch (error) {
+                log('connectionTest', `❌ Connection failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Add Abstract Testnet
+        async function addAbstractTestnet() {
+            clear('connectionTest');
+            
+            if (!checkMetaMask()) return;
+            
+            try {
+                log('connectionTest', '➕ Adding Abstract Testnet...', 'info');
+                
+                await window.ethereum.request({
+                    method: 'wallet_addEthereumChain',
+                    params: [ABSTRACT_TESTNET],
+                });
+                
+                log('connectionTest', '✅ Abstract Testnet added successfully!', 'success');
+                
+            } catch (error) {
+                if (error.code === 4001) {
+                    log('connectionTest', '⚠️ User rejected request', 'warning');
+                } else {
+                    log('connectionTest', `❌ Failed to add network: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        // Switch to Abstract
+        async function switchToAbstract() {
+            clear('connectionTest');
+            
+            if (!checkMetaMask()) return;
+            
+            try {
+                log('connectionTest', '🔄 Switching to Abstract Testnet...', 'info');
+                
+                await window.ethereum.request({
+                    method: 'wallet_switchEthereumChain',
+                    params: [{ chainId: ABSTRACT_TESTNET.chainId }],
+                });
+                
+                log('connectionTest', '✅ Switched to Abstract Testnet!', 'success');
+                
+            } catch (error) {
+                if (error.code === 4902) {
+                    log('connectionTest', '⚠️ Network not found, try adding it first', 'warning');
+                } else if (error.code === 4001) {
+                    log('connectionTest', '⚠️ User rejected request', 'warning');
+                } else {
+                    log('connectionTest', `❌ Failed to switch: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        // Test Game Integration
+        async function testGameIntegration() {
+            clear('gameTest');
+            
+            try {
+                log('gameTest', '🎰 Testing game integration...', 'info');
+                
+                // Check if on correct network
+                const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+                if (chainId !== ABSTRACT_TESTNET.chainId) {
+                    log('gameTest', '❌ Please switch to Abstract Testnet first', 'error');
+                    return;
+                }
+                
+                // Test provider
+                const provider = new ethers.providers.Web3Provider(window.ethereum);
+                const signer = provider.getSigner();
+                const address = await signer.getAddress();
+                
+                log('gameTest', `✅ Signer address: ${address}`, 'success');
+                
+                // Test signing
+                const message = `Test message for PacoRocko at ${new Date().toISOString()}`;
+                log('gameTest', '✍️ Testing message signing...', 'info');
+                
+                const signature = await signer.signMessage(message);
+                log('gameTest', `✅ Message signed: ${signature.substring(0, 20)}...`, 'success');
+                
+                // Test balance
+                const balance = await provider.getBalance(address);
+                const ethBalance = ethers.utils.formatEther(balance);
+                log('gameTest', `💰 Balance: ${ethBalance} ETH`, 'info');
+                
+                if (parseFloat(ethBalance) < 0.001) {
+                    log('gameTest', '⚠️ Low balance - you might need testnet ETH from a faucet', 'warning');
+                } else {
+                    log('gameTest', '✅ Sufficient balance for testing', 'success');
+                }
+                
+                log('gameTest', '🎉 Game integration test completed!', 'success');
+                
+            } catch (error) {
+                log('gameTest', `❌ Game integration test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Check Network Status
+        async function checkNetworkStatus() {
+            clear('networkStatus');
+            
+            try {
+                log('networkStatus', '🌐 Checking Abstract Testnet status...', 'info');
+                
+                // Test RPC endpoint
+                const response = await fetch('https://api.testnet.abs.xyz', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        jsonrpc: '2.0',
+                        method: 'eth_blockNumber',
+                        params: [],
+                        id: 1
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                if (data.error) {
+                    throw new Error(`RPC Error: ${data.error.message}`);
+                }
+                
+                const blockNumber = parseInt(data.result, 16);
+                log('networkStatus', `✅ RPC endpoint working! Latest block: ${blockNumber}`, 'success');
+                
+                // Test explorer
+                const explorerResponse = await fetch('https://sepolia.abscan.org');
+                if (explorerResponse.ok) {
+                    log('networkStatus', '✅ Block explorer accessible', 'success');
+                } else {
+                    log('networkStatus', '⚠️ Block explorer might be down', 'warning');
+                }
+                
+            } catch (error) {
+                log('networkStatus', `❌ Network status check failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            checkBrowserEnvironment();
+            checkMetaMask();
+        });
+    </script>
+</body>
+</html>

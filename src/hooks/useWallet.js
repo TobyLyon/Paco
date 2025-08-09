@@ -1,37 +1,49 @@
-import { useAccount, useConnect, useDisconnect } from 'wagmi'
+import { useAccount, useConnect, useDisconnect, useChainId } from 'wagmi'
 import { useEffect } from 'react'
+import { useAbstractChain } from '../components/WalletProviders.tsx'
 
 export default function useWallet() {
-  const { address, isConnected, isConnecting } = useAccount()
+  const { address, isConnected, isConnecting, status } = useAccount()
   const { connect, connectors } = useConnect()
   const { disconnect } = useDisconnect()
+  const chainId = useChainId()
+  const { isAbstract, targetChain, currentChain } = useAbstractChain()
 
   // Log connection state changes
   useEffect(() => {
     if (isConnected && address) {
       console.log('🔗 Wallet connected:', address)
+      console.log('🌐 Current chain:', currentChain?.name, `(${chainId})`)
+      console.log('📍 On Abstract L2:', isAbstract)
     }
-  }, [isConnected, address])
-
-  // Auto-reconnect if previously connected
-  useEffect(() => {
-    const lastConnector = localStorage.getItem('wagmi.wallet')
-    if (lastConnector && !isConnected && !isConnecting) {
-      const connector = connectors.find(c => c.name === lastConnector)
-      if (connector) {
-        connect({ connector })
-      }
-    }
-  }, [connect, connectors, isConnected, isConnecting])
+  }, [isConnected, address, chainId, currentChain, isAbstract])
 
   return {
+    // Core wallet state
     address,
     isConnected,
     isConnecting,
+    status,
+    
+    // Chain information
+    chainId,
+    isAbstract,
+    currentChain,
+    targetChain,
+    
+    // Connection functions
     connect,
     disconnect,
+    connectors,
+    
     // Helper functions
     formatAddress: (addr) => addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : '',
-    isWalletReady: isConnected && address,
+    isWalletReady: isConnected && address && isAbstract,
+    isWrongNetwork: isConnected && !isAbstract,
+    
+    // Wallet connection status helpers
+    isConnecting: status === 'connecting',
+    isReconnecting: status === 'reconnecting',
+    isDisconnected: status === 'disconnected',
   }
 }

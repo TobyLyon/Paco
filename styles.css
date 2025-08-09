@@ -4055,4 +4055,120 @@ button:focus,
     .action-buttons button {
         min-height: 48px;
     }
+}
+
+/* Professional Wallet Connection Styles - Industry Standard 2024 */
+.connect-wallet-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: 2px solid transparent;
+    padding: 12px 24px;
+    border-radius: 16px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+    letter-spacing: 0.3px;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+    text-transform: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 140px;
+    justify-content: center;
+}
+
+.connect-wallet-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.connect-wallet-btn:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.connect-wallet-btn:hover::before {
+    opacity: 1;
+}
+
+.connect-wallet-btn.connected {
+    background: linear-gradient(135deg, #00D4AA 0%, #01B574 100%);
+    box-shadow: 0 4px 20px rgba(0, 212, 170, 0.3);
+    border-color: #00D4AA;
+}
+
+.connect-wallet-btn.connected:hover {
+    background: linear-gradient(135deg, #00C4A0 0%, #01A564 100%);
+    box-shadow: 0 8px 32px rgba(0, 212, 170, 0.4);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.connect-wallet-btn:active {
+    transform: translateY(0) scale(0.98);
+}
+
+/* Notification Styles */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    color: white;
+    font-weight: bold;
+    z-index: 10001;
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: all 0.3s ease;
+    max-width: 300px;
+    word-wrap: break-word;
+}
+
+.notification.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.notification.success {
+    background: linear-gradient(135deg, #56ab2f, #a8e6cf);
+}
+
+.notification.error {
+    background: linear-gradient(135deg, #ff416c, #ff4b2b);
+}
+
+.notification.warning {
+    background: linear-gradient(135deg, #f7971e, #ffd200);
+    color: #333;
+}
+
+.notification.info {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+/* Mobile responsive for wallet button */
+@media (max-width: 768px) {
+    .connect-wallet-btn {
+        padding: 8px 16px;
+        font-size: 12px;
+        margin-top: 10px;
+    }
+    
+    .restaurant-hours {
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
 } 

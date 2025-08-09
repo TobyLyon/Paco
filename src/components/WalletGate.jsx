@@ -1,7 +1,8 @@
 import React from 'react'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { motion } from 'framer-motion'
-import { Shield, Chicken, Crown, Zap } from 'lucide-react'
+import { Shield, Chicken, Crown, Zap, Network } from 'lucide-react'
+import { useAbstractChain } from './WalletProviders.tsx'
 
 export default function WalletGate({ hasAccess, loading }) {
   return (
@@ -56,6 +57,8 @@ export default function WalletGate({ hasAccess, loading }) {
 }
 
 function ConnectState() {
+  const { isAbstract, targetChain } = useAbstractChain()
+  
   return (
     <div className="text-center space-y-4">
       <div className="flex items-center justify-center space-x-2 text-paco-yellow mb-4">
@@ -66,6 +69,16 @@ function ConnectState() {
       <p className="text-gray-300 text-sm mb-6">
         Connect your wallet to check for Chicken or Coyote NFTs and enter the farm!
       </p>
+      
+      {/* Network Status Indicator */}
+      {!isAbstract && (
+        <div className="bg-orange-900 bg-opacity-50 rounded-lg p-3 mb-4">
+          <div className="flex items-center justify-center space-x-2 text-orange-300">
+            <Network size={16} />
+            <span className="text-sm">Will auto-switch to {targetChain.name}</span>
+          </div>
+        </div>
+      )}
       
       <div className="flex justify-center">
         <ConnectButton.Custom>
@@ -104,9 +117,22 @@ function ConnectState() {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={openConnectModal}
-                        className="pixel-button text-lg px-8 py-3 rounded-lg"
+                        className="pixel-button text-lg px-8 py-3 rounded-lg bg-paco-yellow text-gray-900 hover:bg-yellow-400 transition-colors"
                       >
                         Connect Wallet
+                      </motion.button>
+                    )
+                  }
+
+                  if (chain?.unsupported) {
+                    return (
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={openChainModal}
+                        className="pixel-button text-lg px-8 py-3 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+                      >
+                        Wrong Network
                       </motion.button>
                     )
                   }
@@ -115,6 +141,16 @@ function ConnectState() {
                     <div className="text-center">
                       <div className="text-green-400 mb-2">✅ Wallet Connected</div>
                       <p className="text-xs text-gray-400">Checking NFT ownership...</p>
+                      
+                      {/* Account Management Button */}
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={openAccountModal}
+                        className="mt-3 text-xs text-paco-yellow hover:text-yellow-300 transition-colors"
+                      >
+                        {account.displayName || `${account.address.slice(0, 6)}...${account.address.slice(-4)}`}
+                      </motion.button>
                     </div>
                   )
                 })()}

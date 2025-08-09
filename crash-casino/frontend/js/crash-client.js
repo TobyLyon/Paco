@@ -198,8 +198,10 @@ class CrashGameClient {
         const phase = data.status || data.currentPhase || 'waiting';
         
         // Map backend phases to frontend states
-        if (phase === 'betting' || phase === 'waiting') {
-            this.gameState = 'pending';  // Accepting bets
+        if (phase === 'betting') {
+            this.gameState = 'betting';  // Accepting bets
+        } else if (phase === 'waiting') {
+            this.gameState = 'pending';  // Between rounds
         } else if (phase === 'running' || phase === 'flying') {
             this.gameState = 'running';  // Game in progress
         } else if (phase === 'crashed' || phase === 'ended') {
@@ -388,10 +390,12 @@ class CrashGameClient {
 
         // Check if we can place bets (during betting phase only)
         if (this.gameState !== 'betting') {
-            this.showError(`Wait for betting phase - current: ${this.gameState}`);
-            console.log(`🚫 Bet rejected - Game state: ${this.gameState}, Wait for "betting" phase`);
+            this.showError(`Cannot bet now - need "betting" phase, current: "${this.gameState}"`);
+            console.log(`🚫 Bet rejected - Expected: "betting", Actual: "${this.gameState}"`);
             return false;
         }
+        
+        console.log(`✅ Bet validation passed - Game state: "${this.gameState}"`);
 
         try {
             // Check if wallet is connected

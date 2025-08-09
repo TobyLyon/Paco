@@ -187,7 +187,22 @@ async function build() {
             console.log(`⚠️  Game assets directory not found at ${gameSourceDir}, skipping.`);
         }
 
-        // 8. Inject environment variables into HTML files
+        // 8. Copy crash casino directory for PacoRocko game
+        const crashCasinoSourceDir = path.join(rootDir, 'crash-casino');
+        const crashCasinoOutputDir = path.join(outputDir, 'crash-casino');
+        if (await fs.pathExists(crashCasinoSourceDir)) {
+            console.log(`🎰  Copying crash casino from ${crashCasinoSourceDir} to ${crashCasinoOutputDir}...`);
+            await fs.copy(crashCasinoSourceDir, crashCasinoOutputDir, {
+                overwrite: true,
+                errorOnExist: false,
+                recursive: true
+            });
+            console.log('✅  Crash casino copied successfully to crash-casino/ subdirectory.');
+        } else {
+            console.log(`⚠️  Crash casino directory not found at ${crashCasinoSourceDir}, skipping.`);
+        }
+
+        // 9. Inject environment variables into HTML files
         console.log('🔧  Injecting environment variables into HTML files...');
         await injectEnvironmentVariables(outputDir);
         console.log('✅  Environment variables injected.');

@@ -196,9 +196,22 @@ class CrashGameClient {
     handleGameState(data) {
         // Support both legacy and enhanced payloads
         const phase = data.status || data.currentPhase || 'waiting';
-        this.gameState = (phase === 'betting' || phase === 'waiting') ? 'pending' : (phase === 'running' ? 'running' : (phase === 'crashed' ? 'crashed' : phase));
+        
+        // Map backend phases to frontend states
+        if (phase === 'betting' || phase === 'waiting') {
+            this.gameState = 'pending';  // Accepting bets
+        } else if (phase === 'running' || phase === 'flying') {
+            this.gameState = 'running';  // Game in progress
+        } else if (phase === 'crashed' || phase === 'ended') {
+            this.gameState = 'crashed'; // Round ended
+        } else {
+            this.gameState = phase;      // Use backend phase as-is
+        }
+        
         this.currentMultiplier = data.currentMultiplier || 1.0;
         this.currentRound = data.roundId;
+        
+        console.log(`🎮 Game state updated: ${phase} → ${this.gameState}`);
         
         // Update UI
         document.getElementById('currentRoundId').textContent = 
@@ -243,14 +256,17 @@ class CrashGameClient {
         
         // Only update multiplier display if game is actually running
         // Don't override during countdown/waiting phases
-        if (window.liveGameSystem && window.liveGameSystem.gameState === 'running') {
+        if (this.gameState === 'running' || (window.liveGameSystem && window.liveGameSystem.gameState === 'running')) {
             const multiplierElement = document.getElementById('multiplierValue');
             if (multiplierElement) {
                 multiplierElement.textContent = data.multiplier.toFixed(2) + 'x';
                 console.log(`📡 WebSocket updated multiplier to: ${data.multiplier.toFixed(2)}x (game running)`);
             }
         } else {
-            console.log(`🚫 Ignoring WebSocket multiplier update (${data.multiplier.toFixed(2)}x) - game not running`);
+            // Only log if multiplier is significant (reduces console spam)
+            if (data.multiplier > 2.0) {
+                console.log(`🚫 Ignoring WebSocket multiplier update (${data.multiplier.toFixed(2)}x) - game state: ${this.gameState}`);
+            }
         }
         
         // Update potential winnings
@@ -373,8 +389,10 @@ class CrashGameClient {
             return false;
         }
 
-        if (this.gameState !== 'pending' && this.gameState !== 'waiting') {
-            this.showError('Cannot place bet - round not accepting bets');
+        // Check if we can place bets (during betting/waiting phase)
+        if (this.gameState !== 'pending' && this.gameState !== 'waiting' && this.gameState !== 'betting') {
+            this.showError(`Cannot place bet - round not accepting bets (current state: ${this.gameState})`);
+            console.log(`🚫 Bet rejected - Game state: ${this.gameState}, Round: ${this.currentRound}`);
             return false;
         }
 

@@ -79,6 +79,91 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        
+        /* Provably Fair Modal Styles */
+        .fair-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            border: 1px solid rgba(251, 191, 36, 0.2);
+        }
+        
+        .fair-section h3 {
+            color: var(--restaurant-yellow);
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+        
+        .seed-display {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .seed-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .seed-item label {
+            color: var(--restaurant-orange);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .seed-item input {
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            border-radius: 6px;
+            color: white;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+        }
+        
+        .manual-verify {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .manual-verify input {
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            border-radius: 6px;
+            color: white;
+        }
+        
+        .manual-verify button {
+            padding: 10px 20px;
+            background: linear-gradient(45deg, var(--restaurant-yellow), var(--restaurant-orange));
+            border: none;
+            border-radius: 6px;
+            color: black;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .explanation {
+            color: #d1d5db;
+            line-height: 1.6;
+        }
+        
+        .explanation p {
+            margin-bottom: 8px;
+        }
+        
+        .verification-result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 2px solid;
+        }
     </style>
 </head>
 <body>
@@ -307,7 +392,7 @@
                         </div>
                     </div>
                     <button id="verifyFairnessBtn" class="verify-btn">
-                        ✅ Verify Last Round
+                        🔍 Verify Fairness
                     </button>
                 </div>
             </div>
@@ -316,6 +401,68 @@
 
     <!-- Notifications -->
     <div id="notifications" class="notifications-container"></div>
+
+    <!-- Provably Fair Verification Modal -->
+    <div id="provablyFairModal" class="wallet-modal-overlay" style="display: none;">
+        <div class="wallet-modal">
+            <div class="modal-header">
+                <h2>🔍 Provably Fair Verification</h2>
+                <button class="close-btn" onclick="closeModal('provablyFairModal')">&times;</button>
+            </div>
+            
+            <div class="modal-content">
+                <div class="fair-section">
+                    <h3>🎲 Last Round Verification</h3>
+                    <div class="seed-display">
+                        <div class="seed-item">
+                            <label>Server Seed (revealed):</label>
+                            <input type="text" id="verifyServerSeed" readonly placeholder="Loading...">
+                        </div>
+                        <div class="seed-item">
+                            <label>Client Seed:</label>
+                            <input type="text" id="verifyClientSeed" readonly placeholder="Loading...">
+                        </div>
+                        <div class="seed-item">
+                            <label>Nonce:</label>
+                            <input type="text" id="verifyNonce" readonly placeholder="Loading...">
+                        </div>
+                        <div class="seed-item">
+                            <label>Crash Point:</label>
+                            <input type="text" id="verifyCrashPoint" readonly placeholder="Loading...">
+                        </div>
+                    </div>
+                    
+                    <button id="calculateCrashBtn" class="verify-btn" onclick="calculateAndVerify()">
+                        ⚡ Calculate & Verify
+                    </button>
+                    
+                    <div id="verificationResult" class="verification-result" style="display: none;"></div>
+                </div>
+                
+                <div class="fair-section">
+                    <h3>🔧 Manual Verification</h3>
+                    <p>You can also verify any round manually using these seeds:</p>
+                    <div class="manual-verify">
+                        <input type="text" id="manualServerSeed" placeholder="Enter server seed">
+                        <input type="text" id="manualClientSeed" placeholder="Enter client seed">
+                        <input type="number" id="manualNonce" placeholder="Enter nonce">
+                        <button onclick="calculateManualCrash()">Calculate</button>
+                        <div id="manualResult"></div>
+                    </div>
+                </div>
+                
+                <div class="fair-section">
+                    <h3>📖 How It Works</h3>
+                    <div class="explanation">
+                        <p><strong>1. Server Seed:</strong> Generated and hashed before each round starts</p>
+                        <p><strong>2. Client Seed:</strong> Your browser contributes randomness</p>
+                        <p><strong>3. Calculation:</strong> SHA-256(server + client + nonce) → crash point</p>
+                        <p><strong>4. Verification:</strong> You can verify any round was fair after it ends</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Web3Modal will be injected here automatically -->
 
@@ -332,7 +479,11 @@
         // Close modal when clicking overlay
         document.addEventListener('click', function(e) {
             if (e.target.classList.contains('wallet-modal-overlay')) {
-                closeModal('walletModal');
+                if (e.target.id === 'walletModal') {
+                    closeModal('walletModal');
+                } else if (e.target.id === 'provablyFairModal') {
+                    closeModal('provablyFairModal');
+                }
             }
         });
     </script>
@@ -686,6 +837,109 @@
                     console.log('⚠️ CrashGameClient not available, running live game system only');
                 }
             }, 1000);
+        });
+
+        // Provably Fair Verification Functions
+        function showProvablyFairModal() {
+            document.getElementById('provablyFairModal').style.display = 'flex';
+            loadLastRoundData();
+        }
+        
+        function loadLastRoundData() {
+            // Get the last round data (mock for now, would come from server)
+            const lastRound = {
+                serverSeed: "a1b2c3d4e5f67890abcdef1234567890abcdef1234567890abcdef1234567890",
+                clientSeed: "player-browser-seed-12345",
+                nonce: 1,
+                crashPoint: 2.45
+            };
+            
+            document.getElementById('verifyServerSeed').value = lastRound.serverSeed;
+            document.getElementById('verifyClientSeed').value = lastRound.clientSeed;
+            document.getElementById('verifyNonce').value = lastRound.nonce;
+            document.getElementById('verifyCrashPoint').value = lastRound.crashPoint + 'x';
+        }
+        
+        async function calculateAndVerify() {
+            const serverSeed = document.getElementById('verifyServerSeed').value;
+            const clientSeed = document.getElementById('verifyClientSeed').value;
+            const nonce = parseInt(document.getElementById('verifyNonce').value);
+            const actualCrash = parseFloat(document.getElementById('verifyCrashPoint').value);
+            
+            const calculatedCrash = await calculateCrashPoint(serverSeed, clientSeed, nonce);
+            const isValid = Math.abs(calculatedCrash - actualCrash) < 0.01;
+            
+            const resultDiv = document.getElementById('verificationResult');
+            resultDiv.style.display = 'block';
+            
+            if (isValid) {
+                resultDiv.innerHTML = `
+                    <div style="color: #10b981; font-weight: bold;">
+                        ✅ VERIFIED: Crash point is fair!<br>
+                        Calculated: ${calculatedCrash.toFixed(2)}x<br>
+                        Actual: ${actualCrash.toFixed(2)}x
+                    </div>`;
+            } else {
+                resultDiv.innerHTML = `
+                    <div style="color: #dc2626; font-weight: bold;">
+                        ❌ VERIFICATION FAILED<br>
+                        Calculated: ${calculatedCrash.toFixed(2)}x<br>
+                        Actual: ${actualCrash.toFixed(2)}x
+                    </div>`;
+            }
+        }
+        
+        async function calculateManualCrash() {
+            const serverSeed = document.getElementById('manualServerSeed').value;
+            const clientSeed = document.getElementById('manualClientSeed').value;
+            const nonce = parseInt(document.getElementById('manualNonce').value);
+            
+            if (!serverSeed || !clientSeed || !nonce) {
+                document.getElementById('manualResult').innerHTML = '<span style="color: #dc2626;">Please fill all fields</span>';
+                return;
+            }
+            
+            const crashPoint = await calculateCrashPoint(serverSeed, clientSeed, nonce);
+            document.getElementById('manualResult').innerHTML = `
+                <div style="color: #10b981; font-weight: bold; margin-top: 10px;">
+                    Calculated Crash Point: ${crashPoint.toFixed(2)}x
+                </div>`;
+        }
+        
+        // Core crash point calculation (same as backend)
+        async function calculateCrashPoint(serverSeed, clientSeed, nonce) {
+            const input = `${serverSeed}:${clientSeed}:${nonce}`;
+            
+            // Use Web Crypto API for SHA-256
+            const encoder = new TextEncoder();
+            const data = encoder.encode(input);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = new Uint8Array(hashBuffer);
+            
+            // Convert first 4 bytes to integer
+            let intValue = 0;
+            for (let i = 0; i < 4; i++) {
+                intValue = (intValue << 8) + hashArray[i];
+            }
+            
+            // Apply same algorithm as backend
+            const houseEdge = 0.01; // 1% house edge
+            const houseEdgeMultiplier = 1 - houseEdge;
+            const rawMultiplier = (Math.pow(2, 32)) / (intValue + 1);
+            let crashPoint = Math.max(1.0, rawMultiplier * houseEdgeMultiplier);
+            
+            // Cap at maximum (same as backend)
+            crashPoint = Math.min(crashPoint, 1000.0);
+            
+            return Math.round(crashPoint * 100) / 100;
+        }
+        
+        // Update the verify button click handler
+        document.addEventListener('DOMContentLoaded', function() {
+            const verifyBtn = document.getElementById('verifyFairnessBtn');
+            if (verifyBtn) {
+                verifyBtn.onclick = showProvablyFairModal;
+            }
         });
 
         // Utility functions

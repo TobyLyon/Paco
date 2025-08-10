@@ -831,32 +831,14 @@
             },
             
             async addToHistory(crashPoint) {
-                const historyContainer = document.getElementById('roundHistory');
-                if (!historyContainer) return;
+                console.log(`📊 Adding round ${crashPoint.toFixed(2)}x to database...`);
                 
                 // Save to Supabase database
                 await this.saveRoundToDatabase(crashPoint);
                 
-                const item = document.createElement('div');
-                item.className = 'round-item';
-                item.textContent = crashPoint.toFixed(2) + 'x';
-                
-                // Color based on multiplier
-                if (crashPoint < 2) {
-                    item.classList.add('low');
-                } else if (crashPoint < 10) {
-                    item.classList.add('medium');
-                } else {
-                    item.classList.add('high');
-                }
-                
-                // Add to beginning
-                historyContainer.insertBefore(item, historyContainer.firstChild);
-                
-                // Keep only last 20 rounds in display
-                while (historyContainer.children.length > 20) {
-                    historyContainer.removeChild(historyContainer.lastChild);
-                }
+                // Reload history from database to keep display in sync
+                console.log(`🔄 Refreshing history display from database...`);
+                await this.loadHistoryFromDatabase();
             },
             
             async saveRoundToDatabase(crashPoint) {

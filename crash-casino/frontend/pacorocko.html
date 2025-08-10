@@ -1482,6 +1482,15 @@
                     window.crashGameClient.disableMultiplierUpdates = false;
                     console.log('🔄 Server multiplier updates ENABLED - waiting for server connection...');
                     
+                    // RENDER FREE TIER WORKAROUND: Keep server alive with periodic pings
+                    console.log('⏰ Starting Render keep-alive system (prevents 15-min sleep)...');
+                    setInterval(() => {
+                        if (window.crashGameClient && window.crashGameClient.socket) {
+                            window.crashGameClient.socket.emit('ping', { keepAlive: true });
+                            console.log('📡 Keep-alive ping sent to prevent Render sleep');
+                        }
+                    }, 10 * 60 * 1000); // Ping every 10 minutes
+                    
                     // Smart takeover: Listen for ANY server game events
                     let serverActiveCounter = 0;
                     let serverTookOver = false;

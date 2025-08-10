@@ -44,6 +44,9 @@
     <meta property="og:description" content="Bet, watch the multiplier rise, and cash out before it crashes! Provably fair gambling on Abstract L2.">
     <meta property="og:image" content="/PACO-BANNER.png">
     
+    <!-- Twitter Configuration -->
+    <meta name="twitter-client-id" content="N3BYdkxPZFJIS1lmSzkyRUJkcUM6MTpjaQ">
+    
     <style>
         /* Critical CSS for loading */
         body {
@@ -489,6 +492,23 @@
     <!-- Supabase for Database Integration -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     
+    <!-- Supabase Configuration -->
+    <script>
+        // Supabase Configuration - Fallback for production
+        window.SUPABASE_CONFIG = {
+            url: 'https://tbowrsbjoijdtpdgnoio.supabase.co',
+            anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRib3dyc2Jqb2lqZHRwZGdub2lvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM4NTM5NDQsImV4cCI6MjA2OTQyOTk0NH0.-A1uzl0uuzS5ZyHhRAffLEPo10PH1K7dwNPHNW5r1FQ'
+        };
+        
+        // Initialize Supabase globally
+        window.supabase = supabase.createClient(
+            window.SUPABASE_CONFIG.url,
+            window.SUPABASE_CONFIG.anonKey
+        );
+        
+        console.log('✅ Supabase initialized for PacoRocko');
+    </script>
+    
     <!-- Scripts -->
     <script>
         // Global utility functions
@@ -516,6 +536,38 @@
             // Old Web3Modal integration removed - now using RainbowKit
         });
     </script>
+    <!-- Abstract Network Configuration -->
+    <script>
+        // Abstract L2 Network Configuration
+        window.ABSTRACT_NETWORKS = {
+            mainnet: {
+                chainId: '0xAB5', // 2741 in hex
+                chainName: 'Abstract',
+                nativeCurrency: {
+                    name: 'Ether',
+                    symbol: 'ETH',
+                    decimals: 18
+                },
+                rpcUrls: ['https://api.mainnet.abs.xyz'],
+                blockExplorerUrls: ['https://abscan.org']
+            },
+            testnet: {
+                chainId: '0x2B6C', // 11124 in hex  
+                chainName: 'Abstract Sepolia',
+                nativeCurrency: {
+                    name: 'Ether',
+                    symbol: 'ETH',
+                    decimals: 18
+                },
+                rpcUrls: ['https://api.testnet.abs.xyz'],
+                blockExplorerUrls: ['https://sepolia.abscan.org']
+            }
+        };
+        
+        // Set target network (mainnet for production)
+        window.TARGET_NETWORK = window.ABSTRACT_NETWORKS.mainnet;
+    </script>
+    
     <!-- Abstract Global Wallet (AGW) Integration - Vanilla JS Client -->
     <script src="https://unpkg.com/@abstract-foundation/agw-client@latest/dist/index.umd.js"></script>
     <script>
@@ -529,7 +581,7 @@
                 });
                 console.log('🌟 AGW Client initialized');
             } else {
-                console.log('⚠️ AGW Client SDK not found');
+                console.log('⚠️ AGW Client SDK not found - using fallback wallet integration');
             }
         });
     </script>
@@ -619,7 +671,7 @@
                 }, 1000);
             },
             
-            startNewRound() {
+            async startNewRound() {
                 if (!this.isRunning) return;
                 
                 this.gameState = 'running';
@@ -724,7 +776,7 @@
                 this.animationFrame = requestAnimationFrame(() => this.animate());
             },
             
-            crash() {
+            async crash() {
                 this.gameState = 'crashed';
                 
                 // Cancel animation
@@ -760,7 +812,7 @@
                 updatePacoMood(crashedAt, false, true);
                 
                 // Add to round history with the SAME crash point
-                this.addToHistory(crashedAt);
+                await this.addToHistory(crashedAt);
                 
                 console.log(`💥 Crashed at exactly: ${crashedAt.toFixed(2)}x`);
                 console.log(`🔍 VERIFY: Display shows ${multiplierElement ? multiplierElement.textContent : 'N/A'}, History gets ${crashedAt.toFixed(2)}x`);
@@ -893,11 +945,36 @@
         };
 
         // Initialize app when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            // Hide loading screen
-            setTimeout(() => {
-                document.getElementById('loadingScreen').style.display = 'none';
-                document.getElementById('gameContainer').style.display = 'block';
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                console.log('🔍 DOM loaded, starting initialization...');
+                
+                // Test external dependencies
+                console.log('📦 Checking dependencies...');
+                console.log('Socket.IO:', typeof io !== 'undefined' ? '✅' : '❌');
+                console.log('Ethers:', typeof ethers !== 'undefined' ? '✅' : '❌');
+                console.log('Chart.js:', typeof Chart !== 'undefined' ? '✅' : '❌');
+                console.log('Supabase:', typeof supabase !== 'undefined' ? '✅' : '❌');
+                
+                // Check if any critical dependencies are missing
+                const criticalDeps = [
+                    { name: 'Socket.IO', check: typeof io !== 'undefined' },
+                    { name: 'Ethers', check: typeof ethers !== 'undefined' },
+                    { name: 'Chart.js', check: typeof Chart !== 'undefined' },
+                    { name: 'Supabase', check: typeof supabase !== 'undefined' }
+                ];
+                
+                const missingDeps = criticalDeps.filter(dep => !dep.check);
+                if (missingDeps.length > 0) {
+                    console.error('❌ Missing critical dependencies:', missingDeps.map(d => d.name));
+                    console.error('🔧 This might be causing the loading issue!');
+                }
+                
+                // Hide loading screen
+                setTimeout(() => {
+                    console.log('⏰ Timeout reached, hiding loading screen...');
+                    document.getElementById('loadingScreen').style.display = 'none';
+                    document.getElementById('gameContainer').style.display = 'block';
                 
                 // Initialize crash visualizer (supports both chart and rocket)
                 console.log('🎮 Initializing crash visualizer...');
@@ -929,7 +1006,7 @@
                 
                 // Load historical rounds from database
                 console.log('📊 Loading round history from database...');
-                await liveGameSystem.loadHistoryFromDatabase();
+                liveGameSystem.loadHistoryFromDatabase();
                 
                 // Initialize crash game client for betting ONLY - display controlled locally
                 if (typeof CrashGameClient !== 'undefined') {
@@ -950,6 +1027,17 @@
                     console.log('⚠️ CrashGameClient not available, running live game system only');
                 }
             }, 1000);
+            } catch (error) {
+                console.error('❌ Critical initialization error:', error);
+                console.error('🔧 Error details:', error.stack);
+                // Still hide loading screen even if there's an error
+                setTimeout(() => {
+                    document.getElementById('loadingScreen').style.display = 'none';
+                    document.getElementById('gameContainer').style.display = 'block';
+                    // Show error message in game container
+                    document.getElementById('gameStateMessage').textContent = '❌ Loading failed - check console for details';
+                }, 1000);
+            }
         });
 
         // Provably Fair Verification Functions

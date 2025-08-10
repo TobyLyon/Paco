@@ -67,7 +67,8 @@ class WalletBridge {
                 
                 // Check current chain - ensure we're on Abstract L2
                 const network = await this.provider.getNetwork();
-                console.log('🌐 Current network:', network.name, network.chainId);
+                const networkName = network.name === 'unknown' && network.chainId === 2741n ? 'Abstract' : network.name;
+                console.log('🌐 Current network:', networkName, network.chainId);
                 
                 // Check if already connected
                 const accounts = await window.ethereum.request({ method: 'eth_accounts' });

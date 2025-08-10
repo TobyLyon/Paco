@@ -422,16 +422,23 @@ class CrashGameClient {
             return false;
         }
 
-        // HYBRID MODE: Check local game state instead of server state
+        // HYBRID MODE: Check local game state with extended betting window
         if (this.disableMultiplierUpdates) {
-            // In hybrid mode, check if local game is in betting phase
             const localGameState = window.liveGameSystem?.gameState;
-            console.log(`🎮 Hybrid mode - Local game state: "${localGameState}", Server state: "${this.gameState}"`);
+            const gameMultiplier = window.liveGameSystem?.currentMultiplier || 1.0;
+            console.log(`🎮 Hybrid mode - Local game state: "${localGameState}", Server state: "${this.gameState}", Multiplier: ${gameMultiplier}x`);
             
             if (localGameState === 'betting') {
                 console.log(`✅ Bet allowed - Local game in betting phase`);
-            } else if (localGameState === 'running' || localGameState === 'crashed') {
-                this.showError(`Cannot bet now - local round is ${localGameState}`);
+            } else if (localGameState === 'running' && gameMultiplier < 1.2) {
+                // Allow "late betting" if round just started (< 1.2x multiplier)
+                console.log(`✅ Late bet allowed - Round just started (${gameMultiplier}x)`);
+            } else if (localGameState === 'running' && gameMultiplier >= 1.2) {
+                this.showError(`Too late to bet - round is at ${gameMultiplier}x`);
+                console.log(`🚫 Bet rejected - Round too advanced (${gameMultiplier}x)`);
+                return false;
+            } else if (localGameState === 'crashed') {
+                this.showError(`Cannot bet now - round crashed`);
                 console.log(`🚫 Bet rejected - Local game is "${localGameState}"`);
                 return false;
             } else {
@@ -464,14 +471,46 @@ class CrashGameClient {
             }
 
             this.showNotification('🎰 Processing bet transaction...', 'info');
+            this.showTransactionStatus('pending', 'Waiting for MetaMask approval...', 'Please approve the transaction in your wallet');
             
             // Send transaction to Abstract L2 - Use correct house wallet with advanced retry logic
             const houseWallet = '0x1f8B1c4D05eF17Ebaa1E572426110146691e6C5a'; // Your house wallet
             
-            // Enhanced Abstract Network transaction handling
+            // Advanced RPC error handling for Abstract Network
             let txResult;
-            const attempts = await this.executeTransactionWithRetry(houseWallet, amount);
-            txResult = attempts;
+            let attempts = 0;
+            const maxAttempts = 3;
+            
+            while (attempts < maxAttempts) {
+                attempts++;
+                console.log(`🔄 Transaction attempt ${attempts}/${maxAttempts}`);
+                
+                try {
+                    // Different gas strategies for each attempt
+                    let gasConfig;
+                    switch (attempts) {
+                        case 1:
+                            // First attempt: Let MetaMask estimate everything
+                            gasConfig = {};
+                            console.log('📊 Attempt 1: MetaMask auto-estimation');
+                            break;
+                        case 2:
+                            // Second attempt: Manual gas limit with auto price
+                            gasConfig = {
+                                gasLimit: 100000,
+                                gasPrice: null
+                            };
+                            console.log('📊 Attempt 2: Manual gas limit 100k');
+                            break;
+                        case 3:
+                            // Third attempt: Conservative manual settings
+                            gasConfig = {
+                                gasLimit: 21000, // Standard ETH transfer
+                                gasPrice: '20000000000' // 20 gwei
+                            };
+                            console.log('📊 Attempt 3: Conservative settings');
+                            break;
+                    }
                     
                     // Debug current network state
                     if (window.ethereum) {
@@ -580,6 +619,9 @@ class CrashGameClient {
             document.getElementById('betStatus').style.display = 'block';
             document.getElementById('placeBetBtn').disabled = true;
 
+            // Show success status
+            this.showTransactionStatus('success', 'Bet placed successfully!', `${amount.toFixed(4)} ETH bet confirmed`);
+
             return true;
 
         } catch (error) {
@@ -603,6 +645,7 @@ class CrashGameClient {
             }
             
             this.showError(errorMessage);
+            this.showTransactionStatus('error', 'Transaction failed', errorMessage);
             return false;
         }
     }
@@ -833,6 +876,58 @@ class CrashGameClient {
      */
     showError(message) {
         this.showNotification(message, 'error');
+    }
+
+    /**
+     * 📱 Show transaction status feedback
+     */
+    showTransactionStatus(type, message, detail) {
+        const statusElement = document.getElementById('transactionStatus');
+        if (!statusElement) return;
+
+        const statusIcon = statusElement.querySelector('.status-icon');
+        const statusText = statusElement.querySelector('.status-text');
+        const statusDetail = statusElement.querySelector('.status-detail');
+
+        // Reset classes
+        statusElement.className = 'transaction-status';
+        
+        switch (type) {
+            case 'pending':
+                statusIcon.textContent = '⏳';
+                statusElement.classList.add('pending');
+                break;
+            case 'success':
+                statusIcon.textContent = '✅';
+                statusElement.classList.add('success');
+                break;
+            case 'error':
+                statusIcon.textContent = '❌';
+                statusElement.classList.add('error');
+                break;
+        }
+
+        statusText.textContent = message;
+        if (detail) statusDetail.textContent = detail;
+        
+        statusElement.style.display = 'flex';
+
+        // Auto-hide success/error messages after 5 seconds
+        if (type !== 'pending') {
+            setTimeout(() => {
+                statusElement.style.display = 'none';
+            }, 5000);
+        }
+    }
+
+    /**
+     * 🔒 Hide transaction status
+     */
+    hideTransactionStatus() {
+        const statusElement = document.getElementById('transactionStatus');
+        if (statusElement) {
+            statusElement.style.display = 'none';
+        }
     }
 
     /**

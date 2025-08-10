@@ -126,44 +126,23 @@ class BetInterface {
             return;
         }
 
-
-
         this.isPlacingBet = true;
-        this.updatePlaceBetButton('⚡ INSTANT BET...');
+        this.updatePlaceBetButton('🔄 PLACING...');
 
         try {
-            // Priority 1: Enhanced betting system (Option 1 - fixes RPC issues)
-            if (window.enhancedBetting && window.enhancedBetting.preApprovalActive) {
-                console.log('🚀 Using enhanced betting system (pre-approved)');
-                
-                const result = await window.enhancedBetting.placeInstantBet(this.betAmount);
-                
+            // Place bet through crash client
+            const success = await window.crashGameClient.placeBet(this.betAmount);
+            
+            if (success) {
                 this.currentBet = {
                     amount: this.betAmount,
                     timestamp: Date.now()
                 };
                 
                 this.showBetStatus();
-                this.showNotification(`🚀 Instant bet placed: ${this.betAmount.toFixed(4)} ETH`, 'success');
-                
-            } 
-            // Priority 2: Direct blockchain transaction (original system)
-            else {
-                console.log('🔗 Using direct blockchain transaction');
-                
-                const success = await window.crashGameClient.placeBet(this.betAmount);
-                
-                if (success) {
-                    this.currentBet = {
-                        amount: this.betAmount,
-                        timestamp: Date.now()
-                    };
-                    
-                    this.showBetStatus();
-                    this.showNotification(`✅ Bet placed: ${this.betAmount.toFixed(4)} ETH`, 'success');
-                } else {
-                    this.showNotification('❌ Failed to place bet', 'error');
-                }
+                this.showNotification(`✅ Bet placed: ${this.betAmount.toFixed(4)} ETH`, 'success');
+            } else {
+                this.showNotification('❌ Failed to place bet', 'error');
             }
         } catch (error) {
             console.error('❌ Bet placement error:', error);
@@ -320,8 +299,6 @@ class BetInterface {
      * 🏆 Handle successful cash out
      */
     onCashOut(data) {
-
-        
         this.showNotification(
             `🏆 Cashed out at ${data.multiplier.toFixed(2)}x for ${data.payout.toFixed(4)} ETH!`, 
             'success'
@@ -329,8 +306,6 @@ class BetInterface {
         
         this.hideBetStatus();
     }
-
-
 
     /**
      * 📢 Show notification

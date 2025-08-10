@@ -296,11 +296,78 @@
             100% { transform: scale(1); }
         }
         
-
+        /* Transaction Status Styles */
+        .transaction-status {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 15px 20px;
+            background: rgba(59, 130, 246, 0.1);
+            border: 2px solid rgba(59, 130, 246, 0.3);
+            border-radius: 12px;
+            margin-top: 10px;
+            backdrop-filter: blur(5px);
+            animation: transactionPulse 2s ease-in-out infinite;
+        }
         
-
+        .transaction-status.success {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.3);
+            animation: none;
+        }
         
-
+        .transaction-status.error {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.3);
+            animation: none;
+        }
+        
+        .status-icon {
+            font-size: 24px;
+            filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.6));
+        }
+        
+        .transaction-status.success .status-icon {
+            filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.6));
+        }
+        
+        .transaction-status.error .status-icon {
+            filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.6));
+        }
+        
+        .status-text {
+            font-size: 16px;
+            font-weight: 600;
+            color: #3b82f6;
+            text-align: center;
+        }
+        
+        .transaction-status.success .status-text {
+            color: #10b981;
+        }
+        
+        .transaction-status.error .status-text {
+            color: #ef4444;
+        }
+        
+        .status-detail {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            text-align: center;
+            max-width: 300px;
+        }
+        
+        @keyframes transactionPulse {
+            0%, 100% { 
+                border-color: rgba(59, 130, 246, 0.3);
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+            }
+            50% { 
+                border-color: rgba(59, 130, 246, 0.6);
+                box-shadow: 0 0 0 8px rgba(59, 130, 246, 0);
+            }
+        }
         
         /* Responsive adjustments */
         @media (max-width: 768px) {
@@ -323,13 +390,6 @@
             .abstract-logo {
                 width: 16px;
                 height: 16px;
-            }
-            .wallet-modal {
-                width: 95%;
-                margin: 10px;
-            }
-            .quick-amounts {
-                grid-template-columns: repeat(2, 1fr);
             }
         }
     </style>
@@ -418,7 +478,14 @@
                     </div>
                     
                     <div class="countdown-timer" id="countdownTimer" style="display: none;">
-                        🎰 <span id="countdownValue">5</span>s - Place Your Bets!
+                        🎰 <span id="countdownValue">15</span>s - Place Your Bets!
+                    </div>
+                    
+                    <!-- Transaction Status Display -->
+                    <div class="transaction-status" id="transactionStatus" style="display: none;">
+                        <div class="status-icon">⏳</div>
+                        <div class="status-text">Waiting for MetaMask approval...</div>
+                        <div class="status-detail">Please approve the transaction in your wallet</div>
                     </div>
                 </div>
                 
@@ -430,8 +497,6 @@
 
             <!-- Betting Panel -->
             <div class="betting-panel">
-
-
                 <div class="bet-input-section">
                     <label for="betAmount">Bet Amount (ETH)</label>
                     <div class="bet-input-container">
@@ -445,11 +510,10 @@
                             <button class="quick-bet" data-amount="10">Max</button>
                         </div>
                     </div>
-                    
                 </div>
                 
                 <button id="placeBetBtn" class="place-bet-btn">
-                    🎰 PLACE BET
+                    🎯 PLACE BET
                 </button>
                 
                 <div class="bet-status" id="betStatus" style="display: none;">
@@ -460,8 +524,6 @@
                 </div>
             </div>
         </div>
-
-
 
         <!-- Players & Chat Section - Subdivided -->
         <div class="players-section">
@@ -682,7 +744,9 @@
         // Close modal when clicking overlay
         document.addEventListener('click', function(e) {
             if (e.target.classList.contains('wallet-modal-overlay')) {
-                if (e.target.id === 'provablyFairModal') {
+                if (e.target.id === 'walletModal') {
+                    closeModal('walletModal');
+                } else if (e.target.id === 'provablyFairModal') {
                     closeModal('provablyFairModal');
                 }
             }
@@ -752,56 +816,12 @@
     <script src="/crash-casino/frontend/js/wallet-bridge.js"></script>
     <script src="/crash-casino/frontend/js/crash-client.js"></script>
     <script src="/crash-casino/frontend/js/bet-interface.js"></script>
-    <script src="/crash-casino/frontend/js/enhanced-betting.js"></script>
     <script src="/crash-casino/frontend/js/multiplier-display.js"></script>
     <script src="/crash-casino/frontend/js/crash-chart.js"></script>
     <script src="/crash-casino/frontend/js/crash-rocket.js"></script>
     <script src="/crash-casino/frontend/js/crash-visualizer.js"></script>
     <script src="/crash-casino/frontend/js/twitter-auth-chat.js"></script>
     <script src="/crash-casino/frontend/js/global-chat-enhanced.js"></script>
-    
-    <!-- EMERGENCY LOADING SCREEN FIX - MUST BE FIRST -->
-    <script>
-        // CRITICAL: Force hide loading screen - this runs IMMEDIATELY
-        console.log('🚨 EMERGENCY LOADER: Starting immediate fallback system...');
-        
-        function forceHideLoadingScreen() {
-            try {
-                const loadingScreen = document.getElementById('loadingScreen');
-                const gameContainer = document.getElementById('gameContainer');
-                
-                if (loadingScreen) {
-                    loadingScreen.style.display = 'none';
-                    console.log('✅ Loading screen hidden');
-                }
-                
-                if (gameContainer) {
-                    gameContainer.style.display = 'block';
-                    console.log('✅ Game container shown');
-                }
-                
-                console.log('🎯 Emergency loading screen fix complete!');
-            } catch (error) {
-                console.error('❌ Emergency fallback error:', error);
-            }
-        }
-        
-        // Multiple attempts to hide loading screen
-        setTimeout(forceHideLoadingScreen, 500);   // 0.5 seconds
-        setTimeout(forceHideLoadingScreen, 1500);  // 1.5 seconds  
-        setTimeout(forceHideLoadingScreen, 3000);  // 3 seconds
-        setTimeout(forceHideLoadingScreen, 5000);  // 5 seconds (ultimate fallback)
-        
-        // Also try on DOM ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', forceHideLoadingScreen);
-        } else {
-            // DOM already loaded, try immediately
-            forceHideLoadingScreen();
-        }
-        
-        console.log('🚨 Emergency loading system initialized - will try multiple times');
-    </script>
     
     <script>
         // Live Game System - runs continuous rounds with countdown timer
@@ -838,7 +858,7 @@
                 
                 this.gameState = 'betting';
                 console.log('🎰 Local game entering BETTING phase');
-                let countdown = 5; // Unified 5-second countdown
+                let countdown = 15; // Extended to 15 seconds for MetaMask approval
                 
                 // Reset multiplier display
                 const multiplierElement = document.getElementById('multiplierValue');
@@ -855,7 +875,7 @@
                 document.getElementById('countdownValue').textContent = countdown;
                 document.getElementById('gameStateMessage').textContent = `🎰 Next round starting in ${countdown}s - Place your bets now!`;
                 
-                console.log('💰 Starting unified 5-second betting countdown...');
+                console.log('💰 Starting extended 15-second betting countdown for MetaMask approval...');
                 
                 this.countdownInterval = setInterval(() => {
                     countdown--;
@@ -1230,8 +1250,6 @@
                 }
             }
         };
-
-
 
         // Initialize app when page loads
         document.addEventListener('DOMContentLoaded', async function() {
@@ -1680,294 +1698,6 @@
                 EthBalanceTracker.init();
             }, 2000);
         });
-
-        // [WalletManager removed - using Enhanced Betting System]
-        /*
-        const WalletManager = {
-            gamingBalance: 0,
-            isDepositing: false,
-            isWithdrawing: false,
-            
-            init() {
-                console.log('💰 Initializing Wallet Manager...');
-                this.setupEventListeners();
-                this.loadGamingBalance();
-                this.updateDisplay();
-            },
-            
-            setupEventListeners() {
-                // Deposit button
-                const depositBtn = document.getElementById('depositBtn');
-                if (depositBtn) {
-                    depositBtn.addEventListener('click', () => this.openDepositModal());
-                }
-                
-                // Withdraw button
-                const withdrawBtn = document.getElementById('withdrawBtn');
-                if (withdrawBtn) {
-                    withdrawBtn.addEventListener('click', () => this.openWithdrawModal());
-                }
-                
-                // Quick amount buttons in modal
-                document.querySelectorAll('.quick-amount').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const amount = parseFloat(e.target.dataset.amount);
-                        document.getElementById('walletAmount').value = amount;
-                    });
-                });
-                
-                // Wallet action submit button
-                const walletActionBtn = document.getElementById('walletActionBtn');
-                if (walletActionBtn) {
-                    walletActionBtn.addEventListener('click', () => this.executeWalletAction());
-                }
-            },
-            
-            loadGamingBalance() {
-                // Load from localStorage
-                const saved = localStorage.getItem('pacoRocko_gamingBalance');
-                if (saved) {
-                    this.gamingBalance = parseFloat(saved) || 0;
-                }
-            },
-            
-            saveGamingBalance() {
-                localStorage.setItem('pacoRocko_gamingBalance', this.gamingBalance.toString());
-            },
-            
-            updateDisplay() {
-                const balanceElement = document.getElementById('gamingBalance');
-                if (balanceElement) {
-                    balanceElement.textContent = this.gamingBalance.toFixed(6);
-                }
-                
-                // Update modal displays if modal is open
-                const modalGamingBalance = document.getElementById('modalGamingBalance');
-                if (modalGamingBalance) {
-                    modalGamingBalance.textContent = this.gamingBalance.toFixed(6) + ' ETH';
-                }
-                
-                // Update wallet balance in modal if wallet is connected
-                this.updateModalWalletBalance();
-            },
-            
-            async updateModalWalletBalance() {
-                const modalWalletBalance = document.getElementById('modalWalletBalance');
-                if (modalWalletBalance && window.realWeb3Modal && window.realWeb3Modal.isConnected) {
-                    try {
-                        const balance = await window.realWeb3Modal.getBalance();
-                        modalWalletBalance.textContent = parseFloat(balance).toFixed(6) + ' ETH';
-                    } catch (error) {
-                        console.error('Failed to get wallet balance:', error);
-                        modalWalletBalance.textContent = 'Error';
-                    }
-                }
-            },
-            
-            openDepositModal() {
-                if (!window.realWeb3Modal || !window.realWeb3Modal.isConnected) {
-                    alert('Please connect your wallet first!');
-                    return;
-                }
-                
-                document.getElementById('modalTitle').textContent = '💰 Deposit ETH';
-                document.getElementById('walletActionBtn').textContent = '💰 Confirm Deposit';
-                document.getElementById('estimatedGasRow').style.display = 'flex';
-                
-                this.updateDisplay();
-                document.getElementById('walletModal').style.display = 'flex';
-            },
-            
-            openWithdrawModal() {
-                if (this.gamingBalance <= 0) {
-                    alert('No gaming balance to withdraw!');
-                    return;
-                }
-                
-                document.getElementById('modalTitle').textContent = '⬆️ Withdraw ETH';
-                document.getElementById('walletActionBtn').textContent = '⬆️ Confirm Withdraw';
-                document.getElementById('estimatedGasRow').style.display = 'flex';
-                
-                // Set max withdrawal amount
-                const walletAmountInput = document.getElementById('walletAmount');
-                walletAmountInput.max = this.gamingBalance;
-                walletAmountInput.value = Math.min(0.01, this.gamingBalance);
-                
-                this.updateDisplay();
-                document.getElementById('walletModal').style.display = 'flex';
-            },
-            
-            async executeWalletAction() {
-                const amount = parseFloat(document.getElementById('walletAmount').value);
-                const isDeposit = document.getElementById('modalTitle').textContent.includes('Deposit');
-                
-                if (!amount || amount <= 0) {
-                    alert('Please enter a valid amount!');
-                    return;
-                }
-                
-                if (isDeposit) {
-                    await this.deposit(amount);
-                } else {
-                    await this.withdraw(amount);
-                }
-            },
-            
-            async deposit(amount) {
-                if (this.isDepositing) return;
-                
-                this.isDepositing = true;
-                const walletActionBtn = document.getElementById('walletActionBtn');
-                walletActionBtn.disabled = true;
-                walletActionBtn.textContent = '⏳ Processing...';
-                
-                try {
-                    console.log(`💰 Depositing ${amount} ETH to gaming balance...`);
-                    
-                    // For now, simulate the deposit (replace with actual smart contract call later)
-                    // This gives players instant gaming balance to test the system
-                    this.gamingBalance += amount;
-                    this.saveGamingBalance();
-                    this.updateDisplay();
-                    
-                    console.log(`✅ Deposit successful! New gaming balance: ${this.gamingBalance.toFixed(6)} ETH`);
-                    
-                    // Show success message
-                    this.showSuccessMessage(`Successfully deposited ${amount} ETH!`);
-                    
-                    // Close modal
-                    this.closeModal();
-                    
-                } catch (error) {
-                    console.error('❌ Deposit failed:', error);
-                    alert('Deposit failed. Please try again.');
-                } finally {
-                    this.isDepositing = false;
-                    walletActionBtn.disabled = false;
-                    walletActionBtn.textContent = '💰 Confirm Deposit';
-                }
-            },
-            
-            async withdraw(amount) {
-                if (this.isWithdrawing) return;
-                
-                if (amount > this.gamingBalance) {
-                    alert('Insufficient gaming balance!');
-                    return;
-                }
-                
-                this.isWithdrawing = true;
-                const walletActionBtn = document.getElementById('walletActionBtn');
-                walletActionBtn.disabled = true;
-                walletActionBtn.textContent = '⏳ Processing...';
-                
-                try {
-                    console.log(`⬆️ Withdrawing ${amount} ETH from gaming balance...`);
-                    
-                    // For now, simulate the withdrawal (replace with actual smart contract call later)
-                    this.gamingBalance -= amount;
-                    this.saveGamingBalance();
-                    this.updateDisplay();
-                    
-                    console.log(`✅ Withdrawal successful! New gaming balance: ${this.gamingBalance.toFixed(6)} ETH`);
-                    
-                    // Show success message
-                    this.showSuccessMessage(`Successfully withdrew ${amount} ETH!`);
-                    
-                    // Close modal
-                    this.closeModal();
-                    
-                } catch (error) {
-                    console.error('❌ Withdrawal failed:', error);
-                    alert('Withdrawal failed. Please try again.');
-                } finally {
-                    this.isWithdrawing = false;
-                    walletActionBtn.disabled = false;
-                    walletActionBtn.textContent = '⬆️ Confirm Withdraw';
-                }
-            },
-            
-            placeBet(amount) {
-                if (amount > this.gamingBalance) {
-                    console.log(`❌ Insufficient gaming balance: ${amount} > ${this.gamingBalance}`);
-                    return false;
-                }
-                
-                this.gamingBalance -= amount;
-                this.saveGamingBalance();
-                this.updateDisplay();
-                
-                console.log(`🎯 Bet placed: ${amount} ETH. Remaining balance: ${this.gamingBalance.toFixed(6)} ETH`);
-                return true;
-            },
-            
-            payoutWin(amount) {
-                this.gamingBalance += amount;
-                this.saveGamingBalance();
-                this.updateDisplay();
-                
-                console.log(`💰 Payout received: ${amount} ETH. New balance: ${this.gamingBalance.toFixed(6)} ETH`);
-            },
-            
-            checkBalanceForBet(amount) {
-                return this.gamingBalance >= amount;
-            },
-            
-            showSuccessMessage(message) {
-                // Create a temporary success notification
-                const notification = document.createElement('div');
-                notification.className = 'success-notification';
-                notification.style.cssText = `
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    background: linear-gradient(45deg, #10b981, #059669);
-                    color: white;
-                    padding: 12px 20px;
-                    border-radius: 8px;
-                    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
-                    z-index: 1001;
-                    font-weight: 600;
-                    animation: slideIn 0.3s ease;
-                `;
-                notification.textContent = message;
-                
-                document.body.appendChild(notification);
-                
-                setTimeout(() => {
-                    notification.remove();
-                }, 3000);
-            },
-            
-            closeModal() {
-                document.getElementById('walletModal').style.display = 'none';
-            }
-        };
-
-        // Make WalletManager globally available
-        // window.WalletManager = WalletManager;
-
-        // Modal close functions
-        // function closeWalletModal() {
-        //     WalletManager.closeModal();
-        // }
-        */
-
-        // Add CSS animation for success notification
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideIn {
-                from {
-                    transform: translateX(100%);
-                    opacity: 0;
-                }
-                to {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
-            }
-        `;
-        document.head.appendChild(style);
     </script>
 </body>
 </html>

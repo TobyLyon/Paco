@@ -10,7 +10,7 @@ const CrashGameEngine = require('./game-engine-compiled');
 
 class CrashWebSocketServer {
     constructor(server, jwtSecret) {
-        console.log('🔌🔌🔌 WEBSOCKET SERVER CONSTRUCTOR CALLED - DEBUG VERSION LOADED! 🔌🔌🔌');
+        console.log('🔌🔌🔌 WEBSOCKET SERVER CONSTRUCTOR CALLED - DEBUG VERSION v2.0 LOADED AT', new Date().toISOString(), '🔌🔌🔌');
         this.jwtSecret = jwtSecret;
         this.io = new Server(server, {
             cors: {

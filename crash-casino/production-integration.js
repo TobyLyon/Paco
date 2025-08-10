@@ -8,6 +8,12 @@
 const http = require('http');
 const path = require('path');
 const { Server } = require('socket.io');
+// FORCE CLEAR NODE.JS REQUIRE CACHE FOR RENDER DEPLOYMENT
+delete require.cache[require.resolve('./backend/src/game-engine-compiled.js')];
+delete require.cache[require.resolve('./backend/src/websocket-server-compiled.js')];
+
+console.log('🔄 CACHE CLEARED - FORCING FRESH LOAD OF COMPILED FILES v2.0');
+
 const CrashGameEngine = require('./backend/src/game-engine-compiled.js');
 // FORCE USE STABLE COMPILED SERVER for Render Starter Plan reliability
 let CrashWebSocketServer = null;

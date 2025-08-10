@@ -869,7 +869,7 @@
                     const roundData = {
                         round_id: `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
                         crash_point: parseFloat(crashPoint.toFixed(2)),
-                        round_duration: this.roundDuration || null,
+                        round_duration: this.roundDuration ? Math.round(this.roundDuration) : null, // Convert to integer milliseconds
                         is_test_round: true, // Mark local rounds as test rounds
                         started_at: new Date(this.roundStartTime).toISOString(),
                         crashed_at: new Date().toISOString()

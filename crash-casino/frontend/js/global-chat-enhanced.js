@@ -88,6 +88,12 @@ class EnhancedGlobalChat {
     async initDatabase() {
         try {
             // Try to use existing supabase client from main site
+            if (window.supabase) {
+                this.supabase = window.supabase;
+                console.log('✅ Using existing global Supabase client for chat');
+                return;
+            }
+            
             if (window.supabaseClient) {
                 this.supabase = window.supabaseClient;
                 console.log('✅ Using existing Supabase client');

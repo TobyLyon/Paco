@@ -1447,10 +1447,10 @@
                 
                 // Enhanced global chat with database integration will auto-initialize
                 
-                // Start live game system
-                console.log('🎮 Starting live game system...');
-                window.liveGameSystem = liveGameSystem; // Make it globally accessible
-                liveGameSystem.start();
+                // Server-driven game - disable local game system
+                console.log('🌐 Using server-driven game system - local game disabled');
+                window.liveGameSystem = liveGameSystem; // Keep for reference but don't start
+                // liveGameSystem.start(); // DISABLED - server controls game now
                 
                 // Load historical rounds from database
                 console.log('📊 Loading round history from database...');
@@ -1461,14 +1461,14 @@
                     console.log('🎰 Initializing crash game client for BETTING only...');
                     window.crashGameClient = new CrashGameClient();
                     
-                    // CRITICAL: Disable multiplier updates from server to prevent conflicts
-                    window.crashGameClient.disableMultiplierUpdates = true;
-                    console.log('🔒 Server multiplier updates DISABLED - local game controls display');
+                    // ENABLE server-driven game - server controls everything now
+                    window.crashGameClient.disableMultiplierUpdates = false;
+                    console.log('🌐 Server multiplier updates ENABLED - server controls the game');
                     
-                    // Keep live game running - server is for betting only
+                    // Server now controls all game state and display
                     window.crashGameClient.onGameStateUpdate = (state) => {
                         if (state.connected) {
-                            console.log('🔌 Connected to server for betting - local game handles display');
+                            console.log('🔌 Connected to server - server controls all game state');
                         }
                     };
                 } else {

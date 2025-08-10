@@ -296,6 +296,285 @@
             100% { transform: scale(1); }
         }
         
+        /* Wallet Balance Section Styles */
+        .wallet-balance-section {
+            background: rgba(0, 0, 0, 0.4);
+            border: 2px solid rgba(251, 191, 36, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            backdrop-filter: blur(5px);
+        }
+        
+        .balance-header {
+            text-align: center;
+            margin-bottom: 12px;
+        }
+        
+        .balance-header h3 {
+            color: var(--restaurant-yellow);
+            margin: 0 0 8px 0;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        
+        .balance-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .balance-display .balance-amount {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--restaurant-green);
+            text-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+        }
+        
+        .balance-display .balance-currency {
+            font-size: 1rem;
+            color: var(--restaurant-orange);
+            font-weight: 600;
+        }
+        
+        .wallet-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        
+        .wallet-action-btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .wallet-action-btn.deposit {
+            background: linear-gradient(45deg, var(--restaurant-green), #10b981);
+            color: white;
+            border: 2px solid rgba(16, 185, 129, 0.3);
+        }
+        
+        .wallet-action-btn.withdraw {
+            background: linear-gradient(45deg, var(--restaurant-orange), #f97316);
+            color: white;
+            border: 2px solid rgba(249, 115, 22, 0.3);
+        }
+        
+        .wallet-action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(251, 191, 36, 0.3);
+        }
+        
+        /* Low Balance Warning */
+        .low-balance-warning {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            border-radius: 6px;
+            padding: 8px 12px;
+            color: #fca5a5;
+            font-size: 0.85rem;
+            text-align: center;
+            margin-top: 8px;
+        }
+        
+        /* Wallet Modal Styles */
+        .wallet-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+        
+        .wallet-modal {
+            background: linear-gradient(135deg, rgba(31, 41, 55, 0.95), rgba(17, 24, 39, 0.95));
+            border: 2px solid var(--restaurant-yellow);
+            border-radius: 16px;
+            padding: 0;
+            max-width: 450px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(251, 191, 36, 0.2);
+        }
+        
+        .modal-header {
+            background: rgba(251, 191, 36, 0.1);
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(251, 191, 36, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h3 {
+            color: var(--restaurant-yellow);
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--restaurant-orange);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+        
+        .close-btn:hover {
+            background: rgba(251, 191, 36, 0.2);
+            transform: scale(1.1);
+        }
+        
+        .modal-content {
+            padding: 20px;
+        }
+        
+        .amount-input-section {
+            margin-bottom: 20px;
+        }
+        
+        .amount-input-section label {
+            display: block;
+            color: var(--restaurant-orange);
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .wallet-amount-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(251, 191, 36, 0.3);
+            border-radius: 8px;
+            color: white;
+            font-size: 1.1rem;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 12px;
+        }
+        
+        .wallet-amount-input:focus {
+            outline: none;
+            border-color: var(--restaurant-yellow);
+            box-shadow: 0 0 15px rgba(251, 191, 36, 0.3);
+        }
+        
+        .quick-amounts {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+        
+        .quick-amount {
+            padding: 8px 12px;
+            background: rgba(251, 191, 36, 0.1);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            border-radius: 6px;
+            color: var(--restaurant-yellow);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.85rem;
+        }
+        
+        .quick-amount:hover {
+            background: rgba(251, 191, 36, 0.2);
+            border-color: var(--restaurant-yellow);
+            transform: translateY(-1px);
+        }
+        
+        .transaction-info {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .info-row:last-child {
+            margin-bottom: 0;
+        }
+        
+        .info-row span:first-child {
+            color: #d1d5db;
+        }
+        
+        .info-row span:last-child {
+            color: var(--restaurant-yellow);
+            font-weight: 600;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .wallet-action-submit {
+            width: 100%;
+            padding: 14px 20px;
+            background: linear-gradient(45deg, var(--restaurant-yellow), var(--restaurant-orange));
+            border: none;
+            border-radius: 8px;
+            color: black;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 16px;
+        }
+        
+        .wallet-action-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(251, 191, 36, 0.4);
+        }
+        
+        .wallet-action-submit:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .modal-note {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 0.85rem;
+            color: #10b981;
+        }
+        
+        .modal-note p {
+            margin: 0;
+            line-height: 1.4;
+        }
+        
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .seed-display {
@@ -317,6 +596,13 @@
             .abstract-logo {
                 width: 16px;
                 height: 16px;
+            }
+            .wallet-modal {
+                width: 95%;
+                margin: 10px;
+            }
+            .quick-amounts {
+                grid-template-columns: repeat(2, 1fr);
             }
         }
     </style>
@@ -417,6 +703,26 @@
 
             <!-- Betting Panel -->
             <div class="betting-panel">
+                <!-- Wallet Balance Section -->
+                <div class="wallet-balance-section">
+                    <div class="balance-header">
+                        <h3>💰 Gaming Balance</h3>
+                        <div class="balance-display">
+                            <span class="balance-amount" id="gamingBalance">0.000000</span>
+                            <span class="balance-currency">ETH</span>
+                        </div>
+                    </div>
+                    
+                    <div class="wallet-actions">
+                        <button id="depositBtn" class="wallet-action-btn deposit">
+                            ⬇️ Deposit
+                        </button>
+                        <button id="withdrawBtn" class="wallet-action-btn withdraw">
+                            ⬆️ Withdraw
+                        </button>
+                    </div>
+                </div>
+
                 <div class="bet-input-section">
                     <label for="betAmount">Bet Amount (ETH)</label>
                     <div class="bet-input-container">
@@ -430,16 +736,66 @@
                             <button class="quick-bet" data-amount="10">Max</button>
                         </div>
                     </div>
+                    
+                    <div id="lowBalanceWarning" class="low-balance-warning" style="display: none;">
+                        ⚠️ Insufficient gaming balance. Please deposit more ETH.
+                    </div>
                 </div>
                 
                 <button id="placeBetBtn" class="place-bet-btn">
-                    🎯 PLACE BET
+                    ⚡ INSTANT BET
                 </button>
                 
                 <div class="bet-status" id="betStatus" style="display: none;">
                     <div class="current-bet-info">
                         <span>Your bet: <strong id="yourBetAmount">-</strong></span>
                         <span>Potential win: <strong id="potentialWin">-</strong></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Deposit/Withdraw Modal -->
+        <div id="walletModal" class="wallet-modal-overlay" style="display: none;">
+            <div class="wallet-modal">
+                <div class="modal-header">
+                    <h3 id="modalTitle">💰 Deposit ETH</h3>
+                    <button class="close-btn" onclick="closeWalletModal()">&times;</button>
+                </div>
+                <div class="modal-content">
+                    <div class="amount-input-section">
+                        <label for="walletAmount">Amount (ETH)</label>
+                        <input type="number" id="walletAmount" class="wallet-amount-input" 
+                               placeholder="0.001" min="0.001" max="10" step="0.001" value="0.01">
+                        <div class="quick-amounts">
+                            <button class="quick-amount" data-amount="0.01">0.01</button>
+                            <button class="quick-amount" data-amount="0.05">0.05</button>
+                            <button class="quick-amount" data-amount="0.1">0.1</button>
+                            <button class="quick-amount" data-amount="0.5">0.5</button>
+                        </div>
+                    </div>
+                    
+                    <div class="transaction-info">
+                        <div class="info-row">
+                            <span>Wallet Balance:</span>
+                            <span id="modalWalletBalance">--</span>
+                        </div>
+                        <div class="info-row">
+                            <span>Gaming Balance:</span>
+                            <span id="modalGamingBalance">--</span>
+                        </div>
+                        <div class="info-row" id="estimatedGasRow">
+                            <span>Estimated Gas:</span>
+                            <span id="estimatedGas">~0.002 ETH</span>
+                        </div>
+                    </div>
+                    
+                    <button id="walletActionBtn" class="wallet-action-submit">
+                        💰 Confirm Deposit
+                    </button>
+                    
+                    <div class="modal-note">
+                        <p>💡 <strong>Pro Tip:</strong> Deposit once, then place instant bets without waiting for blockchain confirmations!</p>
                     </div>
                 </div>
             </div>
@@ -1616,8 +1972,295 @@
             // Delay initialization to ensure wallet bridge is loaded
             setTimeout(() => {
                 EthBalanceTracker.init();
+                WalletManager.init();
             }, 2000);
         });
+
+        // Wallet Management System
+        const WalletManager = {
+            gamingBalance: 0,
+            isDepositing: false,
+            isWithdrawing: false,
+            
+            init() {
+                console.log('💰 Initializing Wallet Manager...');
+                this.setupEventListeners();
+                this.loadGamingBalance();
+                this.updateDisplay();
+            },
+            
+            setupEventListeners() {
+                // Deposit button
+                const depositBtn = document.getElementById('depositBtn');
+                if (depositBtn) {
+                    depositBtn.addEventListener('click', () => this.openDepositModal());
+                }
+                
+                // Withdraw button
+                const withdrawBtn = document.getElementById('withdrawBtn');
+                if (withdrawBtn) {
+                    withdrawBtn.addEventListener('click', () => this.openWithdrawModal());
+                }
+                
+                // Quick amount buttons in modal
+                document.querySelectorAll('.quick-amount').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const amount = parseFloat(e.target.dataset.amount);
+                        document.getElementById('walletAmount').value = amount;
+                    });
+                });
+                
+                // Wallet action submit button
+                const walletActionBtn = document.getElementById('walletActionBtn');
+                if (walletActionBtn) {
+                    walletActionBtn.addEventListener('click', () => this.executeWalletAction());
+                }
+            },
+            
+            loadGamingBalance() {
+                // Load from localStorage
+                const saved = localStorage.getItem('pacoRocko_gamingBalance');
+                if (saved) {
+                    this.gamingBalance = parseFloat(saved) || 0;
+                }
+            },
+            
+            saveGamingBalance() {
+                localStorage.setItem('pacoRocko_gamingBalance', this.gamingBalance.toString());
+            },
+            
+            updateDisplay() {
+                const balanceElement = document.getElementById('gamingBalance');
+                if (balanceElement) {
+                    balanceElement.textContent = this.gamingBalance.toFixed(6);
+                }
+                
+                // Update modal displays if modal is open
+                const modalGamingBalance = document.getElementById('modalGamingBalance');
+                if (modalGamingBalance) {
+                    modalGamingBalance.textContent = this.gamingBalance.toFixed(6) + ' ETH';
+                }
+                
+                // Update wallet balance in modal if wallet is connected
+                this.updateModalWalletBalance();
+            },
+            
+            async updateModalWalletBalance() {
+                const modalWalletBalance = document.getElementById('modalWalletBalance');
+                if (modalWalletBalance && window.realWeb3Modal && window.realWeb3Modal.isConnected) {
+                    try {
+                        const balance = await window.realWeb3Modal.getBalance();
+                        modalWalletBalance.textContent = parseFloat(balance).toFixed(6) + ' ETH';
+                    } catch (error) {
+                        console.error('Failed to get wallet balance:', error);
+                        modalWalletBalance.textContent = 'Error';
+                    }
+                }
+            },
+            
+            openDepositModal() {
+                if (!window.realWeb3Modal || !window.realWeb3Modal.isConnected) {
+                    alert('Please connect your wallet first!');
+                    return;
+                }
+                
+                document.getElementById('modalTitle').textContent = '💰 Deposit ETH';
+                document.getElementById('walletActionBtn').textContent = '💰 Confirm Deposit';
+                document.getElementById('estimatedGasRow').style.display = 'flex';
+                
+                this.updateDisplay();
+                document.getElementById('walletModal').style.display = 'flex';
+            },
+            
+            openWithdrawModal() {
+                if (this.gamingBalance <= 0) {
+                    alert('No gaming balance to withdraw!');
+                    return;
+                }
+                
+                document.getElementById('modalTitle').textContent = '⬆️ Withdraw ETH';
+                document.getElementById('walletActionBtn').textContent = '⬆️ Confirm Withdraw';
+                document.getElementById('estimatedGasRow').style.display = 'flex';
+                
+                // Set max withdrawal amount
+                const walletAmountInput = document.getElementById('walletAmount');
+                walletAmountInput.max = this.gamingBalance;
+                walletAmountInput.value = Math.min(0.01, this.gamingBalance);
+                
+                this.updateDisplay();
+                document.getElementById('walletModal').style.display = 'flex';
+            },
+            
+            async executeWalletAction() {
+                const amount = parseFloat(document.getElementById('walletAmount').value);
+                const isDeposit = document.getElementById('modalTitle').textContent.includes('Deposit');
+                
+                if (!amount || amount <= 0) {
+                    alert('Please enter a valid amount!');
+                    return;
+                }
+                
+                if (isDeposit) {
+                    await this.deposit(amount);
+                } else {
+                    await this.withdraw(amount);
+                }
+            },
+            
+            async deposit(amount) {
+                if (this.isDepositing) return;
+                
+                this.isDepositing = true;
+                const walletActionBtn = document.getElementById('walletActionBtn');
+                walletActionBtn.disabled = true;
+                walletActionBtn.textContent = '⏳ Processing...';
+                
+                try {
+                    console.log(`💰 Depositing ${amount} ETH to gaming balance...`);
+                    
+                    // For now, simulate the deposit (replace with actual smart contract call later)
+                    // This gives players instant gaming balance to test the system
+                    this.gamingBalance += amount;
+                    this.saveGamingBalance();
+                    this.updateDisplay();
+                    
+                    console.log(`✅ Deposit successful! New gaming balance: ${this.gamingBalance.toFixed(6)} ETH`);
+                    
+                    // Show success message
+                    this.showSuccessMessage(`Successfully deposited ${amount} ETH!`);
+                    
+                    // Close modal
+                    this.closeModal();
+                    
+                } catch (error) {
+                    console.error('❌ Deposit failed:', error);
+                    alert('Deposit failed. Please try again.');
+                } finally {
+                    this.isDepositing = false;
+                    walletActionBtn.disabled = false;
+                    walletActionBtn.textContent = '💰 Confirm Deposit';
+                }
+            },
+            
+            async withdraw(amount) {
+                if (this.isWithdrawing) return;
+                
+                if (amount > this.gamingBalance) {
+                    alert('Insufficient gaming balance!');
+                    return;
+                }
+                
+                this.isWithdrawing = true;
+                const walletActionBtn = document.getElementById('walletActionBtn');
+                walletActionBtn.disabled = true;
+                walletActionBtn.textContent = '⏳ Processing...';
+                
+                try {
+                    console.log(`⬆️ Withdrawing ${amount} ETH from gaming balance...`);
+                    
+                    // For now, simulate the withdrawal (replace with actual smart contract call later)
+                    this.gamingBalance -= amount;
+                    this.saveGamingBalance();
+                    this.updateDisplay();
+                    
+                    console.log(`✅ Withdrawal successful! New gaming balance: ${this.gamingBalance.toFixed(6)} ETH`);
+                    
+                    // Show success message
+                    this.showSuccessMessage(`Successfully withdrew ${amount} ETH!`);
+                    
+                    // Close modal
+                    this.closeModal();
+                    
+                } catch (error) {
+                    console.error('❌ Withdrawal failed:', error);
+                    alert('Withdrawal failed. Please try again.');
+                } finally {
+                    this.isWithdrawing = false;
+                    walletActionBtn.disabled = false;
+                    walletActionBtn.textContent = '⬆️ Confirm Withdraw';
+                }
+            },
+            
+            placeBet(amount) {
+                if (amount > this.gamingBalance) {
+                    console.log(`❌ Insufficient gaming balance: ${amount} > ${this.gamingBalance}`);
+                    return false;
+                }
+                
+                this.gamingBalance -= amount;
+                this.saveGamingBalance();
+                this.updateDisplay();
+                
+                console.log(`🎯 Bet placed: ${amount} ETH. Remaining balance: ${this.gamingBalance.toFixed(6)} ETH`);
+                return true;
+            },
+            
+            payoutWin(amount) {
+                this.gamingBalance += amount;
+                this.saveGamingBalance();
+                this.updateDisplay();
+                
+                console.log(`💰 Payout received: ${amount} ETH. New balance: ${this.gamingBalance.toFixed(6)} ETH`);
+            },
+            
+            checkBalanceForBet(amount) {
+                return this.gamingBalance >= amount;
+            },
+            
+            showSuccessMessage(message) {
+                // Create a temporary success notification
+                const notification = document.createElement('div');
+                notification.className = 'success-notification';
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: linear-gradient(45deg, #10b981, #059669);
+                    color: white;
+                    padding: 12px 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+                    z-index: 1001;
+                    font-weight: 600;
+                    animation: slideIn 0.3s ease;
+                `;
+                notification.textContent = message;
+                
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.remove();
+                }, 3000);
+            },
+            
+            closeModal() {
+                document.getElementById('walletModal').style.display = 'none';
+            }
+        };
+
+        // Make WalletManager globally available
+        window.WalletManager = WalletManager;
+
+        // Modal close functions
+        function closeWalletModal() {
+            WalletManager.closeModal();
+        }
+
+        // Add CSS animation for success notification
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+        `;
+        document.head.appendChild(style);
     </script>
 </body>
 </html>

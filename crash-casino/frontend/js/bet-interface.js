@@ -126,23 +126,50 @@ class BetInterface {
             return;
         }
 
+        // Check gaming balance using new wallet system
+        if (window.WalletManager) {
+            if (!window.WalletManager.checkBalanceForBet(this.betAmount)) {
+                this.showNotification(`❌ Insufficient gaming balance. Please deposit more ETH.`, 'error');
+                this.showLowBalanceWarning();
+                return;
+            }
+        }
+
         this.isPlacingBet = true;
-        this.updatePlaceBetButton('🔄 PLACING...');
+        this.updatePlaceBetButton('⚡ INSTANT BET...');
 
         try {
-            // Place bet through crash client
-            const success = await window.crashGameClient.placeBet(this.betAmount);
-            
-            if (success) {
-                this.currentBet = {
-                    amount: this.betAmount,
-                    timestamp: Date.now()
-                };
+            // Place instant bet using gaming balance
+            if (window.WalletManager) {
+                const success = window.WalletManager.placeBet(this.betAmount);
                 
-                this.showBetStatus();
-                this.showNotification(`✅ Bet placed: ${this.betAmount.toFixed(4)} ETH`, 'success');
+                if (success) {
+                    this.currentBet = {
+                        amount: this.betAmount,
+                        timestamp: Date.now()
+                    };
+                    
+                    this.showBetStatus();
+                    this.showNotification(`⚡ Instant bet placed: ${this.betAmount.toFixed(4)} ETH`, 'success');
+                    this.hideLowBalanceWarning();
+                } else {
+                    this.showNotification('❌ Failed to place instant bet', 'error');
+                }
             } else {
-                this.showNotification('❌ Failed to place bet', 'error');
+                // Fallback to old system if wallet manager not available
+                const success = await window.crashGameClient.placeBet(this.betAmount);
+                
+                if (success) {
+                    this.currentBet = {
+                        amount: this.betAmount,
+                        timestamp: Date.now()
+                    };
+                    
+                    this.showBetStatus();
+                    this.showNotification(`✅ Bet placed: ${this.betAmount.toFixed(4)} ETH`, 'success');
+                } else {
+                    this.showNotification('❌ Failed to place bet', 'error');
+                }
             }
         } catch (error) {
             console.error('❌ Bet placement error:', error);
@@ -299,12 +326,37 @@ class BetInterface {
      * 🏆 Handle successful cash out
      */
     onCashOut(data) {
+        // Add payout to gaming balance if using wallet manager
+        if (window.WalletManager && data.payout) {
+            window.WalletManager.payoutWin(data.payout);
+        }
+        
         this.showNotification(
             `🏆 Cashed out at ${data.multiplier.toFixed(2)}x for ${data.payout.toFixed(4)} ETH!`, 
             'success'
         );
         
         this.hideBetStatus();
+    }
+
+    /**
+     * ⚠️ Show low balance warning
+     */
+    showLowBalanceWarning() {
+        const warning = document.getElementById('lowBalanceWarning');
+        if (warning) {
+            warning.style.display = 'block';
+        }
+    }
+    
+    /**
+     * ✅ Hide low balance warning
+     */
+    hideLowBalanceWarning() {
+        const warning = document.getElementById('lowBalanceWarning');
+        if (warning) {
+            warning.style.display = 'none';
+        }
     }
 
     /**

@@ -312,3 +312,13 @@
  TAB ...................................... Complete filename & cycle.
  SHIFT-TAB ...................... ESC-TAB   Complete filename & reverse cycle.
  ctrl-L ................................... Complete filename, list all.
+[33m0fe1c52[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m  Fix crash casino to industry standards - standardized algorithm, realistic multipliers, sync display
+[33m83a980c[m  Fix PacoRocko production setup - wallet address, server startup, and routing
+[33m1a6cd79[m  CRITICAL FIX: betting phase state mapping bug - now correctly maps backend 'betting' to frontend 'betting'
+[33mfaf6479[m  Fix crash casino betting and multiplier display issues
+[33m33f5b55[m  Add clean /pacorocko URL route for crash casino
+[33m3334dad[m  Fix: Add crash-casino directory to build process for PacoRocko deployment
+[33m458c36e[m  FIX: Crash casino betting - Round not accepting bets
+[33mbbf90cc[m  MAJOR CLEANUP: Consolidate documentation and SQL schemas
+[33m482c76d[m Connect frontend to live Render backend
+[33mb5c601c[m Add backend server entry point for Render deployment

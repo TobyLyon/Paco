@@ -422,18 +422,34 @@ class CrashGameClient {
             return false;
         }
 
-        // Check if we can place bets (more flexible for hybrid mode)
-        if (this.gameState === 'running' || this.gameState === 'crashed') {
-            this.showError(`Cannot bet now - round is ${this.gameState}`);
-            console.log(`🚫 Bet rejected - Round is "${this.gameState}"`);
-            return false;
-        }
-        
-        // Allow betting in betting, waiting, pending, or undefined states
-        if (!['betting', 'waiting', 'pending', undefined].includes(this.gameState)) {
-            this.showError(`Cannot bet now - game state: "${this.gameState}"`);
-            console.log(`🚫 Bet rejected - Game state: "${this.gameState}"`);
-            return false;
+        // HYBRID MODE: Check local game state instead of server state
+        if (this.disableMultiplierUpdates) {
+            // In hybrid mode, check if local game is in betting phase
+            const localGameState = window.liveGameSystem?.gameState;
+            console.log(`🎮 Hybrid mode - Local game state: "${localGameState}", Server state: "${this.gameState}"`);
+            
+            if (localGameState === 'betting') {
+                console.log(`✅ Bet allowed - Local game in betting phase`);
+            } else if (localGameState === 'running' || localGameState === 'crashed') {
+                this.showError(`Cannot bet now - local round is ${localGameState}`);
+                console.log(`🚫 Bet rejected - Local game is "${localGameState}"`);
+                return false;
+            } else {
+                console.log(`⚠️ Local game state unclear (${localGameState}), checking server state`);
+            }
+        } else {
+            // Legacy mode: Use server state
+            if (this.gameState === 'running' || this.gameState === 'crashed') {
+                this.showError(`Cannot bet now - round is ${this.gameState}`);
+                console.log(`🚫 Bet rejected - Round is "${this.gameState}"`);
+                return false;
+            }
+            
+            if (!['betting', 'waiting', 'pending', undefined].includes(this.gameState)) {
+                this.showError(`Cannot bet now - game state: "${this.gameState}"`);
+                console.log(`🚫 Bet rejected - Game state: "${this.gameState}"`);
+                return false;
+            }
         }
         
         console.log(`✅ Bet validation passed - Game state: "${this.gameState}"`);

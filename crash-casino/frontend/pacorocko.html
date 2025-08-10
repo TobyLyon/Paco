@@ -560,6 +560,7 @@
                 if (!this.isRunning) return;
                 
                 this.gameState = 'betting';
+                console.log('🎰 Local game entering BETTING phase');
                 let countdown = 5; // Unified 5-second countdown
                 
                 // Reset multiplier display
@@ -816,6 +817,7 @@
                 
                 // Start live game system
                 console.log('🎮 Starting live game system...');
+                window.liveGameSystem = liveGameSystem; // Make it globally accessible
                 liveGameSystem.start();
                 
                 // Initialize crash game client for betting ONLY - display controlled locally

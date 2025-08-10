@@ -75,9 +75,15 @@ class MultiplierDisplay {
             return;
         }
         
-        console.log(`📈 MultiplierDisplay updating to: ${multiplier.toFixed(2)}x (RESTRICTED MODE)`);
+        // Smooth updates for server-driven casino
+        const now = Date.now();
+        if (now - this.lastUpdateTime < 16) { // 60 FPS throttling
+            return;
+        }
+        this.lastUpdateTime = now;
+        
+        console.log(`📈 MultiplierDisplay updating to: ${multiplier.toFixed(2)}x (SERVER-DRIVEN)`);
         this.currentMultiplier = multiplier;
-        this.lastUpdateTime = Date.now();
 
         // Only update animations and colors, NOT the actual text display
         // The live game system handles the text display directly

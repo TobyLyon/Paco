@@ -25,7 +25,7 @@ class CrashGameEngine extends EventEmitter {
             houseEdge: 0.02,      // 2% house edge
             maxMultiplier: 1000.0, // 1000x max
             roundDuration: 60,    // 60 seconds max
-            tickRate: 20,         // 20 FPS updates
+            tickRate: 60,         // 60 FPS updates for smooth gameplay
             ...config
         };
     }

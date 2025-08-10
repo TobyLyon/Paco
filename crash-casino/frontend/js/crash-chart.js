@@ -12,6 +12,8 @@ class CrashChart {
         this.maxDataPoints = 100; // Keep last 100 points for performance
         this.isRunning = false;
         this.roundStartTime = null;
+        this.lastUpdateTime = 0;
+        this.updateThrottleMs = 16; // ~60 FPS max frontend updates
         
         // Paco rocket element
         this.pacoRocket = null;
@@ -181,6 +183,13 @@ class CrashChart {
             console.log('Chart not ready:', { isRunning: this.isRunning, hasChart: !!this.chart });
             return;
         }
+        
+        // Throttle updates to prevent overwhelming the browser (60 FPS max)
+        const now = Date.now();
+        if (now - this.lastUpdateTime < this.updateThrottleMs) {
+            return; // Skip this update for smoother performance
+        }
+        this.lastUpdateTime = now;
         
         try {
             // Add new data point

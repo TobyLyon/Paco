@@ -91,7 +91,10 @@ class CrashGameClient {
 
         // Handle compiled server message format (generic 'message' event with type field)
         this.socket.on('message', (message) => {
-            console.log(`📨 Server message received:`, message.type, message.data);
+            // Reduce console spam - only log important events
+            if (message.type !== 'multiplierUpdate') {
+                console.log(`📨 Server message received:`, message.type, message.data);
+            }
             
             // Route based on message type
             switch (message.type) {
@@ -260,11 +263,20 @@ class CrashGameClient {
      */
     handleRoundStart(data) {
         this.gameState = 'running';
-        this.roundStartTime = Date.now(); // Track round start for chart timing
+        this.roundStartTime = data.startTime || Date.now(); // Use server time if available
         this.currentRound = data.roundId;
         this.currentMultiplier = 1.0;
         
         console.log('🚀 Round started:', data.roundId);
+        
+        // Reset all visual systems for new round
+        if (window.crashChart) {
+            window.crashChart.startNewRound();
+        }
+        
+        if (window.multiplierDisplay) {
+            window.multiplierDisplay.reset();
+        }
         
         // Update UI
         document.getElementById('gameStatus').textContent = 'Running';
@@ -302,7 +314,10 @@ class CrashGameClient {
             const multiplierElement = document.getElementById('multiplierValue');
             if (multiplierElement) {
                 multiplierElement.textContent = data.multiplier.toFixed(2) + 'x';
-                console.log(`📡 Server Multiplier: ${data.multiplier.toFixed(2)}x`);
+                // Only log occasionally to reduce console spam
+                if (data.multiplier % 1 < 0.1 || data.multiplier > 5) {
+                    console.log(`📡 Server Multiplier: ${data.multiplier.toFixed(2)}x`);
+                }
             }
             
             // Update MultiplierDisplay if available
@@ -337,7 +352,16 @@ class CrashGameClient {
     handleRoundCrash(data) {
         this.gameState = 'crashed';
         
-        console.log('💥 Server round crashed at:', data.crashPoint);
+        console.log('💥 Server round crashed at:', data.crashPoint + 'x');
+        
+        // Update all visual systems for crash (server-driven mode)
+        if (window.crashChart) {
+            window.crashChart.crash(data.crashPoint);
+        }
+        
+        if (window.multiplierDisplay) {
+            window.multiplierDisplay.crash(data.crashPoint);
+        }
         
         // HYBRID MODE: Don't update UI if local game controls display
         if (this.disableMultiplierUpdates) {

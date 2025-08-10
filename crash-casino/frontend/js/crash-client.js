@@ -543,10 +543,21 @@ class CrashGameClient {
                     );
                     
                     console.log('✅ Transaction successful:', txResult);
+                    
+                    // Report success to network health monitor
+                    if (window.NetworkHealthMonitor) {
+                        window.NetworkHealthMonitor.recordSuccess();
+                    }
+                    
                     break; // Success, exit retry loop
                     
                 } catch (error) {
                     console.error(`❌ Attempt ${attempts} failed:`, error);
+                    
+                    // Report failure to network health monitor
+                    if (window.NetworkHealthMonitor) {
+                        window.NetworkHealthMonitor.recordFailure();
+                    }
                     
                     // Analyze error type
                     if (error.message.includes('Internal JSON-RPC error')) {

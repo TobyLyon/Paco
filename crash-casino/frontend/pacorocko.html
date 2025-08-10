@@ -594,7 +594,7 @@
             </div>
             <div class="stat">
                 <span class="stat-label">Network</span>
-                <span class="stat-value" id="gameStatus">Abstract L2</span>
+                <span class="stat-value" id="gameStatus">Abstract L2 <span id="networkIndicator">🟢</span></span>
             </div>
         </div>
 
@@ -1673,6 +1673,95 @@
         }
 
         // ETH Balance Tracker System
+        // Network Health Monitor
+        const NetworkHealthMonitor = {
+            lastSuccessfulCall: Date.now(),
+            consecutiveFailures: 0,
+            
+            updateNetworkStatus() {
+                const indicator = document.getElementById('networkIndicator');
+                if (!indicator) return;
+                
+                const timeSinceSuccess = Date.now() - this.lastSuccessfulCall;
+                const minutes = Math.floor(timeSinceSuccess / 60000);
+                
+                if (this.consecutiveFailures === 0 && timeSinceSuccess < 30000) {
+                    indicator.textContent = '🟢'; // Green - Good
+                    indicator.title = 'Network: Healthy';
+                } else if (this.consecutiveFailures < 3 && timeSinceSuccess < 60000) {
+                    indicator.textContent = '🟡'; // Yellow - Warning
+                    indicator.title = `Network: ${this.consecutiveFailures} failures`;
+                } else {
+                    indicator.textContent = '🔴'; // Red - Error
+                    indicator.title = `Network: Issues detected (${minutes}m ago)`;
+                }
+            },
+            
+            recordSuccess() {
+                this.lastSuccessfulCall = Date.now();
+                this.consecutiveFailures = 0;
+                this.updateNetworkStatus();
+            },
+            
+            recordFailure() {
+                this.consecutiveFailures++;
+                this.updateNetworkStatus();
+                
+                // Show user-friendly notification after 3 failures
+                if (this.consecutiveFailures === 3) {
+                    this.showRpcGuidance();
+                }
+            },
+            
+            showRpcGuidance() {
+                const notification = document.createElement('div');
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 80px;
+                    right: 20px;
+                    background: rgba(239, 68, 68, 0.95);
+                    color: white;
+                    padding: 16px;
+                    border-radius: 8px;
+                    border: 1px solid rgba(239, 68, 68, 0.5);
+                    max-width: 350px;
+                    z-index: 10000;
+                    font-size: 13px;
+                    backdrop-filter: blur(10px);
+                `;
+                notification.innerHTML = `
+                    <div style="font-weight: bold; margin-bottom: 8px;">🔴 Abstract Network Issues Detected</div>
+                    <div style="margin-bottom: 8px;">Transactions are failing. Try:</div>
+                    <div style="font-size: 11px; line-height: 1.4;">
+                        • Refresh page and reconnect wallet<br>
+                        • Check <a href="https://status.abs.xyz" target="_blank" style="color: #fbbf24;">Abstract Network status</a><br>
+                        • Switch to backup RPC: <strong>https://rpc.abs.xyz</strong>
+                    </div>
+                    <button onclick="this.parentElement.remove()" style="
+                        background: rgba(255,255,255,0.2);
+                        border: none;
+                        color: white;
+                        padding: 4px 8px;
+                        border-radius: 4px;
+                        margin-top: 8px;
+                        cursor: pointer;
+                        font-size: 11px;
+                    ">Dismiss</button>
+                `;
+                document.body.appendChild(notification);
+                
+                // Auto-remove after 15 seconds
+                setTimeout(() => {
+                    if (notification.parentElement) {
+                        notification.remove();
+                    }
+                }, 15000);
+            }
+        };
+
+        // Make NetworkHealthMonitor globally available
+        window.NetworkHealthMonitor = NetworkHealthMonitor;
+
         const EthBalanceTracker = {
             isConnected: false,
             provider: null,
@@ -1836,6 +1925,9 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Delay initialization to ensure wallet bridge is loaded
             setTimeout(() => {
+                // Initialize Network Health Monitor
+                NetworkHealthMonitor.updateNetworkStatus();
+                
                 EthBalanceTracker.init();
             }, 2000);
         });

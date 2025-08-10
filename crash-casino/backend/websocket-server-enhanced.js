@@ -28,13 +28,13 @@ class EnhancedWebSocketServer {
             transports: ['websocket', 'polling']
         });
         
-        // Game components
+        // Game components - INDUSTRY STANDARD SETTINGS
         this.gameEngine = new EnhancedCrashEngine(this.io, {
-            bettingPhaseDuration: 5000,   // 5 seconds
-            cashoutPhaseDuration: 5000,   // 5 seconds  
-            houseEdge: 0.02,             // 2% house edge
-            maxMultiplier: 1000.0,       // 1000x max
-            tickRate: 50                 // 20 FPS updates
+            bettingPhaseDuration: 5000,   // 5 seconds betting phase
+            cashoutPhaseDuration: 5000,   // 5 seconds to cash out  
+            houseEdge: 0.01,             // 1% house edge (industry standard)
+            maxMultiplier: 1000.0,       // 1000x maximum (industry standard)
+            tickRate: 50                 // 50ms updates (20 FPS)
         });
         
         this.walletIntegration = getWalletIntegration();

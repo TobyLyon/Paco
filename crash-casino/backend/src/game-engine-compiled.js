@@ -29,40 +29,29 @@ class CrashGameEngine extends EventEmitter {
     }
 
     /**
-     * 🎲 Generate provably fair crash point - FIXED ALGORITHM
-     * Based on industry standard from original wbrandon25/Online-Crash-Gambling-Simulator
+     * 🎲 Generate provably fair crash point - INDUSTRY STANDARD
+     * Based on proven algorithms used by major crash games (Bustabit, etc)
      */
     generateCrashPoint(serverSeed, clientSeed, nonce) {
         const input = `${serverSeed}:${clientSeed}:${nonce}`;
         const hash = crypto.createHash('sha256').update(input).digest('hex');
         
-        // Use first 10 characters for larger random range
-        const hexSubstring = hash.substring(0, 10);
+        // Use first 8 characters for random generation
+        const hexSubstring = hash.substring(0, 8);
         const randomInt = parseInt(hexSubstring, 16);
         
-        // EXACT ORIGINAL ALGORITHM - 3% chance instant crash
-        if (randomInt % 33 === 0) {
-            return 1.00;
-        } else {
-            // Generate random float [0, 1) but never exactly 0
-            let randomFloat = (randomInt % 1000000) / 1000000;
-            
-            // Ensure never exactly 0 (like original while loop)
-            while (randomFloat === 0) {
-                // Generate new value if somehow 0
-                const newHash = crypto.createHash('sha256').update(input + nonce.toString()).digest('hex');
-                const newInt = parseInt(newHash.substring(0, 6), 16);
-                randomFloat = (newInt % 1000000) / 1000000;
-            }
-            
-            // EXACT ORIGINAL FORMULA: 0.01 + (0.99 / randomFloat)
-            // This gives proper distribution with house edge built-in
-            let crashPoint = 0.01 + (0.99 / randomFloat);
-            
-            // Apply safety cap and round to 2 decimal places
-            crashPoint = Math.min(crashPoint, this.config.maxMultiplier);
-            return Math.round(crashPoint * 100) / 100;
-        }
+        // Convert to float [0, 1) - industry standard method
+        const randomFloat = randomInt / 0x100000000;
+        
+        // Industry standard crash game formula (1% house edge)
+        const houseEdge = 0.01;
+        let crashPoint = Math.max(1.00, Math.floor((100 * (1 - houseEdge)) / randomFloat) / 100);
+        
+        // Apply maximum cap (industry standard is usually 1000x-10000x)
+        crashPoint = Math.min(crashPoint, 1000.0);
+        
+        // Round to 2 decimal places for consistency
+        return Math.round(crashPoint * 100) / 100;
     }
 
     /**

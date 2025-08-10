@@ -42,12 +42,12 @@ const config = {
         privateKey: process.env.HOUSE_WALLET_PRIVATE_KEY || ''
     },
     
-    // Game configuration
+    // Game configuration - INDUSTRY STANDARD SETTINGS
     game: {
         minBet: 0.001, // 0.001 ETH minimum
-        maxBet: 10.0,  // 10 ETH maximum
-        houseEdge: 0.03, // 3% house edge (industry standard)
-        maxMultiplier: 100.0, // Realistic 100x max (not 1000x!)
+        maxBet: 10.0,  // 10 ETH maximum  
+        houseEdge: 0.01, // 1% house edge (industry standard for crash games)
+        maxMultiplier: 1000.0, // Standard 1000x max for crash games
         autoWithdrawThreshold: 100, // Auto withdraw to cold wallet at 100 ETH
         hotWalletMaxBalance: 50 // Keep max 50 ETH in hot wallet
     },

@@ -66,8 +66,8 @@ export class CrashGameEngine extends EventEmitter {
   }
 
   /**
-   * 🎲 Generate provably fair crash point
-   * Based on SHA-256 hash of serverSeed + clientSeed + nonce
+   * 🎲 Generate provably fair crash point - INDUSTRY STANDARD
+   * Based on proven algorithms used by major crash games
    */
   private generateCrashPoint(serverSeed: string, clientSeed: string, nonce: number): number {
     const input = `${serverSeed}:${clientSeed}:${nonce}`
@@ -75,15 +75,18 @@ export class CrashGameEngine extends EventEmitter {
     
     // Convert first 8 characters of hash to integer
     const hexSubstring = hash.substring(0, 8)
-    const intValue = parseInt(hexSubstring, 16)
+    const randomInt = parseInt(hexSubstring, 16)
     
-    // Apply house edge and convert to crash multiplier
-    const houseEdgeMultiplier = 1 - this.config.houseEdge
-    const rawMultiplier = (2 ** 32) / (intValue + 1)
-    const crashPoint = Math.max(1.0, rawMultiplier * houseEdgeMultiplier)
+    // Convert to float [0, 1) - industry standard method
+    const randomFloat = randomInt / 0x100000000
     
-    // Cap at max multiplier
-    return Math.min(crashPoint, this.config.maxMultiplier)
+    // Industry standard crash game formula with house edge
+    const houseEdge = this.config.houseEdge
+    let crashPoint = Math.max(1.0, Math.floor((100 * (1 - houseEdge)) / randomFloat) / 100)
+    
+    // Cap at max multiplier and round to 2 decimal places
+    crashPoint = Math.min(crashPoint, this.config.maxMultiplier)
+    return Math.round(crashPoint * 100) / 100
   }
 
   /**

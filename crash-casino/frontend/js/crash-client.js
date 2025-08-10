@@ -422,14 +422,23 @@ class CrashGameClient {
             return false;
         }
 
-        // Check if we can place bets (during betting phase only)
-        if (this.gameState !== 'betting') {
-            this.showError(`Cannot bet now - need "betting" phase, current: "${this.gameState}"`);
-            console.log(`🚫 Bet rejected - Expected: "betting", Actual: "${this.gameState}"`);
+        // Check if we can place bets (more flexible for hybrid mode)
+        if (this.gameState === 'running' || this.gameState === 'crashed') {
+            this.showError(`Cannot bet now - round is ${this.gameState}`);
+            console.log(`🚫 Bet rejected - Round is "${this.gameState}"`);
+            return false;
+        }
+        
+        // Allow betting in betting, waiting, pending, or undefined states
+        if (!['betting', 'waiting', 'pending', undefined].includes(this.gameState)) {
+            this.showError(`Cannot bet now - game state: "${this.gameState}"`);
+            console.log(`🚫 Bet rejected - Game state: "${this.gameState}"`);
             return false;
         }
         
         console.log(`✅ Bet validation passed - Game state: "${this.gameState}"`);
+        console.log(`🔗 Connection status: ${this.isConnected}`);
+        console.log(`🎰 Current round: ${this.currentRound}`);
 
         try {
             // Check if wallet is connected

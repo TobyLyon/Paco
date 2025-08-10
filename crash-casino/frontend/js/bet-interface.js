@@ -105,8 +105,18 @@ class BetInterface {
         }
 
         // Check if crash client is available and connected for betting
-        if (!window.crashGameClient || !window.crashGameClient.isConnected) {
-            this.showNotification('❌ Not connected to betting server - connecting...', 'error');
+        if (!window.crashGameClient) {
+            this.showNotification('❌ Betting system not initialized', 'error');
+            return;
+        }
+        
+        if (!window.crashGameClient.isConnected) {
+            this.showNotification('❌ Not connected to betting server - check connection status', 'error');
+            console.log('🔍 CrashGameClient status:', {
+                exists: !!window.crashGameClient,
+                isConnected: window.crashGameClient?.isConnected,
+                gameState: window.crashGameClient?.gameState
+            });
             return;
         }
 

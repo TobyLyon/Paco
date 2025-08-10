@@ -6,7 +6,7 @@
 
 class BetInterface {
     constructor() {
-        this.betAmount = 0.01; // Default bet amount
+        this.betAmount = 0.005; // Realistic default bet amount
         this.isPlacingBet = false;
         this.currentBet = null;
         
@@ -30,7 +30,7 @@ class BetInterface {
         const betInput = document.getElementById('betAmount');
         if (betInput) {
             betInput.addEventListener('input', (e) => {
-                this.betAmount = parseFloat(e.target.value) || 0.01;
+                this.betAmount = parseFloat(e.target.value) || 0.005;
                 this.updateBetDisplay();
                 this.validateBetAmount();
             });
@@ -65,7 +65,7 @@ class BetInterface {
      * 💰 Set bet amount
      */
     setBetAmount(amount) {
-        this.betAmount = Math.max(0.001, Math.min(amount, 10)); // Min 0.001, Max 10 ETH
+        this.betAmount = Math.max(0.001, Math.min(amount, 1)); // Min 0.001, Max 10 ETH
         
         const betInput = document.getElementById('betAmount');
         if (betInput) {

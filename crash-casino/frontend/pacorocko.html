@@ -200,8 +200,24 @@
         }
         
         .balance-icon {
-            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+        }
+        
+        .abstract-logo {
+            width: 18px;
+            height: 18px;
+            object-fit: contain;
             filter: drop-shadow(0 0 4px rgba(251, 191, 36, 0.6));
+            transition: all 0.3s ease;
+        }
+        
+        .eth-balance-tracker:hover .abstract-logo {
+            filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.8));
+            transform: scale(1.05);
         }
         
         .balance-content {
@@ -298,6 +314,10 @@
             .balance-amount {
                 font-size: 12px;
             }
+            .abstract-logo {
+                width: 16px;
+                height: 16px;
+            }
         }
     </style>
 </head>
@@ -326,9 +346,11 @@
                 
                 <!-- ETH Balance Tracker -->
                 <div class="eth-balance-tracker" id="ethBalanceTracker" style="display: none;">
-                    <div class="balance-icon">⚡</div>
+                    <div class="balance-icon">
+                        <img src="/abstract.png" alt="Abstract" class="abstract-logo">
+                    </div>
                     <div class="balance-content">
-                        <div class="balance-label">Abstract ETH</div>
+                        <div class="balance-label">ETH</div>
                         <div class="balance-amount" id="ethBalanceAmount">--</div>
                     </div>
                     <div class="balance-refresh" id="balanceRefresh" title="Refresh balance">

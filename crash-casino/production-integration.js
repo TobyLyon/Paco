@@ -9,14 +9,14 @@ const http = require('http');
 const path = require('path');
 const { Server } = require('socket.io');
 const CrashGameEngine = require('./backend/src/game-engine-compiled.js');
-// Prefer enhanced runtime websocket + abstract wallet integration
+// FORCE USE STABLE COMPILED SERVER for Render Starter Plan reliability
 let CrashWebSocketServer = null;
 try {
-    CrashWebSocketServer = require('./backend/websocket-server-enhanced.js');
-    console.log('🔌 Using enhanced WebSocket server');
-} catch (e) {
     CrashWebSocketServer = require('./backend/src/websocket-server-compiled.js');
-    console.log('🔌 Fallback to compiled WebSocket server');
+    console.log('🔌 Using STABLE compiled WebSocket server for Render production');
+} catch (e) {
+    console.log('❌ Failed to load compiled server, this should not happen');
+    throw e;
 }
 
 let WalletIntegration = null;
@@ -272,7 +272,7 @@ class PacoRockoProduction {
         
         gameEngine.on('roundStarted', (round) => {
             this.gameStats.totalRounds++;
-            console.log(`🚀 Round ${round.id} started`);
+            console.log(`🚀 Round ${round.id} started - Crash Point: ${round.crashPoint}x`);
         });
 
         gameEngine.on('roundCrashed', (data) => {
@@ -288,6 +288,18 @@ class PacoRockoProduction {
             
             // TODO: Save bet to database
         });
+
+        // Add forced round start if no activity detected
+        setTimeout(() => {
+            if (this.gameStats.totalRounds === 0) {
+                console.log('⚠️ No rounds detected after 30s - forcing game engine restart');
+                try {
+                    gameEngine.startNewRound();
+                } catch (error) {
+                    console.log('❌ Failed to force restart:', error.message);
+                }
+            }
+        }, 30000);
 
         console.log('🎮 Game engine event listeners configured');
     }

@@ -36,7 +36,9 @@ class CrashWebSocketServer {
             },
             path: this.wsPath,
             transports: ['websocket', 'polling'],
-            allowEIO3: true
+            allowEIO3: true,
+            pingTimeout: 60000,
+            pingInterval: 25000
         });
 
         this.gameEngine = new CrashGameEngine();
@@ -45,6 +47,7 @@ class CrashWebSocketServer {
         
         this.setupGameEngineListeners();
         this.setupSocketHandlers();
+        this.startGameEngine();
         
         console.log('🎰 Crash WebSocket server initialized');
     }
@@ -104,13 +107,68 @@ class CrashWebSocketServer {
             });
         });
 
+        // 🔄 AUTO-RESTART: Critical missing listener for automatic round cycling
         this.gameEngine.on('readyForNewRound', () => {
-            console.log('🔄 readyForNewRound event received, starting new round in 2s...');
+            console.log('🔄 Round ended, auto-starting new round in 2 seconds...');
             setTimeout(() => {
-                console.log('🎰 Starting new round from readyForNewRound event');
-                this.gameEngine.startNewRound();
+                try {
+                    this.gameEngine.startNewRound();
+                    console.log('✅ New round auto-started successfully');
+                } catch (error) {
+                    console.error('❌ Failed to auto-start new round:', error.message);
+                    // Retry in 5 seconds if failed
+                    setTimeout(() => {
+                        try {
+                            this.gameEngine.startNewRound();
+                        } catch (retryError) {
+                            console.error('❌ Retry failed:', retryError.message);
+                        }
+                    }, 5000);
+                }
             }, 2000);
         });
+
+        this.gameEngine.on('playerCashedOut', (data) => {
+            this.broadcast('playerCashedOut', {
+                roundId: data.roundId,
+                playerId: data.playerId,
+                multiplier: data.multiplier,
+                payout: data.payout
+            });
+        });
+
+
+    }
+
+    /**
+     * 🚀 Start the game engine and ensure continuous rounds
+     */
+    startGameEngine() {
+        console.log('🚀 Starting game engine...');
+        
+        // Start the first round immediately
+        setTimeout(() => {
+            try {
+                this.gameEngine.startNewRound();
+                console.log('✅ Initial round started');
+            } catch (error) {
+                console.error('❌ Failed to start initial round:', error.message);
+            }
+        }, 1000);
+
+        // 🔄 FAILSAFE: Check every 30 seconds if we need to restart rounds
+        setInterval(() => {
+            const gameState = this.gameEngine.getGameState();
+            if (!gameState.isRunning && !gameState.currentRound) {
+                console.log('⚠️ No active round detected, auto-starting failsafe round...');
+                try {
+                    this.gameEngine.startNewRound();
+                    console.log('✅ Failsafe round started');
+                } catch (error) {
+                    console.error('❌ Failsafe round failed:', error.message);
+                }
+            }
+        }, 30000); // Check every 30 seconds
     }
 
     /**

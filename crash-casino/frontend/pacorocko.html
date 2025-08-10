@@ -760,6 +760,49 @@
     <script src="/crash-casino/frontend/js/twitter-auth-chat.js"></script>
     <script src="/crash-casino/frontend/js/global-chat-enhanced.js"></script>
     
+    <!-- EMERGENCY LOADING SCREEN FIX - MUST BE FIRST -->
+    <script>
+        // CRITICAL: Force hide loading screen - this runs IMMEDIATELY
+        console.log('🚨 EMERGENCY LOADER: Starting immediate fallback system...');
+        
+        function forceHideLoadingScreen() {
+            try {
+                const loadingScreen = document.getElementById('loadingScreen');
+                const gameContainer = document.getElementById('gameContainer');
+                
+                if (loadingScreen) {
+                    loadingScreen.style.display = 'none';
+                    console.log('✅ Loading screen hidden');
+                }
+                
+                if (gameContainer) {
+                    gameContainer.style.display = 'block';
+                    console.log('✅ Game container shown');
+                }
+                
+                console.log('🎯 Emergency loading screen fix complete!');
+            } catch (error) {
+                console.error('❌ Emergency fallback error:', error);
+            }
+        }
+        
+        // Multiple attempts to hide loading screen
+        setTimeout(forceHideLoadingScreen, 500);   // 0.5 seconds
+        setTimeout(forceHideLoadingScreen, 1500);  // 1.5 seconds  
+        setTimeout(forceHideLoadingScreen, 3000);  // 3 seconds
+        setTimeout(forceHideLoadingScreen, 5000);  // 5 seconds (ultimate fallback)
+        
+        // Also try on DOM ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', forceHideLoadingScreen);
+        } else {
+            // DOM already loaded, try immediately
+            forceHideLoadingScreen();
+        }
+        
+        console.log('🚨 Emergency loading system initialized - will try multiple times');
+    </script>
+    
     <script>
         // Live Game System - runs continuous rounds with countdown timer
         let liveGameSystem = {
@@ -1188,24 +1231,7 @@
             }
         };
 
-        // EMERGENCY FALLBACK: Hide loading screen after 3 seconds no matter what
-        setTimeout(() => {
-            console.log('🚨 EMERGENCY: Force hiding loading screen after 3 seconds');
-            const loadingScreen = document.getElementById('loadingScreen');
-            const gameContainer = document.getElementById('gameContainer');
-            if (loadingScreen) loadingScreen.style.display = 'none';
-            if (gameContainer) gameContainer.style.display = 'block';
-            console.log('✅ Loading screen force-hidden, game should be visible now');
-        }, 3000);
-        
-        // IMMEDIATE FALLBACK: Also try right away
-        setTimeout(() => {
-            console.log('⚡ IMMEDIATE: Trying to hide loading screen after 1 second');
-            const loadingScreen = document.getElementById('loadingScreen');
-            const gameContainer = document.getElementById('gameContainer');
-            if (loadingScreen) loadingScreen.style.display = 'none';
-            if (gameContainer) gameContainer.style.display = 'block';
-        }, 1000);
+
 
         // Initialize app when page loads
         document.addEventListener('DOMContentLoaded', async function() {

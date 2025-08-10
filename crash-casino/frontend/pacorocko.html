@@ -524,8 +524,8 @@
             if (typeof AbstractWalletClient !== 'undefined') {
                 console.log('🌟 AGW Client SDK loaded successfully');
                 window.agwClient = new AbstractWalletClient({
-                    chain: 'abstract-testnet', // Change to 'abstract' for mainnet
-                    rpcUrl: 'https://api.testnet.abs.xyz', // Change for mainnet
+                    chain: 'abstract', // Abstract mainnet
+                    rpcUrl: 'https://api.mainnet.abs.xyz', // Abstract mainnet RPC
                 });
                 console.log('🌟 AGW Client initialized');
             } else {

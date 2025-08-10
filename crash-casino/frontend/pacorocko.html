@@ -1447,11 +1447,16 @@
                 
                 // Enhanced global chat with database integration will auto-initialize
                 
-                // ⚠️ COMPLETELY DISABLE LOCAL GAME SYSTEM ⚠️
-                console.log('🛑 LOCAL GAME SYSTEM COMPLETELY DISABLED - SERVER CONTROLS EVERYTHING');
-                window.liveGameSystem = liveGameSystem; // Keep for reference but NEVER start
-                console.log('🌐 Using PURE server-driven game system - no local rounds');
-                // liveGameSystem.start(); // PERMANENTLY DISABLED
+                // 🔄 SMART HYBRID SYSTEM: Server-first with local fallback
+                console.log('🔄 Initializing SMART HYBRID game system...');
+                window.liveGameSystem = liveGameSystem;
+                
+                // Start with local system as fallback, then let server take over
+                console.log('⏰ Starting local fallback system (server will override when connected)');
+                liveGameSystem.start();
+                
+                // Server will take control once connected
+                console.log('🌐 Server will take control when WebSocket connects');
                 
                 // Load historical rounds from database
                 console.log('📊 Loading round history from database...');
@@ -1462,22 +1467,43 @@
                     console.log('🎰 Initializing crash game client for BETTING only...');
                     window.crashGameClient = new CrashGameClient();
                     
-                    // 🚨 FORCE ENABLE SERVER-DRIVEN GAME 🚨
+                    // 🔄 SMART SERVER TAKEOVER SYSTEM
                     window.crashGameClient.disableMultiplierUpdates = false;
-                    console.log('🌐🌐🌐 SERVER MULTIPLIER UPDATES FORCE ENABLED - SERVER CONTROLS GAME 🌐🌐🌐');
-                    console.log('🛑 Local game system is DISABLED - all control from server');
+                    console.log('🔄 Server multiplier updates ENABLED - waiting for server connection...');
                     
-                    // Additional safeguard - override any future attempts to disable
-                    Object.defineProperty(window.crashGameClient, 'disableMultiplierUpdates', {
-                        value: false,
-                        writable: false,
-                        configurable: false
-                    });
+                    // Smart takeover: When server sends multipliers, stop local system
+                    let serverActiveCounter = 0;
+                    const originalHandleMultiplierUpdate = window.crashGameClient.handleMultiplierUpdate;
+                    window.crashGameClient.handleMultiplierUpdate = function(data) {
+                        serverActiveCounter++;
+                        
+                        // After 3 server multiplier updates, disable local system
+                        if (serverActiveCounter >= 3 && window.liveGameSystem && window.liveGameSystem.isRunning) {
+                            console.log('🌐 SERVER ACTIVE! Disabling local game system...');
+                            window.liveGameSystem.stop();
+                            window.liveGameSystem.isRunning = false;
+                        }
+                        
+                        // Call original function
+                        return originalHandleMultiplierUpdate.call(this, data);
+                    };
                     
                     // Server now controls all game state and display
                     window.crashGameClient.onGameStateUpdate = (state) => {
                         if (state.connected) {
-                            console.log('🔌 Connected to server - server controls all game state');
+                            console.log('🔌 Connected to server - hybrid mode active');
+                        } else {
+                            console.log('🔌 Disconnected from server - local fallback may activate');
+                            // Reset counter so local system can restart if needed
+                            serverActiveCounter = 0;
+                            
+                            // Restart local system if server is down for too long
+                            setTimeout(() => {
+                                if (!window.crashGameClient.isConnected && window.liveGameSystem && !window.liveGameSystem.isRunning) {
+                                    console.log('🔄 Server timeout - restarting local fallback system');
+                                    window.liveGameSystem.start();
+                                }
+                            }, 10000); // 10 second timeout
                         }
                     };
                 } else {

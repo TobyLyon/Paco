@@ -9,15 +9,34 @@ const jwt = require('jsonwebtoken');
 const CrashGameEngine = require('./game-engine-compiled');
 
 class CrashWebSocketServer {
-    constructor(server, jwtSecret) {
-        console.log('🔌🔌🔌 WEBSOCKET SERVER CONSTRUCTOR CALLED - DEBUG VERSION v2.0 LOADED AT', new Date().toISOString(), '🔌🔌🔌');
-        this.jwtSecret = jwtSecret;
+    constructor(server, config = {}) {
+        console.log('🔌🔌🔌 WEBSOCKET SERVER CONSTRUCTOR CALLED - DEBUG VERSION v2.1 LOADED AT', new Date().toISOString(), '🔌🔌🔌');
+        
+        // Handle both old (jwtSecret string) and new (config object) formats
+        if (typeof config === 'string') {
+            this.jwtSecret = config;
+            this.corsOrigin = "*";
+            this.wsPath = '/crash-ws';
+        } else {
+            this.jwtSecret = config.jwtSecret || 'default-secret';
+            this.corsOrigin = config.corsOrigin || "*";
+            this.wsPath = config.path || '/crash-ws';
+        }
+        
+        console.log('🔧 WebSocket config:', { 
+            corsOrigin: this.corsOrigin, 
+            path: this.wsPath 
+        });
+        
         this.io = new Server(server, {
             cors: {
-                origin: "*",
-                methods: ["GET", "POST"]
+                origin: this.corsOrigin,
+                methods: ["GET", "POST"],
+                credentials: true
             },
-            path: '/crash-ws'
+            path: this.wsPath,
+            transports: ['websocket', 'polling'],
+            allowEIO3: true
         });
 
         this.gameEngine = new CrashGameEngine();

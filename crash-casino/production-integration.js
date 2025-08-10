@@ -86,7 +86,8 @@ class PacoRockoProduction {
             // Setup WebSocket server with TypeScript engine
             this.crashWebSocketServer = new CrashWebSocketServer(this.server, {
                 jwtSecret: this.config.jwtSecret,
-                corsOrigin: this.config.corsOrigin
+                corsOrigin: this.config.corsOrigin,
+                path: '/crash-ws'
             });
             
             // Inject wallet integration into WebSocket server

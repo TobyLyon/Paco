@@ -1224,8 +1224,8 @@
                 // Add to beginning
                 historyContainer.insertBefore(item, historyContainer.firstChild);
                 
-                // Keep only last 40 rounds in display (smaller tiles, more history)
-                while (historyContainer.children.length > 40) {
+                // Keep only last 20 rounds in display
+                while (historyContainer.children.length > 20) {
                     historyContainer.removeChild(historyContainer.lastChild);
                 }
                 
@@ -1259,7 +1259,7 @@
                             // Save to localStorage as fallback for local persistence
                             this.saveToLocalStorage(roundData);
                         } else {
-                            console.error('❌ Failed to save round to database:', error);
+                        console.error('❌ Failed to save round to database:', error);
                             // Also save to localStorage as backup
                             this.saveToLocalStorage(roundData);
                         }
@@ -1276,9 +1276,9 @@
                     const existingRounds = JSON.parse(localStorage.getItem('pacoRocko_rounds') || '[]');
                     existingRounds.unshift(roundData); // Add to beginning
                     
-                    // Keep only last 40 rounds (more history for smaller tiles)
-                    if (existingRounds.length > 40) {
-                        existingRounds.splice(40);
+                    // Keep only last 20 rounds
+                    if (existingRounds.length > 20) {
+                        existingRounds.splice(20);
                     }
                     
                     localStorage.setItem('pacoRocko_rounds', JSON.stringify(existingRounds));
@@ -1357,30 +1357,30 @@
                             // This prevents overwriting rounds added during current session
                             if (historyContainer.children.length === 0) {
                                 console.log('📊 Loading initial rounds from database...');
+                            
+                            // Add database rounds to history
+                            data.forEach(round => {
+                                const item = document.createElement('div');
+                                item.className = 'round-item';
+                                item.textContent = parseFloat(round.crash_point).toFixed(2) + 'x';
                                 
-                                // Add database rounds to history
-                                data.forEach(round => {
-                                    const item = document.createElement('div');
-                                    item.className = 'round-item';
-                                    item.textContent = parseFloat(round.crash_point).toFixed(2) + 'x';
-                                    
                                     // Color based on multiplier (2x+ = positive return = green)
-                                    if (round.crash_point < 2) {
-                                        item.classList.add('low');
-                                    } else if (round.crash_point < 10) {
+                                if (round.crash_point < 2) {
+                                    item.classList.add('low');
+                                } else if (round.crash_point < 10) {
                                         item.classList.add('medium'); // 2x+ positive returns = green
-                                    } else {
-                                        item.classList.add('high');
-                                    }
-                                    
-                                    // Add timestamp tooltip
-                                    const timestamp = new Date(round.started_at).toLocaleTimeString();
-                                    item.title = `Round at ${timestamp}`;
-                                    
-                                    historyContainer.appendChild(item);
-                                });
+                                } else {
+                                    item.classList.add('high');
+                                }
                                 
-                                console.log(`✅ Loaded ${data.length} rounds from database`);
+                                // Add timestamp tooltip
+                                const timestamp = new Date(round.started_at).toLocaleTimeString();
+                                item.title = `Round at ${timestamp}`;
+                                
+                                historyContainer.appendChild(item);
+                            });
+                            
+                            console.log(`✅ Loaded ${data.length} rounds from database`);
                             } else {
                                 console.log(`📊 Skipping database load - ${historyContainer.children.length} rounds already in display`);
                             }
@@ -1418,11 +1418,11 @@
                     console.error('🔧 This might be causing the loading issue!');
                 }
                 
-                // Hide loading screen
-                setTimeout(() => {
+            // Hide loading screen
+            setTimeout(() => {
                     console.log('⏰ Timeout reached, hiding loading screen...');
-                    document.getElementById('loadingScreen').style.display = 'none';
-                    document.getElementById('gameContainer').style.display = 'block';
+                document.getElementById('loadingScreen').style.display = 'none';
+                document.getElementById('gameContainer').style.display = 'block';
                 
                 // Initialize crash visualizer (supports both chart and rocket)
                 console.log('🎮 Initializing crash visualizer...');
@@ -1447,24 +1447,14 @@
                 
                 // Enhanced global chat with database integration will auto-initialize
                 
-                // 🔄 SMART HYBRID SYSTEM: Server-first with local fallback
-                console.log('🔄 Initializing SMART HYBRID game system...');
+                // 🌐 PURE SERVER-DRIVEN SYSTEM: Render Starter Plan (Always-On)
+                console.log('🌐 Initializing PURE server-driven casino system...');
+                console.log('💎 Render Starter Plan: Always-on server with continuous rounds');
                 window.liveGameSystem = liveGameSystem;
                 
-                // Start with local system as fallback, then let server take over
-                console.log('⏰ Starting local fallback system (server will override when connected)');
-                liveGameSystem.start();
-                
-                // Check if server takes over within 30 seconds
-                setTimeout(() => {
-                    if (!window.serverTookOver && window.liveGameSystem) {
-                        console.log('⚠️ Server did not take over - keeping local system running');
-                        if (!window.liveGameSystem.isRunning) {
-                            console.log('🔄 Restarting local system as server fallback');
-                            window.liveGameSystem.start();
-                        }
-                    }
-                }, 30000);
+                // Keep local system available ONLY for round history display
+                console.log('📊 Local system available for history display only');
+                // DO NOT START local game - server controls everything
                 
                 // Server will take control once connected
                 console.log('🌐 Server will take control when WebSocket connects');
@@ -1482,77 +1472,39 @@
                     window.crashGameClient.disableMultiplierUpdates = false;
                     console.log('🔄 Server multiplier updates ENABLED - waiting for server connection...');
                     
-                    // RENDER FREE TIER WORKAROUND: Keep server alive with periodic pings
-                    console.log('⏰ Starting Render keep-alive system (prevents 15-min sleep)...');
-                    setInterval(() => {
-                        if (window.crashGameClient && window.crashGameClient.socket) {
-                            window.crashGameClient.socket.emit('ping', { keepAlive: true });
-                            console.log('📡 Keep-alive ping sent to prevent Render sleep');
-                        }
-                    }, 10 * 60 * 1000); // Ping every 10 minutes
+                    // 🌐 RENDER STARTER PLAN: No sleep issues, server always running
+                    console.log('💎 Render Starter Plan active - server never sleeps!');
                     
-                    // Smart takeover: Listen for ANY server game events
-                    let serverActiveCounter = 0;
-                    let serverTookOver = false;
-                    window.serverTookOver = false; // Global access
+                    // 🌐 SERVER-ONLY SYSTEM: No local fallback needed with Starter Plan
+                    console.log('🎰 Waiting for always-on server to send game events...');
                     
-                    // Monitor for server game state updates
+                    // Monitor server events for logging/debugging
                     const originalHandleGameState = window.crashGameClient.handleGameStateUpdate || function() {};
                     window.crashGameClient.handleGameStateUpdate = function(data) {
                         console.log('🌐 Server game state received:', data);
-                        serverActiveCounter++;
-                        
-                        if (!serverTookOver && serverActiveCounter >= 1) {
-                            console.log('🌐 SERVER DETECTED! Taking over immediately...');
-                            serverTookOver = true;
-                            window.serverTookOver = true;
-                            
-                            if (window.liveGameSystem && window.liveGameSystem.isRunning) {
-                                window.liveGameSystem.stop();
-                                console.log('🛑 Local game system stopped - server in control');
-                            }
-                        }
-                        
+                        console.log('✅ Always-on server is controlling the game');
                         return originalHandleGameState.call(this, data);
                     };
                     
-                    // Also monitor multiplier updates
+                    // Monitor multiplier updates from always-on server
                     const originalHandleMultiplierUpdate = window.crashGameClient.handleMultiplierUpdate || function() {};
                     window.crashGameClient.handleMultiplierUpdate = function(data) {
-                        console.log('📡 Server multiplier update:', data.multiplier);
-                        
-                        if (!serverTookOver) {
-                            console.log('🌐 SERVER MULTIPLIERS ACTIVE! Taking over...');
-                            serverTookOver = true;
-                            window.serverTookOver = true;
-                            
-                            if (window.liveGameSystem && window.liveGameSystem.isRunning) {
-                                window.liveGameSystem.stop();
-                                console.log('🛑 Local game system stopped - server sending multipliers');
-                            }
-                        }
-                        
+                        console.log('📡 Always-on server multiplier:', data.multiplier);
                         return originalHandleMultiplierUpdate.call(this, data);
                     };
                     
-                    // Monitor round events
+                    // Monitor server events from always-on Render service
                     const originalSocket = window.crashGameClient.socket;
                     if (originalSocket) {
                         originalSocket.on('gameState', (data) => {
-                            console.log('📢 Server gameState event:', data);
+                            console.log('📢 Always-on server gameState:', data);
                             if (window.crashGameClient.handleGameStateUpdate) {
                                 window.crashGameClient.handleGameStateUpdate(data);
                             }
                         });
                         
                         originalSocket.on('roundStarted', (data) => {
-                            console.log('🚀 Server round started:', data);
-                            serverTookOver = true;
-                            window.serverTookOver = true;
-                            if (window.liveGameSystem && window.liveGameSystem.isRunning) {
-                                window.liveGameSystem.stop();
-                                console.log('🛑 Local game stopped - server round started');
-                            }
+                            console.log('🚀 Always-on server round started:', data);
                         });
                         
                         originalSocket.on('multiplierUpdate', (data) => {
@@ -1562,26 +1514,14 @@
                         });
                     }
                     
-                    // Server now controls all game state and display
+                    // Always-on server connection monitoring
                     window.crashGameClient.onGameStateUpdate = (state) => {
                         if (state.connected) {
-                            console.log('🔌 Connected to server - hybrid mode active');
+                            console.log('🔌 Connected to always-on Render server');
+                            console.log('🎰 Pure server-driven casino is active');
                         } else {
-                            console.log('🔌 Disconnected from server - local fallback may activate');
-                            // Reset all server state
-                            serverActiveCounter = 0;
-                            serverTookOver = false;
-                            window.serverTookOver = false;
-                            
-                            // Restart local system if server is down for too long
-                            setTimeout(() => {
-                                if (!window.crashGameClient.isConnected && window.liveGameSystem && !window.liveGameSystem.isRunning) {
-                                    console.log('🔄 Server timeout - restarting local fallback system');
-                                    serverTookOver = false; // Allow local system to run
-                                    window.serverTookOver = false;
-                                    window.liveGameSystem.start();
-                                }
-                            }, 10000); // 10 second timeout
+                            console.log('🔌 Temporarily disconnected from server');
+                            console.log('⏰ Render Starter Plan will auto-reconnect (server never sleeps)');
                         }
                     };
                 } else {

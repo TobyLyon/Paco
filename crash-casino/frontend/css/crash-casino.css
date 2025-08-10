@@ -929,19 +929,16 @@ body {
 .round-history {
     display: flex;
     flex-wrap: wrap;
-    gap: 3px;
+    gap: 5px;
 }
 
 .round-item {
-    padding: 4px 6px;
-    border-radius: 3px;
+    padding: 8px 12px;
+    border-radius: 5px;
     font-weight: bold;
-    font-size: 0.65rem;
+    font-size: 0.9rem;
     cursor: pointer;
     transition: all 0.3s ease;
-    min-width: 28px;
-    text-align: center;
-    display: inline-block;
 }
 
 .round-item.low {

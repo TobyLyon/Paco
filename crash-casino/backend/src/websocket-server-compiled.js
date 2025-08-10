@@ -85,7 +85,9 @@ class CrashWebSocketServer {
         });
 
         this.gameEngine.on('readyForNewRound', () => {
+            console.log('🔄 readyForNewRound event received, starting new round in 2s...');
             setTimeout(() => {
+                console.log('🎰 Starting new round from readyForNewRound event');
                 this.gameEngine.startNewRound();
             }, 2000);
         });

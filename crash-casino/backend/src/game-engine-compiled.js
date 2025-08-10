@@ -103,6 +103,8 @@ class CrashGameEngine extends EventEmitter {
         this.currentMultiplier = 1.0;
         this.gameStartTime = Date.now();
         
+        console.log(`🚀 ROUND STARTING: ${this.currentRound.id} | Crash Point: ${this.currentRound.crashPoint}x | Timer: ${this.config.updateInterval}ms`);
+        
         this.emit('roundStarted', {
             roundId: this.currentRound.id,
             crashPoint: this.currentRound.crashPoint // Hidden from clients
@@ -132,8 +134,11 @@ class CrashGameEngine extends EventEmitter {
             elapsed
         });
         
-        // Check if we've reached the crash point
-        if (this.currentMultiplier >= this.currentRound.crashPoint) {
+        // Check if we've reached the crash point with debugging
+        console.log(`🎯 Multiplier: ${this.currentMultiplier.toFixed(2)}x | Crash Point: ${this.currentRound.crashPoint}x | Diff: ${(this.currentRound.crashPoint - this.currentMultiplier).toFixed(3)}`);
+        
+        if (this.currentMultiplier >= this.currentRound.crashPoint - 0.01) {
+            console.log(`💥 CRASHING NOW! ${this.currentMultiplier.toFixed(2)}x >= ${this.currentRound.crashPoint}x`);
             this.crashRound();
         }
         
@@ -147,7 +152,12 @@ class CrashGameEngine extends EventEmitter {
      * 💥 Crash the round and process payouts
      */
     crashRound() {
-        if (!this.currentRound || !this.isGameRunning) return;
+        if (!this.currentRound || !this.isGameRunning) {
+            console.log('⚠️ crashRound called but no active round or not running');
+            return;
+        }
+        
+        console.log(`💥 CRASHING ROUND ${this.currentRound.id} at ${this.currentMultiplier.toFixed(2)}x (target: ${this.currentRound.crashPoint}x)`);
         
         this.isGameRunning = false;
         this.currentRound.status = 'crashed';
@@ -179,6 +189,7 @@ class CrashGameEngine extends EventEmitter {
         
         // Clean up for next round
         setTimeout(() => {
+            console.log(`🔄 Round cleanup complete, emitting readyForNewRound event`);
             this.currentRound = null;
             this.emit('readyForNewRound');
         }, 3000);

@@ -137,6 +137,21 @@ class WalletBridge {
                 chainId: this.chainId
             }
         }));
+        
+        // Dispatch specific events for balance tracker
+        if (this.isConnected && this.address && this.provider) {
+            document.dispatchEvent(new CustomEvent('walletConnected', {
+                detail: {
+                    address: this.address,
+                    provider: this.provider,
+                    chainId: this.chainId
+                }
+            }));
+            console.log('⚡ Wallet connected event dispatched for balance tracker');
+        } else {
+            document.dispatchEvent(new CustomEvent('walletDisconnected'));
+            console.log('⚡ Wallet disconnected event dispatched for balance tracker');
+        }
     }
 
     /**

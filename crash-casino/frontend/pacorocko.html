@@ -179,6 +179,107 @@
             font-size: 0.85rem;
         }
         
+        /* ETH Balance Tracker Styles */
+        .eth-balance-tracker {
+            display: flex !important;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            border-radius: 8px;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+            cursor: default;
+            min-width: 150px;
+        }
+        
+        .eth-balance-tracker:hover {
+            border-color: rgba(251, 191, 36, 0.6);
+            background: rgba(0, 0, 0, 0.6);
+        }
+        
+        .balance-icon {
+            font-size: 16px;
+            filter: drop-shadow(0 0 4px rgba(251, 191, 36, 0.6));
+        }
+        
+        .balance-content {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            flex: 1;
+        }
+        
+        .balance-label {
+            font-size: 10px;
+            color: var(--restaurant-orange);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            line-height: 1;
+        }
+        
+        .balance-amount {
+            font-size: 14px;
+            color: var(--restaurant-yellow);
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            line-height: 1.2;
+            margin-top: 2px;
+        }
+        
+        .balance-refresh {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+            opacity: 0.7;
+        }
+        
+        .balance-refresh:hover {
+            opacity: 1;
+            background: rgba(251, 191, 36, 0.2);
+        }
+        
+        .balance-refresh.spinning {
+            animation: balanceRefreshSpin 1s linear infinite;
+        }
+        
+        .refresh-icon {
+            font-size: 12px;
+            filter: drop-shadow(0 0 2px rgba(251, 191, 36, 0.4));
+        }
+        
+        @keyframes balanceRefreshSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .balance-amount.updating {
+            opacity: 0.6;
+            transition: opacity 0.2s ease;
+        }
+        
+        .balance-amount.error {
+            color: #ef4444;
+        }
+        
+        .balance-amount.success {
+            color: #10b981;
+            animation: balanceSuccess 0.5s ease;
+        }
+        
+        @keyframes balanceSuccess {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .seed-display {
@@ -186,6 +287,16 @@
             }
             .manual-verify {
                 grid-template-columns: 1fr;
+            }
+            .eth-balance-tracker {
+                min-width: 120px;
+                padding: 6px 10px;
+            }
+            .balance-label {
+                font-size: 9px;
+            }
+            .balance-amount {
+                font-size: 12px;
             }
         }
     </style>
@@ -211,6 +322,18 @@
                 <div class="connection-status" id="connectionStatus">
                     <span class="status-indicator offline"></span>
                     <span class="status-text">Connecting...</span>
+                </div>
+                
+                <!-- ETH Balance Tracker -->
+                <div class="eth-balance-tracker" id="ethBalanceTracker" style="display: none;">
+                    <div class="balance-icon">⚡</div>
+                    <div class="balance-content">
+                        <div class="balance-label">Abstract ETH</div>
+                        <div class="balance-amount" id="ethBalanceAmount">--</div>
+                    </div>
+                    <div class="balance-refresh" id="balanceRefresh" title="Refresh balance">
+                        <span class="refresh-icon">🔄</span>
+                    </div>
                 </div>
                 
                 <button id="connectWalletBtn">
@@ -1305,6 +1428,174 @@
                 attributeFilter: ['class']
             });
         }
+
+        // ETH Balance Tracker System
+        const EthBalanceTracker = {
+            isConnected: false,
+            provider: null,
+            userAddress: null,
+            refreshInterval: null,
+            lastBalance: null,
+            
+            init() {
+                console.log('⚡ Initializing ETH Balance Tracker...');
+                this.setupUI();
+                this.connectToWalletBridge();
+                this.startPeriodicRefresh();
+            },
+            
+            setupUI() {
+                const refreshBtn = document.getElementById('balanceRefresh');
+                if (refreshBtn) {
+                    refreshBtn.addEventListener('click', () => {
+                        this.refreshBalance(true);
+                    });
+                }
+            },
+            
+            connectToWalletBridge() {
+                // Listen for wallet connection events from wallet-bridge.js
+                document.addEventListener('walletConnected', (event) => {
+                    const { address, provider } = event.detail;
+                    this.onWalletConnected(address, provider);
+                });
+                
+                document.addEventListener('walletDisconnected', () => {
+                    this.onWalletDisconnected();
+                });
+                
+                // Check if wallet is already connected
+                if (window.realWeb3Modal && window.realWeb3Modal.isConnected) {
+                    setTimeout(() => {
+                        this.onWalletConnected(
+                            window.realWeb3Modal.address,
+                            window.realWeb3Modal.provider
+                        );
+                    }, 1000);
+                }
+            },
+            
+            onWalletConnected(address, provider) {
+                console.log('⚡ Wallet connected to balance tracker:', address);
+                this.isConnected = true;
+                this.userAddress = address;
+                this.provider = provider;
+                
+                this.showTracker();
+                this.refreshBalance();
+            },
+            
+            onWalletDisconnected() {
+                console.log('⚡ Wallet disconnected from balance tracker');
+                this.isConnected = false;
+                this.userAddress = null;
+                this.provider = null;
+                this.lastBalance = null;
+                
+                this.hideTracker();
+            },
+            
+            showTracker() {
+                const tracker = document.getElementById('ethBalanceTracker');
+                if (tracker) {
+                    tracker.style.display = 'flex';
+                }
+            },
+            
+            hideTracker() {
+                const tracker = document.getElementById('ethBalanceTracker');
+                if (tracker) {
+                    tracker.style.display = 'none';
+                }
+            },
+            
+            async refreshBalance(manual = false) {
+                if (!this.isConnected || !this.provider || !this.userAddress) {
+                    return;
+                }
+                
+                const balanceAmount = document.getElementById('ethBalanceAmount');
+                const refreshBtn = document.getElementById('balanceRefresh');
+                
+                if (!balanceAmount) return;
+                
+                try {
+                    // Show loading state
+                    if (manual) {
+                        refreshBtn?.classList.add('spinning');
+                    }
+                    balanceAmount.classList.add('updating');
+                    
+                    // Get balance from provider
+                    const balanceWei = await this.provider.getBalance(this.userAddress);
+                    const balanceEth = ethers.formatEther(balanceWei);
+                    const formattedBalance = parseFloat(balanceEth).toFixed(6);
+                    
+                    // Update display
+                    balanceAmount.textContent = `${formattedBalance} ETH`;
+                    balanceAmount.classList.remove('updating', 'error');
+                    
+                    // Show success animation if balance changed
+                    if (this.lastBalance !== null && this.lastBalance !== formattedBalance) {
+                        balanceAmount.classList.add('success');
+                        setTimeout(() => {
+                            balanceAmount.classList.remove('success');
+                        }, 500);
+                        
+                        console.log(`⚡ Balance updated: ${this.lastBalance} → ${formattedBalance} ETH`);
+                    }
+                    
+                    this.lastBalance = formattedBalance;
+                    
+                    // Update tooltip with timestamp
+                    const tracker = document.getElementById('ethBalanceTracker');
+                    if (tracker) {
+                        const timestamp = new Date().toLocaleTimeString();
+                        tracker.title = `Last updated: ${timestamp}`;
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ Failed to fetch ETH balance:', error);
+                    balanceAmount.textContent = 'Error';
+                    balanceAmount.classList.remove('updating');
+                    balanceAmount.classList.add('error');
+                } finally {
+                    // Remove loading state
+                    if (manual) {
+                        setTimeout(() => {
+                            refreshBtn?.classList.remove('spinning');
+                        }, 500);
+                    }
+                }
+            },
+            
+            startPeriodicRefresh() {
+                // Refresh balance every 15 seconds when connected
+                this.refreshInterval = setInterval(() => {
+                    if (this.isConnected) {
+                        this.refreshBalance();
+                    }
+                }, 15000);
+                
+                console.log('⚡ Started periodic balance refresh (15s interval)');
+            },
+            
+            stopPeriodicRefresh() {
+                if (this.refreshInterval) {
+                    clearInterval(this.refreshInterval);
+                    this.refreshInterval = null;
+                    console.log('⚡ Stopped periodic balance refresh');
+                }
+            }
+        };
+
+        // Initialize ETH Balance Tracker when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            // Delay initialization to ensure wallet bridge is loaded
+            setTimeout(() => {
+                EthBalanceTracker.init();
+            }, 2000);
+        });
     </script>
 </body>
 </html>

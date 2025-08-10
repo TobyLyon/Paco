@@ -1455,6 +1455,17 @@
                 console.log('⏰ Starting local fallback system (server will override when connected)');
                 liveGameSystem.start();
                 
+                // Check if server takes over within 30 seconds
+                setTimeout(() => {
+                    if (!window.serverTookOver && window.liveGameSystem) {
+                        console.log('⚠️ Server did not take over - keeping local system running');
+                        if (!window.liveGameSystem.isRunning) {
+                            console.log('🔄 Restarting local system as server fallback');
+                            window.liveGameSystem.start();
+                        }
+                    }
+                }, 30000);
+                
                 // Server will take control once connected
                 console.log('🌐 Server will take control when WebSocket connects');
                 
@@ -1464,29 +1475,83 @@
                 
                 // Initialize crash game client for betting ONLY - display controlled locally
                 if (typeof CrashGameClient !== 'undefined') {
-                    console.log('🎰 Initializing crash game client for BETTING only...');
+                    console.log('🎰 Initializing crash game client for SERVER-DRIVEN game...');
                     window.crashGameClient = new CrashGameClient();
                     
                     // 🔄 SMART SERVER TAKEOVER SYSTEM
                     window.crashGameClient.disableMultiplierUpdates = false;
                     console.log('🔄 Server multiplier updates ENABLED - waiting for server connection...');
                     
-                    // Smart takeover: When server sends multipliers, stop local system
+                    // Smart takeover: Listen for ANY server game events
                     let serverActiveCounter = 0;
-                    const originalHandleMultiplierUpdate = window.crashGameClient.handleMultiplierUpdate;
-                    window.crashGameClient.handleMultiplierUpdate = function(data) {
+                    let serverTookOver = false;
+                    window.serverTookOver = false; // Global access
+                    
+                    // Monitor for server game state updates
+                    const originalHandleGameState = window.crashGameClient.handleGameStateUpdate || function() {};
+                    window.crashGameClient.handleGameStateUpdate = function(data) {
+                        console.log('🌐 Server game state received:', data);
                         serverActiveCounter++;
                         
-                        // After 3 server multiplier updates, disable local system
-                        if (serverActiveCounter >= 3 && window.liveGameSystem && window.liveGameSystem.isRunning) {
-                            console.log('🌐 SERVER ACTIVE! Disabling local game system...');
-                            window.liveGameSystem.stop();
-                            window.liveGameSystem.isRunning = false;
+                        if (!serverTookOver && serverActiveCounter >= 1) {
+                            console.log('🌐 SERVER DETECTED! Taking over immediately...');
+                            serverTookOver = true;
+                            window.serverTookOver = true;
+                            
+                            if (window.liveGameSystem && window.liveGameSystem.isRunning) {
+                                window.liveGameSystem.stop();
+                                console.log('🛑 Local game system stopped - server in control');
+                            }
                         }
                         
-                        // Call original function
+                        return originalHandleGameState.call(this, data);
+                    };
+                    
+                    // Also monitor multiplier updates
+                    const originalHandleMultiplierUpdate = window.crashGameClient.handleMultiplierUpdate || function() {};
+                    window.crashGameClient.handleMultiplierUpdate = function(data) {
+                        console.log('📡 Server multiplier update:', data.multiplier);
+                        
+                        if (!serverTookOver) {
+                            console.log('🌐 SERVER MULTIPLIERS ACTIVE! Taking over...');
+                            serverTookOver = true;
+                            window.serverTookOver = true;
+                            
+                            if (window.liveGameSystem && window.liveGameSystem.isRunning) {
+                                window.liveGameSystem.stop();
+                                console.log('🛑 Local game system stopped - server sending multipliers');
+                            }
+                        }
+                        
                         return originalHandleMultiplierUpdate.call(this, data);
                     };
+                    
+                    // Monitor round events
+                    const originalSocket = window.crashGameClient.socket;
+                    if (originalSocket) {
+                        originalSocket.on('gameState', (data) => {
+                            console.log('📢 Server gameState event:', data);
+                            if (window.crashGameClient.handleGameStateUpdate) {
+                                window.crashGameClient.handleGameStateUpdate(data);
+                            }
+                        });
+                        
+                        originalSocket.on('roundStarted', (data) => {
+                            console.log('🚀 Server round started:', data);
+                            serverTookOver = true;
+                            window.serverTookOver = true;
+                            if (window.liveGameSystem && window.liveGameSystem.isRunning) {
+                                window.liveGameSystem.stop();
+                                console.log('🛑 Local game stopped - server round started');
+                            }
+                        });
+                        
+                        originalSocket.on('multiplierUpdate', (data) => {
+                            if (window.crashGameClient.handleMultiplierUpdate) {
+                                window.crashGameClient.handleMultiplierUpdate(data);
+                            }
+                        });
+                    }
                     
                     // Server now controls all game state and display
                     window.crashGameClient.onGameStateUpdate = (state) => {
@@ -1494,13 +1559,17 @@
                             console.log('🔌 Connected to server - hybrid mode active');
                         } else {
                             console.log('🔌 Disconnected from server - local fallback may activate');
-                            // Reset counter so local system can restart if needed
+                            // Reset all server state
                             serverActiveCounter = 0;
+                            serverTookOver = false;
+                            window.serverTookOver = false;
                             
                             // Restart local system if server is down for too long
                             setTimeout(() => {
                                 if (!window.crashGameClient.isConnected && window.liveGameSystem && !window.liveGameSystem.isRunning) {
                                     console.log('🔄 Server timeout - restarting local fallback system');
+                                    serverTookOver = false; // Allow local system to run
+                                    window.serverTookOver = false;
                                     window.liveGameSystem.start();
                                 }
                             }, 10000); // 10 second timeout

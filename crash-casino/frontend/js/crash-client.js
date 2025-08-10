@@ -14,6 +14,9 @@ class CrashGameClient {
         this.playerBet = null;
         this.roundHistory = [];
         
+        // HYBRID MODE: Disable multiplier updates by default (local game controls display)
+        this.disableMultiplierUpdates = false; // Will be set to true externally
+        
         // Event handlers
         this.onGameStateUpdate = null;
         this.onMultiplierUpdate = null;
@@ -69,7 +72,8 @@ class CrashGameClient {
      */
     setupSocketListeners() {
         this.socket.on('connect', () => {
-            console.log('✅ Connected to crash game server');
+            console.log('✅ Connected to crash game server for betting');
+            console.log('🎮 Local game system handling multiplier display');
             this.isConnected = true;
             this.updateConnectionStatus(true);
             
@@ -256,22 +260,32 @@ class CrashGameClient {
     handleMultiplierUpdate(data) {
         this.currentMultiplier = data.multiplier;
         
-        // Update multiplier display more reliably - allow during running phase
+        // COMPLETE ISOLATION: Never update display from server (local game owns it)
+        if (this.disableMultiplierUpdates) {
+            // Server values ignored completely for display
+            if (Math.random() < 0.02) { // 2% chance to log for debugging
+                console.log(`📡 Server multiplier: ${data.multiplier.toFixed(2)}x (IGNORED - local controls display)`);
+            }
+            // Don't even try to touch the display element
+            return;
+        }
+        
+        // Legacy mode: Only if specifically not disabled (shouldn't happen in hybrid mode)
         if (data.multiplier >= 1.0) {
             const multiplierElement = document.getElementById('multiplierValue');
             if (multiplierElement) {
                 multiplierElement.textContent = data.multiplier.toFixed(2) + 'x';
-                // Only log occasionally to reduce spam
-                if (Math.random() < 0.01) { // 1% chance to log
-                    console.log(`📡 Multiplier: ${data.multiplier.toFixed(2)}x (${this.gameState})`);
-                }
+                console.log(`📡 Server Multiplier: ${data.multiplier.toFixed(2)}x (legacy mode)`);
             }
         }
         
-        // Update potential winnings
+        // Always update potential winnings even if display is disabled
         if (this.playerBet && !this.playerBet.cashedOut) {
             const potentialWin = (this.playerBet.amount * data.multiplier).toFixed(4);
-            document.getElementById('potentialWin').textContent = potentialWin + ' ETH';
+            const potentialWinElement = document.getElementById('potentialWin');
+            if (potentialWinElement) {
+                potentialWinElement.textContent = potentialWin + ' ETH';
+            }
         }
         
         if (this.onMultiplierUpdate) {
@@ -285,9 +299,29 @@ class CrashGameClient {
     handleRoundCrash(data) {
         this.gameState = 'crashed';
         
-        console.log('💥 Round crashed at:', data.crashPoint);
+        console.log('💥 Server round crashed at:', data.crashPoint);
         
-        // Update UI
+        // HYBRID MODE: Don't update UI if local game controls display
+        if (this.disableMultiplierUpdates) {
+            console.log('🔒 Server crash UI updates DISABLED - local game controls crash display');
+            
+            // Only handle betting results, not display
+            if (this.playerBet) {
+                if (this.playerBet.cashedOut) {
+                    this.showNotification(`🎉 You won ${this.playerBet.payout.toFixed(4)} ETH!`, 'success');
+                } else {
+                    this.showNotification('💥 Your bet was lost in the crash', 'error');
+                }
+                this.playerBet = null;
+            }
+            
+            if (this.onRoundCrash) {
+                this.onRoundCrash(data);
+            }
+            return;
+        }
+        
+        // Legacy mode: Update UI (only if not in hybrid mode)
         document.getElementById('gameStatus').textContent = 'Crashed';
         document.getElementById('gameStateMessage').textContent = 
             `Crashed at ${data.crashPoint.toFixed(2)}x`;

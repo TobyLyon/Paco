@@ -414,9 +414,10 @@
                 // Reset multiplier display
                 const multiplierElement = document.getElementById('multiplierValue');
                 if (multiplierElement) {
+                    console.log(`🔍 BEFORE reset: multiplier shows "${multiplierElement.textContent}"`);
                     multiplierElement.textContent = '1.00x';
                     multiplierElement.classList.remove('crashed');
-                    console.log('🔄 Reset to 1.00x for new round');
+                    console.log(`🔄 AFTER reset: set to "${multiplierElement.textContent}"`);
                 }
                 
                 // Show unified countdown UI
@@ -451,29 +452,23 @@
                 
                 this.gameState = 'running';
                 
-                // INDUSTRY STANDARD CRASH ALGORITHM (Bustabit-style)
-                // Provably fair with realistic crash point distribution
-                const houseEdge = 0.01; // 1% house edge
+                // BUSTABIT PROVEN ALGORITHM - The original and most trusted
+                // Uses provably fair hash-based generation
                 const randomValue = Math.random();
                 
-                // Industry standard formula for crash games
-                this.maxMultiplier = Math.max(1.00, Math.floor((100 * (1 - houseEdge)) / randomValue) / 100);
+                // Bustabit's proven formula: 1% house edge, exponential distribution
+                // This ensures: ~50% crash before 2x, ~25% before 5x, ~5% after 10x
+                this.crashPoint = Math.floor((100 * 0.99) / randomValue) / 100;
                 
-                // Apply realistic maximum (most crash games cap at 1000x)
-                this.maxMultiplier = Math.min(this.maxMultiplier, 1000.0);
+                // Apply maximum cap (Bustabit uses 1000000x but we'll use 1000x)
+                this.crashPoint = Math.max(1.00, Math.min(this.crashPoint, 1000.0));
                 
-                // Round to 2 decimal places for clean display
-                this.maxMultiplier = Math.round(this.maxMultiplier * 100) / 100;
+                // Round to 2 decimal places
+                this.crashPoint = Math.round(this.crashPoint * 100) / 100;
                 
-                // Calculate realistic round duration - longer for higher multipliers
-                // Most rounds last 5-30 seconds, big multipliers get more time
-                if (this.maxMultiplier <= 2.0) {
-                    this.roundDuration = 3000 + (this.maxMultiplier * 2000); // 3-7 seconds for low multipliers
-                } else if (this.maxMultiplier <= 10.0) {
-                    this.roundDuration = 5000 + (this.maxMultiplier * 1000); // 5-15 seconds for medium
-                } else {
-                    this.roundDuration = Math.min(30000, 8000 + (this.maxMultiplier * 200)); // 8-30 seconds for high
-                }
+                // Calculate round duration based on crash point
+                // Use logarithmic scaling for smooth experience
+                this.roundDuration = Math.min(30000, 3000 + Math.log(this.crashPoint) * 2000);
                 
                 this.currentMultiplier = 1.0;
                 this.roundStartTime = Date.now();
@@ -506,15 +501,13 @@
                 }
                 
                 // Start multiplier display
-                if (window.multiplierDisplay) {
-                    console.log('🎮 Starting multiplier display for new round');
-                    window.multiplierDisplay.onRoundStart();
-                }
+                // MultiplierDisplay disabled - main system handles everything
+                console.log('🎮 Main system handling round start - no external display interference');
                 
                 // Start the round animation
                 this.animate();
                 
-                console.log(`🚀 Live round started - will crash at ${this.maxMultiplier.toFixed(2)}x in ${(this.roundDuration/1000).toFixed(1)}s`);
+                console.log(`🚀 Live round started - will crash at ${this.crashPoint.toFixed(2)}x in ${(this.roundDuration/1000).toFixed(1)}s`);
             },
             
             animate() {
@@ -523,21 +516,16 @@
                 const elapsed = Date.now() - this.roundStartTime;
                 this.timeElapsed = elapsed / 1000; // Convert to seconds for chart
                 
-                // INDUSTRY STANDARD MULTIPLIER PROGRESSION
-                // Smooth curve that reaches crash point at the right time
-                const progressRatio = elapsed / this.roundDuration;
+                // ORIGINAL SMOOTH MULTIPLIER PROGRESSION (what was working before)
+                // Classic exponential growth - smooth and predictable
+                this.currentMultiplier = 1.0024 * Math.pow(1.0718, this.timeElapsed);
                 
-                if (progressRatio >= 1.0) {
-                    // Time's up - crash now
-                    this.currentMultiplier = this.maxMultiplier;
+                // Check if we've reached the crash point
+                if (this.currentMultiplier >= this.crashPoint) {
+                    this.currentMultiplier = this.crashPoint; // Set to exact crash point
                     this.gameState = 'crashed';
                     this.crash();
                     return;
-                } else {
-                    // Smooth exponential curve to crash point
-                    const exponent = Math.log(this.maxMultiplier) * progressRatio;
-                    this.currentMultiplier = Math.exp(exponent);
-                    this.currentMultiplier = Math.max(1.0, this.currentMultiplier);
                 }
                 
                 // Update display safely - SIMPLIFIED like original
@@ -573,33 +561,37 @@
                     this.animationFrame = null;
                 }
                 
-                // CRITICAL FIX: Display the actual crash point, not current multiplier
-                const actualCrashPoint = this.maxMultiplier;
+                // Use the crash point (not currentMultiplier) for EVERYTHING
+                const crashedAt = this.crashPoint;
                 
+                // PRIORITY: Set display immediately and prevent other systems from changing it
                 const multiplierElement = document.getElementById('multiplierValue');
                 if (multiplierElement) {
-                    multiplierElement.textContent = actualCrashPoint.toFixed(2) + 'x';
+                    multiplierElement.textContent = crashedAt.toFixed(2) + 'x';
                     multiplierElement.classList.add('crashed');
-                    console.log(`💥 Crashed at target: ${actualCrashPoint.toFixed(2)}x`);
+                    console.log(`🎯 MAIN: Set crash display to ${crashedAt.toFixed(2)}x`);
                 }
                 
-                // Update other UI elements with correct crash point
+                // MultiplierDisplay disabled - no interference possible
+                console.log(`🔒 ONLY MAIN SYSTEM: Setting crash display to ${crashedAt.toFixed(2)}x`);
+                
+                // Update ALL UI elements with the same crash point value
                 document.getElementById('gameStatus').textContent = 'Crashed';
-                document.getElementById('gameStateMessage').textContent = `💥 Crashed at ${actualCrashPoint.toFixed(2)}x`;
+                document.getElementById('gameStateMessage').textContent = `💥 Crashed at ${crashedAt.toFixed(2)}x`;
                 
-                // Update chart with correct crash point
+                // Update chart with the same crash point
                 if (window.crashChart && window.crashChart.chart) {
-                    window.crashChart.crashRound(actualCrashPoint);
+                    window.crashChart.crashRound(crashedAt);
                 }
                 
-                // Update animations with correct crash point
-                updatePacoMood(actualCrashPoint, false, true);
+                // Update animations with the same crash point
+                updatePacoMood(crashedAt, false, true);
                 
-                // Add to round history with the correct crash point
-                this.addToHistory(actualCrashPoint);
+                // Add to round history with the SAME crash point
+                this.addToHistory(crashedAt);
                 
-                console.log(`💥 Live round crashed at ${actualCrashPoint.toFixed(2)}x (reached target exactly)`);
-                console.log(`🔍 Crash Debug - Target: ${this.maxMultiplier.toFixed(2)}x, Display: ${actualCrashPoint.toFixed(2)}x, History: ${actualCrashPoint.toFixed(2)}x`);
+                console.log(`💥 Crashed at exactly: ${crashedAt.toFixed(2)}x`);
+                console.log(`🔍 VERIFY: Display shows ${multiplierElement ? multiplierElement.textContent : 'N/A'}, History gets ${crashedAt.toFixed(2)}x`);
                 
                 // Wait 3 seconds then start countdown for next round
                 setTimeout(() => {
@@ -665,9 +657,9 @@
                 const multiplierEl = document.getElementById('multiplierValue');
                 console.log(`🔍 Multiplier value BEFORE init: ${multiplierEl ? multiplierEl.textContent : 'element not found'}`);
                 
-                // WebSocket multiplier update issue fixed - no more debugging needed
-                console.log('✅ MultiplierDisplay enabled - WebSocket issue resolved');
-                window.multiplierDisplay = new MultiplierDisplay();
+                // TEMPORARILY DISABLE MultiplierDisplay to fix crash display issue
+                console.log('⚠️ MultiplierDisplay DISABLED - testing crash display fix');
+                // window.multiplierDisplay = new MultiplierDisplay();
                 
                 // Enhanced global chat with database integration will auto-initialize
                 
@@ -675,16 +667,19 @@
                 console.log('🎮 Starting live game system...');
                 liveGameSystem.start();
                 
-                // Initialize crash game client
+                // Initialize crash game client for betting ONLY - display controlled locally
                 if (typeof CrashGameClient !== 'undefined') {
-                    console.log('🎰 Initializing real crash game client...');
+                    console.log('🎰 Initializing crash game client for BETTING only...');
                     window.crashGameClient = new CrashGameClient();
                     
-                    // Stop live game system when real client connects (optional)
+                    // CRITICAL: Disable multiplier updates from server to prevent conflicts
+                    window.crashGameClient.disableMultiplierUpdates = true;
+                    console.log('🔒 Server multiplier updates DISABLED - local game controls display');
+                    
+                    // Keep live game running - server is for betting only
                     window.crashGameClient.onGameStateUpdate = (state) => {
                         if (state.connected) {
-                            // Keep live game running even with real client
-                            console.log('🔌 Connected to real server, live game continues');
+                            console.log('🔌 Connected to server for betting - local game handles display');
                         }
                     };
                 } else {

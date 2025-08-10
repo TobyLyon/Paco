@@ -104,9 +104,9 @@ class BetInterface {
             return;
         }
 
-        // Check if crash client is available and connected
+        // Check if crash client is available and connected for betting
         if (!window.crashGameClient || !window.crashGameClient.isConnected) {
-            this.showNotification('❌ Not connected to game server', 'error');
+            this.showNotification('❌ Not connected to betting server - connecting...', 'error');
             return;
         }
 

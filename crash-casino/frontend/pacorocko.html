@@ -991,11 +991,11 @@
                 item.className = 'round-item';
                 item.textContent = crashPoint.toFixed(2) + 'x';
                 
-                // Color based on multiplier
+                // Color based on multiplier (2x+ = positive return = green)
                 if (crashPoint < 2) {
                     item.classList.add('low');
                 } else if (crashPoint < 10) {
-                    item.classList.add('medium');
+                    item.classList.add('medium'); // 2x+ positive returns = green
                 } else {
                     item.classList.add('high');
                 }
@@ -1080,11 +1080,11 @@
                                 item.className = 'round-item';
                                 item.textContent = parseFloat(roundData.crash_point).toFixed(2) + 'x';
                                 
-                                // Color based on multiplier
+                                // Color based on multiplier (2x+ = positive return = green)
                                 if (roundData.crash_point < 2) {
                                     item.classList.add('low');
                                 } else if (roundData.crash_point < 10) {
-                                    item.classList.add('medium');
+                                    item.classList.add('medium'); // 2x+ positive returns = green
                                 } else {
                                     item.classList.add('high');
                                 }
@@ -1143,11 +1143,11 @@
                                     item.className = 'round-item';
                                     item.textContent = parseFloat(round.crash_point).toFixed(2) + 'x';
                                     
-                                    // Color based on multiplier
+                                    // Color based on multiplier (2x+ = positive return = green)
                                     if (round.crash_point < 2) {
                                         item.classList.add('low');
                                     } else if (round.crash_point < 10) {
-                                        item.classList.add('medium');
+                                        item.classList.add('medium'); // 2x+ positive returns = green
                                     } else {
                                         item.classList.add('high');
                                     }

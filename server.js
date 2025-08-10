@@ -30,22 +30,26 @@ app.get('/health', (req, res) => {
 // Initialize crash casino backend
 console.log('🎰 Initializing PacoRocko crash casino backend...');
 
+// Start the server
+const PORT = process.env.PORT || 3001;
+
+console.log('🎰 Creating PacoRocko Production instance...');
 const crashCasino = new PacoRockoProduction(app, {
-    jwtSecret: process.env.JWT_SECRET || 'paco-crash-secret-key',
+    jwtSecret: process.env.JWT_SECRET || 'paco-crash-production-key-2025',
     corsOrigin: process.env.CORS_ORIGIN || "*",
     enableDatabase: true,
     enableSmartContracts: true
 });
 
-// Start the server
-const PORT = process.env.PORT || 3001;
-
+console.log('🚀 Starting PacoRocko backend server...');
 crashCasino.start(PORT).then(() => {
-    console.log(`🚀 PacoRocko backend running on port ${PORT}`);
-    console.log(`🔗 WebSocket endpoint: ws://localhost:${PORT}/crash-ws`);
-    console.log(`🏥 Health check: http://localhost:${PORT}/health`);
+    console.log(`✅ PacoRocko backend running on port ${PORT}`);
+    console.log(`🔗 WebSocket endpoint: wss://paco-x57j.onrender.com/crash-ws`);
+    console.log(`🏥 Health check: https://paco-x57j.onrender.com/health`);
+    console.log(`🎰 Crash casino ready for betting!`);
 }).catch((error) => {
     console.error('❌ Failed to start server:', error);
+    console.error('❌ Error details:', error.stack);
     process.exit(1);
 });
 

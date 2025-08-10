@@ -15,6 +15,10 @@
       "destination": "/auth/callback.html"
     },
     {
+      "source": "/PacoRocko",
+      "destination": "/crash-casino/frontend/pacorocko.html"
+    },
+    {
       "source": "/pacorocko",
       "destination": "/crash-casino/frontend/pacorocko.html"
     }

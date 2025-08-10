@@ -406,9 +406,9 @@ class CrashGameClient {
 
             this.showNotification('🎰 Processing bet transaction...', 'info');
             
-            // Send transaction to Abstract L2
+            // Send transaction to Abstract L2 - Use correct house wallet
             const txResult = await window.realWeb3Modal.sendTransaction(
-                this.config.houseWallet || '0x742d35Cc6634C0532925a3b8D5Bc9d65F62ce4AA', 
+                this.config.houseWallet || '0x1f8B1c4D05eF17Ebaa1E572426110146691e6C5a', 
                 amount
             );
             

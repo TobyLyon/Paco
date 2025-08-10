@@ -682,9 +682,7 @@
         // Close modal when clicking overlay
         document.addEventListener('click', function(e) {
             if (e.target.classList.contains('wallet-modal-overlay')) {
-                if (e.target.id === 'walletModal') {
-                    closeModal('walletModal');
-                } else if (e.target.id === 'provablyFairModal') {
+                if (e.target.id === 'provablyFairModal') {
                     closeModal('provablyFairModal');
                 }
             }
@@ -1190,12 +1188,24 @@
             }
         };
 
-        // EMERGENCY FALLBACK: Hide loading screen after 5 seconds no matter what
+        // EMERGENCY FALLBACK: Hide loading screen after 3 seconds no matter what
         setTimeout(() => {
-            console.log('🚨 EMERGENCY: Force hiding loading screen after 5 seconds');
-            document.getElementById('loadingScreen').style.display = 'none';
-            document.getElementById('gameContainer').style.display = 'block';
-        }, 5000);
+            console.log('🚨 EMERGENCY: Force hiding loading screen after 3 seconds');
+            const loadingScreen = document.getElementById('loadingScreen');
+            const gameContainer = document.getElementById('gameContainer');
+            if (loadingScreen) loadingScreen.style.display = 'none';
+            if (gameContainer) gameContainer.style.display = 'block';
+            console.log('✅ Loading screen force-hidden, game should be visible now');
+        }, 3000);
+        
+        // IMMEDIATE FALLBACK: Also try right away
+        setTimeout(() => {
+            console.log('⚡ IMMEDIATE: Trying to hide loading screen after 1 second');
+            const loadingScreen = document.getElementById('loadingScreen');
+            const gameContainer = document.getElementById('gameContainer');
+            if (loadingScreen) loadingScreen.style.display = 'none';
+            if (gameContainer) gameContainer.style.display = 'block';
+        }, 1000);
 
         // Initialize app when page loads
         document.addEventListener('DOMContentLoaded', async function() {
@@ -1645,7 +1655,8 @@
             }, 2000);
         });
 
-        // Wallet Management System
+        // [WalletManager removed - using Enhanced Betting System]
+        /*
         const WalletManager = {
             gamingBalance: 0,
             isDepositing: false,
@@ -1908,12 +1919,13 @@
         };
 
         // Make WalletManager globally available
-        window.WalletManager = WalletManager;
+        // window.WalletManager = WalletManager;
 
         // Modal close functions
-        function closeWalletModal() {
-            WalletManager.closeModal();
-        }
+        // function closeWalletModal() {
+        //     WalletManager.closeModal();
+        // }
+        */
 
         // Add CSS animation for success notification
         const style = document.createElement('style');

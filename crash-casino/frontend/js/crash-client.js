@@ -465,16 +465,115 @@ class CrashGameClient {
 
             this.showNotification('🎰 Processing bet transaction...', 'info');
             
-            // Send transaction to Abstract L2 - Use correct house wallet with higher gas
+            // Send transaction to Abstract L2 - Use correct house wallet with advanced retry logic
             const houseWallet = '0x1f8B1c4D05eF17Ebaa1E572426110146691e6C5a'; // Your house wallet
-            const txResult = await window.realWeb3Modal.sendTransaction(
-                houseWallet, 
-                amount,
-                {
-                    gasLimit: 50000, // Higher gas limit to avoid RPC estimation issues
-                    gasPrice: null   // Let MetaMask estimate gas price
+            
+            // Advanced RPC error handling for Abstract Network
+            let txResult;
+            let attempts = 0;
+            const maxAttempts = 3;
+            
+            while (attempts < maxAttempts) {
+                attempts++;
+                console.log(`🔄 Transaction attempt ${attempts}/${maxAttempts}`);
+                
+                try {
+                    // Different gas strategies for each attempt
+                    let gasConfig;
+                    switch (attempts) {
+                        case 1:
+                            // First attempt: Let MetaMask estimate everything
+                            gasConfig = {};
+                            console.log('📊 Attempt 1: MetaMask auto-estimation');
+                            break;
+                        case 2:
+                            // Second attempt: Manual gas limit with auto price
+                            gasConfig = {
+                                gasLimit: 100000,
+                                gasPrice: null
+                            };
+                            console.log('📊 Attempt 2: Manual gas limit 100k');
+                            break;
+                        case 3:
+                            // Third attempt: Conservative manual settings
+                            gasConfig = {
+                                gasLimit: 21000, // Standard ETH transfer
+                                gasPrice: '20000000000' // 20 gwei
+                            };
+                            console.log('📊 Attempt 3: Conservative settings');
+                            break;
+                    }
+                    
+                    // Debug current network state
+                    if (window.ethereum) {
+                        const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+                        const balance = await window.ethereum.request({ 
+                            method: 'eth_getBalance', 
+                            params: [this.playerAddress, 'latest'] 
+                        });
+                        const balanceEth = parseInt(balance, 16) / 1e18;
+                        console.log(`🌐 Network: ${chainId}, Balance: ${balanceEth.toFixed(6)} ETH`);
+                        
+                        // Check if we're on Abstract mainnet
+                        if (chainId !== '0xab5') {
+                            console.log('⚠️ Not on Abstract mainnet (0xab5). Current chain:', chainId);
+                            throw new Error('Please switch to Abstract mainnet (Chain ID: 0xab5)');
+                        }
+                        
+                        // Check if balance is sufficient for bet + gas
+                        const betAmountEth = parseInt(amount.toString(), 16) / 1e18;
+                        const estimatedGasEth = 0.001; // Conservative estimate
+                        if (balanceEth < (betAmountEth + estimatedGasEth)) {
+                            throw new Error(`Insufficient balance. Need ${(betAmountEth + estimatedGasEth).toFixed(6)} ETH, have ${balanceEth.toFixed(6)} ETH`);
+                        }
+                    }
+                    
+                    txResult = await window.realWeb3Modal.sendTransaction(
+                        houseWallet,
+                        amount,
+                        gasConfig
+                    );
+                    
+                    console.log('✅ Transaction successful:', txResult);
+                    break; // Success, exit retry loop
+                    
+                } catch (error) {
+                    console.error(`❌ Attempt ${attempts} failed:`, error);
+                    
+                    // Analyze error type
+                    if (error.message.includes('Internal JSON-RPC error')) {
+                        console.log('🔍 RPC Error detected - this is likely an Abstract Network issue');
+                        
+                        // If it's the last attempt, show user-friendly message
+                        if (attempts === maxAttempts) {
+                            console.log('💡 Abstract Network RPC Issue - Suggested solutions:');
+                            console.log('1. 🔄 Refresh the page and reconnect your wallet');
+                            console.log('2. 🌐 Check Abstract Network status at https://status.abs.xyz');
+                            console.log('3. 💰 Ensure sufficient ETH balance for gas fees');
+                            console.log('4. ⏰ Try again in a few minutes');
+                            console.log('5. 🔗 Try switching MetaMask RPC endpoint');
+                            
+                            // Show user-friendly modal message
+                            this.showNotification(
+                                '❌ Transaction Failed: Abstract Network RPC Error. Try refreshing the page and reconnecting your wallet, or check Abstract Network status.',
+                                'error',
+                                10000
+                            );
+                            
+                            throw new Error(`Transaction failed after ${maxAttempts} attempts. This appears to be an Abstract Network RPC issue. Please try refreshing the page or check the console for detailed troubleshooting steps.`);
+                        }
+                    } else {
+                        // Different error type, don't retry
+                        throw error;
+                    }
+                    
+                    // Wait before retry
+                    if (attempts < maxAttempts) {
+                        console.log(`⏱️ Waiting 2 seconds before retry...`);
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                    }
                 }
-            );
+            }
             
             // Verify transaction was successful
             if (!txResult || !txResult.hash) {
@@ -517,6 +616,11 @@ class CrashGameClient {
         } catch (error) {
             console.error('❌ Failed to place bet:', error);
             
+            // If it's an RPC error, suggest solutions
+            if (error.message.includes('RPC') || error.message.includes('JSON-RPC')) {
+                this.suggestRPCSwitch();
+            }
+            
             // Handle specific error types
             let errorMessage = 'Failed to place bet';
             if (error.message.includes('insufficient funds')) {
@@ -532,6 +636,44 @@ class CrashGameClient {
             this.showError(errorMessage);
             return false;
         }
+    }
+
+    /**
+     * 🔗 Helper function to suggest Alternative Abstract RPC endpoints
+     */
+    suggestRPCSwitch() {
+        const abstractRPCs = [
+            {
+                name: 'Abstract Mainnet (Primary)',
+                url: 'https://api.mainnet.abs.xyz',
+                chainId: '0xab5'
+            },
+            {
+                name: 'Abstract Mainnet (Alternative)',
+                url: 'https://rpc.abs.xyz', 
+                chainId: '0xab5'
+            }
+        ];
+        
+        console.log('🔗 Alternative Abstract RPC endpoints you can try:');
+        abstractRPCs.forEach((rpc, index) => {
+            console.log(`${index + 1}. ${rpc.name}: ${rpc.url}`);
+        });
+        
+        console.log('📋 To switch RPC in MetaMask:');
+        console.log('1. Open MetaMask > Settings > Networks');
+        console.log('2. Find "Abstract" and click Edit');
+        console.log('3. Try changing RPC URL to one above');
+        console.log('4. Chain ID: 2741 (0xab5)');
+        console.log('5. Currency: ETH');
+        console.log('6. Block Explorer: https://explorer.abs.xyz');
+        
+        // Also show a user notification
+        this.showNotification(
+            '🔗 RPC Issue Detected. Check console for alternative RPC endpoints to try in MetaMask.',
+            'warning',
+            8000
+        );
     }
 
     /**

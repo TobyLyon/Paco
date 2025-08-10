@@ -778,9 +778,12 @@
                 }, 3000);
             },
             
-            addToHistory(crashPoint) {
+            async addToHistory(crashPoint) {
                 const historyContainer = document.getElementById('roundHistory');
                 if (!historyContainer) return;
+                
+                // Save to Supabase database
+                await this.saveRoundToDatabase(crashPoint);
                 
                 const item = document.createElement('div');
                 item.className = 'round-item';
@@ -798,9 +801,93 @@
                 // Add to beginning
                 historyContainer.insertBefore(item, historyContainer.firstChild);
                 
-                // Keep only last 20 rounds
+                // Keep only last 20 rounds in display
                 while (historyContainer.children.length > 20) {
                     historyContainer.removeChild(historyContainer.lastChild);
+                }
+            },
+            
+            async saveRoundToDatabase(crashPoint) {
+                try {
+                    if (!window.supabase) {
+                        console.log('📊 Supabase not available - round not saved to database');
+                        return;
+                    }
+                    
+                    const roundData = {
+                        round_id: `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                        crash_point: parseFloat(crashPoint.toFixed(2)),
+                        round_duration: this.roundDuration || null,
+                        is_test_round: true, // Mark local rounds as test rounds
+                        started_at: new Date(this.roundStartTime).toISOString(),
+                        crashed_at: new Date().toISOString()
+                    };
+                    
+                    const { data, error } = await window.supabase
+                        .from('crash_rounds')
+                        .insert([roundData]);
+                    
+                    if (error) {
+                        console.error('❌ Failed to save round to database:', error);
+                    } else {
+                        console.log('✅ Round saved to database:', roundData.round_id);
+                    }
+                } catch (error) {
+                    console.error('❌ Database save error:', error);
+                }
+            },
+            
+            async loadHistoryFromDatabase() {
+                try {
+                    if (!window.supabase) {
+                        console.log('📊 Supabase not available - loading local history only');
+                        return;
+                    }
+                    
+                    const { data, error } = await window.supabase
+                        .from('recent_crash_rounds')
+                        .select('*')
+                        .order('started_at', { ascending: false })
+                        .limit(20);
+                    
+                    if (error) {
+                        console.error('❌ Failed to load round history:', error);
+                        return;
+                    }
+                    
+                    if (data && data.length > 0) {
+                        const historyContainer = document.getElementById('roundHistory');
+                        if (historyContainer) {
+                            // Clear existing history
+                            historyContainer.innerHTML = '';
+                            
+                            // Add database rounds to history
+                            data.forEach(round => {
+                                const item = document.createElement('div');
+                                item.className = 'round-item';
+                                item.textContent = parseFloat(round.crash_point).toFixed(2) + 'x';
+                                
+                                // Color based on multiplier
+                                if (round.crash_point < 2) {
+                                    item.classList.add('low');
+                                } else if (round.crash_point < 10) {
+                                    item.classList.add('medium');
+                                } else {
+                                    item.classList.add('high');
+                                }
+                                
+                                // Add timestamp tooltip
+                                const timestamp = new Date(round.started_at).toLocaleTimeString();
+                                item.title = `Round at ${timestamp}`;
+                                
+                                historyContainer.appendChild(item);
+                            });
+                            
+                            console.log(`✅ Loaded ${data.length} rounds from database`);
+                        }
+                    }
+                } catch (error) {
+                    console.error('❌ Database load error:', error);
                 }
             }
         };
@@ -839,6 +926,10 @@
                 console.log('🎮 Starting live game system...');
                 window.liveGameSystem = liveGameSystem; // Make it globally accessible
                 liveGameSystem.start();
+                
+                // Load historical rounds from database
+                console.log('📊 Loading round history from database...');
+                await liveGameSystem.loadHistoryFromDatabase();
                 
                 // Initialize crash game client for betting ONLY - display controlled locally
                 if (typeof CrashGameClient !== 'undefined') {

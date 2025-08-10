@@ -17,6 +17,15 @@ class CrashGameClient {
         // HYBRID MODE: Disable multiplier updates by default (local game controls display)
         this.disableMultiplierUpdates = false; // Will be set to true externally
         
+        // Smooth interpolation system for server-driven mode
+        this.lastServerMultiplier = 1.0;
+        this.lastServerTime = 0;
+        this.serverUpdateInterval = 16.67; // 60 FPS expected
+        this.interpolationActive = false;
+        this.animationFrame = null;
+        this.crashPoint = null;
+        this.roundStartTime = null;
+        
         // Event handlers
         this.onGameStateUpdate = null;
         this.onMultiplierUpdate = null;
@@ -266,8 +275,14 @@ class CrashGameClient {
         this.roundStartTime = data.startTime || Date.now(); // Use server time if available
         this.currentRound = data.roundId;
         this.currentMultiplier = 1.0;
+        this.lastServerMultiplier = 1.0;
+        this.lastServerTime = Date.now();
+        this.crashPoint = null;
         
         console.log('🚀 Round started:', data.roundId);
+        
+        // Start smooth interpolation for server-driven mode
+        this.startSmoothInterpolation();
         
         // Reset all visual systems for new round
         if (window.crashChart) {
@@ -297,6 +312,9 @@ class CrashGameClient {
      * 📈 Handle multiplier updates
      */
     handleMultiplierUpdate(data) {
+        // Store server data for smooth interpolation
+        this.lastServerMultiplier = data.multiplier;
+        this.lastServerTime = Date.now();
         this.currentMultiplier = data.multiplier;
         
         // COMPLETE ISOLATION: Never update display from server (local game owns it)
@@ -308,27 +326,24 @@ class CrashGameClient {
             // Don't even try to touch the display element
             return;
         }
+
+        // In smooth interpolation mode, let the animation loop handle updates
+        if (this.interpolationActive) {
+            // Only log occasionally to reduce console spam
+            if (data.multiplier % 1 < 0.1 || data.multiplier > 5) {
+                console.log(`📡 Server Multiplier: ${data.multiplier.toFixed(2)}x (interpolating)`);
+            }
+            return;
+        }
         
-        // Update all display systems with server multiplier
+        // Fallback: Direct update if interpolation isn't active
         if (data.multiplier >= 1.0) {
-            const multiplierElement = document.getElementById('multiplierValue');
-            if (multiplierElement) {
-                multiplierElement.textContent = data.multiplier.toFixed(2) + 'x';
-                // Only log occasionally to reduce console spam
-                if (data.multiplier % 1 < 0.1 || data.multiplier > 5) {
-                    console.log(`📡 Server Multiplier: ${data.multiplier.toFixed(2)}x`);
-                }
-            }
+            const timeElapsed = (Date.now() - this.roundStartTime) / 1000;
+            this.updateVisualSystems(data.multiplier, timeElapsed);
             
-            // Update MultiplierDisplay if available
-            if (window.multiplierDisplay) {
-                window.multiplierDisplay.updateMultiplier(data.multiplier);
-            }
-            
-            // Update crash chart if available
-            if (window.crashChart) {
-                const timeElapsed = (Date.now() - this.roundStartTime) / 1000;
-                window.crashChart.addDataPoint(timeElapsed, data.multiplier);
+            // Only log occasionally to reduce console spam
+            if (data.multiplier % 1 < 0.1 || data.multiplier > 5) {
+                console.log(`📡 Server Multiplier: ${data.multiplier.toFixed(2)}x (direct)`);
             }
         }
         
@@ -353,6 +368,9 @@ class CrashGameClient {
         this.gameState = 'crashed';
         
         console.log('💥 Server round crashed at:', data.crashPoint + 'x');
+        
+        // Stop smooth interpolation on crash
+        this.stopSmoothInterpolation();
         
         // Update all visual systems for crash (server-driven mode)
         if (window.crashChart) {
@@ -1003,6 +1021,93 @@ class CrashGameClient {
         const statusElement = document.getElementById('transactionStatus');
         if (statusElement) {
             statusElement.style.display = 'none';
+        }
+    }
+
+    /**
+     * 🎬 Start smooth interpolation animation
+     */
+    startSmoothInterpolation() {
+        if (this.interpolationActive) return;
+        
+        this.interpolationActive = true;
+        console.log('🎬 Starting smooth interpolation for server-driven casino');
+        this.smoothInterpolationLoop();
+    }
+
+    /**
+     * 🛑 Stop smooth interpolation
+     */
+    stopSmoothInterpolation() {
+        this.interpolationActive = false;
+        if (this.animationFrame) {
+            cancelAnimationFrame(this.animationFrame);
+            this.animationFrame = null;
+        }
+        console.log('🛑 Stopped smooth interpolation');
+    }
+
+    /**
+     * 🔄 Smooth interpolation loop for ultra-smooth visuals
+     */
+    smoothInterpolationLoop() {
+        if (!this.interpolationActive || this.gameState !== 'running') {
+            this.stopSmoothInterpolation();
+            return;
+        }
+
+        const now = Date.now();
+        const timeSinceRoundStart = (now - this.roundStartTime) / 1000;
+        
+        // Predict multiplier based on exponential growth (same formula as server)
+        const predictedMultiplier = 1.0024 * Math.pow(1.0718, timeSinceRoundStart);
+        
+        // Use interpolated server value if recent, otherwise predict
+        const timeSinceServerUpdate = now - this.lastServerTime;
+        const displayMultiplier = (timeSinceServerUpdate < 200) ? // 200ms tolerance
+            this.interpolateTowards(this.lastServerMultiplier, now) : 
+            predictedMultiplier;
+
+        // Update all visual systems with smooth interpolated value
+        this.updateVisualSystems(displayMultiplier, timeSinceRoundStart);
+
+        // Continue animation loop at 60 FPS
+        this.animationFrame = requestAnimationFrame(() => this.smoothInterpolationLoop());
+    }
+
+    /**
+     * 📈 Interpolate towards server value for smoothness
+     */
+    interpolateTowards(serverMultiplier, currentTime) {
+        const timeSinceUpdate = currentTime - this.lastServerTime;
+        const interpolationFactor = Math.min(timeSinceUpdate / this.serverUpdateInterval, 1.0);
+        
+        // Smooth interpolation with exponential prediction
+        const predictedGrowth = 1.0024 * Math.pow(1.0718, timeSinceUpdate / 1000);
+        return serverMultiplier * predictedGrowth;
+    }
+
+    /**
+     * 🎨 Update all visual systems with smooth value
+     */
+    updateVisualSystems(multiplier, timeElapsed) {
+        // Update current multiplier
+        this.currentMultiplier = multiplier;
+
+        // Update multiplier display element
+        const multiplierElement = document.getElementById('multiplierValue');
+        if (multiplierElement) {
+            multiplierElement.textContent = multiplier.toFixed(2) + 'x';
+        }
+
+        // Update MultiplierDisplay (throttled internally)
+        if (window.multiplierDisplay && !window.multiplierDisplay.isCrashed) {
+            window.multiplierDisplay.updateMultiplier(multiplier);
+        }
+
+        // Update crash chart (throttled internally)
+        if (window.crashChart && window.crashChart.isRunning) {
+            window.crashChart.addDataPoint(timeElapsed, multiplier);
         }
     }
 

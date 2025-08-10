@@ -831,14 +831,39 @@
             },
             
             async addToHistory(crashPoint) {
-                console.log(`📊 Adding round ${crashPoint.toFixed(2)}x to database...`);
+                const historyContainer = document.getElementById('roundHistory');
+                if (!historyContainer) return;
                 
-                // Save to Supabase database
-                await this.saveRoundToDatabase(crashPoint);
+                console.log(`📊 Adding round ${crashPoint.toFixed(2)}x to database and display...`);
                 
-                // Reload history from database to keep display in sync
-                console.log(`🔄 Refreshing history display from database...`);
-                await this.loadHistoryFromDatabase();
+                // Save to Supabase database (but don't wait for it to complete)
+                this.saveRoundToDatabase(crashPoint).catch(error => {
+                    console.error('❌ Failed to save round to database:', error);
+                });
+                
+                // Add to local display immediately for responsive UI
+                const item = document.createElement('div');
+                item.className = 'round-item';
+                item.textContent = crashPoint.toFixed(2) + 'x';
+                
+                // Color based on multiplier
+                if (crashPoint < 2) {
+                    item.classList.add('low');
+                } else if (crashPoint < 10) {
+                    item.classList.add('medium');
+                } else {
+                    item.classList.add('high');
+                }
+                
+                // Add to beginning
+                historyContainer.insertBefore(item, historyContainer.firstChild);
+                
+                // Keep only last 20 rounds in display
+                while (historyContainer.children.length > 20) {
+                    historyContainer.removeChild(historyContainer.lastChild);
+                }
+                
+                console.log(`✅ Round ${crashPoint.toFixed(2)}x added to display. Total visible: ${historyContainer.children.length}`);
             },
             
             async saveRoundToDatabase(crashPoint) {
@@ -892,32 +917,37 @@
                     if (data && data.length > 0) {
                         const historyContainer = document.getElementById('roundHistory');
                         if (historyContainer) {
-                            // Clear existing history
-                            historyContainer.innerHTML = '';
-                            
-                            // Add database rounds to history
-                            data.forEach(round => {
-                                const item = document.createElement('div');
-                                item.className = 'round-item';
-                                item.textContent = parseFloat(round.crash_point).toFixed(2) + 'x';
+                            // Only clear and load from database if container is empty
+                            // This prevents overwriting rounds added during current session
+                            if (historyContainer.children.length === 0) {
+                                console.log('📊 Loading initial rounds from database...');
                                 
-                                // Color based on multiplier
-                                if (round.crash_point < 2) {
-                                    item.classList.add('low');
-                                } else if (round.crash_point < 10) {
-                                    item.classList.add('medium');
-                                } else {
-                                    item.classList.add('high');
-                                }
+                                // Add database rounds to history
+                                data.forEach(round => {
+                                    const item = document.createElement('div');
+                                    item.className = 'round-item';
+                                    item.textContent = parseFloat(round.crash_point).toFixed(2) + 'x';
+                                    
+                                    // Color based on multiplier
+                                    if (round.crash_point < 2) {
+                                        item.classList.add('low');
+                                    } else if (round.crash_point < 10) {
+                                        item.classList.add('medium');
+                                    } else {
+                                        item.classList.add('high');
+                                    }
+                                    
+                                    // Add timestamp tooltip
+                                    const timestamp = new Date(round.started_at).toLocaleTimeString();
+                                    item.title = `Round at ${timestamp}`;
+                                    
+                                    historyContainer.appendChild(item);
+                                });
                                 
-                                // Add timestamp tooltip
-                                const timestamp = new Date(round.started_at).toLocaleTimeString();
-                                item.title = `Round at ${timestamp}`;
-                                
-                                historyContainer.appendChild(item);
-                            });
-                            
-                            console.log(`✅ Loaded ${data.length} rounds from database`);
+                                console.log(`✅ Loaded ${data.length} rounds from database`);
+                            } else {
+                                console.log(`📊 Skipping database load - ${historyContainer.children.length} rounds already in display`);
+                            }
                         }
                     }
                 } catch (error) {

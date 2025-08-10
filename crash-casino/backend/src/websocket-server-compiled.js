@@ -10,6 +10,7 @@ const CrashGameEngine = require('./game-engine-compiled');
 
 class CrashWebSocketServer {
     constructor(server, jwtSecret) {
+        console.log('🔌🔌🔌 WEBSOCKET SERVER CONSTRUCTOR CALLED - DEBUG VERSION LOADED! 🔌🔌🔌');
         this.jwtSecret = jwtSecret;
         this.io = new Server(server, {
             cors: {
@@ -149,9 +150,21 @@ class CrashWebSocketServer {
             });
         });
 
-        // Start the first round
+        // Start the first round  
+        console.log('⏰ Scheduling first round start in 3 seconds...');
         setTimeout(() => {
-            this.gameEngine.startNewRound();
+            console.log('🎰 FORCING FIRST ROUND START NOW!');
+            try {
+                this.gameEngine.startNewRound();
+                console.log('✅ First round start command completed');
+            } catch (error) {
+                console.error('❌ Failed to start first round:', error);
+                // Retry in 5 seconds
+                setTimeout(() => {
+                    console.log('🔄 Retrying first round start...');
+                    this.gameEngine.startNewRound();
+                }, 5000);
+            }
         }, 3000);
     }
 

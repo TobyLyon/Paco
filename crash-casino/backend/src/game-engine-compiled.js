@@ -11,6 +11,8 @@ class CrashGameEngine extends EventEmitter {
     constructor(config = {}) {
         super();
         
+        console.log('🚀🚀🚀 GAME ENGINE CONSTRUCTOR CALLED - DEBUG VERSION LOADED! 🚀🚀🚀');
+        
         this.currentRound = null;
         this.gameTimer = null;
         this.currentMultiplier = 1.0;

@@ -126,14 +126,7 @@ class BetInterface {
             return;
         }
 
-        // Check gaming balance using new wallet system
-        if (window.WalletManager) {
-            if (!window.WalletManager.checkBalanceForBet(this.betAmount)) {
-                this.showNotification(`❌ Insufficient gaming balance. Please deposit more ETH.`, 'error');
-                this.showLowBalanceWarning();
-                return;
-            }
-        }
+
 
         this.isPlacingBet = true;
         this.updatePlaceBetButton('⚡ INSTANT BET...');
@@ -152,29 +145,9 @@ class BetInterface {
                 
                 this.showBetStatus();
                 this.showNotification(`🚀 Instant bet placed: ${this.betAmount.toFixed(4)} ETH`, 'success');
-                this.hideLowBalanceWarning();
                 
             } 
-            // Priority 2: Gaming wallet system (if user has gaming balance)
-            else if (window.WalletManager && window.WalletManager.checkBalanceForBet(this.betAmount)) {
-                console.log('💰 Using gaming wallet system');
-                
-                const success = window.WalletManager.placeBet(this.betAmount);
-                
-                if (success) {
-                    this.currentBet = {
-                        amount: this.betAmount,
-                        timestamp: Date.now()
-                    };
-                    
-                    this.showBetStatus();
-                    this.showNotification(`⚡ Instant bet placed: ${this.betAmount.toFixed(4)} ETH`, 'success');
-                    this.hideLowBalanceWarning();
-                } else {
-                    this.showNotification('❌ Failed to place instant bet', 'error');
-                }
-            } 
-            // Priority 3: Direct blockchain transaction (original system)
+            // Priority 2: Direct blockchain transaction (original system)
             else {
                 console.log('🔗 Using direct blockchain transaction');
                 
@@ -347,10 +320,7 @@ class BetInterface {
      * 🏆 Handle successful cash out
      */
     onCashOut(data) {
-        // Add payout to gaming balance if using wallet manager
-        if (window.WalletManager && data.payout) {
-            window.WalletManager.payoutWin(data.payout);
-        }
+
         
         this.showNotification(
             `🏆 Cashed out at ${data.multiplier.toFixed(2)}x for ${data.payout.toFixed(4)} ETH!`, 
@@ -360,25 +330,7 @@ class BetInterface {
         this.hideBetStatus();
     }
 
-    /**
-     * ⚠️ Show low balance warning
-     */
-    showLowBalanceWarning() {
-        const warning = document.getElementById('lowBalanceWarning');
-        if (warning) {
-            warning.style.display = 'block';
-        }
-    }
-    
-    /**
-     * ✅ Hide low balance warning
-     */
-    hideLowBalanceWarning() {
-        const warning = document.getElementById('lowBalanceWarning');
-        if (warning) {
-            warning.style.display = 'none';
-        }
-    }
+
 
     /**
      * 📢 Show notification

@@ -465,11 +465,15 @@ class CrashGameClient {
 
             this.showNotification('🎰 Processing bet transaction...', 'info');
             
-            // Send transaction to Abstract L2 - Use correct house wallet
+            // Send transaction to Abstract L2 - Use correct house wallet with higher gas
             const houseWallet = '0x1f8B1c4D05eF17Ebaa1E572426110146691e6C5a'; // Your house wallet
             const txResult = await window.realWeb3Modal.sendTransaction(
                 houseWallet, 
-                amount
+                amount,
+                {
+                    gasLimit: 50000, // Higher gas limit to avoid RPC estimation issues
+                    gasPrice: null   // Let MetaMask estimate gas price
+                }
             );
             
             // Verify transaction was successful

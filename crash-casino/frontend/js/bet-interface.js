@@ -139,8 +139,26 @@ class BetInterface {
         this.updatePlaceBetButton('⚡ INSTANT BET...');
 
         try {
-            // Place instant bet using gaming balance
-            if (window.WalletManager) {
+            // Priority 1: Enhanced betting system (Option 1 - fixes RPC issues)
+            if (window.enhancedBetting && window.enhancedBetting.preApprovalActive) {
+                console.log('🚀 Using enhanced betting system (pre-approved)');
+                
+                const result = await window.enhancedBetting.placeInstantBet(this.betAmount);
+                
+                this.currentBet = {
+                    amount: this.betAmount,
+                    timestamp: Date.now()
+                };
+                
+                this.showBetStatus();
+                this.showNotification(`🚀 Instant bet placed: ${this.betAmount.toFixed(4)} ETH`, 'success');
+                this.hideLowBalanceWarning();
+                
+            } 
+            // Priority 2: Gaming wallet system (if user has gaming balance)
+            else if (window.WalletManager && window.WalletManager.checkBalanceForBet(this.betAmount)) {
+                console.log('💰 Using gaming wallet system');
+                
                 const success = window.WalletManager.placeBet(this.betAmount);
                 
                 if (success) {
@@ -155,8 +173,11 @@ class BetInterface {
                 } else {
                     this.showNotification('❌ Failed to place instant bet', 'error');
                 }
-            } else {
-                // Fallback to old system if wallet manager not available
+            } 
+            // Priority 3: Direct blockchain transaction (original system)
+            else {
+                console.log('🔗 Using direct blockchain transaction');
+                
                 const success = await window.crashGameClient.placeBet(this.betAmount);
                 
                 if (success) {

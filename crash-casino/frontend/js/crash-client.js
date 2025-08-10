@@ -468,41 +468,10 @@ class CrashGameClient {
             // Send transaction to Abstract L2 - Use correct house wallet with advanced retry logic
             const houseWallet = '0x1f8B1c4D05eF17Ebaa1E572426110146691e6C5a'; // Your house wallet
             
-            // Advanced RPC error handling for Abstract Network
+            // Enhanced Abstract Network transaction handling
             let txResult;
-            let attempts = 0;
-            const maxAttempts = 3;
-            
-            while (attempts < maxAttempts) {
-                attempts++;
-                console.log(`🔄 Transaction attempt ${attempts}/${maxAttempts}`);
-                
-                try {
-                    // Different gas strategies for each attempt
-                    let gasConfig;
-                    switch (attempts) {
-                        case 1:
-                            // First attempt: Let MetaMask estimate everything
-                            gasConfig = {};
-                            console.log('📊 Attempt 1: MetaMask auto-estimation');
-                            break;
-                        case 2:
-                            // Second attempt: Manual gas limit with auto price
-                            gasConfig = {
-                                gasLimit: 100000,
-                                gasPrice: null
-                            };
-                            console.log('📊 Attempt 2: Manual gas limit 100k');
-                            break;
-                        case 3:
-                            // Third attempt: Conservative manual settings
-                            gasConfig = {
-                                gasLimit: 21000, // Standard ETH transfer
-                                gasPrice: '20000000000' // 20 gwei
-                            };
-                            console.log('📊 Attempt 3: Conservative settings');
-                            break;
-                    }
+            const attempts = await this.executeTransactionWithRetry(houseWallet, amount);
+            txResult = attempts;
                     
                     // Debug current network state
                     if (window.ethereum) {

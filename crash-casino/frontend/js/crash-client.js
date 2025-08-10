@@ -89,12 +89,38 @@ class CrashGameClient {
             this.updateConnectionStatus(false);
         });
 
-        // Handle specific crash game events
-        this.socket.on('game_state', (data) => {
-            this.handleGameState(data);
+        // Handle compiled server message format (generic 'message' event with type field)
+        this.socket.on('message', (message) => {
+            console.log(`📨 Server message received:`, message.type, message.data);
+            
+            // Route based on message type
+            switch (message.type) {
+                case 'gameState':
+                    this.handleGameState(message.data);
+                    break;
+                    
+                case 'roundStarted':
+                    this.handleRoundStart(message.data);
+                    break;
+                    
+                case 'multiplierUpdate':
+                    this.handleMultiplierUpdate(message.data);
+                    break;
+                    
+                case 'roundCrashed':
+                    this.handleRoundCrash(message.data);
+                    break;
+                    
+                case 'betPlaced':
+                    this.handleBetPlaced(message.data);
+                    break;
+                    
+                default:
+                    console.log(`🔍 Unhandled message type: ${message.type}`);
+            }
         });
 
-        // Enhanced server event names
+        // Keep enhanced server event names as backup
         this.socket.on('round_started', (data) => {
             this.handleRoundStart({ roundId: data.roundId });
         });

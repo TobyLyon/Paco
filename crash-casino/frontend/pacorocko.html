@@ -80,89 +80,110 @@
             100% { transform: rotate(360deg); }
         }
         
-        /* Provably Fair Modal Styles */
+        /* Provably Fair Modal Styles - COMPACT */
+        #provablyFairModal .wallet-modal {
+            max-width: 600px;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        
         .fair-section {
-            margin-bottom: 30px;
-            padding: 20px;
+            margin-bottom: 20px;
+            padding: 15px;
             background: rgba(0, 0, 0, 0.3);
-            border-radius: 12px;
+            border-radius: 8px;
             border: 1px solid rgba(251, 191, 36, 0.2);
         }
         
         .fair-section h3 {
             color: var(--restaurant-yellow);
-            margin-bottom: 15px;
-            font-size: 1.2rem;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
         }
         
         .seed-display {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
         }
         
         .seed-item {
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 3px;
         }
         
         .seed-item label {
             color: var(--restaurant-orange);
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
         }
         
         .seed-item input {
-            padding: 8px 12px;
+            padding: 6px 8px;
             background: rgba(0, 0, 0, 0.5);
             border: 1px solid rgba(251, 191, 36, 0.3);
-            border-radius: 6px;
+            border-radius: 4px;
             color: white;
             font-family: 'Courier New', monospace;
-            font-size: 0.85rem;
+            font-size: 0.75rem;
         }
         
         .manual-verify {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 80px 80px;
+            gap: 8px;
+            align-items: end;
         }
         
         .manual-verify input {
-            padding: 8px 12px;
+            padding: 6px 8px;
             background: rgba(0, 0, 0, 0.5);
             border: 1px solid rgba(251, 191, 36, 0.3);
-            border-radius: 6px;
+            border-radius: 4px;
             color: white;
+            font-size: 0.8rem;
         }
         
         .manual-verify button {
-            padding: 10px 20px;
+            padding: 6px 12px;
             background: linear-gradient(45deg, var(--restaurant-yellow), var(--restaurant-orange));
             border: none;
-            border-radius: 6px;
+            border-radius: 4px;
             color: black;
             font-weight: bold;
             cursor: pointer;
+            font-size: 0.8rem;
         }
         
         .explanation {
             color: #d1d5db;
-            line-height: 1.6;
+            line-height: 1.4;
+            font-size: 0.85rem;
         }
         
         .explanation p {
-            margin-bottom: 8px;
+            margin-bottom: 5px;
         }
         
         .verification-result {
-            margin-top: 15px;
-            padding: 15px;
-            border-radius: 8px;
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 6px;
             background: rgba(0, 0, 0, 0.4);
             border: 2px solid;
+            font-size: 0.85rem;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .seed-display {
+                grid-template-columns: 1fr;
+            }
+            .manual-verify {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -454,10 +475,9 @@
                 <div class="fair-section">
                     <h3>📖 How It Works</h3>
                     <div class="explanation">
-                        <p><strong>1. Server Seed:</strong> Generated and hashed before each round starts</p>
-                        <p><strong>2. Client Seed:</strong> Your browser contributes randomness</p>
-                        <p><strong>3. Calculation:</strong> SHA-256(server + client + nonce) → crash point</p>
-                        <p><strong>4. Verification:</strong> You can verify any round was fair after it ends</p>
+                        <p><strong>Server Seed:</strong> Pre-committed random value</p>
+                        <p><strong>Client Seed:</strong> Your browser's randomness</p>
+                        <p><strong>Formula:</strong> SHA-256(server + client + nonce) = crash point</p>
                     </div>
                 </div>
             </div>

@@ -1091,8 +1091,8 @@
     <!-- Wallet integration now handled by React app with RainbowKit -->
     <script src="/crash-casino/frontend/js/wallet-bridge.js"></script>
     <script src="/crash-casino/frontend/js/crash-client.js"></script>
-    <script src="/crash-casino/frontend/js/enhanced-betting.js"></script>
     <script src="/crash-casino/frontend/js/bet-interface.js"></script>
+    <script src="/crash-casino/frontend/js/enhanced-betting.js"></script>
     <script src="/crash-casino/frontend/js/multiplier-display.js"></script>
     <script src="/crash-casino/frontend/js/crash-chart.js"></script>
     <script src="/crash-casino/frontend/js/crash-rocket.js"></script>
@@ -1527,6 +1527,13 @@
                 }
             }
         };
+
+        // EMERGENCY FALLBACK: Hide loading screen after 5 seconds no matter what
+        setTimeout(() => {
+            console.log('🚨 EMERGENCY: Force hiding loading screen after 5 seconds');
+            document.getElementById('loadingScreen').style.display = 'none';
+            document.getElementById('gameContainer').style.display = 'block';
+        }, 5000);
 
         // Initialize app when page loads
         document.addEventListener('DOMContentLoaded', async function() {

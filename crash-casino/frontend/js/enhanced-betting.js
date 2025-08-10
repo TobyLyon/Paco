@@ -26,22 +26,32 @@ class EnhancedBettingSystem {
      * 🚀 Initialize the enhanced betting system
      */
     init() {
-        console.log('🎯 Initializing Enhanced Betting System (Option 1)...');
-        this.setupEventListeners();
-        this.isInitialized = true;
+        try {
+            console.log('🎯 Initializing Enhanced Betting System (Option 1)...');
+            this.setupEventListeners();
+            this.isInitialized = true;
+            console.log('✅ Enhanced Betting System initialized successfully');
+        } catch (error) {
+            console.error('❌ Enhanced Betting System initialization failed:', error);
+            // Don't let this break the page - just log the error
+        }
     }
     
     /**
      * 🔌 Setup event listeners
      */
     setupEventListeners() {
-        // Listen for wallet connections
-        document.addEventListener('walletConnected', () => {
-            this.onWalletConnected();
-        });
-        
-        // Add pre-approval button to UI
-        this.addPreApprovalButton();
+        try {
+            // Listen for wallet connections
+            document.addEventListener('walletConnected', () => {
+                this.onWalletConnected();
+            });
+            
+            // Add pre-approval button to UI
+            this.addPreApprovalButton();
+        } catch (error) {
+            console.error('❌ Error setting up event listeners:', error);
+        }
     }
     
     /**
@@ -57,7 +67,11 @@ class EnhancedBettingSystem {
      */
     addPreApprovalButton() {
         const bettingPanel = document.querySelector('.bet-input-section');
-        if (!bettingPanel) return;
+        if (!bettingPanel) {
+            console.log('⏳ Betting panel not found yet, will retry in 2 seconds...');
+            setTimeout(() => this.addPreApprovalButton(), 2000);
+            return;
+        }
         
         // Create pre-approval section
         const preApprovalSection = document.createElement('div');
@@ -404,7 +418,13 @@ class EnhancedBettingSystem {
 document.addEventListener('DOMContentLoaded', function() {
     // Delay to ensure other systems are loaded
     setTimeout(() => {
-        window.enhancedBetting = new EnhancedBettingSystem();
-        console.log('✅ Enhanced Betting System ready!');
+        try {
+            window.enhancedBetting = new EnhancedBettingSystem();
+            console.log('✅ Enhanced Betting System ready!');
+        } catch (error) {
+            console.error('❌ Failed to initialize Enhanced Betting System:', error);
+            console.log('🔄 PacoRocko will continue with standard betting system');
+            // Don't let this break the page - the standard systems will still work
+        }
     }, 3000);
 });

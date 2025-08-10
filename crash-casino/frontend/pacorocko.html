@@ -1679,9 +1679,22 @@
             consecutiveFailures: 0,
             
             updateNetworkStatus() {
-                const indicator = document.getElementById('networkIndicator');
+                const gameStatus = document.getElementById('gameStatus');
+                let indicator = document.getElementById('networkIndicator');
+                
+                console.log('🔍 Network status update check:');
+                console.log('  gameStatus element:', gameStatus ? 'found' : 'NOT FOUND');
+                console.log('  networkIndicator element:', indicator ? 'found' : 'NOT FOUND');
+                
+                if (!indicator && gameStatus) {
+                    // Try to recreate the indicator if gameStatus exists but indicator doesn't
+                    console.log('🔧 Recreating missing networkIndicator element');
+                    gameStatus.innerHTML = 'Abstract L2 <span id="networkIndicator">🟢</span>';
+                    indicator = document.getElementById('networkIndicator');
+                }
+                
                 if (!indicator) {
-                    console.log('⚠️ Network indicator element not found');
+                    console.log('⚠️ Network indicator element not found and could not be recreated');
                     return;
                 }
                 
@@ -1722,48 +1735,78 @@
             },
             
             showRpcGuidance() {
+                console.log('🚨 Creating RPC guidance notification...');
+                
+                // Remove any existing notifications
+                const existingNotifications = document.querySelectorAll('.rpc-guidance-notification');
+                existingNotifications.forEach(n => n.remove());
+                
                 const notification = document.createElement('div');
+                notification.className = 'rpc-guidance-notification';
                 notification.style.cssText = `
                     position: fixed;
                     top: 80px;
                     right: 20px;
-                    background: rgba(239, 68, 68, 0.95);
+                    background: rgba(239, 68, 68, 0.98);
                     color: white;
-                    padding: 16px;
-                    border-radius: 8px;
-                    border: 1px solid rgba(239, 68, 68, 0.5);
-                    max-width: 350px;
-                    z-index: 10000;
-                    font-size: 13px;
-                    backdrop-filter: blur(10px);
+                    padding: 20px;
+                    border-radius: 12px;
+                    border: 2px solid rgba(239, 68, 68, 0.8);
+                    max-width: 380px;
+                    z-index: 999999;
+                    font-size: 14px;
+                    backdrop-filter: blur(15px);
+                    box-shadow: 0 8px 32px rgba(239, 68, 68, 0.5);
+                    animation: slideInRight 0.3s ease-out;
                 `;
+                
+                // Add animation keyframes
+                if (!document.getElementById('rpc-animation-styles')) {
+                    const style = document.createElement('style');
+                    style.id = 'rpc-animation-styles';
+                    style.textContent = `
+                        @keyframes slideInRight {
+                            from { transform: translateX(100%); opacity: 0; }
+                            to { transform: translateX(0); opacity: 1; }
+                        }
+                    `;
+                    document.head.appendChild(style);
+                }
+                
                 notification.innerHTML = `
-                    <div style="font-weight: bold; margin-bottom: 8px;">🔴 Abstract Network Issues Detected</div>
-                    <div style="margin-bottom: 8px;">Transactions are failing. Try:</div>
-                    <div style="font-size: 11px; line-height: 1.4;">
-                        • Refresh page and reconnect wallet<br>
-                        • Check <a href="https://status.abs.xyz" target="_blank" style="color: #fbbf24;">Abstract Network status</a><br>
-                        • Switch to backup RPC: <strong>https://rpc.abs.xyz</strong>
+                    <div style="font-weight: bold; margin-bottom: 12px; font-size: 16px;">🔴 Abstract Network RPC Issues</div>
+                    <div style="margin-bottom: 12px; font-weight: 500;">Transactions are failing. Try these solutions:</div>
+                    <div style="font-size: 12px; line-height: 1.6; margin-bottom: 12px;">
+                        • <strong>Refresh page</strong> and reconnect wallet<br>
+                        • Check <a href="https://status.abs.xyz" target="_blank" style="color: #fbbf24; text-decoration: underline;">Abstract Network status</a><br>
+                        • Switch to backup RPC: <strong style="color: #fbbf24;">https://rpc.abs.xyz</strong>
                     </div>
                     <button onclick="this.parentElement.remove()" style="
-                        background: rgba(255,255,255,0.2);
+                        background: rgba(255,255,255,0.3);
                         border: none;
                         color: white;
-                        padding: 4px 8px;
-                        border-radius: 4px;
-                        margin-top: 8px;
+                        padding: 8px 12px;
+                        border-radius: 6px;
+                        margin-top: 4px;
                         cursor: pointer;
-                        font-size: 11px;
-                    ">Dismiss</button>
+                        font-size: 12px;
+                        font-weight: 600;
+                        transition: background 0.2s;
+                    " onmouseover="this.style.background='rgba(255,255,255,0.4)'" onmouseout="this.style.background='rgba(255,255,255,0.3)'">
+                        Got it, dismiss
+                    </button>
                 `;
-                document.body.appendChild(notification);
                 
-                // Auto-remove after 15 seconds
+                document.body.appendChild(notification);
+                console.log('✅ RPC guidance notification added to DOM');
+                
+                // Auto-remove after 20 seconds
                 setTimeout(() => {
                     if (notification.parentElement) {
                         notification.remove();
+                        console.log('⏰ RPC notification auto-removed after 20s');
                     }
-                }, 15000);
+                }, 20000);
             }
         };
 

@@ -234,6 +234,7 @@ class CrashGameClient {
      */
     handleRoundStart(data) {
         this.gameState = 'running';
+        this.roundStartTime = Date.now(); // Track round start for chart timing
         this.currentRound = data.roundId;
         this.currentMultiplier = 1.0;
         
@@ -270,12 +271,23 @@ class CrashGameClient {
             return;
         }
         
-        // Legacy mode: Only if specifically not disabled (shouldn't happen in hybrid mode)
+        // Update all display systems with server multiplier
         if (data.multiplier >= 1.0) {
             const multiplierElement = document.getElementById('multiplierValue');
             if (multiplierElement) {
                 multiplierElement.textContent = data.multiplier.toFixed(2) + 'x';
-                console.log(`📡 Server Multiplier: ${data.multiplier.toFixed(2)}x (legacy mode)`);
+                console.log(`📡 Server Multiplier: ${data.multiplier.toFixed(2)}x`);
+            }
+            
+            // Update MultiplierDisplay if available
+            if (window.multiplierDisplay) {
+                window.multiplierDisplay.updateMultiplier(data.multiplier);
+            }
+            
+            // Update crash chart if available
+            if (window.crashChart) {
+                const timeElapsed = (Date.now() - this.roundStartTime) / 1000;
+                window.crashChart.addDataPoint(timeElapsed, data.multiplier);
             }
         }
         

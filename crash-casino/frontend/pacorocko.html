@@ -1441,9 +1441,9 @@
                 const multiplierEl = document.getElementById('multiplierValue');
                 console.log(`🔍 Multiplier value BEFORE init: ${multiplierEl ? multiplierEl.textContent : 'element not found'}`);
                 
-                // TEMPORARILY DISABLE MultiplierDisplay to fix crash display issue
-                console.log('⚠️ MultiplierDisplay DISABLED - testing crash display fix');
-                // window.multiplierDisplay = new MultiplierDisplay();
+                // RE-ENABLE MultiplierDisplay for server-driven updates
+                console.log('✅ MultiplierDisplay ENABLED for server-driven casino');
+                window.multiplierDisplay = new MultiplierDisplay();
                 
                 // Enhanced global chat with database integration will auto-initialize
                 

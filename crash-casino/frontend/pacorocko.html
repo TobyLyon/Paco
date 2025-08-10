@@ -1447,10 +1447,11 @@
                 
                 // Enhanced global chat with database integration will auto-initialize
                 
-                // Server-driven game - disable local game system
-                console.log('🌐 Using server-driven game system - local game disabled');
-                window.liveGameSystem = liveGameSystem; // Keep for reference but don't start
-                // liveGameSystem.start(); // DISABLED - server controls game now
+                // ⚠️ COMPLETELY DISABLE LOCAL GAME SYSTEM ⚠️
+                console.log('🛑 LOCAL GAME SYSTEM COMPLETELY DISABLED - SERVER CONTROLS EVERYTHING');
+                window.liveGameSystem = liveGameSystem; // Keep for reference but NEVER start
+                console.log('🌐 Using PURE server-driven game system - no local rounds');
+                // liveGameSystem.start(); // PERMANENTLY DISABLED
                 
                 // Load historical rounds from database
                 console.log('📊 Loading round history from database...');
@@ -1461,9 +1462,17 @@
                     console.log('🎰 Initializing crash game client for BETTING only...');
                     window.crashGameClient = new CrashGameClient();
                     
-                    // ENABLE server-driven game - server controls everything now
+                    // 🚨 FORCE ENABLE SERVER-DRIVEN GAME 🚨
                     window.crashGameClient.disableMultiplierUpdates = false;
-                    console.log('🌐 Server multiplier updates ENABLED - server controls the game');
+                    console.log('🌐🌐🌐 SERVER MULTIPLIER UPDATES FORCE ENABLED - SERVER CONTROLS GAME 🌐🌐🌐');
+                    console.log('🛑 Local game system is DISABLED - all control from server');
+                    
+                    // Additional safeguard - override any future attempts to disable
+                    Object.defineProperty(window.crashGameClient, 'disableMultiplierUpdates', {
+                        value: false,
+                        writable: false,
+                        configurable: false
+                    });
                     
                     // Server now controls all game state and display
                     window.crashGameClient.onGameStateUpdate = (state) => {

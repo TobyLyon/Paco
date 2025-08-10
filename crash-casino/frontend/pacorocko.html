@@ -887,7 +887,16 @@
                         .insert([roundData]);
                     
                     if (error) {
-                        console.error('❌ Failed to save round to database:', error);
+                        // Check if it's a permissions error (expected for anonymous users)
+                        if (error.code === '42501' || error.message.includes('row-level security policy')) {
+                            console.log('📊 Round saved to local session only (database requires authentication for persistence)');
+                            // Save to localStorage as fallback for local persistence
+                            this.saveToLocalStorage(roundData);
+                        } else {
+                            console.error('❌ Failed to save round to database:', error);
+                            // Also save to localStorage as backup
+                            this.saveToLocalStorage(roundData);
+                        }
                     } else {
                         console.log('✅ Round saved to database:', roundData.round_id);
                     }
@@ -896,10 +905,71 @@
                 }
             },
             
+            saveToLocalStorage(roundData) {
+                try {
+                    const existingRounds = JSON.parse(localStorage.getItem('pacoRocko_rounds') || '[]');
+                    existingRounds.unshift(roundData); // Add to beginning
+                    
+                    // Keep only last 20 rounds
+                    if (existingRounds.length > 20) {
+                        existingRounds.splice(20);
+                    }
+                    
+                    localStorage.setItem('pacoRocko_rounds', JSON.stringify(existingRounds));
+                    console.log('💾 Round saved to localStorage for local persistence');
+                } catch (error) {
+                    console.error('❌ Failed to save to localStorage:', error);
+                }
+            },
+            
+            loadFromLocalStorage() {
+                try {
+                    const rounds = JSON.parse(localStorage.getItem('pacoRocko_rounds') || '[]');
+                    if (rounds.length > 0) {
+                        const historyContainer = document.getElementById('roundHistory');
+                        if (historyContainer && historyContainer.children.length === 0) {
+                            console.log('💾 Loading rounds from localStorage...');
+                            
+                            rounds.forEach(roundData => {
+                                const item = document.createElement('div');
+                                item.className = 'round-item';
+                                item.textContent = parseFloat(roundData.crash_point).toFixed(2) + 'x';
+                                
+                                // Color based on multiplier
+                                if (roundData.crash_point < 2) {
+                                    item.classList.add('low');
+                                } else if (roundData.crash_point < 10) {
+                                    item.classList.add('medium');
+                                } else {
+                                    item.classList.add('high');
+                                }
+                                
+                                const timestamp = new Date(roundData.started_at).toLocaleTimeString();
+                                item.title = `Local round at ${timestamp}`;
+                                
+                                historyContainer.appendChild(item);
+                            });
+                            
+                            console.log(`💾 Loaded ${rounds.length} rounds from localStorage`);
+                            return true; // Indicate we loaded from localStorage
+                        }
+                    }
+                    return false;
+                } catch (error) {
+                    console.error('❌ Failed to load from localStorage:', error);
+                    return false;
+                }
+            },
+            
             async loadHistoryFromDatabase() {
                 try {
+                    // Try localStorage first for immediate availability
+                    if (this.loadFromLocalStorage()) {
+                        return; // Successfully loaded from localStorage
+                    }
+                    
                     if (!window.supabase) {
-                        console.log('📊 Supabase not available - loading local history only');
+                        console.log('📊 Supabase not available - loaded from localStorage if any');
                         return;
                     }
                     
@@ -910,7 +980,7 @@
                         .limit(20);
                     
                     if (error) {
-                        console.error('❌ Failed to load round history:', error);
+                        console.error('❌ Failed to load round history from database:', error);
                         return;
                     }
                     

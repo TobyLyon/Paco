@@ -1224,8 +1224,8 @@
                 // Add to beginning
                 historyContainer.insertBefore(item, historyContainer.firstChild);
                 
-                // Keep only last 20 rounds in display
-                while (historyContainer.children.length > 20) {
+                // Keep only last 40 rounds in display (smaller tiles, more history)
+                while (historyContainer.children.length > 40) {
                     historyContainer.removeChild(historyContainer.lastChild);
                 }
                 
@@ -1276,9 +1276,9 @@
                     const existingRounds = JSON.parse(localStorage.getItem('pacoRocko_rounds') || '[]');
                     existingRounds.unshift(roundData); // Add to beginning
                     
-                    // Keep only last 20 rounds
-                    if (existingRounds.length > 20) {
-                        existingRounds.splice(20);
+                    // Keep only last 40 rounds (more history for smaller tiles)
+                    if (existingRounds.length > 40) {
+                        existingRounds.splice(40);
                     }
                     
                     localStorage.setItem('pacoRocko_rounds', JSON.stringify(existingRounds));

@@ -792,8 +792,8 @@ class CrashGameClient {
      */
     addToHistory(crashPoint) {
         this.roundHistory.unshift(crashPoint);
-        if (this.roundHistory.length > 20) {
-            this.roundHistory = this.roundHistory.slice(0, 20);
+        if (this.roundHistory.length > 40) {
+            this.roundHistory = this.roundHistory.slice(0, 40);
         }
         
         this.updateHistoryDisplay();

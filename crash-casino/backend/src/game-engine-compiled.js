@@ -105,47 +105,46 @@ class CrashGameEngine extends EventEmitter {
         this.currentMultiplier = 1.0;
         this.gameStartTime = Date.now();
         
-        console.log(`🚀 ROUND STARTING: ${this.currentRound.id} | Crash Point: ${this.currentRound.crashPoint}x | Timer: ${this.config.updateInterval}ms`);
+        console.log(`🚀 ROUND STARTING: ${this.currentRound.id} | Crash Point: ${this.currentRound.crashPoint}x | CLIENT-DRIVEN MODE`);
         
+        // Send round start with ALL data clients need for local calculation
         this.emit('roundStarted', {
             roundId: this.currentRound.id,
-            crashPoint: this.currentRound.crashPoint // Hidden from clients
+            startTime: this.gameStartTime,
+            crashPoint: this.currentRound.crashPoint,  // CLIENT NEEDS THIS FOR LOCAL CALC
+            serverSeed: this.currentRound.serverSeed,
+            clientSeed: this.currentRound.clientSeed,
+            nonce: this.currentRound.nonce,
+            duration: this.config.roundDuration * 1000 // Max round time in ms
         });
         
-        // Start multiplier updates
+        // SERVER: Only monitor for crash point, don't spam multiplier updates
         this.gameTimer = setInterval(() => {
-            this.updateMultiplier();
-        }, 1000 / this.config.tickRate);
+            this.checkForCrash();
+        }, 100); // Check every 100ms instead of 60 FPS spam
     }
 
     /**
      * 📈 Update multiplier in real-time
      */
-    updateMultiplier() {
+    checkForCrash() {
         if (!this.currentRound || !this.isGameRunning) return;
         
         const elapsed = (Date.now() - this.gameStartTime) / 1000;
         
-        // Exponential growth formula
+        // Calculate multiplier (same formula as client will use)
         const growthRate = Math.log(this.currentRound.crashPoint) / 10;
         this.currentMultiplier = Math.exp(elapsed * growthRate);
         
-        this.emit('multiplierUpdate', {
-            roundId: this.currentRound.id,
-            multiplier: this.currentMultiplier,
-            elapsed
-        });
-        
-        // Check if we've reached the crash point with debugging
-        console.log(`🎯 Multiplier: ${this.currentMultiplier.toFixed(2)}x | Crash Point: ${this.currentRound.crashPoint}x | Diff: ${(this.currentRound.crashPoint - this.currentMultiplier).toFixed(3)}`);
-        
+        // Only emit important events - let client handle smooth updates
         if (this.currentMultiplier >= this.currentRound.crashPoint - 0.01) {
-            console.log(`💥 CRASHING NOW! ${this.currentMultiplier.toFixed(2)}x >= ${this.currentRound.crashPoint}x`);
+            console.log(`💥 SERVER CRASH TRIGGER: ${this.currentMultiplier.toFixed(2)}x >= ${this.currentRound.crashPoint}x`);
             this.crashRound();
         }
         
         // Safety: End round after max duration
         if (elapsed >= this.config.roundDuration) {
+            console.log(`⏰ Round timeout at ${elapsed}s`);
             this.crashRound();
         }
     }

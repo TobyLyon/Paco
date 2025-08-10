@@ -39,6 +39,74 @@ class CrashGameClient {
     }
 
     /**
+     * 🎮 Start client-driven smooth gameplay
+     */
+    startClientDrivenGameplay() {
+        console.log('🎮 Starting CLIENT-DRIVEN smooth gameplay');
+        
+        if (this.animationFrame) {
+            cancelAnimationFrame(this.animationFrame);
+        }
+        
+        const updateLoop = () => {
+            if (this.gameState !== 'running') return;
+            
+            const elapsed = (Date.now() - this.roundStartTime) / 1000;
+            
+            // Calculate multiplier using same formula as server
+            const growthRate = Math.log(this.crashPoint) / 10;
+            this.currentMultiplier = Math.exp(elapsed * growthRate);
+            
+            // Check if we've reached crash point (client prediction)
+            if (this.currentMultiplier >= this.crashPoint - 0.01) {
+                console.log('🎯 Client predicted crash at', this.currentMultiplier.toFixed(2));
+                // Don't crash yet - wait for server confirmation
+                // But we can start preparing the crash animation
+            }
+            
+            // Update all UI components with smooth multiplier
+            this.updateGameplayUI(this.currentMultiplier);
+            
+            // Safety timeout
+            if (elapsed * 1000 < this.maxDuration) {
+                this.animationFrame = requestAnimationFrame(updateLoop);
+            }
+        };
+        
+        this.animationFrame = requestAnimationFrame(updateLoop);
+    }
+
+    /**
+     * 🎨 Update gameplay UI components
+     */
+    updateGameplayUI(multiplier) {
+        // Update multiplier display
+        if (window.multiplierDisplay) {
+            window.multiplierDisplay.updateMultiplier(multiplier);
+        }
+        
+        // Update chart
+        if (window.crashChart) {
+            const elapsed = (Date.now() - this.roundStartTime) / 1000;
+            window.crashChart.addDataPoint(elapsed, multiplier);
+        }
+        
+        // Update rocket/visualizer
+        if (window.crashVisualizer) {
+            window.crashVisualizer.updatePosition(elapsed, multiplier);
+        }
+        
+        // Fire multiplier update event for other systems
+        if (this.onMultiplierUpdate) {
+            this.onMultiplierUpdate({
+                multiplier,
+                elapsed: Date.now() - this.roundStartTime,
+                roundId: this.currentRound
+            });
+        }
+    }
+
+    /**
      * 🚀 Initialize the WebSocket connection
      */
     init() {
@@ -272,17 +340,25 @@ class CrashGameClient {
      */
     handleRoundStart(data) {
         this.gameState = 'running';
-        this.roundStartTime = data.startTime || Date.now(); // Use server time if available
+        this.roundStartTime = data.startTime || Date.now();
         this.currentRound = data.roundId;
         this.currentMultiplier = 1.0;
-        this.lastServerMultiplier = 1.0;
-        this.lastServerTime = Date.now();
-        this.crashPoint = null;
         
-        console.log('🚀 Round started:', data.roundId);
+        // 🎯 CLIENT-DRIVEN MODE: Store server data for local calculation
+        this.crashPoint = data.crashPoint; // Now we know the crash point!
+        this.serverSeed = data.serverSeed;
+        this.clientSeed = data.clientSeed;
+        this.nonce = data.nonce;
+        this.maxDuration = data.duration || 60000;
         
-        // Start smooth interpolation for server-driven mode
-        this.startSmoothInterpolation();
+        console.log('🚀 CLIENT-DRIVEN Round started:', {
+            roundId: data.roundId,
+            crashPoint: this.crashPoint,
+            duration: this.maxDuration
+        });
+        
+        // Start CLIENT-SIDE smooth multiplier calculation
+        this.startClientDrivenGameplay();
         
         // Reset all visual systems for new round
         if (window.crashChart) {
@@ -367,18 +443,25 @@ class CrashGameClient {
     handleRoundCrash(data) {
         this.gameState = 'crashed';
         
-        console.log('💥 Server round crashed at:', data.crashPoint + 'x');
+        console.log('💥 SERVER CRASH CONFIRMED:', data.crashPoint + 'x');
         
-        // Stop smooth interpolation on crash
-        this.stopSmoothInterpolation();
+        // 🛑 STOP CLIENT-DRIVEN UPDATES
+        if (this.animationFrame) {
+            cancelAnimationFrame(this.animationFrame);
+            this.animationFrame = null;
+        }
         
-        // Update all visual systems for crash (server-driven mode)
+        // Update all visual systems for crash
         if (window.crashChart) {
-            window.crashChart.crash(data.crashPoint);
+            window.crashChart.crashRound(data.crashPoint);
         }
         
         if (window.multiplierDisplay) {
-            window.multiplierDisplay.crash(data.crashPoint);
+            window.multiplierDisplay.onRoundCrash(data.crashPoint);
+        }
+        
+        if (window.crashVisualizer) {
+            window.crashVisualizer.crashRound(data.crashPoint);
         }
         
         // HYBRID MODE: Don't update UI if local game controls display

@@ -1680,7 +1680,10 @@
             
             updateNetworkStatus() {
                 const indicator = document.getElementById('networkIndicator');
-                if (!indicator) return;
+                if (!indicator) {
+                    console.log('⚠️ Network indicator element not found');
+                    return;
+                }
                 
                 const timeSinceSuccess = Date.now() - this.lastSuccessfulCall;
                 const minutes = Math.floor(timeSinceSuccess / 60000);
@@ -1688,12 +1691,15 @@
                 if (this.consecutiveFailures === 0 && timeSinceSuccess < 30000) {
                     indicator.textContent = '🟢'; // Green - Good
                     indicator.title = 'Network: Healthy';
+                    console.log('🟢 Network status: Healthy');
                 } else if (this.consecutiveFailures < 3 && timeSinceSuccess < 60000) {
                     indicator.textContent = '🟡'; // Yellow - Warning
                     indicator.title = `Network: ${this.consecutiveFailures} failures`;
+                    console.log(`🟡 Network status: Warning (${this.consecutiveFailures} failures)`);
                 } else {
                     indicator.textContent = '🔴'; // Red - Error
                     indicator.title = `Network: Issues detected (${minutes}m ago)`;
+                    console.log(`🔴 Network status: Error (${this.consecutiveFailures} failures, ${minutes}m ago)`);
                 }
             },
             
@@ -1705,10 +1711,12 @@
             
             recordFailure() {
                 this.consecutiveFailures++;
+                console.log(`🔴 Network Health Monitor: Recording failure #${this.consecutiveFailures}`);
                 this.updateNetworkStatus();
                 
                 // Show user-friendly notification after 3 failures
                 if (this.consecutiveFailures === 3) {
+                    console.log('🚨 Network Health Monitor: Showing RPC guidance notification');
                     this.showRpcGuidance();
                 }
             },

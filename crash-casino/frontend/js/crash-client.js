@@ -556,7 +556,10 @@ class CrashGameClient {
                     
                     // Report failure to network health monitor
                     if (window.NetworkHealthMonitor) {
+                        console.log(`🔴 Recording RPC failure #${window.NetworkHealthMonitor.consecutiveFailures + 1} to health monitor`);
                         window.NetworkHealthMonitor.recordFailure();
+                    } else {
+                        console.log('⚠️ NetworkHealthMonitor not available');
                     }
                     
                     // Analyze error type

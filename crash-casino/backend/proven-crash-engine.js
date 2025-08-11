@@ -299,6 +299,16 @@ class ProvenCrashEngine extends EventEmitter {
     }
     
     /**
+     * 📊 Get current multiplier (for client sync)
+     */
+    getCurrentMultiplier() {
+        if (!this.game_phase) return 1.0;
+        
+        const time_elapsed = (Date.now() - this.phase_start_time) / 1000.0;
+        return parseFloat((1.0024 * Math.pow(1.0718, time_elapsed)).toFixed(2));
+    }
+    
+    /**
      * 📊 Get current game state
      */
     getGameState() {

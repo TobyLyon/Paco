@@ -295,8 +295,13 @@ class ProvenCrashEngine extends EventEmitter {
      * 📊 Get current game state
      */
     getGameState() {
+        const isRunning = this.game_phase;
+        const currentMultiplier = isRunning ? this.getCurrentMultiplier() : 1.0;
+        
         return {
             phase: this.betting_phase ? 'betting' : this.game_phase ? 'game' : 'cashout',
+            isRunning: isRunning,
+            currentMultiplier: currentMultiplier,
             phaseStartTime: this.phase_start_time,
             crashPoint: this.game_crash_value,
             roundId: this.current_round_id,

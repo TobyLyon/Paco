@@ -1454,12 +1454,12 @@
                 console.log('🌐 Server system: Betting, authentication, payouts');
                 window.liveGameSystem = liveGameSystem;
                 
-                // Start local system for smooth visual experience
-                console.log('🚀 Starting local display system for smooth gameplay...');
-                liveGameSystem.start();
+                // DON'T start local system yet - wait for server sync first
+                console.log('⏳ Preparing local display system (waiting for server sync)...');
+                // liveGameSystem.start(); // DEFERRED - will start after server sync
                 
-                // Server handles betting only
-                console.log('💰 Server will handle betting when WebSocket connects');
+                // Server handles betting and initial state
+                console.log('💰 Server will provide initial state, then handle betting');
                 
                 // Load historical rounds from database
                 console.log('📊 Loading round history from database...');
@@ -1506,14 +1506,60 @@
                         }
                     };
                     
-                    // 🔄 SAFE SYNC: Handle server state after local system is running
+                    // 🚀 SMART SYNC: Get server state FIRST, then start local system
                     setTimeout(() => {
-                        // Request current server state for sync (after local system is stable)
                         if (window.crashGameClient && window.crashGameClient.socket) {
-                            console.log('🔄 Requesting server state for safe sync...');
+                            console.log('🔄 Requesting server state to initialize sync...');
+                            
+                            // Listen for server state response ONCE
+                            window.crashGameClient.socket.once('gameState', (serverState) => {
+                                console.log('📡 Received server state:', serverState);
+                                
+                                if (serverState.isRunning && serverState.currentMultiplier > 1.0) {
+                                    console.log(`🔄 Server has active round at ${serverState.currentMultiplier}x - syncing local system`);
+                                    
+                                    // Start local system in sync mode
+                                    if (window.liveGameSystem && !window.liveGameSystem.isRunning) {
+                                        console.log('🎮 Starting local system synced to server state...');
+                                        
+                                        if (typeof window.liveGameSystem.syncToServerState === 'function') {
+                                            window.liveGameSystem.syncToServerState(serverState);
+                                        } else {
+                                            console.log('⚠️ syncToServerState not available, starting normal and syncing multiplier');
+                                            window.liveGameSystem.start();
+                                            
+                                            // Sync the multiplier after a brief delay
+                                            setTimeout(() => {
+                                                if (window.liveGameSystem.updateMultiplier) {
+                                                    window.liveGameSystem.updateMultiplier(serverState.currentMultiplier);
+                                                    console.log(`🔄 Synced to server multiplier: ${serverState.currentMultiplier}x`);
+                                                }
+                                            }, 500);
+                                        }
+                                    }
+                                } else {
+                                    console.log('🎯 Server in betting/idle phase - starting local system normally');
+                                    
+                                    // Start local system normally  
+                                    if (window.liveGameSystem && !window.liveGameSystem.isRunning) {
+                                        console.log('🚀 Starting local system (server idle)...');
+                                        window.liveGameSystem.start();
+                                    }
+                                }
+                            });
+                            
+                            // Request server state
                             window.crashGameClient.socket.emit('requestState');
+                            
+                            // Fallback: If no server response in 3 seconds, start local system anyway
+                            setTimeout(() => {
+                                if (window.liveGameSystem && !window.liveGameSystem.isRunning) {
+                                    console.log('⏰ Server sync timeout - starting local system independently');
+                                    window.liveGameSystem.start();
+                                }
+                            }, 3000);
                         }
-                    }, 2000); // Wait 2 seconds for local system to fully initialize
+                    }, 1000); // Shorter delay since we're not waiting for local system
                     
                     // Synchronize server events with local system
                     window.crashGameClient.onRoundStart = (data) => {

@@ -89,8 +89,7 @@ class CrashVisualizer {
         // Save setting
         localStorage.setItem('crashVisualizerMode', this.useRocket ? 'rocket' : 'chart');
         
-        // Update toggle button text
-        this.updateToggleButton();
+        // Note: Toggle button functionality removed - chart mode only
         
         console.log(`🔄 Switched to: ${this.useRocket ? 'Rocket' : 'Chart'}`);
         return true;

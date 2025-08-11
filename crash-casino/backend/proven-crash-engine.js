@@ -44,7 +44,11 @@ class ProvenCrashEngine extends EventEmitter {
         // Start the proven game loop
         this.startGameLoop();
         
-        console.log('🎰 Proven Crash Engine initialized and running');
+        // FIXED: Force start first betting phase immediately
+        console.log('🎰 Proven Crash Engine initialized - starting first betting phase...');
+        setTimeout(() => {
+            this.startFirstBettingPhase();
+        }, 1000); // Short delay to ensure everything is set up
     }
     
     /**
@@ -303,6 +307,36 @@ class ProvenCrashEngine extends EventEmitter {
             activeBets: this.live_bettors_table.length,
             history: this.previous_crashes
         };
+    }
+    
+    /**
+     * 🚀 Start the first betting phase (fix for engine not starting)
+     */
+    startFirstBettingPhase() {
+        console.log('🎯 Starting first betting phase...');
+        
+        // Generate first crash value
+        this.generateCrashValue();
+        
+        // Set to betting phase
+        this.cashout_phase = false;
+        this.betting_phase = true;
+        this.sent_cashout = false;
+        this.phase_start_time = Date.now();
+        
+        // Emit events for new round
+        this.io.emit('update_user');
+        this.io.emit('crash_history', this.previous_crashes);
+        this.io.emit('get_round_id_list', this.round_id_list);
+        this.io.emit('start_betting_phase');
+        
+        this.emit('roundCreated', {
+            id: this.current_round_id,
+            crashPoint: this.game_crash_value,
+            timeUntilStart: 6000
+        });
+        
+        console.log(`🎲 First betting phase started - Crash point: ${this.game_crash_value.toFixed(2)}x`);
     }
     
     /**

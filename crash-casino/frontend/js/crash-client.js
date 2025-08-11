@@ -39,6 +39,58 @@ class CrashGameClient {
     }
 
     /**
+     * 🚀 Start smooth interpolation using server data as anchor points
+     */
+    startSmoothInterpolation(serverData) {
+        if (this.interpolationActive) return; // Already running
+        
+        this.interpolationActive = true;
+        console.log('🚀 Starting HYBRID smooth interpolation with server anchors at 20 FPS');
+        
+        if (this.animationFrame) {
+            cancelAnimationFrame(this.animationFrame);
+        }
+        
+        const interpolateLoop = () => {
+            if (this.gameState !== 'running' || !this.interpolationActive) {
+                this.interpolationActive = false;
+                return;
+            }
+            
+            const now = Date.now();
+            const serverAge = now - this.lastServerTime;
+            
+            // If server data is fresh (< 100ms), interpolate from server value
+            if (serverAge < 100) {
+                // Predict forward from last server update using industry algorithm
+                const elapsed = (now - this.roundStartTime) / 1000;
+                const predictedMultiplier = parseFloat((1.0024 * Math.pow(1.0718, elapsed)).toFixed(2));
+                
+                // Blend server value with prediction for ultra-smooth display
+                const blendFactor = Math.min(serverAge / 50, 1); // 0-1 over 50ms
+                this.currentMultiplier = this.lastServerMultiplier + (predictedMultiplier - this.lastServerMultiplier) * blendFactor;
+            } else {
+                // Server data too old, use pure client prediction
+                const elapsed = (now - this.roundStartTime) / 1000;
+                this.currentMultiplier = parseFloat((1.0024 * Math.pow(1.0718, elapsed)).toFixed(2));
+            }
+            
+            // Check crash prediction
+            if (this.currentMultiplier >= this.crashPoint - 0.01) {
+                console.log('🎯 Interpolation predicted crash at', this.currentMultiplier.toFixed(2));
+            }
+            
+            // Update UI at 60 FPS
+            this.updateGameplayUI(this.currentMultiplier);
+            
+            // Continue smooth animation
+            this.animationFrame = requestAnimationFrame(interpolateLoop);
+        };
+        
+        this.animationFrame = requestAnimationFrame(interpolateLoop);
+    }
+    
+    /**
      * 🎮 Start client-driven smooth gameplay with industry standard algorithm
      */
     startClientDrivenGameplay() {
@@ -343,21 +395,31 @@ class CrashGameClient {
         this.currentRound = data.roundId;
         this.currentMultiplier = 1.0;
         
-        // 🎯 CLIENT-DRIVEN MODE: Store server data for local calculation
+        // Store server data for hybrid calculation
         this.crashPoint = data.crashPoint; // Now we know the crash point!
         this.serverSeed = data.serverSeed;
         this.clientSeed = data.clientSeed;
         this.nonce = data.nonce;
         this.maxDuration = data.duration || 60000;
         
-        console.log('🚀 CLIENT-DRIVEN Round started:', {
+        console.log('🚀 HYBRID Round started:', {
             roundId: data.roundId,
             crashPoint: this.crashPoint,
-            duration: this.maxDuration
+            duration: this.maxDuration,
+            mode: this.disableMultiplierUpdates ? 'CLIENT-DRIVEN' : 'HYBRID-INTERPOLATION'
         });
         
-        // Start CLIENT-SIDE smooth multiplier calculation
-        this.startClientDrivenGameplay();
+        // Reset interpolation state
+        this.interpolationActive = false;
+        this.lastServerTime = Date.now();
+        this.lastServerMultiplier = 1.0;
+        
+        // Start appropriate mode
+        if (this.disableMultiplierUpdates) {
+            // Fallback: Pure client-side calculation
+            this.startClientDrivenGameplay();
+        }
+        // Note: Hybrid interpolation will start automatically when first multiplier update arrives
         
         // Reset all visual systems for new round
         if (window.crashChart) {
@@ -384,7 +446,7 @@ class CrashGameClient {
     }
 
     /**
-     * 📈 Handle multiplier updates
+     * 📈 Handle multiplier updates - HYBRID APPROACH for proven implementation
      */
     handleMultiplierUpdate(data) {
         // Store server data for smooth interpolation
@@ -392,15 +454,18 @@ class CrashGameClient {
         this.lastServerTime = Date.now();
         this.currentMultiplier = data.multiplier;
         
-        // COMPLETE ISOLATION: Never update display from server (local game owns it)
+        // HYBRID MODE: Use server updates when available (proven implementation sends 20 FPS)
+        // Fall back to client prediction for even smoother 60 FPS display
         if (this.disableMultiplierUpdates) {
-            // Server values ignored completely for display
-            if (Math.random() < 0.02) { // 2% chance to log for debugging
-                console.log(`📡 Server multiplier: ${data.multiplier.toFixed(2)}x (IGNORED - local controls display)`);
+            // Old behavior: ignore server completely (keep for fallback)
+            if (Math.random() < 0.01) { // 1% chance to log for debugging
+                console.log(`📡 Server multiplier: ${data.multiplier.toFixed(2)}x (CLIENT-DRIVEN mode)`);
             }
-            // Don't even try to touch the display element
             return;
         }
+        
+        // NEW: Use server updates but also interpolate for ultra-smooth display
+        this.startSmoothInterpolation(data);
 
         // In smooth interpolation mode, let the animation loop handle updates
         if (this.interpolationActive) {
@@ -444,7 +509,8 @@ class CrashGameClient {
         
         console.log('💥 SERVER CRASH CONFIRMED:', data.crashPoint + 'x');
         
-        // 🛑 STOP CLIENT-DRIVEN UPDATES
+        // 🛑 STOP ALL ANIMATIONS (both client-driven and interpolation)
+        this.interpolationActive = false;
         if (this.animationFrame) {
             cancelAnimationFrame(this.animationFrame);
             this.animationFrame = null;

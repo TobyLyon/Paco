@@ -52,10 +52,15 @@ class ProvenCrashEngine extends EventEmitter {
      * This is the core that makes the game work reliably
      */
     startGameLoop() {
-        // Run the game loop every second (from reference)
+        // Run the main game loop every second (from reference)
         this.gameLoopInterval = setInterval(async () => {
             await this.loopUpdate();
         }, 1000);
+        
+        // SMOOTH MULTIPLIER: Add high-frequency multiplier updates for smooth gameplay
+        this.multiplierUpdateInterval = setInterval(() => {
+            this.emitSmoothMultiplierUpdate();
+        }, 50); // 20 FPS multiplier updates for smooth display
     }
     
     /**
@@ -84,17 +89,10 @@ class ProvenCrashEngine extends EventEmitter {
             }
         } 
         else if (this.game_phase) {
-            // Game phase - multiplier counting up
+            // Game phase - multiplier counting up  
             let current_multiplier = parseFloat((1.0024 * Math.pow(1.0718, time_elapsed)).toFixed(2));
             
-            // Emit real-time multiplier updates
-            this.emit('multiplierUpdate', {
-                roundId: this.current_round_id,
-                multiplier: current_multiplier,
-                elapsed: time_elapsed
-            });
-            
-            // Check if we've reached the crash point
+            // Check if we've reached the crash point (main logic runs every second)
             if (current_multiplier >= this.game_crash_value) {
                 this.io.emit('stop_multiplier_count', this.game_crash_value.toFixed(2));
                 this.emit('roundCrashed', {
@@ -309,6 +307,39 @@ class ProvenCrashEngine extends EventEmitter {
     }
     
     /**
+     * 🚀 High-frequency multiplier updates for smooth gameplay (20 FPS)
+     */
+    emitSmoothMultiplierUpdate() {
+        if (!this.game_phase) return;
+        
+        const time_elapsed = (Date.now() - this.phase_start_time) / 1000.0;
+        const current_multiplier = parseFloat((1.0024 * Math.pow(1.0718, time_elapsed)).toFixed(2));
+        
+        // Only emit if we haven't crashed yet
+        if (current_multiplier < this.game_crash_value) {
+            // Emit both dual naming formats for compatibility
+            this.emit('multiplierUpdate', {
+                roundId: this.current_round_id,
+                multiplier: current_multiplier,
+                elapsed: time_elapsed
+            });
+            
+            this.emit('multiplier_update', {
+                roundId: this.current_round_id,
+                multiplier: current_multiplier,
+                elapsed: time_elapsed
+            });
+            
+            // Also emit via Socket.IO for direct frontend consumption
+            this.io.emit('multiplier_update', {
+                roundId: this.current_round_id,
+                multiplier: current_multiplier,
+                elapsed: time_elapsed
+            });
+        }
+    }
+    
+    /**
      * 🛑 Stop the game engine
      */
     stop() {
@@ -316,6 +347,12 @@ class ProvenCrashEngine extends EventEmitter {
             clearInterval(this.gameLoopInterval);
             this.gameLoopInterval = null;
         }
+        
+        if (this.multiplierUpdateInterval) {
+            clearInterval(this.multiplierUpdateInterval);
+            this.multiplierUpdateInterval = null;
+        }
+        
         console.log('🛑 Proven Crash Engine stopped');
     }
 }

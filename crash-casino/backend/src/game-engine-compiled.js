@@ -118,10 +118,10 @@ class CrashGameEngine extends EventEmitter {
             duration: this.config.roundDuration * 1000 // Max round time in ms
         });
         
-        // SERVER: Only monitor for crash point, don't spam multiplier updates
+        // SERVER: Monitor for crash point with smooth timing
         this.gameTimer = setInterval(() => {
             this.checkForCrash();
-        }, 100); // Check every 100ms instead of 60 FPS spam
+        }, 1000 / this.config.tickRate); // Match configured tick rate (60 FPS = ~16.67ms)
     }
 
     /**
@@ -132,9 +132,8 @@ class CrashGameEngine extends EventEmitter {
         
         const elapsed = (Date.now() - this.gameStartTime) / 1000;
         
-        // Calculate multiplier (same formula as client will use)
-        const growthRate = Math.log(this.currentRound.crashPoint) / 10;
-        this.currentMultiplier = Math.exp(elapsed * growthRate);
+        // INDUSTRY STANDARD ALGORITHM - matches frontend exactly
+        this.currentMultiplier = parseFloat((1.0024 * Math.pow(1.0718, elapsed)).toFixed(2));
         
         // Only emit important events - let client handle smooth updates
         if (this.currentMultiplier >= this.currentRound.crashPoint - 0.01) {
@@ -142,7 +141,7 @@ class CrashGameEngine extends EventEmitter {
             this.crashRound();
         }
         
-        // Safety: End round after max duration
+        // Safety: End round after max duration (but crash point should hit first)
         if (elapsed >= this.config.roundDuration) {
             console.log(`⏰ Round timeout at ${elapsed}s`);
             this.crashRound();

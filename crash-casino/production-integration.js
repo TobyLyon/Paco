@@ -83,12 +83,15 @@ class PacoRockoProduction {
                 });
             }
             
-            // Setup WebSocket server with TypeScript engine
+            // Setup WebSocket server with compiled engine
+            console.log('🔌 Initializing WebSocket server with enhanced configuration...');
             this.crashWebSocketServer = new CrashWebSocketServer(this.server, {
                 jwtSecret: this.config.jwtSecret,
                 corsOrigin: this.config.corsOrigin,
                 path: '/crash-ws'
             });
+            
+            console.log('✅ WebSocket server initialized successfully');
             
             // Inject wallet integration into WebSocket server
             this.crashWebSocketServer.walletIntegration = this.walletIntegration;
@@ -236,11 +239,44 @@ class PacoRockoProduction {
                     webSocket: !!wsServer,
                     gameEngine: !!gameEngine,
                     database: this.config.enableDatabase
-                }
+                },
+                connections: wsServer ? wsServer.getStats?.()?.connectedPlayers || 0 : 0,
+                version: '2.0.0-enhanced',
+                availableRoutes: [
+                    '/api/crash/health',
+                    '/api/crash/ws-test',
+                    '/api/crash/stats',
+                    '/api/crash/history'
+                ]
             };
 
             res.json(health);
         });
+
+        // WebSocket connection test endpoint
+        this.app.get('/api/crash/ws-test', (req, res) => {
+            console.log('🧪 WebSocket test endpoint called');
+            const wsServer = this.crashWebSocketServer;
+            
+            res.json({
+                websocketPath: '/crash-ws',
+                serverUrl: req.get('host'),
+                corsOrigin: this.config.corsOrigin,
+                status: wsServer ? 'ready' : 'not_initialized',
+                instructions: {
+                    frontend: `Connect to: wss://${req.get('host')}/crash-ws`,
+                    local: `Connect to: ws://localhost:3001/crash-ws`
+                },
+                debug: {
+                    timestamp: Date.now(),
+                    method: req.method,
+                    url: req.url,
+                    userAgent: req.get('User-Agent')
+                }
+            });
+        });
+        
+        console.log('✅ WebSocket test endpoint registered at /api/crash/ws-test');
 
         // House wallet endpoint
         this.app.get('/api/crash-casino/house-wallet', (req, res) => {
@@ -286,7 +322,10 @@ class PacoRockoProduction {
             this.gameStats.totalVolume += data.totalPayout;
             console.log(`💥 Round ${data.roundId} crashed at ${data.crashPoint}x`);
             
-            // TODO: Save round data to database
+            // Save round data to database
+            this.saveRoundToDatabase(data).catch(error => {
+                console.error('❌ Failed to save round to database:', error);
+            });
         });
 
         gameEngine.on('betPlaced', (data) => {
@@ -433,6 +472,53 @@ class PacoRockoProduction {
                 connections: this.crashWebSocketServer?.getStats()?.connectedPlayers || 0
             }
         };
+    }
+
+    /**
+     * 🗄️ Save round data to Supabase database
+     */
+    async saveRoundToDatabase(roundData) {
+        if (!this.config.enableDatabase || !this.walletIntegration) {
+            console.log('📊 Database not enabled - round not saved');
+            return;
+        }
+
+        try {
+            // Use the wallet integration's database connection
+            const supabase = this.walletIntegration.supabase;
+            if (!supabase) {
+                console.log('📊 Supabase not available - round not saved');
+                return;
+            }
+
+            const roundInfo = roundData.roundData || roundData;
+            
+            const crashRoundData = {
+                round_id: roundData.roundId,
+                crash_point: parseFloat(roundData.crashPoint.toFixed(2)),
+                round_duration: roundInfo.endTime ? roundInfo.endTime - roundInfo.startTime : null,
+                is_test_round: false, // Mark server rounds as production
+                started_at: new Date(roundInfo.startTime || Date.now()).toISOString(),
+                crashed_at: new Date(roundInfo.endTime || Date.now()).toISOString(),
+                total_bets: roundInfo.totalBetAmount || 0,
+                total_payouts: roundData.totalPayout || 0,
+                server_seed: roundInfo.serverSeed || null,
+                client_seed: roundInfo.clientSeed || null,
+                nonce: roundInfo.nonce || null
+            };
+
+            const { data, error } = await supabase
+                .from('crash_rounds')
+                .insert([crashRoundData]);
+
+            if (error) {
+                console.error('❌ Database save error:', error);
+            } else {
+                console.log(`✅ Round ${roundData.roundId} saved to database`);
+            }
+        } catch (error) {
+            console.error('❌ Exception saving round to database:', error);
+        }
     }
 }
 

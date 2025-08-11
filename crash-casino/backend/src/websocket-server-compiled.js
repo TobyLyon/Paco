@@ -38,7 +38,10 @@ class CrashWebSocketServer {
             transports: ['websocket', 'polling'],
             allowEIO3: true,
             pingTimeout: 60000,
-            pingInterval: 25000
+            pingInterval: 25000,
+            // Additional Render-specific optimizations
+            upgradeTimeout: 30000,
+            maxHttpBufferSize: 1e8
         });
 
         this.gameEngine = new CrashGameEngine();
@@ -128,15 +131,6 @@ class CrashWebSocketServer {
             }, 2000);
         });
 
-        this.gameEngine.on('playerCashedOut', (data) => {
-            this.broadcast('playerCashedOut', {
-                roundId: data.roundId,
-                playerId: data.playerId,
-                multiplier: data.multiplier,
-                payout: data.payout
-            });
-        });
-
 
     }
 
@@ -146,17 +140,34 @@ class CrashWebSocketServer {
     startGameEngine() {
         console.log('🚀 Starting game engine...');
         
-        // Start the first round immediately
+        // Start the first round with improved timing for Render
         setTimeout(() => {
             try {
                 this.gameEngine.startNewRound();
-                console.log('✅ Initial round started');
+                console.log('✅ Initial round started successfully');
+                
+                // Emit initial game state to any connected clients
+                this.broadcast('gameState', {
+                    status: 'initialized',
+                    serverTime: Date.now(),
+                    engineStatus: 'running'
+                });
+                
             } catch (error) {
                 console.error('❌ Failed to start initial round:', error.message);
+                // Retry after 3 seconds
+                setTimeout(() => {
+                    try {
+                        this.gameEngine.startNewRound();
+                        console.log('✅ Retry successful - initial round started');
+                    } catch (retryError) {
+                        console.error('❌ Retry failed:', retryError.message);
+                    }
+                }, 3000);
             }
-        }, 1000);
+        }, 2000); // Increased delay for Render stability
 
-        // 🔄 FAILSAFE: Check every 30 seconds if we need to restart rounds
+        // 🔄 ENHANCED FAILSAFE: More frequent checks for Render reliability
         setInterval(() => {
             const gameState = this.gameEngine.getGameState();
             if (!gameState.isRunning && !gameState.currentRound) {
@@ -168,7 +179,7 @@ class CrashWebSocketServer {
                     console.error('❌ Failsafe round failed:', error.message);
                 }
             }
-        }, 30000); // Check every 30 seconds
+        }, 15000); // Check every 15 seconds for faster recovery
     }
 
     /**
@@ -499,6 +510,7 @@ class CrashWebSocketServer {
 
     /**
      * 📢 Broadcast message to all connected clients
+     * Enhanced with dual emission for maximum compatibility
      */
     broadcast(type, data) {
         const message = {
@@ -507,7 +519,19 @@ class CrashWebSocketServer {
             timestamp: Date.now()
         };
         
+        // Emit as generic message (current format)
         this.io.emit('message', message);
+        
+        // ALSO emit as direct event names for compatibility with different client versions
+        this.io.emit(type, data);
+        
+        // Emit snake_case versions for enhanced server compatibility
+        const snakeType = type.replace(/([A-Z])/g, '_$1').toLowerCase();
+        if (snakeType !== type) {
+            this.io.emit(snakeType, data);
+        }
+        
+        console.log(`📡 Broadcasted ${type} to all clients (dual format)`);
     }
 
     /**

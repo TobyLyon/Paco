@@ -1329,65 +1329,66 @@
             
             async loadHistoryFromDatabase() {
                 try {
-                    // Try localStorage first for immediate availability
-                    if (this.loadFromLocalStorage()) {
-                        return; // Successfully loaded from localStorage
-                    }
-                    
                     if (!window.supabase) {
-                        console.log('📊 Supabase not available - loaded from localStorage if any');
+                        console.log('📊 Supabase not available - trying localStorage fallback');
+                        this.loadFromLocalStorage();
                         return;
                     }
                     
+                    // Load server rounds first (production rounds have priority)
                     const { data, error } = await window.supabase
-                        .from('recent_crash_rounds')
+                        .from('crash_rounds')
                         .select('*')
+                        .eq('is_test_round', false) // Only load production server rounds
                         .order('started_at', { ascending: false })
                         .limit(20);
                     
+                    const historyContainer = document.getElementById('roundHistory');
+                    if (!historyContainer) return;
+                    
                     if (error) {
                         console.error('❌ Failed to load round history from database:', error);
+                        console.log('📊 Falling back to localStorage...');
+                        this.loadFromLocalStorage();
                         return;
                     }
                     
                     if (data && data.length > 0) {
-                        const historyContainer = document.getElementById('roundHistory');
-                        if (historyContainer) {
-                            // Only clear and load from database if container is empty
-                            // This prevents overwriting rounds added during current session
-                            if (historyContainer.children.length === 0) {
-                                console.log('📊 Loading initial rounds from database...');
+                        console.log(`📊 Loading ${data.length} server rounds from database...`);
+                        
+                        // Clear existing history to show fresh server data
+                        historyContainer.innerHTML = '';
+                        
+                        // Add database rounds to history
+                        data.forEach(round => {
+                            const item = document.createElement('div');
+                            item.className = 'round-item server-round'; // Mark as server round
+                            item.textContent = parseFloat(round.crash_point).toFixed(2) + 'x';
                             
-                            // Add database rounds to history
-                            data.forEach(round => {
-                                const item = document.createElement('div');
-                                item.className = 'round-item';
-                                item.textContent = parseFloat(round.crash_point).toFixed(2) + 'x';
-                                
-                                    // Color based on multiplier (2x+ = positive return = green)
-                                if (round.crash_point < 2) {
-                                    item.classList.add('low');
-                                } else if (round.crash_point < 10) {
-                                        item.classList.add('medium'); // 2x+ positive returns = green
-                                } else {
-                                    item.classList.add('high');
-                                }
-                                
-                                // Add timestamp tooltip
-                                const timestamp = new Date(round.started_at).toLocaleTimeString();
-                                item.title = `Round at ${timestamp}`;
-                                
-                                historyContainer.appendChild(item);
-                            });
-                            
-                            console.log(`✅ Loaded ${data.length} rounds from database`);
+                            // Color based on multiplier (2x+ = positive return = green)
+                            if (round.crash_point < 2) {
+                                item.classList.add('low');
+                            } else if (round.crash_point < 10) {
+                                item.classList.add('medium'); // 2x+ positive returns = green
                             } else {
-                                console.log(`📊 Skipping database load - ${historyContainer.children.length} rounds already in display`);
+                                item.classList.add('high');
                             }
-                        }
+                            
+                            // Add timestamp tooltip
+                            const timestamp = new Date(round.started_at).toLocaleTimeString();
+                            item.title = `Server round at ${timestamp}`;
+                            
+                            historyContainer.appendChild(item);
+                        });
+                        
+                        console.log(`✅ Loaded ${data.length} server rounds from database`);
+                    } else {
+                        console.log('📊 No server rounds found, falling back to localStorage...');
+                        this.loadFromLocalStorage();
                     }
                 } catch (error) {
                     console.error('❌ Database load error:', error);
+                    this.loadFromLocalStorage(); // Fallback on any error
                 }
             }
         };

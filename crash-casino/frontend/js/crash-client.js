@@ -39,10 +39,10 @@ class CrashGameClient {
     }
 
     /**
-     * 🎮 Start client-driven smooth gameplay
+     * 🎮 Start client-driven smooth gameplay with industry standard algorithm
      */
     startClientDrivenGameplay() {
-        console.log('🎮 Starting CLIENT-DRIVEN smooth gameplay');
+        console.log('🎮 Starting CLIENT-DRIVEN smooth gameplay with industry standard algorithm');
         
         if (this.animationFrame) {
             cancelAnimationFrame(this.animationFrame);
@@ -53,9 +53,8 @@ class CrashGameClient {
             
             const elapsed = (Date.now() - this.roundStartTime) / 1000;
             
-            // Calculate multiplier using same formula as server
-            const growthRate = Math.log(this.crashPoint) / 10;
-            this.currentMultiplier = Math.exp(elapsed * growthRate);
+            // INDUSTRY STANDARD ALGORITHM - matches server exactly
+            this.currentMultiplier = parseFloat((1.0024 * Math.pow(1.0718, elapsed)).toFixed(2));
             
             // Check if we've reached crash point (client prediction)
             if (this.currentMultiplier >= this.crashPoint - 0.01) {
@@ -67,10 +66,8 @@ class CrashGameClient {
             // Update all UI components with smooth multiplier
             this.updateGameplayUI(this.currentMultiplier);
             
-            // Safety timeout
-            if (elapsed * 1000 < this.maxDuration) {
-                this.animationFrame = requestAnimationFrame(updateLoop);
-            }
+            // Continue animation at 60 FPS
+            this.animationFrame = requestAnimationFrame(updateLoop);
         };
         
         this.animationFrame = requestAnimationFrame(updateLoop);
@@ -200,22 +197,24 @@ class CrashGameClient {
             }
         });
 
-        // Keep enhanced server event names as backup
-        this.socket.on('round_started', (data) => {
-            this.handleRoundStart({ roundId: data.roundId });
-        });
-
-        this.socket.on('multiplier_update', (data) => {
-            this.handleMultiplierUpdate(data);
-        });
-
-        this.socket.on('round_crashed', (data) => {
-            this.handleRoundCrash({ crashPoint: data.crashPoint });
-        });
-
-        this.socket.on('bet_placed', (data) => {
-            this.handleBetPlaced(data);
-        });
+        // ALSO handle direct event names for different server versions
+        this.socket.on('gameState', (data) => this.handleGameState(data));
+        this.socket.on('game_state', (data) => this.handleGameState(data));
+        
+        this.socket.on('roundStarted', (data) => this.handleRoundStart(data));
+        this.socket.on('round_started', (data) => this.handleRoundStart(data));
+        
+        this.socket.on('multiplierUpdate', (data) => this.handleMultiplierUpdate(data));
+        this.socket.on('multiplier_update', (data) => this.handleMultiplierUpdate(data));
+        
+        this.socket.on('roundCrashed', (data) => this.handleRoundCrash(data));
+        this.socket.on('round_crashed', (data) => this.handleRoundCrash(data));
+        
+        this.socket.on('betPlaced', (data) => this.handleBetPlaced(data));
+        this.socket.on('bet_placed', (data) => this.handleBetPlaced(data));
+        
+        this.socket.on('cashOut', (data) => this.handleCashOut(data));
+        this.socket.on('cash_out', (data) => this.handleCashOut(data));
 
         this.socket.on('bet_placed_global', (data) => {
             // Update players list / stats if needed

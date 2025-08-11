@@ -1442,72 +1442,79 @@
                 const multiplierEl = document.getElementById('multiplierValue');
                 console.log(`🔍 Multiplier value BEFORE init: ${multiplierEl ? multiplierEl.textContent : 'element not found'}`);
                 
-                // RE-ENABLE MultiplierDisplay for server-driven updates
-                console.log('✅ MultiplierDisplay ENABLED for server-driven casino');
-                window.multiplierDisplay = new MultiplierDisplay();
+                // DISABLE MultiplierDisplay to prevent conflicts with local system
+                console.log('🚫 MultiplierDisplay DISABLED - local system handles all display');
+                // window.multiplierDisplay = new MultiplierDisplay(); // DISABLED
                 
                 // Enhanced global chat with database integration will auto-initialize
                 
-                // 🌐 PURE SERVER-DRIVEN SYSTEM: Render Starter Plan (Always-On)
-                console.log('🌐 Initializing PURE server-driven casino system...');
-                console.log('💎 Render Starter Plan: Always-on server with continuous rounds');
+                // 🎯 HYBRID SYSTEM: Local display + Server betting
+                console.log('🎯 Initializing HYBRID casino system...');
+                console.log('📱 Local system: Smooth 60 FPS display');
+                console.log('🌐 Server system: Betting, authentication, payouts');
                 window.liveGameSystem = liveGameSystem;
                 
-                // Keep local system available ONLY for round history display
-                console.log('📊 Local system available for history display only');
-                // DO NOT START local game - server controls everything
+                // Start local system for smooth visual experience
+                console.log('🚀 Starting local display system for smooth gameplay...');
+                liveGameSystem.start();
                 
-                // Server will take control once connected
-                console.log('🌐 Server will take control when WebSocket connects');
+                // Server handles betting only
+                console.log('💰 Server will handle betting when WebSocket connects');
                 
                 // Load historical rounds from database
                 console.log('📊 Loading round history from database...');
                 liveGameSystem.loadHistoryFromDatabase();
                 
-                // Initialize crash game client for betting ONLY - display controlled locally
+                // Initialize crash game client for BETTING ONLY - display controlled by local system
                 if (typeof CrashGameClient !== 'undefined') {
-                    console.log('🎰 Initializing crash game client for SERVER-DRIVEN game...');
+                    console.log('🎰 Initializing crash game client for BETTING ONLY (local display)...');
                     window.crashGameClient = new CrashGameClient();
                     
-                    // 🔄 SMART SERVER TAKEOVER SYSTEM
-                    window.crashGameClient.disableMultiplierUpdates = false;
-                    console.log('🔄 Server multiplier updates ENABLED - waiting for server connection...');
+                                    // 🔄 PRODUCTION FIX: Keep server updates disabled to prevent conflicts
+                window.crashGameClient.disableMultiplierUpdates = true;
+                console.log('🔄 Server multiplier updates DISABLED - local system handles display for smooth gameplay...');
                     
                     // 🌐 RENDER STARTER PLAN: No sleep issues, server always running
                     console.log('💎 Render Starter Plan active - server never sleeps!');
                     
-                    // 🌐 SERVER-ONLY SYSTEM: No local fallback needed with Starter Plan
-                    console.log('🎰 Waiting for always-on server to send game events...');
+                    // 🎯 HYBRID SYSTEM: Server handles betting, local handles display
+                    console.log('🎰 Server handles betting, local system handles smooth display...');
                     
-                    // Monitor server events for logging/debugging
+                    // Monitor server events for betting only (not display)
                     const originalHandleGameState = window.crashGameClient.handleGameStateUpdate || function() {};
                     window.crashGameClient.handleGameStateUpdate = function(data) {
-                        console.log('🌐 Server game state received:', data);
-                        console.log('✅ Always-on server is controlling the game');
+                        console.log('🌐 Server state received (betting only):', data);
                         return originalHandleGameState.call(this, data);
                     };
                     
-                    // Monitor multiplier updates from always-on server
-                    const originalHandleMultiplierUpdate = window.crashGameClient.handleMultiplierUpdate || function() {};
-                    window.crashGameClient.handleMultiplierUpdate = function(data) {
-                        console.log('📡 Always-on server multiplier:', data.multiplier);
-                        return originalHandleMultiplierUpdate.call(this, data);
-                    };
+                    // DISABLED: Multiplier updates handled by local system for smooth 60 FPS
+                    console.log('📡 Server multiplier updates disabled - using local 60 FPS animation');
                     
                     // Monitor server events from always-on Render service
                     // REMOVED: Duplicate event listeners causing duplicate events
                     // CrashGameClient handles all events internally for clean architecture
                     console.log('🎯 Using CrashGameClient for all event handling (no duplicates)');
                     
-                    // Always-on server connection monitoring
+                    // PRODUCTION FIX: Add event synchronization
                     window.crashGameClient.onGameStateUpdate = (state) => {
                         if (state.connected) {
-                            console.log('🔌 Connected to always-on Render server');
-                            console.log('🎰 Pure server-driven casino is active');
+                            console.log('🔌 Connected to server - betting system ready');
+                            console.log('🎯 Local system continues visual control');
                         } else {
-                            console.log('🔌 Temporarily disconnected from server');
-                            console.log('⏰ Render Starter Plan will auto-reconnect (server never sleeps)');
+                            console.log('🔌 Server disconnected - betting disabled');
+                            console.log('🎯 Local system continues visual display');
                         }
+                    };
+                    
+                    // Synchronize server events with local system
+                    window.crashGameClient.onRoundStart = (data) => {
+                        console.log('🌐 Server round start - betting enabled');
+                        // Don't interfere with local visual system
+                    };
+                    
+                    window.crashGameClient.onRoundCrash = (data) => {
+                        console.log('🌐 Server round crash - processing bets');
+                        // Local system handles crash display
                     };
                 } else {
                     console.log('⚠️ CrashGameClient not available, running live game system only');

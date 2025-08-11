@@ -249,24 +249,15 @@ class CrashGameClient {
             }
         });
 
-        // ALSO handle direct event names for different server versions
+        // PRODUCTION FIX: Use only one event listener per event type to prevent duplicates
+        // Server should emit consistent event names (camelCase preferred)
         this.socket.on('gameState', (data) => this.handleGameState(data));
-        this.socket.on('game_state', (data) => this.handleGameState(data));
-        
         this.socket.on('roundStarted', (data) => this.handleRoundStart(data));
-        this.socket.on('round_started', (data) => this.handleRoundStart(data));
-        
         this.socket.on('multiplierUpdate', (data) => this.handleMultiplierUpdate(data));
-        this.socket.on('multiplier_update', (data) => this.handleMultiplierUpdate(data));
-        
         this.socket.on('roundCrashed', (data) => this.handleRoundCrash(data));
-        this.socket.on('round_crashed', (data) => this.handleRoundCrash(data));
-        
         this.socket.on('betPlaced', (data) => this.handleBetPlaced(data));
-        this.socket.on('bet_placed', (data) => this.handleBetPlaced(data));
         
         this.socket.on('cashOut', (data) => this.handleCashOut(data));
-        this.socket.on('cash_out', (data) => this.handleCashOut(data));
 
         this.socket.on('bet_placed_global', (data) => {
             // Update players list / stats if needed
@@ -392,7 +383,7 @@ class CrashGameClient {
     }
 
     /**
-     * 🚀 Handle round start
+     * 🚀 Handle round start - PRODUCTION FIX: No visual interference
      */
     handleRoundStart(data) {
         this.gameState = 'running';
@@ -400,57 +391,47 @@ class CrashGameClient {
         this.currentRound = data.roundId;
         this.currentMultiplier = 1.0;
         
-        // Store server data for hybrid calculation
-        this.crashPoint = data.crashPoint; // Now we know the crash point!
+        // Store server data for validation only
+        this.crashPoint = data.crashPoint;
         this.serverSeed = data.serverSeed;
         this.clientSeed = data.clientSeed;
         this.nonce = data.nonce;
         this.maxDuration = data.duration || 60000;
         
-        console.log('🚀 PURE CLIENT Round started:', {
+        console.log('🌐 Server round start (betting only):', {
             roundId: data.roundId,
             crashPoint: this.crashPoint,
-            duration: this.maxDuration,
-            mode: 'PURE CLIENT-DRIVEN (server only start/stop)'
+            mode: 'SERVER-BETTING-ONLY (local handles display)'
         });
         
-        // Always start pure client-side calculation for smooth 60 FPS
-        this.startClientDrivenGameplay();
+        // PRODUCTION FIX: Don't interfere with local visual system
+        // Local system already handles all visual aspects
         
-        // Reset all visual systems for new round
-        if (window.crashChart) {
-            window.crashChart.startNewRound();
-        }
-        
-        if (window.multiplierDisplay) {
-            window.multiplierDisplay.reset();
-        }
-        
-        // Update UI
-        document.getElementById('gameStatus').textContent = 'Running';
-        document.getElementById('gameStateMessage').textContent = 'Round in progress...';
-        document.getElementById('countdownTimer').style.display = 'none';
-        
-        // Show cash out button if player has bet
+        // Only handle betting-related UI (not visual multiplier)
         if (this.playerBet && !this.playerBet.cashedOut) {
             document.getElementById('cashOutBtn').style.display = 'block';
         }
         
+        // Notify betting system only
         if (this.onRoundStart) {
             this.onRoundStart(data);
         }
+        
+        console.log('🎯 Server event processed - local system continues visual control');
     }
 
     /**
-     * 📈 Handle multiplier updates - PURE CLIENT MODE (ignore server updates)
+     * 📈 Handle multiplier updates - PRODUCTION FIX: Always ignore server updates
      */
     handleMultiplierUpdate(data) {
-        // PURE CLIENT MODE: Always ignore server multiplier updates for smooth gameplay
-        // Server only handles round start/stop, client handles all display
-        if (Math.random() < 0.005) { // 0.5% chance to log for debugging
-            console.log(`📡 Server multiplier IGNORED: ${data.multiplier.toFixed(2)}x (PURE CLIENT mode for smooth display)`);
+        // PRODUCTION FIX: Always ignore server multiplier updates to prevent visual bugs
+        // Local system provides smooth 60 FPS, server causes stuttering and conflicts
+        if (this.disableMultiplierUpdates) {
+            if (Math.random() < 0.01) { // 1% chance to log for debugging
+                console.log(`🚫 Server multiplier IGNORED: ${data.multiplier.toFixed(2)}x (LOCAL system controls display)`);
+            }
+            return; // Exit early, don't process server updates
         }
-        // Server updates completely ignored - client handles everything
 
         // In smooth interpolation mode, let the animation loop handle updates
         if (this.interpolationActive) {
@@ -487,64 +468,17 @@ class CrashGameClient {
     }
 
     /**
-     * 💥 Handle round crash
+     * 💥 Handle round crash - PRODUCTION FIX: No visual interference
      */
     handleRoundCrash(data) {
         this.gameState = 'crashed';
         
-        console.log('💥 SERVER CRASH CONFIRMED:', data.crashPoint + 'x');
+        console.log('🌐 Server crash confirmed (betting only):', data.crashPoint + 'x');
         
-        // 🛑 STOP ALL ANIMATIONS (both client-driven and interpolation)
-        this.interpolationActive = false;
-        if (this.animationFrame) {
-            cancelAnimationFrame(this.animationFrame);
-            this.animationFrame = null;
-        }
+        // PRODUCTION FIX: Don't interfere with local visual system
+        // Local system handles all crash display and animations
         
-        // Update all visual systems for crash
-        if (window.crashChart) {
-            window.crashChart.crashRound(data.crashPoint);
-        }
-        
-        if (window.multiplierDisplay) {
-            window.multiplierDisplay.onRoundCrash(data.crashPoint);
-        }
-        
-        if (window.crashVisualizer) {
-            window.crashVisualizer.crashRound(data.crashPoint);
-        }
-        
-        // HYBRID MODE: Don't update UI if local game controls display
-        if (this.disableMultiplierUpdates) {
-            console.log('🔒 Server crash UI updates DISABLED - local game controls crash display');
-            
-            // Only handle betting results, not display
-            if (this.playerBet) {
-                if (this.playerBet.cashedOut) {
-                    this.showNotification(`🎉 You won ${this.playerBet.payout.toFixed(4)} ETH!`, 'success');
-                } else {
-                    this.showNotification('💥 Your bet was lost in the crash', 'error');
-                }
-                this.playerBet = null;
-            }
-            
-            if (this.onRoundCrash) {
-                this.onRoundCrash(data);
-            }
-            return;
-        }
-        
-        // Legacy mode: Update UI (only if not in hybrid mode)
-        document.getElementById('gameStatus').textContent = 'Crashed';
-        document.getElementById('gameStateMessage').textContent = 
-            `Crashed at ${data.crashPoint.toFixed(2)}x`;
-        document.getElementById('multiplierValue').classList.add('crashed');
-        document.getElementById('cashOutBtn').style.display = 'none';
-        
-        // Add to history
-        this.addToHistory(data.crashPoint);
-        
-        // Check if player won or lost
+        // Only handle betting results, never visual display
         if (this.playerBet) {
             if (this.playerBet.cashedOut) {
                 this.showNotification(`🎉 You won ${this.playerBet.payout.toFixed(4)} ETH!`, 'success');
@@ -554,15 +488,18 @@ class CrashGameClient {
             this.playerBet = null;
         }
         
-        // Reset for next round
-        setTimeout(() => {
-            document.getElementById('multiplierValue').classList.remove('crashed');
-            this.prepareForNextRound();
-        }, 3000);
+        // Hide cash out button
+        document.getElementById('cashOutBtn').style.display = 'none';
         
+        // Notify betting system only
         if (this.onRoundCrash) {
             this.onRoundCrash(data);
         }
+        
+        console.log('🎯 Server crash processed - local system handles all visual display');
+        return;
+        
+        // PRODUCTION FIX: All legacy UI updates removed - local system handles everything
     }
 
     /**
@@ -635,11 +572,11 @@ class CrashGameClient {
             return false;
         }
 
-        // HYBRID MODE: Check local game state with extended betting window
-        if (this.disableMultiplierUpdates) {
-            const localGameState = window.liveGameSystem?.gameState;
-            const gameMultiplier = window.liveGameSystem?.currentMultiplier || 1.0;
-            console.log(`🎮 Hybrid mode - Local game state: "${localGameState}", Server state: "${this.gameState}", Multiplier: ${gameMultiplier}x`);
+        // PRODUCTION FIX: Use local game state for betting validation
+        if (this.disableMultiplierUpdates && window.liveGameSystem) {
+            const localGameState = window.liveGameSystem.gameState;
+            const gameMultiplier = window.liveGameSystem.currentMultiplier || 1.0;
+            console.log(`🎮 Local game validation - State: "${localGameState}", Multiplier: ${gameMultiplier}x`);
             
             if (localGameState === 'betting') {
                 console.log(`✅ Bet allowed - Local game in betting phase`);
@@ -647,15 +584,16 @@ class CrashGameClient {
                 // Allow "late betting" if round just started (< 1.2x multiplier)
                 console.log(`✅ Late bet allowed - Round just started (${gameMultiplier}x)`);
             } else if (localGameState === 'running' && gameMultiplier >= 1.2) {
-                this.showError(`Too late to bet - round is at ${gameMultiplier}x`);
+                this.showError(`Too late to bet - round is at ${gameMultiplier.toFixed(2)}x`);
                 console.log(`🚫 Bet rejected - Round too advanced (${gameMultiplier}x)`);
                 return false;
             } else if (localGameState === 'crashed') {
                 this.showError(`Cannot bet now - round crashed`);
-                console.log(`🚫 Bet rejected - Local game is "${localGameState}"`);
+                console.log(`🚫 Bet rejected - Local game crashed`);
                 return false;
             } else {
-                console.log(`⚠️ Local game state unclear (${localGameState}), checking server state`);
+                // If local state is unclear, allow betting as fallback
+                console.log(`⚠️ Local game state unclear (${localGameState}), allowing bet`);
             }
         } else {
             // Legacy mode: Use server state

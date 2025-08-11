@@ -97,7 +97,7 @@ class MultiplierDisplay {
     }
 
     /**
-     * 🎨 Update multiplier color
+     * 🎨 Update multiplier color - FIXED: Stay green until crash
      */
     updateMultiplierColor(multiplier) {
         if (!this.multiplierElement) return;
@@ -105,25 +105,16 @@ class MultiplierDisplay {
         // Remove existing color classes
         this.multiplierElement.classList.remove('low', 'medium', 'high', 'extreme');
 
-        if (multiplier < 2) {
-            this.multiplierElement.style.color = '#10b981'; // Green
-        } else if (multiplier < 5) {
-            this.multiplierElement.style.color = '#fbbf24'; // Yellow
-            this.multiplierElement.classList.add('medium');
-        } else if (multiplier < 10) {
-            this.multiplierElement.style.color = '#f97316'; // Orange
-            this.multiplierElement.classList.add('high');
-        } else {
-            this.multiplierElement.style.color = '#dc2626'; // Red
-            this.multiplierElement.classList.add('extreme');
-        }
+        // FIXED: Always stay green during game - only change color on crash
+        // The CSS handles the crashed state with .multiplier-value.crashed class
+        const greenColor = '#10b981'; // var(--restaurant-green)
+        this.multiplierElement.style.color = greenColor;
 
-        // Update text shadow
-        const color = this.multiplierElement.style.color;
+        // Update text shadow to match the green color and glow
         this.multiplierElement.style.textShadow = `
-            0 0 20px ${color},
-            0 0 40px ${color}aa,
-            0 0 60px ${color}66
+            0 0 20px ${greenColor},
+            0 0 40px rgba(16, 185, 129, 0.5),
+            0 0 60px rgba(16, 185, 129, 0.3)
         `;
     }
 

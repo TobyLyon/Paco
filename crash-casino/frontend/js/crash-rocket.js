@@ -466,26 +466,14 @@ class CrashRocket {
     }
     
     /**
-     * 🎨 Update rocket visual effects based on multiplier
+     * 🎨 Update rocket visual effects based on multiplier - FIXED: Stay green until crash
      */
     updateRocketEffect(multiplier) {
         if (!this.rocket) return;
         
-        let color, intensity;
-        
-        if (multiplier < 2) {
-            color = '#10b981'; // Green
-            intensity = 15;
-        } else if (multiplier < 5) {
-            color = '#fbbf24'; // Yellow
-            intensity = 20;
-        } else if (multiplier < 10) {
-            color = '#f97316'; // Orange
-            intensity = 25;
-        } else {
-            color = '#dc2626'; // Red
-            intensity = 30;
-        }
+        // FIXED: Keep rocket green during entire flight - only change on crash
+        const color = '#10b981'; // Green
+        const intensity = 20; // Consistent intensity
         
         // Update rocket glow
         this.rocket.style.filter = `drop-shadow(0 0 ${intensity}px ${color})`;

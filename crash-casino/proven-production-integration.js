@@ -44,7 +44,8 @@ class ProvenPacoRockoProduction {
                 methods: ["GET", "POST"],
                 credentials: true
             },
-            path: '/crash-ws',
+            // Temporarily use default path to debug connection issues
+            // path: '/crash-ws',
             transports: ['websocket', 'polling'],
             pingTimeout: 60000,
             pingInterval: 25000

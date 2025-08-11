@@ -178,11 +178,12 @@ class CrashGameClient {
             
             console.log('🔗 Connecting to:', wsUrl);
             
-            // Try default Socket.IO path first to debug connection issues
+            // DEBUG: Force HTTP polling first to bypass WebSocket issues
             this.socket = io(wsUrl, {
-                transports: ['websocket', 'polling'],
+                transports: ['polling'], // Force polling transport only
                 timeout: 20000,
-                forceNew: true
+                forceNew: true,
+                upgrade: false, // Don't try to upgrade to WebSocket
                 // Temporarily remove custom path to test default: path: '/crash-ws'
             });
             

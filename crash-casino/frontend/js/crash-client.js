@@ -178,12 +178,11 @@ class CrashGameClient {
             
             console.log('🔗 Connecting to:', wsUrl);
             
-            // DEBUG: Force HTTP polling first to bypass WebSocket issues
+            // CORS FIXED: Both www and non-www domains now allowed
             this.socket = io(wsUrl, {
-                transports: ['polling'], // Force polling transport only
+                transports: ['websocket', 'polling'], // Try WebSocket first, fallback to polling
                 timeout: 20000,
                 forceNew: true,
-                upgrade: false, // Don't try to upgrade to WebSocket
                 // Temporarily remove custom path to test default: path: '/crash-ws'
             });
             

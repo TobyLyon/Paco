@@ -37,10 +37,18 @@ class ProvenPacoRockoProduction {
         // Create HTTP server from Express app
         this.server = http.createServer(this.app);
         
+        // CORS FIX: Handle both www and non-www domains
+        const allowedOrigins = [
+            'https://pacothechicken.xyz',
+            'https://www.pacothechicken.xyz',
+            'http://localhost:3000',
+            'http://localhost:5173'
+        ];
+        
         // Initialize Socket.IO with proven settings
         this.io = new Server(this.server, {
             cors: {
-                origin: this.config.corsOrigin,
+                origin: allowedOrigins,
                 methods: ["GET", "POST"],
                 credentials: true
             },

@@ -367,6 +367,22 @@ class CrashGameClient {
         
         console.log(`🎮 Game state updated: ${phase} → ${this.gameState}`);
         
+        // 🔄 CRITICAL: Sync local system with server state on connection (mid-round fix)
+        if (data.isRunning && data.currentMultiplier > 1.0 && window.liveGameSystem) {
+            console.log(`🔄 MID-ROUND SYNC: Server at ${data.currentMultiplier}x - syncing local system`);
+            
+            // Force local system to match server state
+            window.liveGameSystem.gameState = 'running';
+            window.liveGameSystem.currentMultiplier = data.currentMultiplier;
+            window.liveGameSystem.roundId = data.roundId;
+            
+            // Update UI to match server state
+            if (window.liveGameSystem.updateMultiplierDisplay) {
+                window.liveGameSystem.updateMultiplierDisplay(data.currentMultiplier);
+            }
+            console.log(`✅ Local system synced to server round at ${data.currentMultiplier}x`);
+        }
+        
         // Update UI
         const roundIdElement = document.getElementById('currentRoundId');
         if (roundIdElement) {

@@ -1,0 +1,5 @@
+[33m3ebfece[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m  CRITICAL FIX: Continuous round synchronization - no more restarts on refresh
+[33m3e0255b[m  CRITICAL FIX: Mid-round synchronization on page refresh
+[33m88dfc67[m  FIX: Add static file serving to fix 'Cannot GET /' error
+[33me3ab950[m  PRODUCTION FIXES: Visual bugs & event triggering resolved + database schema fix
+[33m2de3c99[m  FIX GAME AUTO-START & VISUALIZER ERROR

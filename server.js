@@ -30,6 +30,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Serve static files from root directory for frontend
+app.use(express.static('.', {
+    index: 'index.html',
+    extensions: ['html', 'css', 'js', 'png', 'jpg', 'gif', 'ico']
+}));
+
 // Health check endpoint
 app.get('/health', (req, res) => {
     res.json({ 

@@ -1495,25 +1495,9 @@
                     };
                     
                     // Monitor server events from always-on Render service
-                    const originalSocket = window.crashGameClient.socket;
-                    if (originalSocket) {
-                        originalSocket.on('gameState', (data) => {
-                            console.log('📢 Always-on server gameState:', data);
-                            if (window.crashGameClient.handleGameStateUpdate) {
-                                window.crashGameClient.handleGameStateUpdate(data);
-                            }
-                        });
-                        
-                        originalSocket.on('roundStarted', (data) => {
-                            console.log('🚀 Always-on server round started:', data);
-                        });
-                        
-                        originalSocket.on('multiplierUpdate', (data) => {
-                            if (window.crashGameClient.handleMultiplierUpdate) {
-                                window.crashGameClient.handleMultiplierUpdate(data);
-                            }
-                        });
-                    }
+                    // REMOVED: Duplicate event listeners causing duplicate events
+                    // CrashGameClient handles all events internally for clean architecture
+                    console.log('🎯 Using CrashGameClient for all event handling (no duplicates)');
                     
                     // Always-on server connection monitoring
                     window.crashGameClient.onGameStateUpdate = (state) => {

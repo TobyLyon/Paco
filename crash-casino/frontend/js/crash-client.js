@@ -377,9 +377,14 @@ class CrashGameClient {
         console.log(`🎮 Game state updated: ${phase} → ${this.gameState}`);
         
         // Update UI
-        document.getElementById('currentRoundId').textContent = 
-            data.roundId ? data.roundId.substring(0, 8) + '...' : '-';
-        document.getElementById('gameStatus').textContent = this.gameState;
+        const roundIdElement = document.getElementById('currentRoundId');
+        if (roundIdElement) {
+            roundIdElement.textContent = data.roundId ? `Round ${data.roundId}` : '-';
+        }
+        const gameStatusElement = document.getElementById('gameStatus');
+        if (gameStatusElement) {
+            gameStatusElement.textContent = this.gameState;
+        }
         
         if (this.onGameStateUpdate) {
             this.onGameStateUpdate(data);

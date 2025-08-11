@@ -270,13 +270,14 @@ class CrashChart {
     crashRound(crashPoint) {
         console.log(`💥 Chart: Round crashed at ${crashPoint}x`);
         
-        this.isRunning = false;
-        
-        // Final update
+        // Final update BEFORE stopping (so addDataPoint works)
         if (this.roundStartTime) {
             const timeElapsed = (Date.now() - this.roundStartTime) / 1000;
             this.addDataPoint(timeElapsed, crashPoint);
         }
+        
+        // Now stop the chart
+        this.isRunning = false;
         
         // Change to crash color
         this.updateChartColor('#dc2626'); // Red

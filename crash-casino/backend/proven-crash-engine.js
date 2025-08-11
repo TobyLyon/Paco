@@ -40,6 +40,7 @@ class ProvenCrashEngine extends EventEmitter {
         this.previous_crashes = [];
         this.round_id_list = [1];
         this.current_round_id = 1;
+        this.round_counter = 1; // For generating unique string IDs
         
         // Start the proven game loop
         this.startGameLoop();
@@ -119,9 +120,10 @@ class ProvenCrashEngine extends EventEmitter {
                     this.previous_crashes.pop();
                 }
                 
-                // Update round ID
-                this.current_round_id++;
-                this.round_id_list.unshift(this.current_round_id);
+                // Update round ID - Generate proper string format for database
+                this.round_counter++;
+                this.current_round_id = `round_${Date.now()}_${this.round_counter}`;
+                this.round_id_list.unshift(this.round_counter); // Keep numeric for legacy compatibility
                 if (this.round_id_list.length > 25) {
                     this.round_id_list.pop();
                 }
@@ -140,6 +142,11 @@ class ProvenCrashEngine extends EventEmitter {
                 this.io.emit('crash_history', this.previous_crashes);
                 this.io.emit('get_round_id_list', this.round_id_list);
                 this.io.emit('start_betting_phase');
+                
+                // Initialize first round with proper format
+                if (typeof this.current_round_id === 'number') {
+                    this.current_round_id = `round_${Date.now()}_${this.current_round_id}`;
+                }
                 
                 this.emit('roundCreated', {
                     id: this.current_round_id,

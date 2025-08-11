@@ -19,14 +19,14 @@ class CrashChart {
         this.pacoRocket = null;
         this.chartContainer = null;
         
-        // Simple chart data structure like the original
+        // Simple chart data structure like the original - FIXED: Green line
         this.chartData = {
             labels: [],
             datasets: [{
                 label: 'Multiplier',
                 data: [],
-                borderColor: '#fbbf24',
-                backgroundColor: 'rgba(251, 191, 36, 0.1)',
+                borderColor: '#10b981', // Green line to match multiplier color
+                backgroundColor: 'rgba(16, 185, 129, 0.1)', // Green background
                 borderWidth: 3,
                 pointRadius: 0,
                 pointHoverRadius: 0,
@@ -54,16 +54,16 @@ class CrashChart {
                 scales: {
                     x: {
                         display: true,
-                        grid: { color: 'rgba(251, 191, 36, 0.1)' },
-                        ticks: { color: '#fbbf24' }
+                        grid: { color: 'rgba(16, 185, 129, 0.1)' }, // Green grid
+                        ticks: { color: '#10b981' } // Green labels
                     },
                     y: {
                         display: true,
                         min: 1,
                         max: 5,
-                        grid: { color: 'rgba(251, 191, 36, 0.1)' },
+                        grid: { color: 'rgba(16, 185, 129, 0.1)' }, // Green grid
                         ticks: { 
-                            color: '#fbbf24',
+                            color: '#10b981', // Green labels
                             callback: function(value) {
                                 return value.toFixed(2) + 'x';
                             }
@@ -382,7 +382,7 @@ class CrashChart {
             z-index: 50;
             pointer-events: none;
             transition: all 0.1s ease-out;
-            filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.6));
+            filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.6));
             transform-origin: center center;
         `;
         
@@ -415,7 +415,7 @@ class CrashChart {
             z-index: 50;
             pointer-events: none;
             transition: all 0.1s ease-out;
-            filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.6));
+            filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.6));
             transform-origin: center center;
             line-height: 1;
             text-align: center;

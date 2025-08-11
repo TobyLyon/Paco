@@ -74,14 +74,16 @@ class CrashVisualizer {
             return false;
         }
         
-        // Hide current system
-        this.hideCurrentSystem();
+        // Only hide if we're actually switching modes
+        if (this.activeSystem && this.useRocket !== newUseRocket) {
+            this.hideCurrentSystem();
+        }
         
         // Switch to new system
         this.useRocket = newUseRocket;
         this.activeSystem = this.useRocket ? this.rocket : this.chart;
         
-        // Show new system
+        // Always show the current system to ensure visibility
         this.showCurrentSystem();
         
         // Save setting

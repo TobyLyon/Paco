@@ -57,10 +57,9 @@ class ProvenCrashEngine extends EventEmitter {
             await this.loopUpdate();
         }, 1000);
         
-        // SMOOTH MULTIPLIER: Add high-frequency multiplier updates for smooth gameplay
-        this.multiplierUpdateInterval = setInterval(() => {
-            this.emitSmoothMultiplierUpdate();
-        }, 50); // 20 FPS multiplier updates for smooth display
+        // SIMPLIFIED: No more frequent multiplier updates - client handles smooth display
+        // Server only manages game logic and sends start/stop events
+        console.log('🎯 SIMPLIFIED SERVER: Client handles smooth multiplier, server only start/stop/crash');
     }
     
     /**
@@ -307,37 +306,9 @@ class ProvenCrashEngine extends EventEmitter {
     }
     
     /**
-     * 🚀 High-frequency multiplier updates for smooth gameplay (20 FPS)
+     * 🎯 SIMPLIFIED: No more frequent updates - client handles smooth display
+     * Server only sends round start with crash point, client calculates everything else
      */
-    emitSmoothMultiplierUpdate() {
-        if (!this.game_phase) return;
-        
-        const time_elapsed = (Date.now() - this.phase_start_time) / 1000.0;
-        const current_multiplier = parseFloat((1.0024 * Math.pow(1.0718, time_elapsed)).toFixed(2));
-        
-        // Only emit if we haven't crashed yet
-        if (current_multiplier < this.game_crash_value) {
-            // Emit both dual naming formats for compatibility
-            this.emit('multiplierUpdate', {
-                roundId: this.current_round_id,
-                multiplier: current_multiplier,
-                elapsed: time_elapsed
-            });
-            
-            this.emit('multiplier_update', {
-                roundId: this.current_round_id,
-                multiplier: current_multiplier,
-                elapsed: time_elapsed
-            });
-            
-            // Also emit via Socket.IO for direct frontend consumption
-            this.io.emit('multiplier_update', {
-                roundId: this.current_round_id,
-                multiplier: current_multiplier,
-                elapsed: time_elapsed
-            });
-        }
-    }
     
     /**
      * 🛑 Stop the game engine
@@ -348,10 +319,7 @@ class ProvenCrashEngine extends EventEmitter {
             this.gameLoopInterval = null;
         }
         
-        if (this.multiplierUpdateInterval) {
-            clearInterval(this.multiplierUpdateInterval);
-            this.multiplierUpdateInterval = null;
-        }
+        // No more multiplier update interval - simplified server
         
         console.log('🛑 Proven Crash Engine stopped');
     }

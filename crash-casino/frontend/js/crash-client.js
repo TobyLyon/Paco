@@ -14,8 +14,8 @@ class CrashGameClient {
         this.playerBet = null;
         this.roundHistory = [];
         
-        // HYBRID MODE: Disable multiplier updates by default (local game controls display)
-        this.disableMultiplierUpdates = false; // Will be set to true externally
+        // PURE CLIENT MODE: Always disable server multiplier updates for smooth gameplay
+        this.disableMultiplierUpdates = true; // Server only handles start/stop, client handles display
         
         // Smooth interpolation system for server-driven mode
         this.lastServerMultiplier = 1.0;
@@ -402,24 +402,15 @@ class CrashGameClient {
         this.nonce = data.nonce;
         this.maxDuration = data.duration || 60000;
         
-        console.log('🚀 HYBRID Round started:', {
+        console.log('🚀 PURE CLIENT Round started:', {
             roundId: data.roundId,
             crashPoint: this.crashPoint,
             duration: this.maxDuration,
-            mode: this.disableMultiplierUpdates ? 'CLIENT-DRIVEN' : 'HYBRID-INTERPOLATION'
+            mode: 'PURE CLIENT-DRIVEN (server only start/stop)'
         });
         
-        // Reset interpolation state
-        this.interpolationActive = false;
-        this.lastServerTime = Date.now();
-        this.lastServerMultiplier = 1.0;
-        
-        // Start appropriate mode
-        if (this.disableMultiplierUpdates) {
-            // Fallback: Pure client-side calculation
-            this.startClientDrivenGameplay();
-        }
-        // Note: Hybrid interpolation will start automatically when first multiplier update arrives
+        // Always start pure client-side calculation for smooth 60 FPS
+        this.startClientDrivenGameplay();
         
         // Reset all visual systems for new round
         if (window.crashChart) {
@@ -446,26 +437,15 @@ class CrashGameClient {
     }
 
     /**
-     * 📈 Handle multiplier updates - HYBRID APPROACH for proven implementation
+     * 📈 Handle multiplier updates - PURE CLIENT MODE (ignore server updates)
      */
     handleMultiplierUpdate(data) {
-        // Store server data for smooth interpolation
-        this.lastServerMultiplier = data.multiplier;
-        this.lastServerTime = Date.now();
-        this.currentMultiplier = data.multiplier;
-        
-        // HYBRID MODE: Use server updates when available (proven implementation sends 20 FPS)
-        // Fall back to client prediction for even smoother 60 FPS display
-        if (this.disableMultiplierUpdates) {
-            // Old behavior: ignore server completely (keep for fallback)
-            if (Math.random() < 0.01) { // 1% chance to log for debugging
-                console.log(`📡 Server multiplier: ${data.multiplier.toFixed(2)}x (CLIENT-DRIVEN mode)`);
-            }
-            return;
+        // PURE CLIENT MODE: Always ignore server multiplier updates for smooth gameplay
+        // Server only handles round start/stop, client handles all display
+        if (Math.random() < 0.005) { // 0.5% chance to log for debugging
+            console.log(`📡 Server multiplier IGNORED: ${data.multiplier.toFixed(2)}x (PURE CLIENT mode for smooth display)`);
         }
-        
-        // NEW: Use server updates but also interpolate for ultra-smooth display
-        this.startSmoothInterpolation(data);
+        // Server updates completely ignored - client handles everything
 
         // In smooth interpolation mode, let the animation loop handle updates
         if (this.interpolationActive) {

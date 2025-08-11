@@ -367,21 +367,26 @@ class CrashGameClient {
         
         console.log(`🎮 Game state updated: ${phase} → ${this.gameState}`);
         
-        // 🔄 CRITICAL: Sync local system with server state on connection (mid-round fix)
-        if (data.isRunning && data.currentMultiplier > 1.0 && window.liveGameSystem) {
-            console.log(`🔄 MID-ROUND SYNC: Server at ${data.currentMultiplier}x - syncing local system`);
-            
-            // Force local system to match server state
-            window.liveGameSystem.gameState = 'running';
-            window.liveGameSystem.currentMultiplier = data.currentMultiplier;
-            window.liveGameSystem.roundId = data.roundId;
-            
-            // Update UI to match server state
-            if (window.liveGameSystem.updateMultiplierDisplay) {
-                window.liveGameSystem.updateMultiplierDisplay(data.currentMultiplier);
+        // 🔄 SAFE SYNC: Only sync if local system is stable and there's a big difference
+        setTimeout(() => {
+            if (data.isRunning && data.currentMultiplier > 2.0 && window.liveGameSystem && window.liveGameSystem.isRunning) {
+                const localMultiplier = window.liveGameSystem.currentMultiplier || 1.0;
+                const serverMultiplier = data.currentMultiplier;
+                const difference = Math.abs(serverMultiplier - localMultiplier);
+                
+                // Only sync if there's a significant difference (>1.5x gap) to avoid constant adjustments
+                if (difference > 1.5) {
+                    console.log(`🔄 SAFE SYNC: Major difference (local: ${localMultiplier.toFixed(2)}x, server: ${serverMultiplier.toFixed(2)}x)`);
+                    
+                    // Gentle sync - don't force, just suggest
+                    if (window.liveGameSystem.updateMultiplierDisplay) {
+                        window.liveGameSystem.currentMultiplier = serverMultiplier;
+                        window.liveGameSystem.updateMultiplierDisplay(serverMultiplier);
+                        console.log(`✅ Gentle sync to ${serverMultiplier.toFixed(2)}x`);
+                    }
+                }
             }
-            console.log(`✅ Local system synced to server round at ${data.currentMultiplier}x`);
-        }
+        }, 1000); // Wait 1 second to ensure local system is stable
         
         // Update UI
         const roundIdElement = document.getElementById('currentRoundId');

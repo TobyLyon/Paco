@@ -1506,28 +1506,14 @@
                         }
                     };
                     
-                    // 🔄 CRITICAL: Handle server game state on connection (mid-round sync)
-                    window.crashGameClient.handleGameState = function(data) {
-                        console.log('🌐 Server game state received on connection:', data);
-                        
-                        if (data.isRunning && data.currentMultiplier > 1.0) {
-                            console.log(`🔄 SYNC: Server round in progress at ${data.currentMultiplier}x - syncing local system`);
-                            
-                            // Sync local system with ongoing server round
-                            if (window.liveGameSystem) {
-                                // Force local system to match server state
-                                window.liveGameSystem.gameState = 'running';
-                                window.liveGameSystem.currentMultiplier = data.currentMultiplier;
-                                window.liveGameSystem.roundId = data.roundId;
-                                
-                                // Update UI to match server state
-                                window.liveGameSystem.updateMultiplierDisplay(data.currentMultiplier);
-                                console.log(`✅ Local system synced to server state: ${data.currentMultiplier}x`);
-                            }
-                        } else if (!data.isRunning) {
-                            console.log('🔄 SYNC: Server in betting phase - local system can start fresh');
+                    // 🔄 SAFE SYNC: Handle server state after local system is running
+                    setTimeout(() => {
+                        // Request current server state for sync (after local system is stable)
+                        if (window.crashGameClient && window.crashGameClient.socket) {
+                            console.log('🔄 Requesting server state for safe sync...');
+                            window.crashGameClient.socket.emit('requestState');
                         }
-                    };
+                    }, 2000); // Wait 2 seconds for local system to fully initialize
                     
                     // Synchronize server events with local system
                     window.crashGameClient.onRoundStart = (data) => {

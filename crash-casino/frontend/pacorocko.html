@@ -1515,30 +1515,80 @@
                             window.crashGameClient.socket.once('gameState', (serverState) => {
                                 console.log('📡 Received server state:', serverState);
                                 
-                                if (serverState.isRunning && serverState.currentMultiplier > 1.0) {
-                                    console.log(`🔄 Server has active round at ${serverState.currentMultiplier}x - syncing local system`);
+                                // Check if server has an ongoing phase (betting or running)
+                                const hasActivePhase = serverState.phase === 'betting' || serverState.isRunning;
+                                const phaseTimeRemaining = serverState.phaseStartTime ? 
+                                    Math.max(0, 15 - (Date.now() - serverState.phaseStartTime) / 1000) : 0;
+                                
+                                if (hasActivePhase && phaseTimeRemaining > 1) {
+                                    if (serverState.isRunning && serverState.currentMultiplier > 1.0) {
+                                        console.log(`🔄 Server has active round at ${serverState.currentMultiplier}x - syncing local system`);
+                                    } else if (serverState.phase === 'betting') {
+                                        console.log(`🔄 Server has ongoing betting phase (${phaseTimeRemaining.toFixed(1)}s remaining) - syncing local system`);
+                                    }
                                     
-                                    // Start local system in sync mode
+                                    // Start local system in sync mode - DON'T restart countdown
                                     if (window.liveGameSystem && !window.liveGameSystem.isRunning) {
-                                        console.log('🎮 Starting local system synced to server state...');
+                                        console.log('🎮 Starting local system synced to server timing...');
                                         
                                         if (typeof window.liveGameSystem.syncToServerState === 'function') {
                                             window.liveGameSystem.syncToServerState(serverState);
                                         } else {
-                                            console.log('⚠️ syncToServerState not available, starting normal and syncing multiplier');
+                                            console.log('⚠️ syncToServerState not available, using manual sync');
+                                            
                                             window.liveGameSystem.start();
                                             
-                                            // Sync the multiplier after a brief delay
-                                            setTimeout(() => {
-                                                if (window.liveGameSystem.updateMultiplier) {
-                                                    window.liveGameSystem.updateMultiplier(serverState.currentMultiplier);
-                                                    console.log(`🔄 Synced to server multiplier: ${serverState.currentMultiplier}x`);
-                                                }
-                                            }, 500);
+                                            // Sync countdown to server if in betting phase  
+                                            if (serverState.phase === 'betting' && phaseTimeRemaining > 1) {
+                                                console.log(`🎯 Syncing local countdown to server timing (${phaseTimeRemaining.toFixed(1)}s remaining)`);
+                                                
+                                                setTimeout(() => {
+                                                    // Update countdown to match server
+                                                    const newCountdown = Math.ceil(phaseTimeRemaining);
+                                                    document.getElementById('countdownValue').textContent = newCountdown;
+                                                    document.getElementById('gameStateMessage').textContent = `🎰 Next round starting in ${newCountdown}s - Place your bets now!`;
+                                                    
+                                                    // Restart countdown interval with correct timing
+                                                    if (window.liveGameSystem.countdownInterval) {
+                                                        clearInterval(window.liveGameSystem.countdownInterval);
+                                                    }
+                                                    
+                                                    let syncedCountdown = newCountdown;
+                                                    window.liveGameSystem.countdownInterval = setInterval(() => {
+                                                        syncedCountdown--;
+                                                        document.getElementById('countdownValue').textContent = syncedCountdown;
+                                                        
+                                                        if (syncedCountdown > 0) {
+                                                            document.getElementById('gameStateMessage').textContent = `🎰 Next round starting in ${syncedCountdown}s - Place your bets now!`;
+                                                        } else {
+                                                            document.getElementById('gameStateMessage').textContent = `🚀 Round starting...`;
+                                                        }
+                                                        
+                                                        if (syncedCountdown <= 0) {
+                                                            clearInterval(window.liveGameSystem.countdownInterval);
+                                                            window.liveGameSystem.countdownInterval = null;
+                                                            document.getElementById('countdownTimer').style.display = 'none';
+                                                            window.liveGameSystem.startNewRound();
+                                                        }
+                                                    }, 1000);
+                                                    
+                                                    console.log(`🔄 Countdown synced to server: ${newCountdown}s`);
+                                                }, 100); // Small delay to let start() finish
+                                            }
+                                            
+                                            // Sync multiplier if round is running
+                                            if (serverState.isRunning && serverState.currentMultiplier > 1.0) {
+                                                setTimeout(() => {
+                                                    if (window.liveGameSystem.updateMultiplier) {
+                                                        window.liveGameSystem.updateMultiplier(serverState.currentMultiplier);
+                                                        console.log(`🔄 Synced to server multiplier: ${serverState.currentMultiplier}x`);
+                                                    }
+                                                }, 500);
+                                            }
                                         }
                                     }
                                 } else {
-                                    console.log('🎯 Server in betting/idle phase - starting local system normally');
+                                    console.log('🎯 Server idle or phase ending soon - starting local system normally');
                                     
                                     // Start local system normally  
                                     if (window.liveGameSystem && !window.liveGameSystem.isRunning) {

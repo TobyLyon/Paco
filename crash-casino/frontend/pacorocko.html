@@ -1649,7 +1649,24 @@
                     
                     window.crashGameClient.onRoundCrash = (data) => {
                         console.log('🌐 Server round crash - processing bets');
-                        // Local system handles crash display
+                        console.log(`🎯 Server crash point: ${data.crashPoint}x`);
+                        
+                        // CRITICAL: Use server crash point for local display consistency
+                        if (window.liveGameSystem && data.crashPoint) {
+                            console.log(`🔄 Syncing local display to server crash: ${data.crashPoint}x`);
+                            
+                            // Override local crash point with server's actual crash point
+                            window.liveGameSystem.targetCrashMultiplier = data.crashPoint;
+                            
+                            // Update display to show server crash point
+                            document.getElementById('multiplierValue').textContent = `${data.crashPoint}x`;
+                            
+                            // Ensure history uses server crash point
+                            if (window.liveGameSystem.addRoundToHistory) {
+                                window.liveGameSystem.addRoundToHistory(data.crashPoint);
+                                console.log(`📊 Added server crash ${data.crashPoint}x to history`);
+                            }
+                        }
                     };
                 } else {
                     console.log('⚠️ CrashGameClient not available, running live game system only');

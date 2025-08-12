@@ -1594,7 +1594,19 @@
                     // Restore original function temporarily and start round
                     this.startNewRound = originalStartNewRound;
                     this.targetCrashMultiplier = crashPoint; // Use server crash point
+                    
+                    console.log('🔍 About to call startNewRound...');
+                    console.log('🔍 Game system isRunning:', this.isRunning);
+                    console.log('🔍 Target crash multiplier:', this.targetCrashMultiplier);
+                    
+                    // Ensure the system is running before starting round
+                    if (!this.isRunning) {
+                        console.log('🚀 Starting game system first...');
+                        this.start();
+                    }
+                    
                     this.startNewRound(); // Start with server crash point
+                    console.log('✅ startNewRound called successfully');
                     
                     // Block it again for next time
                     this.startNewRound = function() {
@@ -1680,9 +1692,24 @@
                         
                         // Trigger local visual system with server crash point
                         if (window.liveGameSystem && window.liveGameSystem.startServerRound) {
+                            console.log('🎮 Triggering local visual round...');
                             window.liveGameSystem.startServerRound(data.crashPoint);
                         } else {
-                            console.log('⚠️ Local visual system not ready, starting fallback display');
+                            console.log('⚠️ Local visual system not ready');
+                            console.log('🔍 liveGameSystem exists:', !!window.liveGameSystem);
+                            console.log('🔍 startServerRound exists:', !!(window.liveGameSystem && window.liveGameSystem.startServerRound));
+                            
+                            // Force start the local system if it's not running
+                            if (window.liveGameSystem && !window.liveGameSystem.isRunning) {
+                                console.log('🚀 Force starting local game system...');
+                                window.liveGameSystem.start();
+                                // Try again after starting
+                                setTimeout(() => {
+                                    if (window.liveGameSystem.startServerRound) {
+                                        window.liveGameSystem.startServerRound(data.crashPoint);
+                                    }
+                                }, 100);
+                            }
                         }
                     };
                     

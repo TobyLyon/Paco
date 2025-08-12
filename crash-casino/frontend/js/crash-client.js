@@ -204,12 +204,7 @@ class CrashGameClient {
             this.isConnected = true;
             this.updateConnectionStatus(true);
             
-            // CRITICAL FIX: Start first round cycle when connected
-            setTimeout(() => {
-                if (this.gameState === 'waiting' || !this.gameState) {
-                    console.log('🚀 Starting initial betting cycle...');
-                    this.prepareForNextRound();
-                }
+            // Server will initiate rounds - no local initiation needed
             }, 2000); // Wait 2 seconds for full initialization
             
             // Notify connection callback
@@ -376,15 +371,6 @@ class CrashGameClient {
         
         console.log(`🎮 Game state updated: ${phase} → ${this.gameState}`);
         
-        // CRITICAL FIX: Update betting UI when game state changes
-        if (window.betInterface && typeof window.betInterface.onGameStateChange === 'function') {
-            console.log(`🎯 Updating bet interface for state: ${this.gameState}`);
-            window.betInterface.onGameStateChange(this.gameState);
-        }
-        
-        // Update visual indicators based on game state
-        this.updateGameStateUI(this.gameState);
-        
         // 🔄 SAFE SYNC: Only sync if local system is stable and there's a big difference
         setTimeout(() => {
             if (data.isRunning && data.currentMultiplier > 2.0 && window.liveGameSystem && window.liveGameSystem.isRunning) {
@@ -443,13 +429,7 @@ class CrashGameClient {
             mode: 'SERVER-BETTING-ONLY (local handles display)'
         });
         
-        // CRITICAL FIX: Update UI for round start
-        this.updateGameStateUI('running');
-        
-        // Update bet interface for running state
-        if (window.betInterface && typeof window.betInterface.onGameStateChange === 'function') {
-            window.betInterface.onGameStateChange('running');
-        }
+        // SIMPLIFIED: Only handle essential betting UI
         
         // Show cash out button if player has bet
         if (this.playerBet && !this.playerBet.cashedOut) {
@@ -545,11 +525,7 @@ class CrashGameClient {
             this.onRoundCrash(data);
         }
         
-        // CRITICAL FIX: Start countdown for next round after crash
-        setTimeout(() => {
-            console.log('🔄 Starting countdown for next round...');
-            this.prepareForNextRound();
-        }, 2000); // Wait 2 seconds after crash
+        // Server will handle next round timing
         
         console.log('🎯 Server crash processed - local system handles all visual display');
         return;
@@ -713,30 +689,31 @@ class CrashGameClient {
                     // Abstract Network uses LEGACY transaction format (not EIP-1559)
                     let gasConfig;
                     
-                    // CRITICAL FIX: Use proper Abstract L2 low-cost gas settings
-                    if (window.abstractL2Helper) {
-                        switch (attempts) {
-                            case 1:
-                                gasConfig = window.abstractL2Helper.calculateGasConfig('standard');
-                                console.log('📊 Attempt 1: Abstract L2 low-cost standard');
-                                break;
-                            case 2:
-                                gasConfig = window.abstractL2Helper.calculateGasConfig('fast');
-                                console.log('📊 Attempt 2: Abstract L2 fast settings');
-                                break;
-                            case 3:
-                                gasConfig = window.abstractL2Helper.calculateGasConfig('urgent');
-                                console.log('📊 Attempt 3: Abstract L2 urgent settings');
-                                break;
-                        }
-                        console.log(`💰 Gas config: ${parseInt(gasConfig.gas, 16)} gas, ${parseInt(gasConfig.gasPrice, 16) / 1e9} gwei`);
-                    } else {
-                        // Fallback with minimal gas
-                        gasConfig = {
-                            gasPrice: '0x5F5E100', // 0.1 gwei
-                            gas: '0x5208' // 21000
-                        };
-                        console.log('📊 Fallback: Minimal gas settings');
+                    switch (attempts) {
+                        case 1:
+                            // First attempt: Abstract L2 optimized transaction
+                            gasConfig = {
+                                gasPrice: '0x3B9ACA00', // 1 gwei in hex for Abstract L2
+                                gas: '0x186A0' // 100000 in hex (Abstract uses 'gas' not 'gasLimit')
+                            };
+                            console.log('📊 Attempt 1: Abstract L2 optimized format');
+                            break;
+                        case 2:
+                            // Second attempt: Higher gas limit for Abstract L2
+                            gasConfig = {
+                                gasPrice: '0x3B9ACA00', // 1 gwei in hex
+                                gas: '0x249F0' // 150000 in hex
+                            };
+                            console.log('📊 Attempt 2: Abstract L2 with higher gas limit');
+                            break;
+                        case 3:
+                            // Third attempt: Maximum gas for Abstract L2 compatibility
+                            gasConfig = {
+                                gasPrice: '0x77359400', // 2 gwei in hex for reliability
+                                gas: '0x30D40' // 200000 in hex
+                            };
+                            console.log('📊 Attempt 3: Abstract L2 maximum compatibility mode');
+                            break;
                     }
                     
                     // Streamlined transaction flow for production
@@ -885,21 +862,14 @@ class CrashGameClient {
             
             this.showNotification('✅ Transaction confirmed! Placing bet...', 'success');
             
-            // CRITICAL FIX: Notify server with detailed bet information for proper sync
-            const betData = {
+            // Now notify the game server with verified transaction
+            this.socket.emit('place_bet', {
                 betAmount: amount,
                 autoPayoutMultiplier: null, // Can be set for auto-cashout
                 txHash: receipt.transactionHash,
                 blockNumber: receipt.blockNumber,
-                playerAddress: window.realWeb3Modal?.address || window.ethereum.selectedAddress,
-                roundId: this.currentRound, // CRITICAL: Include current round ID
-                gasUsed: receipt.gasUsed,
-                gasPrice: receipt.gasPrice || receipt.effectiveGasPrice,
-                timestamp: Date.now()
-            };
-            
-            console.log('🌐 Sending bet to server with round sync:', betData);
-            this.socket.emit('place_bet', betData);
+                playerAddress: window.realWeb3Modal?.address
+            });
 
             this.playerBet = {
                 amount: amount,
@@ -1070,12 +1040,6 @@ class CrashGameClient {
         
         // Immediately enter betting phase
         this.gameState = 'betting';
-        this.updateGameStateUI('betting');
-        
-        // Update bet interface to enable betting
-        if (window.betInterface && typeof window.betInterface.onGameStateChange === 'function') {
-            window.betInterface.onGameStateChange('betting');
-        }
         
         let remaining = seconds;
         const interval = setInterval(() => {
@@ -1097,12 +1061,6 @@ class CrashGameClient {
                 
                 // Transition to pending/starting state
                 this.gameState = 'pending';
-                this.updateGameStateUI('pending');
-                
-                // Update bet interface to disable betting
-                if (window.betInterface && typeof window.betInterface.onGameStateChange === 'function') {
-                    window.betInterface.onGameStateChange('pending');
-                }
                 
                 console.log('⏰ Betting countdown completed - waiting for server round start');
             }

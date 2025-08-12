@@ -188,25 +188,14 @@ class WalletBridge {
                 }
             }
 
-            // ABSTRACT L2 FIX: Use specialized helper for proper transaction format
-            let tx;
-            if (window.abstractL2Helper) {
-                // Use Abstract L2 helper for optimal compatibility
-                tx = window.abstractL2Helper.formatTransaction(to, ethers.parseEther(value.toString()), gasConfig);
-                console.log('🌐 Using Abstract L2 Helper for transaction format');
-            } else {
-                // Fallback to manual format if helper not available
-                tx = {
-                    to: to,
-                    value: ethers.parseEther(value.toString()),
-                    gas: gasConfig.gasLimit || '0x186A0', // 100000 in hex
-                    gasPrice: gasConfig.gasPrice || '0x3B9ACA00', // 1 gwei in hex
-                    data: '0x', // Required empty data field
-                    ...gasConfig
-                };
-                delete tx.gasLimit; // Abstract uses 'gas'
-                console.log('⚠️ Abstract L2 Helper not available, using fallback format');
-            }
+            // SIMPLIFIED: Use standard ETH transfer format for Abstract L2
+            const tx = {
+                to: to,
+                value: ethers.parseEther(value.toString()),
+                gas: '0x5208', // 21000 gas - standard for simple ETH transfers
+                gasPrice: '0x3B9ACA00', // 1 gwei - appropriate for Abstract L2
+                data: '0x' // Required empty data field for transfers
+            };
             
             console.log('📊 Using legacy transaction format for Abstract Network compatibility');
 
@@ -243,11 +232,10 @@ class WalletBridge {
                 });
                 console.log('✅ Abstract L2 gas estimation successful:', gasEstimate);
                 
-                // Update gas limit with estimated value + 20% buffer
-                const estimatedGasInt = parseInt(gasEstimate, 16);
-                const gasWithBuffer = Math.floor(estimatedGasInt * 1.2);
-                metaMaskTx.gas = '0x' + gasWithBuffer.toString(16);
-                console.log(`🔧 Updated gas limit: ${gasWithBuffer} (${gasEstimate} + 20%)`);
+                // FIXED: Use simple 21k gas for ETH transfers (no buffer needed)
+                // Abstract L2 transfers should cost ~$0.001, not $0.90
+                metaMaskTx.gas = '0x5208'; // 21000 gas - standard ETH transfer
+                console.log(`🔧 Using standard gas limit: 21000 for ETH transfer`);
                 
             } catch (gasError) {
                 console.log('⚠️ Gas estimation failed, using default:', gasError.message);

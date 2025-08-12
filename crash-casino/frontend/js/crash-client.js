@@ -288,15 +288,25 @@ class CrashGameClient {
         
         this.socket.on('start_multiplier_count', () => {
             console.log('🚀 SERVER: MULTIPLIER COUNT STARTED - STARTING VISUALS');
+            console.log('🔄 TRANSITION: Betting countdown finished, game phase starting');
             this.gameState = 'running';
             this.roundStartTime = Date.now();
             this.currentMultiplier = 1.0;
+            
+            // Hide countdown timer when round starts
+            const countdownElement = document.getElementById('countdownTimer');
+            if (countdownElement) {
+                countdownElement.style.display = 'none';
+                console.log('⏰ Countdown timer hidden');
+            }
             
             // Update UI immediately
             const gameStatus = document.getElementById('gameStatus');
             const gameMessage = document.getElementById('gameStateMessage');
             if (gameStatus) gameStatus.textContent = 'Round Running';
             if (gameMessage) gameMessage.textContent = 'Multiplier climbing...';
+            
+            console.log('✅ UI updated for round start');
             
             // Force start visual systems
             if (window.liveGameSystem) {
@@ -313,6 +323,8 @@ class CrashGameClient {
                 console.log('📈 FORCING: Starting crash chart');
                 window.crashChart.startNewRound();
             }
+            
+            console.log('🎮 ROUND START COMPLETE - All systems should be running');
         });
         
         this.socket.on('stop_multiplier_count', (crashValue) => {
@@ -362,7 +374,9 @@ class CrashGameClient {
         });
 
         this.socket.on('crash_history', (data) => {
-            this.handleCrashHistory(data);
+            console.log('📊 Server crash_history received - IGNORING to prevent dual history');
+            console.log('🎯 Local game manages its own recent rounds display');
+            // this.handleCrashHistory(data); // DISABLED - server controls its own history
         });
 
         this.socket.on('connect_error', (error) => {

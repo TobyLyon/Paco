@@ -1585,9 +1585,9 @@
                 console.log('🌐 Server system: Round control, betting, authentication, payouts');
                 console.log('📱 Local system: Smooth 60 FPS display ONLY (no independent rounds)');
                 
-                // COMPLETELY DISABLE local game system - server-only mode
-                console.log('🚫 LOCAL GAME SYSTEM COMPLETELY DISABLED - server-only mode');
-                window.liveGameSystem = null; // DISABLE to prevent conflicts
+                // ENABLE local display system but server controls rounds
+                console.log('✅ LOCAL DISPLAY ENABLED - server controls timing');
+                window.liveGameSystem = liveGameSystem;
                 
                 // COMPLETELY DISABLE LOCAL ROUND GENERATION
                 console.log('🚫 DISABLING local round generation - server controls everything');
@@ -1609,13 +1609,13 @@
                 console.log('🚫 Local game system DISABLED - using server-only data');
                 // liveGameSystem.loadHistoryFromDatabase(); // DISABLED - causes conflicts
                 
-                // Initialize SIMPLE SYNC CLIENT for bulletproof sync
-                console.log('🔍 Checking for SimpleSyncClient...', typeof SimpleSyncClient);
-                if (typeof SimpleSyncClient !== 'undefined') {
-                    console.log('🎯 Using SIMPLE SYNC CLIENT - bulletproof implementation');
-                    window.crashGameClient = new SimpleSyncClient();
-                    window.crashGameClient.connect('https://paco-x57j.onrender.com');
-                    console.log('✅ Simple sync client connected - bulletproof sync active');
+                // Initialize crash game client - USE THE WORKING SYSTEM
+                if (typeof CrashGameClient !== 'undefined') {
+                    console.log('🎰 Initializing crash game client...');
+                    window.crashGameClient = new CrashGameClient();
+                    
+                    // FIXED: Enable server multiplier updates
+                    window.crashGameClient.disableMultiplierUpdates = false;
                 } else if (typeof UnifiedCrashClient !== 'undefined') {
                     console.log('🎯 Initializing UNIFIED crash game client for perfect sync...');
                     window.crashGameClient = new UnifiedCrashClient();
@@ -1640,8 +1640,12 @@
                             document.getElementById('gameStatus').textContent = 'Round Running';
                             document.getElementById('gameStateMessage').textContent = 'Multiplier climbing...';
                             
-                            // No local animation - SimpleSyncClient handles everything
-                            console.log('🎯 SimpleSyncClient handles animation - no local system needed');
+                            // Start visual animation
+                            if (window.liveGameSystem) {
+                                window.liveGameSystem.gameState = 'running';
+                                window.liveGameSystem.roundStartTime = Date.now();
+                                window.liveGameSystem.animate();
+                            }
                         });
                         
                         window.crashGameClient.socket.on('stop_multiplier_count', (crashValue) => {
@@ -1658,8 +1662,11 @@
                                 multiplierElement.classList.add('crashed');
                             }
                             
-                            // No local game system - SimpleSyncClient handles state
-                            console.log('🎯 SimpleSyncClient handles crash state - no local system needed');
+                            // Update local system state
+                            if (window.liveGameSystem) {
+                                window.liveGameSystem.gameState = 'crashed';
+                                window.liveGameSystem.crashPoint = crash;
+                            }
                         });
                         
                         console.log('✅ DIRECT EVENT LISTENERS ADDED - should receive rounds now!');

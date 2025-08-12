@@ -178,12 +178,14 @@ class CrashGameClient {
             
             console.log('🔗 Connecting to:', wsUrl);
             
-            // CORS FIXED: Both www and non-www domains now allowed
+            // FIXED: Stable connection settings
             this.socket = io(wsUrl, {
-                transports: ['websocket', 'polling'], // Try WebSocket first, fallback to polling
-                timeout: 20000,
-                forceNew: true,
-                // Temporarily remove custom path to test default: path: '/crash-ws'
+                transports: ['websocket', 'polling'],
+                timeout: 30000,
+                forceNew: false,  // FIXED: Don't force new connections
+                reconnection: true,
+                reconnectionAttempts: 5,
+                reconnectionDelay: 1000
             });
             
             this.setupSocketListeners();

@@ -1575,43 +1575,17 @@
                 console.log('✅ LOCAL DISPLAY ENABLED - but server controls round timing');
                 window.liveGameSystem = liveGameSystem;
                 
-                // Override startNewRound to prevent automatic round generation
-                const originalStartNewRound = liveGameSystem.startNewRound;
+                // COMPLETELY DISABLE LOCAL ROUND GENERATION
+                console.log('🚫 DISABLING local round generation - server controls everything');
+                
+                // Block ALL local round generation
                 liveGameSystem.startNewRound = function() {
-                    console.log('🚫 Blocking automatic round start - waiting for server signal');
-                    // Don't auto-start rounds, wait for server
+                    console.log('🚫 Local round generation BLOCKED - server-only mode');
                 };
                 
-                // Add method to start rounds ONLY when server says so
-                liveGameSystem.startServerRound = function(crashPoint) {
-                    console.log(`🎯 Starting server-controlled round with crash point: ${crashPoint}x`);
-                    
-                    // Hide any countdown timer - round is starting now
-                    document.getElementById('countdownTimer').style.display = 'none';
-                    document.getElementById('gameStatus').textContent = 'Round Active';
-                    document.getElementById('gameStateMessage').textContent = '🚀 Round in progress - good luck!';
-                    
-                    // Restore original function temporarily and start round
-                    this.startNewRound = originalStartNewRound;
-                    this.targetCrashMultiplier = crashPoint; // Use server crash point
-                    
-                    console.log('🔍 About to call startNewRound...');
-                    console.log('🔍 Game system isRunning:', this.isRunning);
-                    console.log('🔍 Target crash multiplier:', this.targetCrashMultiplier);
-                    
-                    // Ensure the system is running before starting round
-                    if (!this.isRunning) {
-                        console.log('🚀 Starting game system first...');
-                        this.start();
-                    }
-                    
-                    this.startNewRound(); // Start with server crash point
-                    console.log('✅ startNewRound called successfully');
-                    
-                    // Block it again for next time
-                    this.startNewRound = function() {
-                        console.log('🚫 Blocking automatic round start - waiting for server signal');
-                    };
+                // Disable local round start
+                liveGameSystem.start = function() {
+                    console.log('🚫 Local game start BLOCKED - server handles all rounds');
                 };
                 
                 // Server handles betting and initial state
@@ -1623,18 +1597,18 @@
                 
                 // Initialize crash game client for BETTING ONLY - display controlled by local system
                 if (typeof CrashGameClient !== 'undefined') {
-                    console.log('🎰 Initializing crash game client for BETTING ONLY (local display)...');
+                    console.log('🎰 Initializing crash game client for SERVER-ONLY control...');
                     window.crashGameClient = new CrashGameClient();
                     
-                                    // 🔄 DISABLE server multiplier updates - local system handles smooth display
-                window.crashGameClient.disableMultiplierUpdates = true;
-                console.log('🔄 Server multiplier updates DISABLED - local provides smooth 60 FPS display...');
+                    // ✅ ENABLE server multiplier updates - server controls everything
+                    window.crashGameClient.disableMultiplierUpdates = false;
+                    console.log('✅ Server multiplier updates ENABLED - server controls everything');
                     
                     // 🌐 RENDER STARTER PLAN: No sleep issues, server always running
                     console.log('💎 Render Starter Plan active - server never sleeps!');
                     
-                    // 🎯 HYBRID SYSTEM: Server controls rounds, local handles display  
-                    console.log('🎰 Server controls round timing, local handles smooth visual display...');
+                    // 🎯 SERVER-ONLY SYSTEM: Server controls everything
+                    console.log('🎰 Server controls ALL timing and visuals - no local generation');
                     
                     // Monitor server events for betting only (not display)
                     const originalHandleGameState = window.crashGameClient.handleGameStateUpdate || function() {};
@@ -1669,109 +1643,30 @@
                         }
                     };
                     
-                    // 🎯 SIMPLIFIED: Only server controls rounds, no local generation
-                    setTimeout(() => {
-                        if (window.crashGameClient && window.crashGameClient.socket) {
-                            console.log('🔗 Connected to server - server controls all rounds');
-                            // NO local round generation - server handles everything
-                            
-                            // Start local system as fallback if no server activity within 10 seconds
-                            setTimeout(() => {
-                                if (!window.crashGameClient.isConnected && window.liveGameSystem) {
-                                    console.log('⏰ No server connection after 10s, starting local fallback...');
-                                    // Allow local system to run only if server is truly disconnected
-                                    window.liveGameSystem.start();
-                                } else if (window.crashGameClient.isConnected) {
-                                    console.log('🔗 Server connected - ensuring local system does NOT auto-generate rounds');
-                                    // Make sure local system is ready but not generating rounds
-                                    if (window.liveGameSystem && !window.liveGameSystem.isRunning) {
-                                        window.liveGameSystem.start();
-                                    }
-                                }
-                            }, 10000);
-                        }
-                    }, 1000);
+                    // ✅ SERVER-ONLY: Wait for server connection, no local fallback
+                    console.log('🎯 Waiting for server connection - no local generation allowed');
                     
-                    // Server events trigger local visual system
+                    // SIMPLIFIED: Server sends multiplier updates, we just display them
                     window.crashGameClient.onRoundStart = (data) => {
-                        console.log('🌐 Server round start - betting enabled');
-                        console.log(`🎯 Triggering local visual round with crash point: ${data.crashPoint}x`);
+                        console.log('🚀 Server round started');
                         
-                        // Update UI for round start
+                        // Update UI only
                         const gameStatusElement = document.getElementById('gameStatus');
                         const gameStateMessageElement = document.getElementById('gameStateMessage');
                         
                         if (gameStatusElement) gameStatusElement.textContent = 'Round Active';
                         if (gameStateMessageElement) gameStateMessageElement.textContent = '🚀 Round in progress - good luck!';
                         
-                        // Trigger local visual system with server crash point
-                        if (window.liveGameSystem && window.liveGameSystem.startServerRound) {
-                            console.log('🎮 Triggering local visual round...');
-                            window.liveGameSystem.startServerRound(data.crashPoint);
-                        } else {
-                            console.log('⚠️ Local visual system not ready');
-                            console.log('🔍 liveGameSystem exists:', !!window.liveGameSystem);
-                            console.log('🔍 startServerRound exists:', !!(window.liveGameSystem && window.liveGameSystem.startServerRound));
-                            
-                            // Force start the local system if it's not running
-                            if (window.liveGameSystem && !window.liveGameSystem.isRunning) {
-                                console.log('🚀 Force starting local game system...');
-                                window.liveGameSystem.start();
-                                // Try again after starting
-                                setTimeout(() => {
-                                    if (window.liveGameSystem.startServerRound) {
-                                        window.liveGameSystem.startServerRound(data.crashPoint);
-                                    }
-                                }, 100);
-                            }
-                        }
+                        console.log('✅ Server controls all visuals via multiplier updates');
                     };
                     
+                    // Minimal event handlers - server controls everything
                     window.crashGameClient.onRoundCrash = (data) => {
-                        console.log('🌐 Server round crash - processing bets');
-                        console.log(`🎯 Server crash point: ${data.crashPoint}x`);
-                        
-                        // Update UI to show waiting state - server will control timing
-                        setTimeout(() => {
-                            const gameStatusElement = document.getElementById('gameStatus');
-                            const gameStateMessageElement = document.getElementById('gameStateMessage');
-                            
-                            if (gameStatusElement) gameStatusElement.textContent = 'Waiting for Next Round';
-                            if (gameStateMessageElement) gameStateMessageElement.textContent = '⏳ Server preparing next round...';
-                            
-                            console.log('⏳ Waiting for server to start next betting phase...');
-                        }, 3000);
-                        
-                        console.log('📊 Local visual system handles crash display, server handles betting');
+                        console.log('💥 Server round crashed at:', data.crashPoint + 'x');
                     };
-                    
-                    // Add handler for server betting phase events
-                    window.crashGameClient.onBettingPhase = (data) => {
-                        console.log('🎰 Server started betting phase');
-                        
-                        const gameStatusElement = document.getElementById('gameStatus');
-                        const gameStateMessageElement = document.getElementById('gameStateMessage');
-                        const countdownElement = document.getElementById('countdownTimer');
-                        
-                        if (gameStatusElement) gameStatusElement.textContent = 'Place Your Bets';
-                        if (gameStateMessageElement) gameStateMessageElement.textContent = '🎰 Betting is open - place your bets now!';
-                        
-                        // Enable betting interface
-                        if (window.betInterface && typeof window.betInterface.onGameStateChange === 'function') {
-                            window.betInterface.onGameStateChange('betting');
-                        }
-                        
-                        console.log('✅ Betting phase activated by server');
-                    };
-                    
-                    // Server controls all timing - no local countdown needed
                 } else {
-                    console.log('⚠️ CrashGameClient not available, running live game system only');
-                    // Start local game system as fallback
-                    if (window.liveGameSystem) {
-                        console.log('🎮 Starting local game system as fallback...');
-                        window.liveGameSystem.start();
-                    }
+                    console.log('❌ CrashGameClient not available - no game system will run');
+                    console.log('🚫 Local system disabled - server-only mode');
                 }
             }, 1000);
             } catch (error) {

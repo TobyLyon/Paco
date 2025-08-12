@@ -641,18 +641,8 @@ class CrashGameClient {
     /**
      * 🎰 Handle betting phase started by server
      */
-    handleBettingPhase(data) {
-        console.log('🎰 Server betting phase started:', data);
-        
-        this.gameState = 'betting';
-        
-        // Notify the betting phase callback
-        if (this.onBettingPhase) {
-            this.onBettingPhase(data);
-        }
-        
-        console.log('✅ Betting phase activated by server');
-    }
+    // REMOVED DUPLICATE: handleBettingPhase method was defined twice, 
+    // causing the countdown version to be overridden
 
     /**
      * 🏃‍♂️ Handle other player cash out

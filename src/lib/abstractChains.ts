@@ -22,7 +22,11 @@ export const abstract = defineChain({
   },
   rpcUrls: {
     default: {
-      http: ['https://api.mainnet.abs.xyz'],
+      http: [
+        'https://api.mainnet.abs.xyz',
+        'https://rpc.abs.xyz', 
+        'https://abstract-mainnet.g.alchemy.com/v2/demo'
+      ],
       webSocket: ['wss://api.mainnet.abs.xyz/ws'],
     },
   },

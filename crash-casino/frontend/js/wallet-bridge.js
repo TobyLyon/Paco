@@ -29,6 +29,11 @@ class WalletBridge {
     async init() {
         console.log('🌉 Initializing wallet bridge for crash casino...');
         
+        // Check RPC endpoint health if health checker is available
+        if (window.rpcHealthChecker) {
+            await window.rpcHealthChecker.findHealthyEndpoint();
+        }
+        
         // Check if we're running in the React app context
         if (window.parent !== window) {
             // We're in an iframe or embedded context - communicate with parent
@@ -243,7 +248,11 @@ class WalletBridge {
                         symbol: 'ETH',
                         decimals: 18
                     },
-                    rpcUrls: ['https://api.mainnet.abs.xyz'],
+                    rpcUrls: [
+                        'https://api.mainnet.abs.xyz',
+                        'https://rpc.abs.xyz',
+                        'https://abstract-mainnet.g.alchemy.com/v2/demo'
+                    ],
                     blockExplorerUrls: ['https://abscan.org']
                 }]
             });

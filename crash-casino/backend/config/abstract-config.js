@@ -20,7 +20,12 @@ const abstractNetworks = {
     mainnet: {
         chainId: 2741, // Abstract Mainnet
         name: 'Abstract',
-        rpcUrl: 'https://api.mainnet.abs.xyz',
+        rpcUrl: process.env.ABSTRACT_RPC_URL || 'https://api.mainnet.abs.xyz',
+        alternativeRpcUrls: [
+            'https://api.mainnet.abs.xyz',
+            'https://rpc.abs.xyz',
+            'https://abstract-mainnet.g.alchemy.com/v2/demo'
+        ],
         wsUrl: 'wss://api.mainnet.abs.xyz', 
         explorer: 'https://abscan.org',
         nativeCurrency: {

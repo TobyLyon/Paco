@@ -203,6 +203,8 @@ class CrashGameClient {
         this.socket.on('connect', () => {
             console.log('✅ Connected to crash game server for betting');
             console.log('🎮 Local game system handling multiplier display');
+            console.log('🔍 DEBUG: Socket connected, event listeners should be active');
+            console.log('⏰ Waiting for server events: start_betting_phase, betting_countdown, start_multiplier_count');
             this.isConnected = true;
             
             // DEBUG: Log ALL socket events to see what we're actually receiving

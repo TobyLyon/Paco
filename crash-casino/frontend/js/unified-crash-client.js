@@ -174,6 +174,12 @@ class UnifiedCrashClient {
         this.updateGameStatus('Round Running', 'Multiplier climbing...');
         this.updateMultiplierDisplay(1.0);
         
+        // Initialize chart for new round
+        if (window.crashChart) {
+            window.crashChart.startNewRound();
+            console.log('📈 Chart: Started new round for multiplier tracking');
+        }
+        
         // Start smooth multiplier animation
         this.startMultiplierAnimation();
         
@@ -274,7 +280,7 @@ class UnifiedCrashClient {
         // Update chart if available
         if (window.crashChart && this.currentPhase === 'game') {
             const elapsed = (Date.now() - this.gameStartTime) / 1000;
-            window.crashChart.addPoint(elapsed, multiplier);
+            window.crashChart.addDataPoint(elapsed, multiplier);
         }
     }
     

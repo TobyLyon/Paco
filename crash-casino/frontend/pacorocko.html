@@ -1104,6 +1104,7 @@
     <script src="/crash-casino/frontend/js/wallet-bridge.js"></script>
     <script src="/crash-casino/frontend/js/crash-client.js"></script>
     <script src="/crash-casino/frontend/js/unified-crash-client.js"></script>
+    <script src="/crash-casino/frontend/js/simple-sync-client.js"></script>
     <script src="/crash-casino/frontend/js/bet-interface.js"></script>
     <script src="/crash-casino/frontend/js/multiplier-display.js"></script>
     <script src="/crash-casino/frontend/js/crash-chart.js"></script>
@@ -1608,9 +1609,14 @@
                 console.log('📊 Loading round history from database...');
                 liveGameSystem.loadHistoryFromDatabase();
                 
-                // Initialize UNIFIED crash game client for perfect sync
-                console.log('🔍 Checking for UnifiedCrashClient...', typeof UnifiedCrashClient);
-                if (typeof UnifiedCrashClient !== 'undefined') {
+                // Initialize SIMPLE SYNC CLIENT for bulletproof sync
+                console.log('🔍 Checking for SimpleSyncClient...', typeof SimpleSyncClient);
+                if (typeof SimpleSyncClient !== 'undefined') {
+                    console.log('🎯 Using SIMPLE SYNC CLIENT - bulletproof implementation');
+                    window.crashGameClient = new SimpleSyncClient();
+                    window.crashGameClient.connect('https://paco-x57j.onrender.com');
+                    console.log('✅ Simple sync client connected - bulletproof sync active');
+                } else if (typeof UnifiedCrashClient !== 'undefined') {
                     console.log('🎯 Initializing UNIFIED crash game client for perfect sync...');
                     window.crashGameClient = new UnifiedCrashClient();
                     
@@ -1686,9 +1692,12 @@
                     // CrashGameClient handles all events internally for clean architecture
                     console.log('🎯 Using CrashGameClient for all event handling (no duplicates)');
                     
-                    // PRODUCTION FIX: Add event synchronization with UI updates
+                    // PRODUCTION FIX: Add event synchronization with UI updates (with null safety)
                     window.crashGameClient.onGameStateUpdate = (state) => {
-                        if (state.connected) {
+                        // Add null safety check
+                        const connected = state && state.connected;
+                        
+                        if (connected) {
                             console.log('🔌 Connected to server - betting system ready');
                             console.log('🎯 Local system continues visual control');
                         } else {

@@ -1515,17 +1515,13 @@
                             window.crashGameClient.socket.once('gameState', (serverState) => {
                                 console.log('📡 Received server state:', serverState);
                                 
-                                // Check if server has an ongoing phase (betting or running)
-                                const hasActivePhase = serverState.phase === 'betting' || serverState.isRunning;
+                                // SIMPLIFIED: Check if server has an ACTIVE ROUND (multiplier > 1.0)
+                                const serverHasActiveRound = serverState.isRunning && serverState.currentMultiplier > 1.0;
                                 const phaseTimeRemaining = serverState.phaseStartTime ? 
                                     Math.max(0, 15 - (Date.now() - serverState.phaseStartTime) / 1000) : 0;
                                 
-                                if (hasActivePhase && phaseTimeRemaining > 1) {
-                                    if (serverState.isRunning && serverState.currentMultiplier > 1.0) {
-                                        console.log(`🔄 Server has active round at ${serverState.currentMultiplier}x - syncing local system`);
-                                    } else if (serverState.phase === 'betting') {
-                                        console.log(`🔄 Server has ongoing betting phase (${phaseTimeRemaining.toFixed(1)}s remaining) - syncing local system`);
-                                    }
+                                if (serverHasActiveRound) {
+                                    console.log(`🔄 Server has active round at ${serverState.currentMultiplier}x - joining mid-round`);
                                     
                                     // Start local system in sync mode
                                     if (window.liveGameSystem && !window.liveGameSystem.isRunning) {
@@ -1574,46 +1570,6 @@
                                                     }
                                                 }, 100);
                                                 
-                                            } else {
-                                                // Server in betting phase - sync countdown
-                                                console.log(`🎯 Server in betting phase - syncing countdown`);
-                                                window.liveGameSystem.start();
-                                                
-                                                // Sync countdown to server if in betting phase  
-                                                if (serverState.phase === 'betting' && phaseTimeRemaining > 1) {
-                                                    setTimeout(() => {
-                                                        // Update countdown to match server
-                                                        const newCountdown = Math.ceil(phaseTimeRemaining);
-                                                        document.getElementById('countdownValue').textContent = newCountdown;
-                                                        document.getElementById('gameStateMessage').textContent = `🎰 Next round starting in ${newCountdown}s - Place your bets now!`;
-                                                        
-                                                        // Restart countdown interval with correct timing
-                                                        if (window.liveGameSystem.countdownInterval) {
-                                                            clearInterval(window.liveGameSystem.countdownInterval);
-                                                        }
-                                                        
-                                                        let syncedCountdown = newCountdown;
-                                                        window.liveGameSystem.countdownInterval = setInterval(() => {
-                                                            syncedCountdown--;
-                                                            document.getElementById('countdownValue').textContent = syncedCountdown;
-                                                            
-                                                            if (syncedCountdown > 0) {
-                                                                document.getElementById('gameStateMessage').textContent = `🎰 Next round starting in ${syncedCountdown}s - Place your bets now!`;
-                                                            } else {
-                                                                document.getElementById('gameStateMessage').textContent = `🚀 Round starting...`;
-                                                            }
-                                                            
-                                                            if (syncedCountdown <= 0) {
-                                                                clearInterval(window.liveGameSystem.countdownInterval);
-                                                                window.liveGameSystem.countdownInterval = null;
-                                                                document.getElementById('countdownTimer').style.display = 'none';
-                                                                window.liveGameSystem.startNewRound();
-                                                            }
-                                                        }, 1000);
-                                                        
-                                                        console.log(`🔄 Countdown synced to server: ${newCountdown}s`);
-                                                    }, 100); // Small delay to let start() finish
-                                                }
                                             }
                                         }
                                     }
@@ -1650,23 +1606,7 @@
                     window.crashGameClient.onRoundCrash = (data) => {
                         console.log('🌐 Server round crash - processing bets');
                         console.log(`🎯 Server crash point: ${data.crashPoint}x`);
-                        
-                        // CRITICAL: Use server crash point for local display consistency
-                        if (window.liveGameSystem && data.crashPoint) {
-                            console.log(`🔄 Syncing local display to server crash: ${data.crashPoint}x`);
-                            
-                            // Override local crash point with server's actual crash point
-                            window.liveGameSystem.targetCrashMultiplier = data.crashPoint;
-                            
-                            // Update display to show server crash point
-                            document.getElementById('multiplierValue').textContent = `${data.crashPoint}x`;
-                            
-                            // Ensure history uses server crash point
-                            if (window.liveGameSystem.addRoundToHistory) {
-                                window.liveGameSystem.addRoundToHistory(data.crashPoint);
-                                console.log(`📊 Added server crash ${data.crashPoint}x to history`);
-                            }
-                        }
+                        // Removed conflicting crash override logic - let local system handle display
                     };
                 } else {
                     console.log('⚠️ CrashGameClient not available, running live game system only');

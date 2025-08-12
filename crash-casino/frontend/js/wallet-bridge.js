@@ -201,7 +201,41 @@ class WalletBridge {
             console.log('📊 Using legacy transaction format for Abstract Network compatibility');
 
             console.log('📤 Sending transaction with RPC health check:', tx);
-            const txResponse = await this.signer.sendTransaction(tx);
+            
+            // DIAGNOSTIC: Test different transaction methods for Abstract Network
+            console.log('🔍 DIAGNOSTIC: Testing Abstract Network transaction capabilities...');
+            
+            // Method 1: Direct provider request (raw RPC)
+            let txResponse;
+            try {
+                console.log('📡 Testing Method 1: Direct RPC eth_sendTransaction...');
+                const rawTx = {
+                    from: await this.signer.getAddress(),
+                    to: tx.to,
+                    value: '0x' + BigInt(tx.value).toString(16),
+                    gas: '0x' + BigInt(tx.gasLimit).toString(16),
+                    gasPrice: '0x' + BigInt(tx.gasPrice).toString(16)
+                };
+                console.log('📡 Raw transaction object:', rawTx);
+                
+                const rawResult = await this.provider.send('eth_sendTransaction', [rawTx]);
+                console.log('✅ Method 1 SUCCESS - Raw RPC worked:', rawResult);
+                
+                // Return a transaction-like object
+                txResponse = {
+                    hash: rawResult,
+                    wait: async () => {
+                        return await this.provider.waitForTransaction(rawResult);
+                    }
+                };
+            } catch (rawError) {
+                console.log('❌ Method 1 FAILED - Raw RPC failed:', rawError.message);
+                
+                // Method 2: Standard signer (current method)
+                console.log('📡 Testing Method 2: Standard ethers signer...');
+                txResponse = await this.signer.sendTransaction(tx);
+            }
+            
             console.log('✅ Transaction sent successfully:', txResponse.hash);
             
             // Reset failed endpoints on successful transaction
@@ -974,12 +1008,17 @@ class WalletBridge {
                     this.provider = new ethers.BrowserProvider(window.ethereum);
                     this.signer = await this.provider.getSigner();
                     
-                    // Check network
-                    const network = await this.provider.getNetwork();
-                    console.log('🔗 Found existing wallet connection:', this.address);
-                    console.log('🌐 Current network:', network.name, network.chainId);
-                    
-                    this.notifyStateChange();
+                                // Check network
+            const network = await this.provider.getNetwork();
+            console.log('🔗 Found existing wallet connection:', this.address);
+            console.log('🌐 Current network:', network.name, network.chainId);
+            
+            // Debug Abstract Network capabilities
+            if (network.chainId === 2741n) {
+                this.debugAbstractNetwork();
+            }
+            
+            this.notifyStateChange();
                     return true;
                 }
             } catch (error) {
@@ -1011,6 +1050,72 @@ class WalletBridge {
     formatAddress(address) {
         if (!address) return '';
         return `${address.slice(0, 6)}...${address.slice(-4)}`;
+    }
+    
+    /**
+     * 🔍 Debug Abstract Network provider capabilities
+     */
+    debugAbstractNetwork() {
+        if (!this.provider) return;
+        
+        console.log('🔍 ABSTRACT NETWORK DEBUG SESSION STARTING...');
+        console.log('🔗 Provider details:', this.provider);
+        console.log('🌐 Network info available:', !!this.provider.getNetwork);
+        
+        // Test basic RPC capabilities
+        this.testAbstractRPCCapabilities();
+    }
+    
+    /**
+     * 🧪 Test Abstract Network RPC capabilities
+     */
+    async testAbstractRPCCapabilities() {
+        if (!this.provider) return;
+        
+        console.log('🧪 Testing Abstract Network RPC capabilities...');
+        
+        const tests = [
+            { name: 'eth_chainId', method: 'eth_chainId', params: [] },
+            { name: 'eth_gasPrice', method: 'eth_gasPrice', params: [] },
+            { name: 'eth_blockNumber', method: 'eth_blockNumber', params: [] },
+            { name: 'eth_getBalance', method: 'eth_getBalance', params: [await this.signer?.getAddress() || '0x0000000000000000000000000000000000000000', 'latest'] }
+        ];
+        
+        for (const test of tests) {
+            try {
+                const result = await this.provider.send(test.method, test.params);
+                console.log(`✅ ${test.name}: ${result}`);
+            } catch (error) {
+                console.log(`❌ ${test.name}: ${error.message}`);
+            }
+        }
+        
+        // Test transaction estimation specifically
+        try {
+            if (this.signer && await this.signer.getAddress()) {
+                const testTx = {
+                    to: await this.signer.getAddress(), // Send to self
+                    value: '0x1', // 1 wei
+                    data: '0x'
+                };
+                
+                console.log('🧪 Testing eth_estimateGas with minimal transaction...');
+                const gasEstimate = await this.provider.send('eth_estimateGas', [testTx]);
+                console.log(`✅ Gas estimation works: ${gasEstimate}`);
+                
+                console.log('🧪 Testing eth_sendTransaction capability...');
+                // We won't actually send, just see if the method exists and what error we get
+                try {
+                    await this.provider.send('eth_sendTransaction', [testTx]);
+                } catch (sendError) {
+                    console.log(`🔍 eth_sendTransaction error (expected): ${sendError.message}`);
+                    console.log(`🔍 Error code: ${sendError.code}`);
+                    console.log(`🔍 Error data:`, sendError.data);
+                }
+            }
+        } catch (error) {
+            console.log(`❌ Transaction testing failed: ${error.message}`);
+        }
     }
 
     /**

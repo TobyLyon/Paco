@@ -326,6 +326,12 @@ class CrashGameClient {
             }
         });
         
+        // 🎯 SERVER-DRIVEN COUNTDOWN: Listen for real-time countdown from server
+        this.socket.on('betting_countdown', (data) => {
+            console.log(`⏰ SERVER COUNTDOWN: ${data.remaining}s remaining`);
+            this.updateServerCountdown(data.remaining);
+        });
+        
         // Legacy events (keeping for compatibility)
         this.socket.on('gameState', (data) => this.handleGameState(data));
         this.socket.on('roundStarted', (data) => this.handleRoundStart(data));
@@ -485,17 +491,23 @@ class CrashGameClient {
      * 🎲 Handle betting phase start 
      */
     handleBettingPhase(data) {
-        console.log('🎲 Betting phase started - 6 seconds to place bets');
+        console.log('🎲 Betting phase started - waiting for server countdown');
         this.gameState = 'betting';
         
-        // Start countdown timer
-        this.startCountdown(6);
+        // 🚫 REMOVED: No local countdown - server controls timing
+        // this.startCountdown(6); // DISABLED
+        
+        // Show countdown timer but wait for server updates
+        const countdownElement = document.getElementById('countdownTimer');
+        if (countdownElement) countdownElement.style.display = 'block';
         
         // Update UI
         const gameStatus = document.getElementById('gameStatus');
         const gameMessage = document.getElementById('gameStateMessage');
         if (gameStatus) gameStatus.textContent = 'Betting Phase';
-        if (gameMessage) gameMessage.textContent = 'Place your bets! (6 seconds)';
+        if (gameMessage) gameMessage.textContent = 'Waiting for server countdown...';
+        
+        console.log('⏰ Waiting for server betting_countdown events');
     }
 
     /**
@@ -1125,7 +1137,32 @@ class CrashGameClient {
     }
 
     /**
-     * ⏰ Start unified betting countdown
+     * 🎯 Update countdown from server (SERVER-DRIVEN)
+     */
+    updateServerCountdown(remaining) {
+        const countdownElement = document.getElementById('countdownTimer');
+        const countdownValue = document.getElementById('countdownValue');
+        const gameMessage = document.getElementById('gameStateMessage');
+        
+        // Update countdown display
+        if (countdownValue) countdownValue.textContent = remaining;
+        
+        // Update message based on remaining time
+        if (remaining > 3) {
+            if (gameMessage) gameMessage.textContent = `🎰 Place your bets! Round starts in ${remaining}s`;
+        } else if (remaining > 0) {
+            if (gameMessage) gameMessage.textContent = `🚀 Round starting in ${remaining}s - Last chance!`;
+        } else {
+            if (gameMessage) gameMessage.textContent = `🚀 Round starting now...`;
+            // Hide countdown when it reaches 0
+            if (countdownElement) countdownElement.style.display = 'none';
+        }
+        
+        console.log(`✅ Server countdown updated: ${remaining}s`);
+    }
+
+    /**
+     * ⏰ Start unified betting countdown (DEPRECATED - SERVER-DRIVEN NOW)
      */
     startCountdown(seconds = 15) {
         const countdownElement = document.getElementById('countdownTimer');

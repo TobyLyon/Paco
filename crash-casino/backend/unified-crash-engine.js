@@ -41,6 +41,9 @@ class UnifiedCrashEngine extends EventEmitter {
         // Game loop
         this.gameLoopInterval = null;
         
+        // Countdown synchronization
+        this.lastCountdownSecond = -1;
+        
         console.log('🎯 Unified Crash Engine initialized with server authority');
     }
     
@@ -66,7 +69,19 @@ class UnifiedCrashEngine extends EventEmitter {
         const time_elapsed = (Date.now() - this.phase_start_time) / 1000.0;
         
         if (this.betting_phase) {
-            // BETTING PHASE: 6 seconds exactly
+            // BETTING PHASE: 6 seconds exactly with real-time countdown
+            const remaining = Math.max(0, 6 - time_elapsed);
+            
+            // Emit countdown updates every second for perfect sync
+            if (Math.floor(remaining) !== this.lastCountdownSecond) {
+                this.lastCountdownSecond = Math.floor(remaining);
+                this.io.emit('betting_countdown', {
+                    remaining: Math.ceil(remaining),
+                    phase: 'betting'
+                });
+                console.log(`⏰ Betting countdown: ${Math.ceil(remaining)}s remaining`);
+            }
+            
             if (time_elapsed > 6) {
                 this.sent_cashout = false;
                 this.betting_phase = false;

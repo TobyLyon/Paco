@@ -42,6 +42,9 @@ class ProvenCrashEngine extends EventEmitter {
         this.current_round_id = 1;
         this.round_counter = 1; // For generating unique string IDs
         
+        // Countdown synchronization
+        this.lastCountdownSecond = -1;
+        
         // Start the proven game loop
         this.startGameLoop();
         
@@ -70,7 +73,19 @@ class ProvenCrashEngine extends EventEmitter {
         let time_elapsed = (Date.now() - this.phase_start_time) / 1000.0;
         
         if (this.betting_phase) {
-            // Betting phase - 6 seconds
+            // Betting phase - 6 seconds with real-time countdown
+            const remaining = Math.max(0, 6 - time_elapsed);
+            
+            // Emit countdown updates every second for perfect sync
+            if (Math.floor(remaining) !== this.lastCountdownSecond) {
+                this.lastCountdownSecond = Math.floor(remaining);
+                this.io.emit('betting_countdown', {
+                    remaining: Math.ceil(remaining),
+                    phase: 'betting'
+                });
+                console.log(`⏰ Betting countdown: ${Math.ceil(remaining)}s remaining`);
+            }
+            
             if (time_elapsed > 6) {
                 this.sent_cashout = false;
                 this.betting_phase = false;

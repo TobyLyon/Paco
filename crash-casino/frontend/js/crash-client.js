@@ -715,28 +715,28 @@ class CrashGameClient {
                     
                     switch (attempts) {
                         case 1:
-                            // First attempt: Abstract L2 optimized transaction
+                            // First attempt: Abstract L2 standard transaction (21k gas)
                             gasConfig = {
                                 gasPrice: '0x3B9ACA00', // 1 gwei in hex for Abstract L2
-                                gas: '0x186A0' // 100000 in hex (Abstract uses 'gas' not 'gasLimit')
+                                gas: '0x5208' // 21000 in hex - standard ETH transfer
                             };
-                            console.log('📊 Attempt 1: Abstract L2 optimized format');
+                            console.log('📊 Attempt 1: Abstract L2 standard (21k gas, ~$0.02 fee)');
                             break;
                         case 2:
-                            // Second attempt: Higher gas limit for Abstract L2
+                            // Second attempt: Slightly higher gas limit
                             gasConfig = {
                                 gasPrice: '0x3B9ACA00', // 1 gwei in hex
-                                gas: '0x249F0' // 150000 in hex
+                                gas: '0x7530' // 30000 in hex
                             };
-                            console.log('📊 Attempt 2: Abstract L2 with higher gas limit');
+                            console.log('📊 Attempt 2: Abstract L2 with buffer (30k gas, ~$0.03 fee)');
                             break;
                         case 3:
-                            // Third attempt: Maximum gas for Abstract L2 compatibility
+                            // Third attempt: Higher gas for reliability
                             gasConfig = {
                                 gasPrice: '0x77359400', // 2 gwei in hex for reliability
-                                gas: '0x30D40' // 200000 in hex
+                                gas: '0x9C40' // 40000 in hex
                             };
-                            console.log('📊 Attempt 3: Abstract L2 maximum compatibility mode');
+                            console.log('📊 Attempt 3: Abstract L2 reliable (40k gas, ~$0.08 fee)');
                             break;
                     }
                     
@@ -886,31 +886,58 @@ class CrashGameClient {
             
             this.showNotification('✅ Transaction confirmed! Placing bet...', 'success');
             
-            // Now notify the game server with verified transaction
+            // CRITICAL FIX: Notify server IMMEDIATELY with transaction hash
+            console.log('📡 Notifying server of bet placement...');
             this.socket.emit('place_bet', {
                 betAmount: amount,
                 autoPayoutMultiplier: null, // Can be set for auto-cashout
                 txHash: receipt.transactionHash,
                 blockNumber: receipt.blockNumber,
-                playerAddress: window.realWeb3Modal?.address
+                playerAddress: window.realWeb3Modal?.address || this.playerAddress,
+                roundId: this.currentRound, // Include current round ID
+                timestamp: Date.now()
+            });
+            
+            console.log('📡 Bet placement event sent to server:', {
+                amount: amount,
+                txHash: receipt.transactionHash,
+                roundId: this.currentRound,
+                player: this.playerAddress
             });
 
             this.playerBet = {
                 amount: amount,
                 cashedOut: false,
                 txHash: receipt.transactionHash,
-                blockNumber: receipt.blockNumber
+                blockNumber: receipt.blockNumber,
+                roundId: this.currentRound,
+                timestamp: Date.now()
             };
 
-            // Update UI
-            document.getElementById('yourBetAmount').textContent = amount.toFixed(4) + ' ETH';
-            document.getElementById('potentialWin').textContent = amount.toFixed(4) + ' ETH';
-            document.getElementById('betStatus').style.display = 'block';
-            document.getElementById('placeBetBtn').disabled = true;
+            // Update UI immediately
+            const yourBetAmountElement = document.getElementById('yourBetAmount');
+            const potentialWinElement = document.getElementById('potentialWin');
+            const betStatusElement = document.getElementById('betStatus');
+            const placeBetBtnElement = document.getElementById('placeBetBtn');
+            
+            if (yourBetAmountElement) yourBetAmountElement.textContent = amount.toFixed(4) + ' ETH';
+            if (potentialWinElement) potentialWinElement.textContent = amount.toFixed(4) + ' ETH';
+            if (betStatusElement) betStatusElement.style.display = 'block';
+            if (placeBetBtnElement) {
+                placeBetBtnElement.disabled = true;
+                placeBetBtnElement.textContent = '✅ BET PLACED';
+            }
+
+            // Show cash out button if round is running
+            if (this.gameState === 'running') {
+                const cashOutBtn = document.getElementById('cashOutBtn');
+                if (cashOutBtn) cashOutBtn.style.display = 'block';
+            }
 
             // Show success status
-            this.showTransactionStatus('success', 'Bet placed successfully!', `${amount.toFixed(4)} ETH bet confirmed`);
+            this.showTransactionStatus('success', 'Bet placed successfully!', `${amount.toFixed(4)} ETH bet confirmed - waiting for round result`);
 
+            console.log('✅ Bet tracking setup complete:', this.playerBet);
             return true;
 
         } catch (error) {
@@ -987,16 +1014,28 @@ class CrashGameClient {
         }
 
         if (!this.playerBet || this.playerBet.cashedOut) {
-            this.showError('No active bet to cash out');
+            this.showError('No active bet to cash out. Please place a bet first.');
+            console.log('❌ Cash out failed - no active bet:', this.playerBet);
             return;
         }
 
         if (this.gameState !== 'running') {
             this.showError('Cannot cash out - round not running');
+            console.log('❌ Cash out failed - game state:', this.gameState);
             return;
         }
 
-        this.socket.emit('cash_out');
+        console.log('🏃‍♂️ Attempting cash out for bet:', this.playerBet);
+        
+        // Send cash out request with bet details for server verification
+        this.socket.emit('cash_out', {
+            txHash: this.playerBet.txHash,
+            roundId: this.playerBet.roundId || this.currentRound,
+            playerAddress: this.playerAddress,
+            betAmount: this.playerBet.amount
+        });
+        
+        console.log('📡 Cash out request sent to server');
     }
 
     /**

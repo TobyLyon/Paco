@@ -233,24 +233,22 @@ class WalletBridge {
             
             console.log('📡 MetaMask transaction object:', metaMaskTx);
             
-            // ABSTRACT L2 FIX: Enhanced transaction submission with proper error handling
+            // ABSTRACT L2 FIX: Use conservative fixed gas limits to avoid massive fees
             let txHash;
             try {
-                // First, try gas estimation with Abstract L2 format
-                const gasEstimate = await window.ethereum.request({
-                    method: 'eth_estimateGas',
-                    params: [metaMaskTx]
-                });
-                console.log('✅ Abstract L2 gas estimation successful:', gasEstimate);
+                // For Abstract L2, don't use automatic gas estimation as it's returning huge numbers
+                // Instead, use our conservative fixed limits based on transaction type
+                const originalGas = parseInt(metaMaskTx.gas, 16);
                 
-                // Update gas limit with estimated value + 20% buffer
-                const estimatedGasInt = parseInt(gasEstimate, 16);
-                const gasWithBuffer = Math.floor(estimatedGasInt * 1.2);
-                metaMaskTx.gas = '0x' + gasWithBuffer.toString(16);
-                console.log(`🔧 Updated gas limit: ${gasWithBuffer} (${gasEstimate} + 20%)`);
+                // Cap gas at reasonable limits for Abstract L2
+                const maxReasonableGas = 50000; // Max 50k gas for any transaction
+                const finalGas = Math.min(originalGas, maxReasonableGas);
+                
+                metaMaskTx.gas = '0x' + finalGas.toString(16);
+                console.log(`🔧 Using conservative gas limit: ${finalGas} (capped for Abstract L2)`);
                 
             } catch (gasError) {
-                console.log('⚠️ Gas estimation failed, using default:', gasError.message);
+                console.log('⚠️ Gas setup failed, using default:', gasError.message);
                 // Continue with default gas limit
             }
             

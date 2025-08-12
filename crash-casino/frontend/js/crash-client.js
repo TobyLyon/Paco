@@ -327,6 +327,9 @@ class CrashGameClient {
                 console.log('✅ Local animation disabled - server authority only');
             }
             
+            // ✅ START SERVER-DRIVEN VISUAL ANIMATION
+            this.startServerDrivenVisuals();
+            
             // Force start chart
             if (window.crashChart) {
                 console.log('📈 FORCING: Starting crash chart');
@@ -363,6 +366,9 @@ class CrashGameClient {
                 window.liveGameSystem.crashPoint = crash;
                 console.log('✅ liveGameSystem updated with crash data');
             }
+            
+            // Stop visual animation when server crashes
+            this.stopServerDrivenVisuals();
             
             // Add to local recent rounds history
             this.addToLocalHistory(crash);
@@ -1262,6 +1268,89 @@ class CrashGameClient {
         }
         
         this.updateHistoryDisplay();
+    }
+
+    /**
+     * 🎮 Start server-driven visual animation (no independent crashes)
+     */
+    startServerDrivenVisuals() {
+        console.log('🎮 Starting server-driven visual animation...');
+        
+        if (this.visualAnimationFrame) {
+            cancelAnimationFrame(this.visualAnimationFrame);
+        }
+        
+        this.visualAnimationActive = true;
+        this.animateVisuals();
+    }
+    
+    /**
+     * 🛑 Stop server-driven visual animation
+     */
+    stopServerDrivenVisuals() {
+        console.log('🛑 Stopping server-driven visual animation');
+        this.visualAnimationActive = false;
+        
+        if (this.visualAnimationFrame) {
+            cancelAnimationFrame(this.visualAnimationFrame);
+            this.visualAnimationFrame = null;
+        }
+    }
+    
+    /**
+     * 📈 Visual animation loop (server controls timing, no crashes)
+     */
+    animateVisuals() {
+        if (!this.visualAnimationActive || this.gameState !== 'running') {
+            this.stopServerDrivenVisuals();
+            return;
+        }
+        
+        // Calculate visual multiplier based on server timing
+        const elapsed = (Date.now() - this.roundStartTime) / 1000;
+        const visualMultiplier = 1.0024 * Math.pow(1.0718, elapsed);
+        
+        // Update all visual systems (NO CRASH DETECTION)
+        this.updateVisualSystems(visualMultiplier, elapsed);
+        
+        // Continue animation at 60 FPS
+        this.visualAnimationFrame = requestAnimationFrame(() => this.animateVisuals());
+    }
+    
+    /**
+     * 📊 Update all visual systems with multiplier data
+     */
+    updateVisualSystems(multiplier, elapsed) {
+        try {
+            // 1. Update multiplier display
+            const multiplierElement = document.getElementById('multiplierValue');
+            if (multiplierElement && !multiplierElement.classList.contains('crashed')) {
+                multiplierElement.textContent = multiplier.toFixed(2) + 'x';
+            }
+            
+            // 2. Update chart
+            if (window.crashChart && typeof window.crashChart.addDataPoint === 'function') {
+                window.crashChart.addDataPoint(elapsed, multiplier);
+            }
+            
+            // 3. Update rocket/visualizer
+            if (window.crashVisualizer && typeof window.crashVisualizer.updatePosition === 'function') {
+                window.crashVisualizer.updatePosition(elapsed, multiplier);
+            }
+            
+            // 4. Update multiplier display system
+            if (window.multiplierDisplay && typeof window.multiplierDisplay.updateMultiplier === 'function') {
+                window.multiplierDisplay.updateMultiplier(multiplier);
+            }
+            
+            // 5. Update mood/animations
+            if (typeof updatePacoMood === 'function') {
+                updatePacoMood(multiplier, true, false);
+            }
+            
+        } catch (error) {
+            console.log('📊 Visual update error:', error);
+        }
     }
 
     /**

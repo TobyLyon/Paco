@@ -13,6 +13,7 @@ class CrashGameClient {
         this.currentMultiplier = 1.0;
         this.playerBet = null;
         this.roundHistory = [];
+        this.pendingRoundStart = null; // Store round start requests during countdown
         
         // PURE CLIENT MODE: Always disable server multiplier updates for smooth gameplay
         this.disableMultiplierUpdates = true; // Server only handles start/stop, client handles display
@@ -204,13 +205,14 @@ class CrashGameClient {
             this.isConnected = true;
             this.updateConnectionStatus(true);
             
-            // CRITICAL FIX: Start first round cycle when connected
-            setTimeout(() => {
-                if (this.gameState === 'waiting' || !this.gameState) {
-                    console.log('🚀 Starting initial betting cycle...');
-                    this.prepareForNextRound();
-                }
-            }, 2000); // Wait 2 seconds for full initialization
+                    // CRITICAL FIX: Wait for server to control timing - don't start automatic cycles
+        setTimeout(() => {
+            if (this.gameState === 'waiting' || !this.gameState) {
+                console.log('⏰ Connected - waiting for server to start round cycles...');
+                // Don't start automatic countdown - wait for server events
+                this.updateGameStateUI('waiting');
+            }
+        }, 2000); // Wait 2 seconds for full initialization
             
             // Notify connection callback
             if (this.onGameStateUpdate) {
@@ -358,11 +360,14 @@ class CrashGameClient {
         // Support both legacy and enhanced payloads
         const phase = data.status || data.currentPhase || 'waiting';
         
-        // Map backend phases to frontend states
+        // Map backend phases to frontend states with proper countdown handling
         if (phase === 'betting') {
             this.gameState = 'betting';  // Accepting bets
+            // SERVER TRIGGERED BETTING: Start countdown when server says betting is open
+            console.log('🎰 Server triggered betting phase - starting countdown');
+            this.startCountdown(15); // Server says betting is open, start 15s countdown
         } else if (phase === 'waiting') {
-            this.gameState = 'pending';  // Between rounds
+            this.gameState = 'waiting';  // Between rounds - show waiting state
         } else if (phase === 'running' || phase === 'flying') {
             this.gameState = 'running';  // Game in progress
         } else if (phase === 'crashed' || phase === 'ended') {
@@ -422,9 +427,33 @@ class CrashGameClient {
     }
 
     /**
-     * 🚀 Handle round start - PRODUCTION FIX: No visual interference
+     * 🚀 Handle round start - PRODUCTION FIX: Respect countdown timing
      */
     handleRoundStart(data) {
+        console.log('🌐 Server wants to start round:', data.roundId);
+        
+        // Check if we're currently in countdown - if so, delay the round start
+        const countdownElement = document.getElementById('countdownTimer');
+        const isCountdownActive = countdownElement && countdownElement.style.display !== 'none';
+        
+        if (isCountdownActive) {
+            console.log('⏰ Countdown still active - delaying round start until countdown finishes');
+            // Store the round data but don't start yet
+            this.pendingRoundStart = {
+                data: data,
+                receivedAt: Date.now()
+            };
+            return; // Exit early, round will start when countdown finishes
+        }
+        
+        // No countdown active, start round immediately
+        this.actuallyStartRound(data);
+    }
+    
+    /**
+     * 🚀 Actually start the round (called when countdown finishes or immediately if no countdown)
+     */
+    actuallyStartRound(data) {
         this.gameState = 'running';
         this.roundStartTime = data.startTime || Date.now();
         this.currentRound = data.roundId;
@@ -437,11 +466,14 @@ class CrashGameClient {
         this.nonce = data.nonce;
         this.maxDuration = data.duration || 60000;
         
-        console.log('🌐 Server round start (betting only):', {
+        console.log('🚀 Starting round now:', {
             roundId: data.roundId,
             crashPoint: this.crashPoint,
-            mode: 'SERVER-BETTING-ONLY (local handles display)'
+            delay: this.pendingRoundStart ? Date.now() - this.pendingRoundStart.receivedAt : 0
         });
+        
+        // Clear any pending round start
+        this.pendingRoundStart = null;
         
         // CRITICAL FIX: Update UI for round start
         this.updateGameStateUI('running');
@@ -466,7 +498,7 @@ class CrashGameClient {
             this.onRoundStart(data);
         }
         
-        console.log('🎯 Server round start processed - UI updated for running state');
+        console.log('🎯 Round started successfully');
     }
 
     /**
@@ -545,10 +577,18 @@ class CrashGameClient {
             this.onRoundCrash(data);
         }
         
-        // CRITICAL FIX: Start countdown for next round after crash
+        // CRITICAL FIX: Wait for server to signal next round - don't auto-start countdown
         setTimeout(() => {
-            console.log('🔄 Starting countdown for next round...');
-            this.prepareForNextRound();
+            console.log('⏰ Round crashed - waiting for server to start next betting phase...');
+            this.gameState = 'waiting';
+            this.updateGameStateUI('waiting');
+            
+            // Reset UI but don't start countdown - server will control timing
+            const placeBetBtnElement = document.getElementById('placeBetBtn');
+            if (placeBetBtnElement) {
+                placeBetBtnElement.disabled = false;
+                placeBetBtnElement.textContent = '⏰ WAITING FOR NEXT ROUND';
+            }
         }, 2000); // Wait 2 seconds after crash
         
         console.log('🎯 Server crash processed - local system handles all visual display');
@@ -1128,16 +1168,22 @@ class CrashGameClient {
                 clearInterval(interval);
                 if (countdownElement) countdownElement.style.display = 'none';
                 
-                // Transition to pending/starting state
-                this.gameState = 'pending';
-                this.updateGameStateUI('pending');
-                
-                // Update bet interface to disable betting
-                if (window.betInterface && typeof window.betInterface.onGameStateChange === 'function') {
-                    window.betInterface.onGameStateChange('pending');
+                // Check if server wanted to start a round while we were counting down
+                if (this.pendingRoundStart) {
+                    console.log('⏰ Countdown finished - starting pending round');
+                    this.actuallyStartRound(this.pendingRoundStart.data);
+                } else {
+                    // Transition to pending/starting state
+                    this.gameState = 'pending';
+                    this.updateGameStateUI('pending');
+                    
+                    // Update bet interface to disable betting
+                    if (window.betInterface && typeof window.betInterface.onGameStateChange === 'function') {
+                        window.betInterface.onGameStateChange('pending');
+                    }
+                    
+                    console.log('⏰ Betting countdown completed - waiting for server round start');
                 }
-                
-                console.log('⏰ Betting countdown completed - waiting for server round start');
             }
         }, 1000);
     }

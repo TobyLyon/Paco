@@ -1585,9 +1585,9 @@
                 console.log('🌐 Server system: Round control, betting, authentication, payouts');
                 console.log('📱 Local system: Smooth 60 FPS display ONLY (no independent rounds)');
                 
-                // ENABLE local display system but DISABLE independent round generation
-                console.log('✅ LOCAL DISPLAY ENABLED - but server controls round timing');
-                window.liveGameSystem = liveGameSystem;
+                // COMPLETELY DISABLE local game system - server-only mode
+                console.log('🚫 LOCAL GAME SYSTEM COMPLETELY DISABLED - server-only mode');
+                window.liveGameSystem = null; // DISABLE to prevent conflicts
                 
                 // COMPLETELY DISABLE LOCAL ROUND GENERATION
                 console.log('🚫 DISABLING local round generation - server controls everything');
@@ -1605,9 +1605,9 @@
                 // Server handles betting and initial state
                 console.log('💰 Server will provide initial state, then handle betting');
                 
-                // Load historical rounds from database
-                console.log('📊 Loading round history from database...');
-                liveGameSystem.loadHistoryFromDatabase();
+                // DISABLED: No local game system - server provides everything
+                console.log('🚫 Local game system DISABLED - using server-only data');
+                // liveGameSystem.loadHistoryFromDatabase(); // DISABLED - causes conflicts
                 
                 // Initialize SIMPLE SYNC CLIENT for bulletproof sync
                 console.log('🔍 Checking for SimpleSyncClient...', typeof SimpleSyncClient);
@@ -1640,12 +1640,8 @@
                             document.getElementById('gameStatus').textContent = 'Round Running';
                             document.getElementById('gameStateMessage').textContent = 'Multiplier climbing...';
                             
-                            // Start local animation
-                            if (window.liveGameSystem) {
-                                window.liveGameSystem.gameState = 'running';
-                                window.liveGameSystem.roundStartTime = Date.now();
-                                window.liveGameSystem.animate();
-                            }
+                            // No local animation - SimpleSyncClient handles everything
+                            console.log('🎯 SimpleSyncClient handles animation - no local system needed');
                         });
                         
                         window.crashGameClient.socket.on('stop_multiplier_count', (crashValue) => {
@@ -1662,10 +1658,8 @@
                                 multiplierElement.classList.add('crashed');
                             }
                             
-                            if (window.liveGameSystem) {
-                                window.liveGameSystem.gameState = 'crashed';
-                                window.liveGameSystem.crashPoint = crash;
-                            }
+                            // No local game system - SimpleSyncClient handles state
+                            console.log('🎯 SimpleSyncClient handles crash state - no local system needed');
                         });
                         
                         console.log('✅ DIRECT EVENT LISTENERS ADDED - should receive rounds now!');
@@ -1762,11 +1756,8 @@
                                     document.getElementById('gameStatus').textContent = 'Round Running';
                                     document.getElementById('gameStateMessage').textContent = 'Multiplier climbing...';
                                     
-                                    if (window.liveGameSystem) {
-                                        window.liveGameSystem.gameState = 'running';
-                                        window.liveGameSystem.roundStartTime = Date.now();
-                                        window.liveGameSystem.animate();
-                                    }
+                                    // No local game system - SimpleSyncClient handles everything
+                                    console.log('🎯 FALLBACK: SimpleSyncClient handles animation');
                                 });
                                 
                                 socket.on('stop_multiplier_count', (crashValue) => {
@@ -1782,10 +1773,8 @@
                                         multiplierElement.classList.add('crashed');
                                     }
                                     
-                                    if (window.liveGameSystem) {
-                                        window.liveGameSystem.gameState = 'crashed';
-                                        window.liveGameSystem.crashPoint = crash;
-                                    }
+                                    // No local game system - SimpleSyncClient handles state
+                                    console.log('🎯 FALLBACK: SimpleSyncClient handles crash state');
                                 });
                                 
                                 console.log('✅ FALLBACK: Direct event listeners added to old client');

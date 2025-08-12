@@ -13,6 +13,8 @@ class SimpleSyncClient {
         this.multiplier = 1.0;
         this.gameStartTime = null;
         this.animationFrame = null;
+        this.heartbeatInterval = null;
+        this.connectionMonitor = null;
         
         console.log('🎯 Simple Sync Client initialized');
     }
@@ -25,12 +27,17 @@ class SimpleSyncClient {
         
         this.socket = io(serverUrl, {
             transports: ['websocket', 'polling'],
-            timeout: 30000,
+            timeout: 20000,
             forceNew: false,
             autoConnect: true,
             reconnection: true,
-            reconnectionAttempts: 5,
-            reconnectionDelay: 1000
+            reconnectionAttempts: 10,          // More attempts
+            reconnectionDelay: 1000,           // Start with 1s delay
+            reconnectionDelayMax: 5000,        // Max 5s delay
+            maxReconnectionAttempts: 10,       // Retry 10 times
+            randomizationFactor: 0.5,          // Add randomization
+            upgrade: true,                     // Allow transport upgrades
+            rememberUpgrade: true              // Remember successful upgrades
         });
         
         this.setupEventListeners();
@@ -42,14 +49,50 @@ class SimpleSyncClient {
      */
     setupEventListeners() {
         this.socket.on('connect', () => {
-            console.log('✅ Simple client connected to server');
+            console.log('✅ SIMPLE CLIENT: Connected to server');
+            console.log('🔌 Connection ID:', this.socket.id);
             this.isConnected = true;
+            
+            // Send heartbeat to maintain connection
+            this.startHeartbeat();
         });
         
-        this.socket.on('disconnect', () => {
-            console.log('❌ Simple client disconnected');
+        this.socket.on('disconnect', (reason) => {
+            console.log('❌ SIMPLE CLIENT: Disconnected from server');
+            console.log('🔌 Disconnect reason:', reason);
             this.isConnected = false;
             this.stopAnimation();
+            this.stopHeartbeat();
+            
+            // Attempt immediate reconnection for network issues
+            if (reason === 'io server disconnect') {
+                console.log('🔄 Server disconnected us - attempting reconnect in 1s');
+                setTimeout(() => {
+                    if (!this.isConnected) {
+                        this.socket.connect();
+                    }
+                }, 1000);
+            }
+        });
+        
+        this.socket.on('connect_error', (error) => {
+            console.error('❌ SIMPLE CLIENT: Connection error:', error);
+        });
+        
+        this.socket.on('reconnect', (attemptNumber) => {
+            console.log('🔄 SIMPLE CLIENT: Reconnected after', attemptNumber, 'attempts');
+        });
+        
+        this.socket.on('reconnect_attempt', (attemptNumber) => {
+            console.log('🔄 SIMPLE CLIENT: Reconnection attempt', attemptNumber);
+        });
+        
+        this.socket.on('reconnect_error', (error) => {
+            console.error('❌ SIMPLE CLIENT: Reconnection error:', error);
+        });
+        
+        this.socket.on('reconnect_failed', () => {
+            console.error('❌ SIMPLE CLIENT: Reconnection failed - all attempts exhausted');
         });
         
         // BETTING PHASE (6 seconds)
@@ -216,15 +259,58 @@ class SimpleSyncClient {
     }
     
     /**
+     * 💓 Start heartbeat to maintain connection
+     */
+    startHeartbeat() {
+        this.stopHeartbeat(); // Clear any existing heartbeat
+        
+        this.heartbeatInterval = setInterval(() => {
+            if (this.isConnected && this.socket) {
+                this.socket.emit('ping', Date.now());
+                console.log('💓 Heartbeat sent to server');
+            }
+        }, 25000); // Send heartbeat every 25 seconds
+        
+        // Monitor connection status
+        this.connectionMonitor = setInterval(() => {
+            if (!this.isConnected) {
+                console.log('🔍 Connection lost - checking status...');
+            } else {
+                console.log('✅ Connection healthy - ID:', this.socket?.id);
+            }
+        }, 30000); // Check every 30 seconds
+        
+        console.log('💓 Heartbeat and connection monitor started');
+    }
+    
+    /**
+     * 🛑 Stop heartbeat
+     */
+    stopHeartbeat() {
+        if (this.heartbeatInterval) {
+            clearInterval(this.heartbeatInterval);
+            this.heartbeatInterval = null;
+        }
+        
+        if (this.connectionMonitor) {
+            clearInterval(this.connectionMonitor);
+            this.connectionMonitor = null;
+        }
+    }
+    
+    /**
      * 🔌 Disconnect
      */
     disconnect() {
         this.stopAnimation();
+        this.stopHeartbeat();
+        
         if (this.socket) {
             this.socket.disconnect();
             this.socket = null;
         }
         this.isConnected = false;
+        console.log('🔌 Simple client disconnected');
     }
 }
 

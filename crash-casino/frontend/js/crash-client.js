@@ -767,31 +767,9 @@ class CrashGameClient {
                             });
                             console.log(`✅ eth_estimateGas works: ${gasEstimate}`);
                             
-                            // Test eth_sendTransaction with minimal transaction first
-                            console.log('🧪 Testing eth_sendTransaction capability with 1 wei transfer...');
-                            const minimalTx = {
-                                from: this.playerAddress,
-                                to: this.playerAddress,
-                                value: '0x1', // 1 wei
-                                gas: '0x5208', // 21000 in hex
-                                gasPrice: gasPrice
-                            };
-                            console.log('🧪 Minimal test transaction:', minimalTx);
-                            
-                            try {
-                                const testResult = await window.ethereum.request({ 
-                                    method: 'eth_sendTransaction', 
-                                    params: [minimalTx] 
-                                });
-                                console.log(`✅ Minimal eth_sendTransaction SUCCESS: ${testResult}`);
-                                console.log('🎯 Abstract Network supports transactions - main bet should work!');
-                            } catch (testError) {
-                                console.log(`🔍 Minimal eth_sendTransaction FAILED: ${testError.message}`);
-                                console.log(`🔍 Error code: ${testError.code}`);
-                                console.log(`🔍 Error data:`, testError.data);
-                                console.log(`🔍 Full error object:`, testError);
-                                console.log('⚠️ If minimal transaction fails, main bet will also fail');
-                            }
+                            // Skip test transaction - we know eth_sendTransaction works now
+                            console.log('🧪 Skipping test transaction - proceeding directly to main bet');
+                            console.log('✅ Abstract Network RPC debugging complete - all basic calls work');
                             
                         } catch (testError) {
                             console.log(`❌ RPC testing failed: ${testError.message}`);

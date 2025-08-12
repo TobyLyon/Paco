@@ -1309,8 +1309,9 @@
                 // Update animations with the same crash point
                 updatePacoMood(crashedAt, false, true);
                 
-                // Add to round history with the SAME crash point
-                await this.addToHistory(crashedAt);
+                // 🚫 DISABLED: Server controls all round history  
+                console.log(`🎯 Server handles crash point ${crashedAt.toFixed(2)}x - no local history`);
+                // await this.addToHistory(crashedAt); // DISABLED
                 
                 console.log(`💥 Crashed at exactly: ${crashedAt.toFixed(2)}x`);
                 console.log(`🔍 VERIFY: Display shows ${multiplierElement ? multiplierElement.textContent : 'N/A'}, History gets ${crashedAt.toFixed(2)}x`);
@@ -1329,39 +1330,10 @@
             },
             
             async addToHistory(crashPoint) {
-                const historyContainer = document.getElementById('roundHistory');
-                if (!historyContainer) return;
-                
-                console.log(`📊 Adding round ${crashPoint.toFixed(2)}x to database and display...`);
-                
-                // Save to Supabase database (but don't wait for it to complete)
-                this.saveRoundToDatabase(crashPoint).catch(error => {
-                    console.error('❌ Failed to save round to database:', error);
-                });
-                
-                // Add to local display immediately for responsive UI
-                const item = document.createElement('div');
-                item.className = 'round-item';
-                item.textContent = crashPoint.toFixed(2) + 'x';
-                
-                // Color based on multiplier (2x+ = positive return = green)
-                if (crashPoint < 2) {
-                    item.classList.add('low');
-                } else if (crashPoint < 10) {
-                    item.classList.add('medium'); // 2x+ positive returns = green
-                } else {
-                    item.classList.add('high');
-                }
-                
-                // Add to beginning
-                historyContainer.insertBefore(item, historyContainer.firstChild);
-                
-                // Keep only last 20 rounds in display
-                while (historyContainer.children.length > 20) {
-                    historyContainer.removeChild(historyContainer.lastChild);
-                }
-                
-                console.log(`✅ Round ${crashPoint.toFixed(2)}x added to display. Total visible: ${historyContainer.children.length}`);
+                console.log(`🚫 LOCAL HISTORY DISABLED - Server controls all round history`);
+                console.log(`🎯 Crash point ${crashPoint.toFixed(2)}x handled by server only`);
+                // Local system no longer adds to history - prevents dual system conflicts
+                return;
             },
             
             async saveRoundToDatabase(crashPoint) {

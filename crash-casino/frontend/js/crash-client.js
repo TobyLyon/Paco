@@ -278,8 +278,10 @@ class CrashGameClient {
         // FIXED: Listen for ACTUAL server events
         this.socket.on('start_betting_phase', () => {
             console.log('🎲 SERVER: Betting phase started');
+            console.log('🔍 DEBUG: About to call handleBettingPhase()');
             this.gameState = 'betting';
             this.handleBettingPhase();
+            console.log('✅ DEBUG: handleBettingPhase() called');
         });
         
         this.socket.on('start_multiplier_count', () => {
@@ -1140,6 +1142,8 @@ class CrashGameClient {
         const countdownValue = document.getElementById('countdownValue');
         
         console.log(`⏰ Starting ${seconds}s countdown for betting phase`);
+        console.log(`🔍 DEBUG: countdownElement found:`, !!countdownElement);
+        console.log(`🔍 DEBUG: countdownValue found:`, !!countdownValue);
         
         if (countdownElement) countdownElement.style.display = 'block';
         if (countdownValue) countdownValue.textContent = seconds;

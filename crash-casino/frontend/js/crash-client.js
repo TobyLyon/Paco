@@ -300,11 +300,18 @@ class CrashGameClient {
                 console.log('⏰ Countdown timer hidden');
             }
             
-            // Update UI immediately
+            // Update UI immediately and reset multiplier display
             const gameStatus = document.getElementById('gameStatus');
             const gameMessage = document.getElementById('gameStateMessage');
+            const multiplierElement = document.getElementById('multiplierValue');
+            
             if (gameStatus) gameStatus.textContent = 'Round Running';
             if (gameMessage) gameMessage.textContent = 'Multiplier climbing...';
+            if (multiplierElement) {
+                multiplierElement.textContent = '1.00x';
+                multiplierElement.classList.remove('crashed');
+                console.log('🔄 Multiplier display reset to 1.00x');
+            }
             
             console.log('✅ UI updated for round start');
             
@@ -329,15 +336,36 @@ class CrashGameClient {
         
         this.socket.on('stop_multiplier_count', (crashValue) => {
             console.log('💥 SERVER: Round crashed at', crashValue + 'x');
+            console.log('🔄 TRANSITION: Game phase ending, crash phase starting');
             this.gameState = 'crashed';
             const crash = parseFloat(crashValue);
             this.currentMultiplier = crash;
+            
+            // Update multiplier display immediately with crash styling
+            const multiplierElement = document.getElementById('multiplierValue');
+            if (multiplierElement) {
+                multiplierElement.textContent = crash.toFixed(2) + 'x';
+                multiplierElement.classList.add('crashed');
+                console.log('💥 Multiplier display updated with crash styling');
+            }
+            
+            // Update UI status
+            const gameStatus = document.getElementById('gameStatus');
+            const gameMessage = document.getElementById('gameStateMessage');
+            if (gameStatus) gameStatus.textContent = 'Crashed';
+            if (gameMessage) gameMessage.textContent = `Crashed at ${crash.toFixed(2)}x`;
             
             // Update local system
             if (window.liveGameSystem) {
                 window.liveGameSystem.gameState = 'crashed';
                 window.liveGameSystem.crashPoint = crash;
+                console.log('✅ liveGameSystem updated with crash data');
             }
+            
+            // Add to local recent rounds history
+            this.addToLocalHistory(crash);
+            
+            console.log('💥 CRASH COMPLETE - All visual systems updated');
         });
         
         // 🎯 SERVER-DRIVEN COUNTDOWN: Listen for real-time countdown from server
@@ -1232,6 +1260,47 @@ class CrashGameClient {
         }
         
         this.updateHistoryDisplay();
+    }
+
+    /**
+     * 📊 Add crash point to LOCAL recent rounds display
+     */
+    addToLocalHistory(crashPoint) {
+        const historyContainer = document.getElementById('roundHistory');
+        if (!historyContainer) {
+            console.log('❌ Round history container not found');
+            return;
+        }
+
+        console.log(`📊 Adding ${crashPoint.toFixed(2)}x to LOCAL recent rounds display`);
+        
+        // Create new round item
+        const item = document.createElement('div');
+        item.className = 'round-item local-round';
+        item.textContent = crashPoint.toFixed(2) + 'x';
+        
+        // Color based on multiplier (2x+ = positive return = green)
+        if (crashPoint < 2) {
+            item.classList.add('low');
+        } else if (crashPoint < 10) {
+            item.classList.add('medium'); // 2x+ positive returns = green
+        } else {
+            item.classList.add('high');
+        }
+        
+        // Add timestamp tooltip
+        const timestamp = new Date().toLocaleTimeString();
+        item.title = `Local round at ${timestamp}`;
+        
+        // Add to beginning of history
+        historyContainer.insertBefore(item, historyContainer.firstChild);
+        
+        // Keep only last 20 rounds in display
+        while (historyContainer.children.length > 20) {
+            historyContainer.removeChild(historyContainer.lastChild);
+        }
+        
+        console.log(`✅ Added ${crashPoint.toFixed(2)}x to recent rounds. Total visible: ${historyContainer.children.length}`);
     }
 
     /**

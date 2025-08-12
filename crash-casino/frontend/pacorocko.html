@@ -1606,7 +1606,33 @@
                     window.crashGameClient.onRoundCrash = (data) => {
                         console.log('🌐 Server round crash - processing bets');
                         console.log(`🎯 Server crash point: ${data.crashPoint}x`);
-                        // Removed conflicting crash override logic - let local system handle display
+                        
+                        // CLEAN FIX: Add server crash to history WITHOUT interfering with display
+                        if (data.crashPoint && window.liveGameSystem) {
+                            // Wait for local display to finish, then add server crash to history
+                            setTimeout(() => {
+                                if (window.liveGameSystem.addRoundToHistory) {
+                                    console.log(`📊 Adding server crash ${data.crashPoint}x to history`);
+                                    window.liveGameSystem.addRoundToHistory(data.crashPoint);
+                                    
+                                    // Remove any duplicate local crash from history (if present)
+                                    const historyContainer = document.getElementById('roundHistory');
+                                    if (historyContainer && historyContainer.children.length > 1) {
+                                        const lastTwo = Array.from(historyContainer.children).slice(-2);
+                                        if (lastTwo.length === 2) {
+                                            const serverCrash = parseFloat(lastTwo[0].textContent);
+                                            const localCrash = parseFloat(lastTwo[1].textContent);
+                                            
+                                            // If they're different and close in time, remove the local one
+                                            if (Math.abs(serverCrash - localCrash) > 0.1) {
+                                                console.log(`🧹 Removing duplicate local crash ${localCrash}x, keeping server ${serverCrash}x`);
+                                                historyContainer.removeChild(lastTwo[1]);
+                                            }
+                                        }
+                                    }
+                                }
+                            }, 2000); // Wait for local crash to be added first
+                        }
                     };
                 } else {
                     console.log('⚠️ CrashGameClient not available, running live game system only');

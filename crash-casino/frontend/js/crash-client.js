@@ -1284,7 +1284,10 @@ class CrashGameClient {
         console.log('🎮 Starting server-driven visual animation...');
         console.log('🔍 Available visual systems:', {
             crashChart: !!window.crashChart,
+            chartAddDataPoint: !!(window.crashChart && window.crashChart.addDataPoint),
+            chartUpdatePacoPosition: !!(window.crashChart && window.crashChart.updatePacoPosition),
             crashVisualizer: !!window.crashVisualizer,
+            visualizerUpdatePosition: !!(window.crashVisualizer && window.crashVisualizer.updatePosition),
             multiplierDisplay: !!window.multiplierDisplay,
             updatePacoMood: typeof updatePacoMood === 'function'
         });
@@ -1341,16 +1344,30 @@ class CrashGameClient {
                 multiplierElement.textContent = multiplier.toFixed(2) + 'x';
             }
             
-            // 2. Update chart system (CRITICAL for line indicator)
+            // 2. Update chart system (CRITICAL for line indicator + Paco rocket)
             if (window.crashChart) {
                 if (typeof window.crashChart.addDataPoint === 'function') {
                     if (window.crashChart.isRunning && window.crashChart.chart) {
+                        // Add data point to chart line
                         window.crashChart.addDataPoint(elapsed, multiplier);
+                        
+                        // CRITICAL: Explicitly update Paco rocket position on chart
+                        if (typeof window.crashChart.updatePacoPosition === 'function') {
+                            window.crashChart.updatePacoPosition(elapsed, multiplier);
+                            // Debug every 30 frames (about every 0.5 seconds)
+                            if (Math.floor(elapsed * 60) % 30 === 0) {
+                                console.log(`🚀 Paco rocket updated: ${elapsed.toFixed(1)}s, ${multiplier.toFixed(2)}x`);
+                            }
+                        }
                     } else if (!window.crashChart.isRunning) {
                         console.log('📈 Chart not running - attempting to start');
                         window.crashChart.startNewRound();
                         if (window.crashChart.isRunning) {
                             window.crashChart.addDataPoint(elapsed, multiplier);
+                            // Update Paco rocket after successful restart
+                            if (typeof window.crashChart.updatePacoPosition === 'function') {
+                                window.crashChart.updatePacoPosition(elapsed, multiplier);
+                            }
                         }
                     }
                 } else {

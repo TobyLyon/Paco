@@ -1662,6 +1662,14 @@
                         if (window.crashGameClient && window.crashGameClient.socket) {
                             console.log('🔗 Connected to server - server controls all rounds');
                             // NO local round generation - server handles everything
+                            
+                            // Start local system as fallback if no server activity within 5 seconds
+                            setTimeout(() => {
+                                if (!window.crashGameClient.isConnected && window.liveGameSystem) {
+                                    console.log('⏰ No server connection after 5s, starting local fallback...');
+                                    window.liveGameSystem.start();
+                                }
+                            }, 5000);
                         }
                     }, 1000);
                     
@@ -1688,6 +1696,11 @@
                     };
                 } else {
                     console.log('⚠️ CrashGameClient not available, running live game system only');
+                    // Start local game system as fallback
+                    if (window.liveGameSystem) {
+                        console.log('🎮 Starting local game system as fallback...');
+                        window.liveGameSystem.start();
+                    }
                 }
             }, 1000);
             } catch (error) {

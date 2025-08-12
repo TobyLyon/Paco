@@ -205,7 +205,6 @@ class CrashGameClient {
             this.updateConnectionStatus(true);
             
             // Server will initiate rounds - no local initiation needed
-            }, 2000); // Wait 2 seconds for full initialization
             
             // Notify connection callback
             if (this.onGameStateUpdate) {
@@ -215,6 +214,13 @@ class CrashGameClient {
 
         this.socket.on('disconnect', () => {
             console.log('🔌 Disconnected from crash game server');
+            this.isConnected = false;
+            this.updateConnectionStatus(false);
+        });
+
+        this.socket.on('connect_error', (error) => {
+            console.error('❌ Failed to connect to crash game server:', error);
+            console.log('🔍 Connection URL was:', this.socket.io.uri);
             this.isConnected = false;
             this.updateConnectionStatus(false);
         });

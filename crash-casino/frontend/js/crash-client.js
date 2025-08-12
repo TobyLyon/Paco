@@ -723,9 +723,12 @@ class CrashGameClient {
                             console.log('🔗 MetaMask connection URL:', window.ethereum.connection.url);
                         }
                         
+                        let chainId;
+                        let balanceEth;
+                        
                         try {
                             console.log('🧪 Step 1: Testing eth_chainId...');
-                            const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+                            chainId = await window.ethereum.request({ method: 'eth_chainId' });
                             console.log(`✅ eth_chainId SUCCESS: ${chainId}`);
                             
                             console.log('🧪 Step 2: Testing eth_getBalance...');
@@ -733,7 +736,7 @@ class CrashGameClient {
                                 method: 'eth_getBalance', 
                                 params: [this.playerAddress, 'latest'] 
                             });
-                            const balanceEth = parseInt(balance, 16) / 1e18;
+                            balanceEth = parseInt(balance, 16) / 1e18;
                             console.log(`✅ eth_getBalance SUCCESS: ${balanceEth.toFixed(6)} ETH`);
                             console.log(`🌐 Network: ${chainId}, Balance: ${balanceEth.toFixed(6)} ETH`);
                         } catch (basicError) {

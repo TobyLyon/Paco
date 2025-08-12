@@ -662,15 +662,27 @@ class CrashGameClient {
                     // Standard EIP-1559 gas configuration for Abstract Network (all attempts use same fees)
                     let gasConfig;
                     
-                    // Get current fee data from Abstract Network
-                    const feeData = await window.realWeb3Modal.provider.getFeeData();
+                    // Abstract Network fee configuration with fallback
+                    let maxFeePerGas, maxPriorityFeePerGas;
+                    
+                    try {
+                        // Try to get fee data, but Abstract Network might not support this
+                        const feeData = await window.realWeb3Modal.provider.getFeeData();
+                        maxFeePerGas = feeData.maxFeePerGas;
+                        maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
+                    } catch (error) {
+                        console.log('📊 getFeeData not supported on Abstract Network, using manual fees');
+                        // Abstract Network manual fee configuration (very low fees)
+                        maxFeePerGas = ethers.parseUnits('2', 'gwei'); // 2 gwei max fee
+                        maxPriorityFeePerGas = ethers.parseUnits('0.1', 'gwei'); // 0.1 gwei priority
+                    }
                     
                     switch (attempts) {
                         case 1:
                             // First attempt: Standard EIP-1559 with network fee data
                             gasConfig = {
-                                maxFeePerGas: feeData.maxFeePerGas,
-                                maxPriorityFeePerGas: feeData.maxPriorityFeePerGas,
+                                maxFeePerGas: maxFeePerGas,
+                                maxPriorityFeePerGas: maxPriorityFeePerGas,
                                 gasLimit: 100000,
                                 type: 2
                             };
@@ -679,8 +691,8 @@ class CrashGameClient {
                         case 2:
                             // Second attempt: Same fees, different gas limit
                             gasConfig = {
-                                maxFeePerGas: feeData.maxFeePerGas,
-                                maxPriorityFeePerGas: feeData.maxPriorityFeePerGas,
+                                maxFeePerGas: maxFeePerGas,
+                                maxPriorityFeePerGas: maxPriorityFeePerGas,
                                 gasLimit: 150000, // Higher gas limit for complex transactions
                                 type: 2
                             };
@@ -689,8 +701,8 @@ class CrashGameClient {
                         case 3:
                             // Third attempt: Same fees, maximum gas limit
                             gasConfig = {
-                                maxFeePerGas: feeData.maxFeePerGas,
-                                maxPriorityFeePerGas: feeData.maxPriorityFeePerGas,
+                                maxFeePerGas: maxFeePerGas,
+                                maxPriorityFeePerGas: maxPriorityFeePerGas,
                                 gasLimit: 200000, // Maximum gas limit for L2
                                 type: 2
                             };

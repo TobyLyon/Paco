@@ -188,14 +188,26 @@ class WalletBridge {
                 }
             }
 
-            // Get current fee data for Abstract L2 EIP-1559 compatibility
-            const feeData = await this.provider.getFeeData();
+            // Abstract Network fee configuration (doesn't support getFeeData)
+            let maxFeePerGas, maxPriorityFeePerGas;
+            
+            try {
+                // Try to get fee data, but Abstract Network might not support this
+                const feeData = await this.provider.getFeeData();
+                maxFeePerGas = feeData.maxFeePerGas;
+                maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
+            } catch (error) {
+                console.log('📊 getFeeData not supported, using Abstract Network defaults');
+                // Abstract Network manual fee configuration (very low fees)
+                maxFeePerGas = ethers.parseUnits('2', 'gwei'); // 2 gwei max fee
+                maxPriorityFeePerGas = ethers.parseUnits('0.1', 'gwei'); // 0.1 gwei priority
+            }
             
             const tx = {
                 to: to,
                 value: ethers.parseEther(value.toString()),
-                maxFeePerGas: gasConfig.maxFeePerGas || feeData.maxFeePerGas,
-                maxPriorityFeePerGas: gasConfig.maxPriorityFeePerGas || feeData.maxPriorityFeePerGas,
+                maxFeePerGas: gasConfig.maxFeePerGas || maxFeePerGas,
+                maxPriorityFeePerGas: gasConfig.maxPriorityFeePerGas || maxPriorityFeePerGas,
                 gasLimit: gasConfig.gasLimit || 100000, // Increased for L2 transactions
                 type: 2, // EIP-1559 transaction type for Abstract Network
                 ...gasConfig

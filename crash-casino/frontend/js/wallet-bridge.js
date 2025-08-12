@@ -202,6 +202,9 @@ class WalletBridge {
 
             console.log('📤 Sending transaction with RPC health check:', tx);
             
+            // Run comprehensive Abstract Network debugging
+            await this.testAbstractRPCCapabilities();
+            
             // DIAGNOSTIC: Test different transaction methods for Abstract Network
             console.log('🔍 DIAGNOSTIC: Testing Abstract Network transaction capabilities...');
             
@@ -1104,13 +1107,24 @@ class WalletBridge {
                 console.log(`✅ Gas estimation works: ${gasEstimate}`);
                 
                 console.log('🧪 Testing eth_sendTransaction capability...');
-                // We won't actually send, just see if the method exists and what error we get
+                // Test with minimal transaction to see exact error
+                const minimalTx = {
+                    from: await this.signer.getAddress(),
+                    to: await this.signer.getAddress(),
+                    value: '0x1', // 1 wei
+                    gas: '0x5208', // 21000 in hex
+                    gasPrice: '0x3b9aca00' // 1 gwei in hex
+                };
+                console.log('🧪 Minimal test transaction:', minimalTx);
+                
                 try {
-                    await this.provider.send('eth_sendTransaction', [testTx]);
+                    const result = await this.provider.send('eth_sendTransaction', [minimalTx]);
+                    console.log(`✅ eth_sendTransaction SUCCESS: ${result}`);
                 } catch (sendError) {
-                    console.log(`🔍 eth_sendTransaction error (expected): ${sendError.message}`);
+                    console.log(`🔍 eth_sendTransaction FAILED: ${sendError.message}`);
                     console.log(`🔍 Error code: ${sendError.code}`);
                     console.log(`🔍 Error data:`, sendError.data);
+                    console.log(`🔍 Full error object:`, sendError);
                 }
             }
         } catch (error) {

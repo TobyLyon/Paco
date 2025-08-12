@@ -205,35 +205,22 @@ class WalletBridge {
             // Skip comprehensive debugging to avoid transaction interference
             console.log('🚀 Streamlined transaction flow - skipping diagnostics...');
             
-            // Abstract Network: Use direct MetaMask request instead of ethers.js
-            console.log('🔗 Sending transaction via direct MetaMask request for Abstract Network...');
+                        // Try Abstract Network compatible transaction using ethers.js with minimal params
+            console.log('🔗 Sending transaction via optimized ethers.js for Abstract Network...');
             
-            // Convert to MetaMask-compatible format
-            const metaMaskTx = {
-                from: await this.signer.getAddress(),
+            // Use minimal transaction object to avoid Abstract Network compatibility issues
+            const minimalTx = {
                 to: tx.to,
-                value: '0x' + BigInt(tx.value).toString(16),
-                gas: '0x' + BigInt(tx.gasLimit).toString(16),
-                gasPrice: '0x' + BigInt(tx.gasPrice).toString(16)
+                value: tx.value,
+                gasLimit: tx.gasLimit,
+                gasPrice: tx.gasPrice,
+                // No nonce, no chainId - let ethers.js handle these automatically
             };
-            
-            console.log('📡 MetaMask transaction object:', metaMaskTx);
-            
-            // Send via direct MetaMask request
-            const txHash = await window.ethereum.request({
-                method: 'eth_sendTransaction',
-                params: [metaMaskTx]
-            });
-            
-            console.log('✅ Transaction sent via MetaMask:', txHash);
-            
-            // Create ethers-compatible response
-            const txResponse = {
-                hash: txHash,
-                wait: async () => {
-                    return await this.provider.waitForTransaction(txHash);
-                }
-            };
+
+            console.log('📡 Minimal transaction object for Abstract:', minimalTx);
+
+            // Send via standard ethers.js (let it handle the low-level details)
+            const txResponse = await this.signer.sendTransaction(minimalTx);
             
             console.log('✅ Transaction sent successfully:', txResponse.hash);
             

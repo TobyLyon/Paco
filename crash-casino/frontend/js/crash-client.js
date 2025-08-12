@@ -682,29 +682,28 @@ class CrashGameClient {
                     
                     switch (attempts) {
                         case 1:
-                            // First attempt: Standard legacy transaction with low gas price
+                            // First attempt: Ultra-low gas price for Abstract Network
                             gasConfig = {
-                                gasPrice: ethers.parseUnits('1', 'gwei'), // 1 gwei for Abstract L2
-                                gasLimit: 100000
-                                // NO EIP-1559 fields - Abstract Network doesn't support them
+                                gasPrice: ethers.parseUnits('0.1', 'gwei'), // Very low gas price for L2
+                                gasLimit: 21000 // Standard ETH transfer gas limit
                             };
-                            console.log('📊 Attempt 1: Legacy transaction format for Abstract Network');
+                            console.log('📊 Attempt 1: Ultra-low gas price for Abstract Network');
                             break;
                         case 2:
-                            // Second attempt: Same gas price, higher gas limit
+                            // Second attempt: Slightly higher gas price and limit
                             gasConfig = {
-                                gasPrice: ethers.parseUnits('1', 'gwei'), 
-                                gasLimit: 150000 // Higher gas limit for complex transactions
+                                gasPrice: ethers.parseUnits('0.5', 'gwei'), 
+                                gasLimit: 50000 // Higher gas limit
                             };
-                            console.log('📊 Attempt 2: Legacy format with higher gas limit');
+                            console.log('📊 Attempt 2: Low gas price with higher limit');
                             break;
                         case 3:
-                            // Third attempt: Slightly higher gas price, maximum gas limit
+                            // Third attempt: Standard gas configuration
                             gasConfig = {
-                                gasPrice: ethers.parseUnits('2', 'gwei'), // Slightly higher for reliability
-                                gasLimit: 200000 // Maximum gas limit for L2
+                                gasPrice: ethers.parseUnits('1', 'gwei'), // Standard gas price
+                                gasLimit: 100000 // Standard gas limit
                             };
-                            console.log('📊 Attempt 3: Legacy format with higher gas price');
+                            console.log('📊 Attempt 3: Standard gas configuration');
                             break;
                     }
                     

@@ -1665,27 +1665,64 @@
                         }
                     }, 1000); // Shorter delay since we're not waiting for local system
                     
-                    // Server events trigger local visual system
-                    window.crashGameClient.onRoundStart = (data) => {
-                        console.log('🌐 Server round start - betting enabled');
-                        console.log(`🎯 Triggering local visual round with crash point: ${data.crashPoint}x`);
-                        
-                        // Trigger local visual system with server crash point
-                        if (window.liveGameSystem && window.liveGameSystem.startServerRound) {
-                            window.liveGameSystem.startServerRound(data.crashPoint);
-                        } else {
-                            console.log('⚠️ Local visual system not ready, starting fallback display');
-                        }
-                    };
+                                    // Server events trigger local visual system
+                window.crashGameClient.onRoundStart = (data) => {
+                    console.log('🌐 Server round start - betting enabled');
+                    console.log(`🎯 Triggering local visual round with crash point: ${data.crashPoint}x`);
+
+                    // Trigger local visual system with server crash point
+                    if (window.liveGameSystem && window.liveGameSystem.startServerRound) {
+                        window.liveGameSystem.startServerRound(data.crashPoint);
+                    } else {
+                        console.log('⚠️ Local visual system not ready, starting fallback display');
+                    }
+                };
+
+                // Server betting countdown for visual feedback
+                window.crashGameClient.onBettingPhase = (data) => {
+                    console.log('⏰ Server betting phase - showing countdown');
                     
-                    window.crashGameClient.onRoundCrash = (data) => {
-                        console.log('🌐 Server round crash - processing bets');
-                        console.log(`🎯 Server crash point: ${data.crashPoint}x`);
+                    // Show server countdown (usually 5 seconds)
+                    const countdownSeconds = data.countdownSeconds || 5;
+                    document.getElementById('gameStatus').textContent = 'Place Your Bets';
+                    document.getElementById('countdownTimer').style.display = 'block';
+                    document.getElementById('gameStateMessage').textContent = `🎰 Next round starting in ${countdownSeconds}s - Place your bets now!`;
+                    
+                    let remaining = countdownSeconds;
+                    const countdownInterval = setInterval(() => {
+                        document.getElementById('countdownValue').textContent = remaining;
                         
-                        // Local visual system should handle its own crash timing
-                        // Server crash is for betting results only
-                        console.log('📊 Local visual system handles crash display, server handles betting');
-                    };
+                        if (remaining > 0) {
+                            document.getElementById('gameStateMessage').textContent = `🎰 Next round starting in ${remaining}s - Place your bets now!`;
+                        } else {
+                            document.getElementById('gameStateMessage').textContent = `🚀 Round starting...`;
+                        }
+                        
+                        remaining--;
+                        
+                        if (remaining < 0) {
+                            clearInterval(countdownInterval);
+                            document.getElementById('countdownTimer').style.display = 'none';
+                        }
+                    }, 1000);
+                };
+                    
+                                    window.crashGameClient.onRoundCrash = (data) => {
+                    console.log('🌐 Server round crash - processing bets');
+                    console.log(`🎯 Server crash point: ${data.crashPoint}x`);
+
+                    // Local visual system should handle its own crash timing
+                    // Server crash is for betting results only
+                    console.log('📊 Local visual system handles crash display, server handles betting');
+                    
+                    // Start countdown for next round after crash
+                    setTimeout(() => {
+                        console.log('⏰ Starting countdown for next round after crash');
+                        if (window.crashGameClient && window.crashGameClient.startCountdown) {
+                            window.crashGameClient.startCountdown(5);
+                        }
+                    }, 2000); // 2 second delay after crash before countdown
+                };
                 } else {
                     console.log('⚠️ CrashGameClient not available, running live game system only');
                 }

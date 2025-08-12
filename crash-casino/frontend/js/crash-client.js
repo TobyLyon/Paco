@@ -659,54 +659,34 @@ class CrashGameClient {
                 console.log(`🔄 Transaction attempt ${attempts}/${maxAttempts}`);
                 
                 try {
-                    // Standard EIP-1559 gas configuration for Abstract Network (all attempts use same fees)
+                    // Abstract Network uses LEGACY transaction format (not EIP-1559)
                     let gasConfig;
-                    
-                    // Abstract Network fee configuration with fallback
-                    let maxFeePerGas, maxPriorityFeePerGas;
-                    
-                    try {
-                        // Try to get fee data, but Abstract Network might not support this
-                        const feeData = await window.realWeb3Modal.provider.getFeeData();
-                        maxFeePerGas = feeData.maxFeePerGas;
-                        maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
-                    } catch (error) {
-                        console.log('📊 getFeeData not supported on Abstract Network, using manual fees');
-                        // Abstract Network manual fee configuration (very low fees)
-                        maxFeePerGas = ethers.parseUnits('2', 'gwei'); // 2 gwei max fee
-                        maxPriorityFeePerGas = ethers.parseUnits('0.1', 'gwei'); // 0.1 gwei priority
-                    }
                     
                     switch (attempts) {
                         case 1:
-                            // First attempt: Standard EIP-1559 with network fee data
+                            // First attempt: Standard legacy transaction with low gas price
                             gasConfig = {
-                                maxFeePerGas: maxFeePerGas,
-                                maxPriorityFeePerGas: maxPriorityFeePerGas,
-                                gasLimit: 100000,
-                                type: 2
+                                gasPrice: ethers.parseUnits('1', 'gwei'), // 1 gwei for Abstract L2
+                                gasLimit: 100000
+                                // NO EIP-1559 fields - Abstract Network doesn't support them
                             };
-                            console.log('📊 Attempt 1: Standard Abstract Network EIP-1559 fees');
+                            console.log('📊 Attempt 1: Legacy transaction format for Abstract Network');
                             break;
                         case 2:
-                            // Second attempt: Same fees, different gas limit
+                            // Second attempt: Same gas price, higher gas limit
                             gasConfig = {
-                                maxFeePerGas: maxFeePerGas,
-                                maxPriorityFeePerGas: maxPriorityFeePerGas,
-                                gasLimit: 150000, // Higher gas limit for complex transactions
-                                type: 2
+                                gasPrice: ethers.parseUnits('1', 'gwei'), 
+                                gasLimit: 150000 // Higher gas limit for complex transactions
                             };
-                            console.log('📊 Attempt 2: Standard fees with higher gas limit');
+                            console.log('📊 Attempt 2: Legacy format with higher gas limit');
                             break;
                         case 3:
-                            // Third attempt: Same fees, maximum gas limit
+                            // Third attempt: Slightly higher gas price, maximum gas limit
                             gasConfig = {
-                                maxFeePerGas: maxFeePerGas,
-                                maxPriorityFeePerGas: maxPriorityFeePerGas,
-                                gasLimit: 200000, // Maximum gas limit for L2
-                                type: 2
+                                gasPrice: ethers.parseUnits('2', 'gwei'), // Slightly higher for reliability
+                                gasLimit: 200000 // Maximum gas limit for L2
                             };
-                            console.log('📊 Attempt 3: Standard fees with maximum gas limit');
+                            console.log('📊 Attempt 3: Legacy format with higher gas price');
                             break;
                     }
                     

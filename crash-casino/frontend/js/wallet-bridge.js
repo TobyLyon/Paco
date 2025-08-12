@@ -188,30 +188,17 @@ class WalletBridge {
                 }
             }
 
-            // Abstract Network fee configuration (doesn't support getFeeData)
-            let maxFeePerGas, maxPriorityFeePerGas;
-            
-            try {
-                // Try to get fee data, but Abstract Network might not support this
-                const feeData = await this.provider.getFeeData();
-                maxFeePerGas = feeData.maxFeePerGas;
-                maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
-            } catch (error) {
-                console.log('📊 getFeeData not supported, using Abstract Network defaults');
-                // Abstract Network manual fee configuration (very low fees)
-                maxFeePerGas = ethers.parseUnits('2', 'gwei'); // 2 gwei max fee
-                maxPriorityFeePerGas = ethers.parseUnits('0.1', 'gwei'); // 0.1 gwei priority
-            }
-            
+            // Abstract Network transaction format - use legacy format (EIP-1559 not supported)
             const tx = {
                 to: to,
                 value: ethers.parseEther(value.toString()),
-                maxFeePerGas: gasConfig.maxFeePerGas || maxFeePerGas,
-                maxPriorityFeePerGas: gasConfig.maxPriorityFeePerGas || maxPriorityFeePerGas,
                 gasLimit: gasConfig.gasLimit || 100000, // Increased for L2 transactions
-                type: 2, // EIP-1559 transaction type for Abstract Network
+                gasPrice: gasConfig.gasPrice || ethers.parseUnits('1', 'gwei'), // 1 gwei for Abstract L2
+                // Remove EIP-1559 fields - Abstract Network uses legacy format
                 ...gasConfig
             };
+            
+            console.log('📊 Using legacy transaction format for Abstract Network compatibility');
 
             console.log('📤 Sending transaction with RPC health check:', tx);
             const txResponse = await this.signer.sendTransaction(tx);

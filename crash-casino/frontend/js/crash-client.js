@@ -297,9 +297,11 @@ class CrashGameClient {
             // Force start visual systems
             if (window.liveGameSystem) {
                 console.log('🎯 FORCING: Starting liveGameSystem animation');
+                window.liveGameSystem.isRunning = true;  // CRITICAL: Must set this to true!
                 window.liveGameSystem.gameState = 'running';
                 window.liveGameSystem.roundStartTime = Date.now();
                 window.liveGameSystem.animate();
+                console.log('✅ liveGameSystem fully activated');
             }
             
             // Force start chart

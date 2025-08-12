@@ -1642,6 +1642,7 @@
                             
                             // Start visual animation
                             if (window.liveGameSystem) {
+                                window.liveGameSystem.isRunning = true;  // CRITICAL FIX!
                                 window.liveGameSystem.gameState = 'running';
                                 window.liveGameSystem.roundStartTime = Date.now();
                                 window.liveGameSystem.animate();

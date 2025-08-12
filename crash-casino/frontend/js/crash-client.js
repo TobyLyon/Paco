@@ -266,8 +266,41 @@ class CrashGameClient {
             }
         });
 
-        // PRODUCTION FIX: Use only one event listener per event type to prevent duplicates
-        // Server should emit consistent event names (camelCase preferred)
+        // FIXED: Listen for ACTUAL server events
+        this.socket.on('start_betting_phase', () => {
+            console.log('🎲 SERVER: Betting phase started');
+            this.gameState = 'betting';
+            this.handleBettingPhase();
+        });
+        
+        this.socket.on('start_multiplier_count', () => {
+            console.log('🚀 SERVER: Round started');
+            this.gameState = 'running';
+            this.roundStartTime = Date.now();
+            this.currentMultiplier = 1.0;
+            
+            // Start visual systems
+            if (window.liveGameSystem) {
+                window.liveGameSystem.gameState = 'running';
+                window.liveGameSystem.roundStartTime = Date.now();
+                window.liveGameSystem.animate();
+            }
+        });
+        
+        this.socket.on('stop_multiplier_count', (crashValue) => {
+            console.log('💥 SERVER: Round crashed at', crashValue + 'x');
+            this.gameState = 'crashed';
+            const crash = parseFloat(crashValue);
+            this.currentMultiplier = crash;
+            
+            // Update local system
+            if (window.liveGameSystem) {
+                window.liveGameSystem.gameState = 'crashed';
+                window.liveGameSystem.crashPoint = crash;
+            }
+        });
+        
+        // Legacy events (keeping for compatibility)
         this.socket.on('gameState', (data) => this.handleGameState(data));
         this.socket.on('roundStarted', (data) => this.handleRoundStart(data));
         this.socket.on('multiplierUpdate', (data) => this.handleMultiplierUpdate(data));
@@ -420,6 +453,23 @@ class CrashGameClient {
         if (this.onGameStateUpdate) {
             this.onGameStateUpdate(data);
         }
+    }
+
+    /**
+     * 🎲 Handle betting phase start 
+     */
+    handleBettingPhase(data) {
+        console.log('🎲 Betting phase started - 6 seconds to place bets');
+        this.gameState = 'betting';
+        
+        // Start countdown timer
+        this.startCountdown(6);
+        
+        // Update UI
+        const gameStatus = document.getElementById('gameStatus');
+        const gameMessage = document.getElementById('gameStateMessage');
+        if (gameStatus) gameStatus.textContent = 'Betting Phase';
+        if (gameMessage) gameMessage.textContent = 'Place your bets! (6 seconds)';
     }
 
     /**

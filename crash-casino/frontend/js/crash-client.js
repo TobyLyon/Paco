@@ -205,12 +205,26 @@ class CrashGameClient {
             this.isConnected = true;
             this.updateConnectionStatus(true);
             
-                    // CRITICAL FIX: Wait for server to control timing - don't start automatic cycles
+                    // CRITICAL FIX: Wait for server to control timing, but add fallback
         setTimeout(() => {
             if (this.gameState === 'waiting' || !this.gameState) {
                 console.log('⏰ Connected - waiting for server to start round cycles...');
-                // Don't start automatic countdown - wait for server events
                 this.updateGameStateUI('waiting');
+                
+                // FALLBACK: If no server events after 5 seconds, start betting countdown
+                setTimeout(() => {
+                    if (this.gameState === 'waiting' || !this.gameState) {
+                        console.log('🚨 No server events detected - starting betting countdown manually');
+                        this.gameState = 'betting';
+                        this.updateGameStateUI('betting');
+                        this.startCountdown(15);
+                        
+                        // Update bet interface
+                        if (window.betInterface && typeof window.betInterface.onGameStateChange === 'function') {
+                            window.betInterface.onGameStateChange('betting');
+                        }
+                    }
+                }, 5000); // Wait 5 seconds for server events
             }
         }, 2000); // Wait 2 seconds for full initialization
             
@@ -577,13 +591,28 @@ class CrashGameClient {
             this.onRoundCrash(data);
         }
         
-        // CRITICAL FIX: Wait for server to signal next round - don't auto-start countdown
+        // CRITICAL FIX: Auto-start betting countdown if server doesn't signal betting phase
         setTimeout(() => {
             console.log('⏰ Round crashed - waiting for server to start next betting phase...');
             this.gameState = 'waiting';
             this.updateGameStateUI('waiting');
             
-            // Reset UI but don't start countdown - server will control timing
+            // FALLBACK: If server doesn't send betting signal within 3 seconds, start countdown anyway
+            setTimeout(() => {
+                if (this.gameState === 'waiting') {
+                    console.log('🚨 Server betting signal timeout - starting betting countdown anyway');
+                    this.gameState = 'betting';
+                    this.updateGameStateUI('betting');
+                    this.startCountdown(15);
+                    
+                    // Update bet interface
+                    if (window.betInterface && typeof window.betInterface.onGameStateChange === 'function') {
+                        window.betInterface.onGameStateChange('betting');
+                    }
+                }
+            }, 3000); // Wait 3 seconds for server betting signal
+            
+            // Reset UI 
             const placeBetBtnElement = document.getElementById('placeBetBtn');
             if (placeBetBtnElement) {
                 placeBetBtnElement.disabled = false;

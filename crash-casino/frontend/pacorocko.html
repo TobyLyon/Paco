@@ -1160,19 +1160,27 @@
                 
                 this.gameState = 'running';
                 
-                // BUSTABIT PROVEN ALGORITHM - The original and most trusted
-                // Uses provably fair hash-based generation
-                const randomValue = Math.random();
-                
-                // Bustabit's proven formula: 1% house edge, exponential distribution
-                // This ensures: ~50% crash before 2x, ~25% before 5x, ~5% after 10x
-                this.crashPoint = Math.floor((100 * 0.99) / randomValue) / 100;
-                
-                // Apply maximum cap (Bustabit uses 1000000x but we'll use 1000x)
-                this.crashPoint = Math.max(1.00, Math.min(this.crashPoint, 1000.0));
-                
-                // Round to 2 decimal places
-                this.crashPoint = Math.round(this.crashPoint * 100) / 100;
+                // CRITICAL SYNC FIX: Use server crash point if provided, otherwise generate locally
+                if (this.targetCrashMultiplier) {
+                    // SERVER CONTROLLED: Use exact crash point from server
+                    this.crashPoint = this.targetCrashMultiplier;
+                    console.log(`🎯 USING SERVER CRASH POINT: ${this.crashPoint}x`);
+                    // Clear the target so next round generates locally if no server signal
+                    this.targetCrashMultiplier = null;
+                } else {
+                    // LOCAL GENERATION: Bustabit proven algorithm for local rounds
+                    const randomValue = Math.random();
+                    
+                    // Bustabit's proven formula: 1% house edge, exponential distribution
+                    this.crashPoint = Math.floor((100 * 0.99) / randomValue) / 100;
+                    
+                    // Apply maximum cap
+                    this.crashPoint = Math.max(1.00, Math.min(this.crashPoint, 1000.0));
+                    
+                    // Round to 2 decimal places
+                    this.crashPoint = Math.round(this.crashPoint * 100) / 100;
+                    console.log(`🎲 GENERATED LOCAL CRASH POINT: ${this.crashPoint}x`);
+                }
                 
                 // Calculate round duration based on crash point
                 // Use logarithmic scaling for smooth experience
@@ -1602,6 +1610,35 @@
                     };
                 };
                 
+                // Add method to force crash at exact server point
+                liveGameSystem.forceCrashAtPoint = function(serverCrashPoint) {
+                    console.log(`🎯 FORCING IMMEDIATE CRASH AT: ${serverCrashPoint}x`);
+                    
+                    // Stop the current round immediately
+                    this.gameState = 'crashed';
+                    this.currentMultiplier = serverCrashPoint;
+                    this.crashPoint = serverCrashPoint;
+                    
+                    // Force update display to server crash point
+                    const multiplierElement = document.getElementById('multiplierValue');
+                    if (multiplierElement) {
+                        multiplierElement.textContent = `${serverCrashPoint.toFixed(2)}x`;
+                        console.log(`🎯 MAIN: Set crash display to ${serverCrashPoint}x`);
+                        console.log(`🔒 ONLY MAIN SYSTEM: Setting crash display to ${serverCrashPoint}x`);
+                    }
+                    
+                    // Trigger crash display immediately
+                    if (window.crashChart && window.crashChart.triggerCrash) {
+                        window.crashChart.triggerCrash(serverCrashPoint);
+                    }
+                    
+                    // Add to round history with server crash point
+                    this.addRoundToHistory(serverCrashPoint);
+                    
+                    console.log(`💥 Crashed at exactly: ${serverCrashPoint}x`);
+                    console.log(`🔍 VERIFY: Display shows ${serverCrashPoint}x, History gets ${serverCrashPoint}x`);
+                };
+                
                 // Server handles betting and initial state
                 console.log('💰 Server will provide initial state, then handle betting');
                 
@@ -1692,9 +1729,13 @@
                         console.log('🌐 Server round crash - processing bets');
                         console.log(`🎯 Server crash point: ${data.crashPoint}x`);
                         
-                        // Local visual system should handle its own crash timing
-                        // Server crash is for betting results only
-                        console.log('📊 Local visual system handles crash display, server handles betting');
+                        // CRITICAL SYNC FIX: Force local system to crash at server point
+                        if (window.liveGameSystem && window.liveGameSystem.forceCrashAtPoint) {
+                            console.log(`🎯 FORCING LOCAL CRASH AT SERVER POINT: ${data.crashPoint}x`);
+                            window.liveGameSystem.forceCrashAtPoint(data.crashPoint);
+                        } else {
+                            console.log('📊 Local visual system handles crash display independently');
+                        }
                     };
                 } else {
                     console.log('⚠️ CrashGameClient not available, running live game system only');

@@ -218,8 +218,22 @@ class WalletBridge {
             // Abstract Network: Use direct MetaMask request instead of ethers.js
             console.log('🔗 Sending transaction via direct MetaMask request for Abstract Network...');
             
-            // Convert to Abstract L2 MetaMask-compatible format
-            const fromAddress = await this.signer.getAddress();
+            // Convert to Abstract L2 MetaMask-compatible format - get address directly from MetaMask
+            let fromAddress;
+            try {
+                fromAddress = window.ethereum.selectedAddress;
+                if (!fromAddress) {
+                    const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                    fromAddress = accounts[0];
+                }
+                if (!fromAddress) {
+                    throw new Error('No wallet address available');
+                }
+                console.log('🔍 Using wallet address:', fromAddress);
+            } catch (error) {
+                console.error('❌ Failed to get wallet address:', error);
+                throw new Error('Wallet not connected properly. Please reconnect your wallet.');
+            }
             const metaMaskTx = {
                 from: fromAddress,
                 to: tx.to,
@@ -1134,10 +1148,14 @@ class WalletBridge {
         
         // Test transaction estimation specifically
         try {
-            if (this.signer && await this.signer.getAddress()) {
+            // Get wallet address directly from MetaMask
+            const walletAddress = window.ethereum.selectedAddress || 
+                                 (await window.ethereum.request({ method: 'eth_accounts' }))[0];
+            
+            if (walletAddress) {
                 const testTx = {
-                    from: await this.signer.getAddress(), // Required for estimateGas
-                    to: await this.signer.getAddress(), // Send to self
+                    from: walletAddress, // Required for estimateGas
+                    to: walletAddress, // Send to self
                     value: '0x1', // 1 wei
                     data: '0x'
                 };
@@ -1149,8 +1167,8 @@ class WalletBridge {
                 console.log('🧪 Testing eth_sendTransaction capability...');
                 // Test with minimal transaction to see exact error
                 const minimalTx = {
-                    from: await this.signer.getAddress(),
-                    to: await this.signer.getAddress(),
+                    from: walletAddress,
+                    to: walletAddress,
                     value: '0x1', // 1 wei
                     gas: '0x5208', // 21000 in hex
                     gasPrice: '0x3b9aca00' // 1 gwei in hex

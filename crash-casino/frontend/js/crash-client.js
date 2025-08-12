@@ -204,6 +204,15 @@ class CrashGameClient {
             console.log('✅ Connected to crash game server for betting');
             console.log('🎮 Local game system handling multiplier display');
             this.isConnected = true;
+            
+            // DEBUG: Log ALL socket events to see what we're actually receiving
+            const originalEmit = this.socket.emit;
+            const originalOn = this.socket.on;
+            
+            // Log all incoming events
+            this.socket.onAny((eventName, ...args) => {
+                console.log(`📡 SOCKET EVENT RECEIVED: ${eventName}`, args);
+            });
             this.updateConnectionStatus(true);
             
             // Server will initiate rounds - no local initiation needed
@@ -274,16 +283,29 @@ class CrashGameClient {
         });
         
         this.socket.on('start_multiplier_count', () => {
-            console.log('🚀 SERVER: Round started');
+            console.log('🚀 SERVER: MULTIPLIER COUNT STARTED - STARTING VISUALS');
             this.gameState = 'running';
             this.roundStartTime = Date.now();
             this.currentMultiplier = 1.0;
             
-            // Start visual systems
+            // Update UI immediately
+            const gameStatus = document.getElementById('gameStatus');
+            const gameMessage = document.getElementById('gameStateMessage');
+            if (gameStatus) gameStatus.textContent = 'Round Running';
+            if (gameMessage) gameMessage.textContent = 'Multiplier climbing...';
+            
+            // Force start visual systems
             if (window.liveGameSystem) {
+                console.log('🎯 FORCING: Starting liveGameSystem animation');
                 window.liveGameSystem.gameState = 'running';
                 window.liveGameSystem.roundStartTime = Date.now();
                 window.liveGameSystem.animate();
+            }
+            
+            // Force start chart
+            if (window.crashChart) {
+                console.log('📈 FORCING: Starting crash chart');
+                window.crashChart.startNewRound();
             }
         });
         

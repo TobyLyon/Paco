@@ -1540,25 +1540,42 @@
                                             if (serverState.isRunning && serverState.currentMultiplier > 1.0) {
                                                 console.log(`🚀 Server round active at ${serverState.currentMultiplier}x - joining mid-round`);
                                                 
-                                                // Skip betting phase and go straight to running round
+                                                // Set up local system to mirror server state (NO new round)
                                                 window.liveGameSystem.isRunning = true;
                                                 window.liveGameSystem.currentPhase = 'running';
                                                 
-                                                // Set up display for running round
+                                                // Set up display for EXISTING round
                                                 document.getElementById('gameStatus').textContent = 'Round Active';
                                                 document.getElementById('countdownTimer').style.display = 'none';
                                                 document.getElementById('gameStateMessage').textContent = '🚀 Round in progress - good luck!';
                                                 
-                                                // Start the round display with server multiplier
-                                                window.liveGameSystem.startNewRound();
+                                                // DON'T start new round - just initialize display systems
+                                                console.log('🎮 Initializing display for ongoing server round...');
                                                 
-                                                // Sync to server multiplier
+                                                // Initialize chart for existing round
+                                                if (window.crashChart && window.crashChart.startNewRound) {
+                                                    console.log('📈 Chart: Joining ongoing round');
+                                                    window.crashChart.startNewRound();
+                                                }
+                                                
+                                                // Initialize rocket display for existing round  
+                                                if (window.crashRocket && window.crashRocket.reset) {
+                                                    window.crashRocket.reset();
+                                                }
+                                                
+                                                // Set multiplier display to server value immediately
+                                                document.getElementById('multiplierValue').textContent = `${serverState.currentMultiplier}x`;
+                                                
+                                                // Start animation loop to follow server events
+                                                console.log('🔄 Local display ready - following server round events');
+                                                
+                                                // Sync to server multiplier (for smooth continuation)
                                                 setTimeout(() => {
                                                     if (window.liveGameSystem.updateMultiplier) {
                                                         window.liveGameSystem.updateMultiplier(serverState.currentMultiplier);
-                                                        console.log(`🔄 Synced to server multiplier: ${serverState.currentMultiplier}x`);
+                                                        console.log(`🔄 Display synced to server: ${serverState.currentMultiplier}x`);
                                                     }
-                                                }, 200);
+                                                }, 100);
                                                 
                                             } else {
                                                 // Server in betting phase - sync countdown

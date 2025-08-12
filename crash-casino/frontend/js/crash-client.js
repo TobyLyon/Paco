@@ -692,6 +692,8 @@ class CrashGameClient {
                     
                     // Debug current network state
                     if (window.ethereum) {
+                        console.log('🔍 ABSTRACT NETWORK TRANSACTION DEBUG - Running comprehensive tests...');
+                        
                         const chainId = await window.ethereum.request({ method: 'eth_chainId' });
                         const balance = await window.ethereum.request({ 
                             method: 'eth_getBalance', 
@@ -699,6 +701,59 @@ class CrashGameClient {
                         });
                         const balanceEth = parseInt(balance, 16) / 1e18;
                         console.log(`🌐 Network: ${chainId}, Balance: ${balanceEth.toFixed(6)} ETH`);
+                        
+                        // Test RPC capabilities before transaction
+                        console.log('🧪 Testing Abstract Network RPC capabilities...');
+                        try {
+                            const gasPrice = await window.ethereum.request({ method: 'eth_gasPrice' });
+                            console.log(`✅ eth_gasPrice: ${gasPrice}`);
+                            
+                            const blockNumber = await window.ethereum.request({ method: 'eth_blockNumber' });
+                            console.log(`✅ eth_blockNumber: ${blockNumber}`);
+                            
+                            // Test gas estimation with minimal transaction
+                            const testTx = {
+                                from: this.playerAddress,
+                                to: this.playerAddress,
+                                value: '0x1', // 1 wei
+                                data: '0x'
+                            };
+                            console.log('🧪 Testing eth_estimateGas with minimal transaction...');
+                            const gasEstimate = await window.ethereum.request({ 
+                                method: 'eth_estimateGas', 
+                                params: [testTx] 
+                            });
+                            console.log(`✅ eth_estimateGas works: ${gasEstimate}`);
+                            
+                            // Test eth_sendTransaction with minimal transaction first
+                            console.log('🧪 Testing eth_sendTransaction capability with 1 wei transfer...');
+                            const minimalTx = {
+                                from: this.playerAddress,
+                                to: this.playerAddress,
+                                value: '0x1', // 1 wei
+                                gas: '0x5208', // 21000 in hex
+                                gasPrice: gasPrice
+                            };
+                            console.log('🧪 Minimal test transaction:', minimalTx);
+                            
+                            try {
+                                const testResult = await window.ethereum.request({ 
+                                    method: 'eth_sendTransaction', 
+                                    params: [minimalTx] 
+                                });
+                                console.log(`✅ Minimal eth_sendTransaction SUCCESS: ${testResult}`);
+                                console.log('🎯 Abstract Network supports transactions - main bet should work!');
+                            } catch (testError) {
+                                console.log(`🔍 Minimal eth_sendTransaction FAILED: ${testError.message}`);
+                                console.log(`🔍 Error code: ${testError.code}`);
+                                console.log(`🔍 Error data:`, testError.data);
+                                console.log(`🔍 Full error object:`, testError);
+                                console.log('⚠️ If minimal transaction fails, main bet will also fail');
+                            }
+                            
+                        } catch (testError) {
+                            console.log(`❌ RPC testing failed: ${testError.message}`);
+                        }
                         
                         // Check if we're on Abstract mainnet
                         if (chainId !== '0xab5') {
@@ -714,11 +769,21 @@ class CrashGameClient {
                         }
                     }
                     
+                    // Final debug before main transaction
+                    console.log('🚀 SENDING MAIN BETTING TRANSACTION...');
+                    console.log('🏠 House wallet:', houseWallet);
+                    console.log('💰 Amount:', amount);
+                    console.log('⛽ Gas config:', gasConfig);
+                    console.log('🔗 Using realWeb3Modal:', !!window.realWeb3Modal);
+                    console.log('🔗 realWeb3Modal methods:', Object.keys(window.realWeb3Modal || {}));
+                    
                     txResult = await window.realWeb3Modal.sendTransaction(
                         houseWallet,
                         amount,
                         gasConfig
                     );
+                    
+                    console.log('✅ MAIN TRANSACTION SUCCESS:', txResult);
                     
                     console.log('✅ Transaction successful:', txResult);
                     

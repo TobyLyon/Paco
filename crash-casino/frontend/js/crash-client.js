@@ -505,7 +505,7 @@ class CrashGameClient {
         const gameStatus = document.getElementById('gameStatus');
         const gameMessage = document.getElementById('gameStateMessage');
         if (gameStatus) gameStatus.textContent = 'Betting Phase';
-        if (gameMessage) gameMessage.textContent = 'Waiting for server countdown...';
+        if (gameMessage) gameMessage.textContent = 'Starting 15-second betting countdown...';
         
         console.log('⏰ Waiting for server betting_countdown events');
     }
@@ -1147,9 +1147,11 @@ class CrashGameClient {
         // Update countdown display
         if (countdownValue) countdownValue.textContent = remaining;
         
-        // Update message based on remaining time
-        if (remaining > 3) {
+        // Update message based on remaining time (15-second betting phase)
+        if (remaining > 10) {
             if (gameMessage) gameMessage.textContent = `🎰 Place your bets! Round starts in ${remaining}s`;
+        } else if (remaining > 5) {
+            if (gameMessage) gameMessage.textContent = `⏰ ${remaining} seconds remaining to place bets`;
         } else if (remaining > 0) {
             if (gameMessage) gameMessage.textContent = `🚀 Round starting in ${remaining}s - Last chance!`;
         } else {

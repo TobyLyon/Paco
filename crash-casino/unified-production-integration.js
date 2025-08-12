@@ -100,7 +100,7 @@ class UnifiedPacoRockoProduction {
             // Initialize unified crash engine (SERVER AUTHORITY)
             console.log('🎮 Starting unified crash engine...');
             this.crashEngine = new UnifiedCrashEngine(this.io, {
-                bettingPhaseDuration: 6000,  // 6 seconds (proven timing)
+                bettingPhaseDuration: 15000, // 15 seconds (user requested)
                 cashoutPhaseDuration: 3000   // 3 seconds (proven timing)
             });
             

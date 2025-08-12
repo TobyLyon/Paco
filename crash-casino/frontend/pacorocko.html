@@ -1549,25 +1549,22 @@
                                                 document.getElementById('countdownTimer').style.display = 'none';
                                                 document.getElementById('gameStateMessage').textContent = '🚀 Round in progress - good luck!';
                                                 
-                                                // DON'T start new round - just initialize display systems
+                                                // Initialize display systems for ongoing server round
                                                 console.log('🎮 Initializing display for ongoing server round...');
                                                 
-                                                // Initialize chart for existing round
-                                                if (window.crashChart && window.crashChart.startNewRound) {
-                                                    console.log('📈 Chart: Joining ongoing round');
-                                                    window.crashChart.startNewRound();
-                                                }
+                                                // Start the local animation system (but sync to server state)
+                                                window.liveGameSystem.startNewRound();
+                                                console.log('🚀 Local display animation started');
                                                 
-                                                // Initialize rocket display for existing round  
-                                                if (window.crashRocket && window.crashRocket.reset) {
-                                                    window.crashRocket.reset();
+                                                // Override the local crash point with server crash point
+                                                if (serverState.crashPoint) {
+                                                    window.liveGameSystem.targetCrashMultiplier = serverState.crashPoint;
+                                                    console.log(`🎯 Synced target crash: ${serverState.crashPoint}x`);
                                                 }
                                                 
                                                 // Set multiplier display to server value immediately
                                                 document.getElementById('multiplierValue').textContent = `${serverState.currentMultiplier}x`;
-                                                
-                                                // Start animation loop to follow server events
-                                                console.log('🔄 Local display ready - following server round events');
+                                                console.log(`🔄 Display shows server multiplier: ${serverState.currentMultiplier}x`);
                                                 
                                                 // Sync to server multiplier (for smooth continuation)
                                                 setTimeout(() => {

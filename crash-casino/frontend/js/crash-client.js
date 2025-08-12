@@ -637,10 +637,27 @@ class CrashGameClient {
         console.log(`🎰 Current round: ${this.currentRound}`);
 
         try {
-            // Check if wallet is connected
+            // Check if wallet is connected and get player address
             if (!window.realWeb3Modal || !window.realWeb3Modal.isWalletConnected()) {
                 this.showError('Please connect your wallet first');
                 return false;
+            }
+            
+            // Get current wallet address for RPC debugging
+            this.playerAddress = window.realWeb3Modal.getAddress() || window.ethereum.selectedAddress;
+            console.log('🔗 Player address for debugging:', this.playerAddress);
+            
+            if (!this.playerAddress) {
+                console.log('⚠️ No player address found, attempting to get from MetaMask...');
+                try {
+                    const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                    this.playerAddress = accounts[0];
+                    console.log('✅ Retrieved player address:', this.playerAddress);
+                } catch (error) {
+                    console.error('❌ Failed to get player address:', error);
+                    this.showError('Unable to get wallet address');
+                    return false;
+                }
             }
 
             this.showNotification('🎰 Processing bet transaction...', 'info');

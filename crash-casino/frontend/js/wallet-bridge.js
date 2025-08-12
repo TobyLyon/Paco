@@ -188,15 +188,25 @@ class WalletBridge {
                 }
             }
 
-            // Abstract Network transaction format - use legacy format (EIP-1559 not supported)
-            const tx = {
-                to: to,
-                value: ethers.parseEther(value.toString()),
-                gasLimit: gasConfig.gasLimit || 100000, // Increased for L2 transactions
-                gasPrice: gasConfig.gasPrice || ethers.parseUnits('1', 'gwei'), // 1 gwei for Abstract L2
-                // Remove EIP-1559 fields - Abstract Network uses legacy format
-                ...gasConfig
-            };
+            // ABSTRACT L2 FIX: Use specialized helper for proper transaction format
+            let tx;
+            if (window.abstractL2Helper) {
+                // Use Abstract L2 helper for optimal compatibility
+                tx = window.abstractL2Helper.formatTransaction(to, ethers.parseEther(value.toString()), gasConfig);
+                console.log('🌐 Using Abstract L2 Helper for transaction format');
+            } else {
+                // Fallback to manual format if helper not available
+                tx = {
+                    to: to,
+                    value: ethers.parseEther(value.toString()),
+                    gas: gasConfig.gasLimit || '0x186A0', // 100000 in hex
+                    gasPrice: gasConfig.gasPrice || '0x3B9ACA00', // 1 gwei in hex
+                    data: '0x', // Required empty data field
+                    ...gasConfig
+                };
+                delete tx.gasLimit; // Abstract uses 'gas'
+                console.log('⚠️ Abstract L2 Helper not available, using fallback format');
+            }
             
             console.log('📊 Using legacy transaction format for Abstract Network compatibility');
 
@@ -205,60 +215,70 @@ class WalletBridge {
             // Skip comprehensive debugging to avoid transaction interference
             console.log('🚀 Streamlined transaction flow - skipping diagnostics...');
             
-                        // Try Abstract Network compatible transaction using ethers.js with minimal params
-            console.log('🔗 Sending transaction via optimized ethers.js for Abstract Network...');
+            // Abstract Network: Use direct MetaMask request instead of ethers.js
+            console.log('🔗 Sending transaction via direct MetaMask request for Abstract Network...');
             
-            // Abstract Network specific transaction format with required gas_per_pubdata_limit
-            const abstractTx = {
+            // Convert to Abstract L2 MetaMask-compatible format
+            const fromAddress = await this.signer.getAddress();
+            const metaMaskTx = {
+                from: fromAddress,
                 to: tx.to,
-                value: tx.value,
-                gasLimit: tx.gasLimit,
-                gasPrice: tx.gasPrice,
-                // Abstract Network specific parameter - CRITICAL for transaction success
-                customData: {
-                    gasPerPubdata: 50000, // Abstract Network requirement
-                    factoryDeps: []
-                },
-                // Let ethers.js handle nonce and chainId automatically
+                value: typeof tx.value === 'string' ? tx.value : '0x' + BigInt(tx.value).toString(16),
+                gas: typeof tx.gas === 'string' ? tx.gas : '0x' + BigInt(tx.gas || tx.gasLimit || 100000).toString(16),
+                gasPrice: typeof tx.gasPrice === 'string' ? tx.gasPrice : '0x' + BigInt(tx.gasPrice).toString(16),
+                data: '0x', // Abstract L2 requires data field
+                // Abstract L2 specific: Add nonce if needed
+                // nonce: await this.provider.getTransactionCount(fromAddress)
             };
-
-            console.log('📡 Abstract Network transaction object:', abstractTx);
-
-            // Try Abstract Network compatible transaction
-            let txResponse;
+            
+            console.log('📡 MetaMask transaction object:', metaMaskTx);
+            
+            // ABSTRACT L2 FIX: Enhanced transaction submission with proper error handling
+            let txHash;
             try {
-                // Method 1: Try ethers.js with Abstract Network parameters
-                console.log('🔄 Method 1: Ethers.js with Abstract Network customData...');
-                txResponse = await this.signer.sendTransaction(abstractTx);
-            } catch (ethersError) {
-                console.log('❌ Method 1 failed, trying direct wallet request...', ethersError.message);
-                
-                // Method 2: Direct wallet request with minimal parameters (bypass ethers.js)
-                console.log('🔄 Method 2: Direct wallet request (bypass ethers.js)...');
-                
-                const directTx = {
-                    from: await this.signer.getAddress(),
-                    to: tx.to,
-                    value: '0x' + tx.value.toString(16),
-                    gas: '0x' + tx.gasLimit.toString(16),
-                    gasPrice: '0x' + tx.gasPrice.toString(16)
-                };
-                
-                console.log('📡 Direct wallet transaction:', directTx);
-                
-                const txHash = await window.ethereum.request({
-                    method: 'eth_sendTransaction',
-                    params: [directTx]
+                // First, try gas estimation with Abstract L2 format
+                const gasEstimate = await window.ethereum.request({
+                    method: 'eth_estimateGas',
+                    params: [metaMaskTx]
                 });
+                console.log('✅ Abstract L2 gas estimation successful:', gasEstimate);
                 
-                // Create ethers-compatible response
-                txResponse = {
-                    hash: txHash,
-                    wait: async () => {
-                        return await this.provider.waitForTransaction(txHash);
-                    }
-                };
+                // Update gas limit with estimated value + 20% buffer
+                const estimatedGasInt = parseInt(gasEstimate, 16);
+                const gasWithBuffer = Math.floor(estimatedGasInt * 1.2);
+                metaMaskTx.gas = '0x' + gasWithBuffer.toString(16);
+                console.log(`🔧 Updated gas limit: ${gasWithBuffer} (${gasEstimate} + 20%)`);
+                
+            } catch (gasError) {
+                console.log('⚠️ Gas estimation failed, using default:', gasError.message);
+                // Continue with default gas limit
             }
+            
+            // ABSTRACT L2 FIX: Use helper for optimized transaction submission
+            console.log('📡 Sending Abstract L2 transaction:', metaMaskTx);
+            
+            if (window.abstractL2Helper) {
+                // Use Abstract L2 helper with built-in retry logic
+                txHash = await window.abstractL2Helper.sendTransaction(metaMaskTx, 3);
+                console.log('🌐 Transaction sent via Abstract L2 Helper');
+            } else {
+                // Fallback to direct MetaMask request
+                txHash = await window.ethereum.request({
+                    method: 'eth_sendTransaction',
+                    params: [metaMaskTx]
+                });
+                console.log('⚠️ Transaction sent via fallback method');
+            }
+            
+            console.log('✅ Transaction sent via MetaMask:', txHash);
+            
+            // Create ethers-compatible response
+            const txResponse = {
+                hash: txHash,
+                wait: async () => {
+                    return await this.provider.waitForTransaction(txHash);
+                }
+            };
             
             console.log('✅ Transaction sent successfully:', txResponse.hash);
             

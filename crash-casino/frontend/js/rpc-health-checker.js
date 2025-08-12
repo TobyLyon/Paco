@@ -70,7 +70,7 @@ class RPCHealthChecker {
                 throw new Error(`Wrong chain ID: ${chainData.result}, expected 0xab5`);
             }
 
-            // Test 3: Legacy gas estimation (Abstract Network uses legacy format)
+            // Test 3: Abstract L2 gas estimation with proper format
             const gasResponse = await fetch(endpoint, {
                 method: 'POST',
                 headers: {
@@ -83,12 +83,12 @@ class RPCHealthChecker {
                         to: '0x1f8B1c4D05eF17Ebaa1E572426110146691e6C5a',
                         value: '0x1',
                         gasPrice: '0x3B9ACA00', // 1 gwei in hex
-                        data: '0x'
-                        // No EIP-1559 fields - Abstract Network uses legacy format
+                        data: '0x', // Required data field for Abstract L2
+                        gas: '0x186A0' // Use 'gas' field for Abstract compatibility
                     }],
                     id: 3
                 }),
-                timeout: 5000
+                timeout: 8000 // Increased timeout for Abstract L2
             });
 
             const gasData = await gasResponse.json();

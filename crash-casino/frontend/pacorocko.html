@@ -21,6 +21,9 @@
     <!-- Ethers v6 (ONLY ONE VERSION) -->
     <script src="https://unpkg.com/ethers@6.13.0/dist/ethers.umd.min.js"></script>
     
+    <!-- Abstract L2 Helper - Load early for transaction compatibility -->
+    <script src="/crash-casino/frontend/js/abstract-l2-helper.js?v=2025-01-12"></script>
+    
     <!-- Abstract Global Wallet (AGW) - Official Integration -->
     <!-- AGW will be loaded from node_modules via our integration script -->
     
@@ -1563,141 +1566,41 @@
                 
                 // Enhanced global chat with database integration will auto-initialize
                 
-                // 🎯 UNIFIED GAME CONTROLLER - Single source of truth
-                console.log('🎯 CREATING UNIFIED GAME CONTROLLER...');
-                console.log('🌐 Server: Round control, betting, authentication, payouts');
-                console.log('📱 Local: Visual display ONLY (no timing, no rounds, no countdowns)');
+                // 🎯 HYBRID SYSTEM: Server rounds + Local smooth display
+                console.log('🎯 IMPLEMENTING HYBRID SYSTEM - OPTION 2...');
+                console.log('🌐 Server system: Round control, betting, authentication, payouts');
+                console.log('📱 Local system: Smooth 60 FPS display ONLY (no independent rounds)');
                 
-                // UNIFIED GAME CONTROLLER - Prevents all conflicts
-                window.unifiedGameController = {
-                    currentState: 'waiting', // waiting, countdown, running, crashed
-                    currentRound: null,
-                    activeTimers: new Set(),
-                    
-                    // Clear all existing timers and states
-                    clearAllTimers() {
-                        console.log('🧹 Clearing all timers and intervals...');
-                        this.activeTimers.forEach(timer => {
-                            clearInterval(timer);
-                            clearTimeout(timer);
-                        });
-                        this.activeTimers.clear();
-                        
-                        // Stop local game system completely
-                        if (window.liveGameSystem) {
-                            window.liveGameSystem.stop();
-                        }
-                    },
-                    
-                    // Server triggers countdown (ONLY source of countdown)
-                    startCountdown(seconds = 5) {
-                        this.clearAllTimers(); // Prevent duplicates
-                        this.currentState = 'countdown';
-                        
-                        console.log(`⏰ UNIFIED: Starting ${seconds}s countdown`);
-                        document.getElementById('gameStatus').textContent = 'Place Your Bets';
-                        document.getElementById('countdownTimer').style.display = 'block';
-                        
-                        let remaining = seconds;
-                        const countdownTimer = setInterval(() => {
-                            document.getElementById('countdownValue').textContent = remaining;
-                            document.getElementById('gameStateMessage').textContent = 
-                                remaining > 0 ? `🎰 Next round starting in ${remaining}s - Place your bets now!` 
-                                             : `🚀 Round starting...`;
-                            
-                            remaining--;
-                            if (remaining < 0) {
-                                clearInterval(countdownTimer);
-                                this.activeTimers.delete(countdownTimer);
-                                document.getElementById('countdownTimer').style.display = 'none';
-                            }
-                        }, 1000);
-                        
-                        this.activeTimers.add(countdownTimer);
-                    },
-                    
-                    // Server triggers round start (ONLY source of rounds)
-                    startRound(roundData) {
-                        this.clearAllTimers(); // Clear any countdowns
-                        this.currentState = 'running';
-                        this.currentRound = roundData;
-                        
-                        console.log(`🚀 UNIFIED: Starting round ${roundData.roundId} crash at ${roundData.crashPoint}x`);
-                        
-                        // Update UI
-                        document.getElementById('gameStatus').textContent = 'Round Active';
-                        document.getElementById('gameStateMessage').textContent = '🚀 Round in progress - good luck!';
-                        document.getElementById('countdownTimer').style.display = 'none';
-                        
-                        // Start visual multiplier animation ONLY
-                        this.startMultiplierAnimation(roundData.crashPoint);
-                        
-                        // Start chart
-                        if (window.crashChart && window.crashChart.chart) {
-                            window.crashChart.startNewRound();
-                        }
-                    },
-                    
-                    // Server triggers round crash (ONLY source of crashes)
-                    crashRound(crashData) {
-                        console.log(`💥 UNIFIED: Round crashed at ${crashData.crashPoint}x`);
-                        
-                        // Stop any running animations
-                        this.currentState = 'crashed';
-                        
-                        // Update final multiplier display
-                        const multiplierElement = document.getElementById('multiplierValue');
-                        if (multiplierElement) {
-                            multiplierElement.textContent = crashData.crashPoint.toFixed(2) + 'x';
-                            multiplierElement.classList.add('crashed');
-                        }
-                        
-                        // Update chart
-                        if (window.crashChart && window.crashChart.chart) {
-                            window.crashChart.crash(crashData.crashPoint);
-                        }
-                        
-                        // Wait 2 seconds then start countdown for next round
-                        const crashTimer = setTimeout(() => {
-                            this.startCountdown(5);
-                        }, 2000);
-                        
-                        this.activeTimers.add(crashTimer);
-                    },
-                    
-                    // Visual multiplier animation (no timing logic)
-                    startMultiplierAnimation(targetCrash) {
-                        const startTime = Date.now();
-                        const duration = Math.min(targetCrash * 1000, 30000); // Max 30 seconds
-                        let animationId;
-                        
-                        const animate = () => {
-                            const elapsed = Date.now() - startTime;
-                            const progress = Math.min(elapsed / duration, 1);
-                            
-                            // Calculate current multiplier based on progress
-                            const currentMultiplier = 1 + (targetCrash - 1) * progress;
-                            
-                            // Update display
-                            const multiplierElement = document.getElementById('multiplierValue');
-                            if (multiplierElement) {
-                                multiplierElement.textContent = currentMultiplier.toFixed(2) + 'x';
-                            }
-                            
-                            // Continue animation until crash point or external stop
-                            if (progress < 1 && this.currentState === 'running') {
-                                animationId = requestAnimationFrame(animate);
-                            }
-                        };
-                        
-                        animate();
-                        return animationId;
-                    }
+                // ENABLE local display system but DISABLE independent round generation
+                console.log('✅ LOCAL DISPLAY ENABLED - but server controls round timing');
+                window.liveGameSystem = liveGameSystem;
+                
+                // Override startNewRound to prevent automatic round generation
+                const originalStartNewRound = liveGameSystem.startNewRound;
+                liveGameSystem.startNewRound = function() {
+                    console.log('🚫 Blocking automatic round start - waiting for server signal');
+                    // Don't auto-start rounds, wait for server
                 };
                 
-                // DISABLE all local game systems
-                console.log('🚫 DISABLING all local game systems...');
-                window.liveGameSystem = null; // Disable completely
+                // Add method to start rounds ONLY when server says so
+                liveGameSystem.startServerRound = function(crashPoint) {
+                    console.log(`🎯 Starting server-controlled round with crash point: ${crashPoint}x`);
+                    
+                    // Hide any countdown timer - round is starting now
+                    document.getElementById('countdownTimer').style.display = 'none';
+                    document.getElementById('gameStatus').textContent = 'Round Active';
+                    document.getElementById('gameStateMessage').textContent = '🚀 Round in progress - good luck!';
+                    
+                    // Restore original function temporarily and start round
+                    this.startNewRound = originalStartNewRound;
+                    this.targetCrashMultiplier = crashPoint; // Use server crash point
+                    this.startNewRound(); // Start with server crash point
+                    
+                    // Block it again for next time
+                    this.startNewRound = function() {
+                        console.log('🚫 Blocking automatic round start - waiting for server signal');
+                    };
+                };
                 
                 // Server handles betting and initial state
                 console.log('💰 Server will provide initial state, then handle betting');
@@ -1749,50 +1652,43 @@
                     
                     // 🚀 SERVER-ONLY: No local system, server controls everything
                     setTimeout(() => {
-                        // UNIFIED: Connect to server - NO fallback systems
+                        // HYBRID: Connect to server and set up fallback visual system
                         if (window.crashGameClient && window.crashGameClient.socket) {
-                            console.log('🔗 UNIFIED: Connected to server - waiting for events');
-                            console.log('🚫 UNIFIED: No fallback systems - server controls everything');
+                            console.log('🔗 Connected to server - waiting for server round events');
+                            
+                            // Start local visual system if no server events after 5 seconds
+                            setTimeout(() => {
+                                if (window.liveGameSystem && !window.liveGameSystem.isRunning) {
+                                    console.log('⏰ No server rounds detected - starting local visual display');
+                                    // Restore original function and start local display
+                                    window.liveGameSystem.startNewRound = originalStartNewRound;
+                                    window.liveGameSystem.start();
+                                }
+                            }, 5000);
                         }
-                    }, 1000);
+                    }, 1000); // Shorter delay since we're not waiting for local system
                     
-                                                    // UNIFIED SERVER EVENT HANDLERS - Single source of truth
-                window.crashGameClient.onRoundStart = (data) => {
-                    console.log('🌐 UNIFIED: Server round start event received');
-                    console.log(`🎯 UNIFIED: Round ${data.roundId} crash point: ${data.crashPoint}x`);
+                    // Server events trigger local visual system
+                    window.crashGameClient.onRoundStart = (data) => {
+                        console.log('🌐 Server round start - betting enabled');
+                        console.log(`🎯 Triggering local visual round with crash point: ${data.crashPoint}x`);
+                        
+                        // Trigger local visual system with server crash point
+                        if (window.liveGameSystem && window.liveGameSystem.startServerRound) {
+                            window.liveGameSystem.startServerRound(data.crashPoint);
+                        } else {
+                            console.log('⚠️ Local visual system not ready, starting fallback display');
+                        }
+                    };
                     
-                    // Use ONLY the unified controller
-                    if (window.unifiedGameController) {
-                        window.unifiedGameController.startRound({
-                            roundId: data.roundId,
-                            crashPoint: data.crashPoint
-                        });
-                    }
-                };
-
-                // UNIFIED betting countdown handler
-                window.crashGameClient.onBettingPhase = (data) => {
-                    console.log('⏰ UNIFIED: Server betting phase event received');
-                    
-                    // Use ONLY the unified controller
-                    if (window.unifiedGameController) {
-                        const countdownSeconds = data.countdownSeconds || 5;
-                        window.unifiedGameController.startCountdown(countdownSeconds);
-                    }
-                };
-
-                // UNIFIED crash handler  
-                window.crashGameClient.onRoundCrash = (data) => {
-                    console.log('💥 UNIFIED: Server round crash event received');
-                    console.log(`🎯 UNIFIED: Crash point: ${data.crashPoint}x`);
-                    
-                    // Use ONLY the unified controller
-                    if (window.unifiedGameController) {
-                        window.unifiedGameController.crashRound({
-                            crashPoint: data.crashPoint
-                        });
-                    }
-                };
+                    window.crashGameClient.onRoundCrash = (data) => {
+                        console.log('🌐 Server round crash - processing bets');
+                        console.log(`🎯 Server crash point: ${data.crashPoint}x`);
+                        
+                        // Local visual system should handle its own crash timing
+                        // Server crash is for betting results only
+                        console.log('📊 Local visual system handles crash display, server handles betting');
+                    };
                 } else {
                     console.log('⚠️ CrashGameClient not available, running live game system only');
                 }

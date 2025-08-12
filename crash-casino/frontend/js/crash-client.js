@@ -254,6 +254,11 @@ class CrashGameClient {
                     this.handleBetPlaced(message.data);
                     break;
                     
+                case 'bettingPhase':
+                case 'betting_phase':
+                    this.handleBettingPhase(message.data);
+                    break;
+                    
                 default:
                     console.log(`🔍 Unhandled message type: ${message.type}`);
             }
@@ -266,6 +271,8 @@ class CrashGameClient {
         this.socket.on('multiplierUpdate', (data) => this.handleMultiplierUpdate(data));
         this.socket.on('roundCrashed', (data) => this.handleRoundCrash(data));
         this.socket.on('betPlaced', (data) => this.handleBetPlaced(data));
+        this.socket.on('bettingPhase', (data) => this.handleBettingPhase(data));
+        this.socket.on('betting_phase', (data) => this.handleBettingPhase(data));
         
         this.socket.on('cashOut', (data) => this.handleCashOut(data));
 
@@ -551,6 +558,22 @@ class CrashGameClient {
         if (this.onBetPlaced) {
             this.onBetPlaced(data);
         }
+    }
+
+    /**
+     * 🎰 Handle betting phase started by server
+     */
+    handleBettingPhase(data) {
+        console.log('🎰 Server betting phase started:', data);
+        
+        this.gameState = 'betting';
+        
+        // Notify the betting phase callback
+        if (this.onBettingPhase) {
+            this.onBettingPhase(data);
+        }
+        
+        console.log('✅ Betting phase activated by server');
     }
 
     /**

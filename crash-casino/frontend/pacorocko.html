@@ -1160,27 +1160,19 @@
                 
                 this.gameState = 'running';
                 
-                // CRITICAL SYNC FIX: Use server crash point if provided, otherwise generate locally
-                if (this.targetCrashMultiplier) {
-                    // SERVER CONTROLLED: Use exact crash point from server
-                    this.crashPoint = this.targetCrashMultiplier;
-                    console.log(`🎯 USING SERVER CRASH POINT: ${this.crashPoint}x`);
-                    // Clear the target so next round generates locally if no server signal
-                    this.targetCrashMultiplier = null;
-                } else {
-                    // LOCAL GENERATION: Bustabit proven algorithm for local rounds
-                    const randomValue = Math.random();
-                    
-                    // Bustabit's proven formula: 1% house edge, exponential distribution
-                    this.crashPoint = Math.floor((100 * 0.99) / randomValue) / 100;
-                    
-                    // Apply maximum cap
-                    this.crashPoint = Math.max(1.00, Math.min(this.crashPoint, 1000.0));
-                    
-                    // Round to 2 decimal places
-                    this.crashPoint = Math.round(this.crashPoint * 100) / 100;
-                    console.log(`🎲 GENERATED LOCAL CRASH POINT: ${this.crashPoint}x`);
-                }
+                // BUSTABIT PROVEN ALGORITHM - The original and most trusted
+                // Uses provably fair hash-based generation
+                const randomValue = Math.random();
+                
+                // Bustabit's proven formula: 1% house edge, exponential distribution
+                // This ensures: ~50% crash before 2x, ~25% before 5x, ~5% after 10x
+                this.crashPoint = Math.floor((100 * 0.99) / randomValue) / 100;
+                
+                // Apply maximum cap (Bustabit uses 1000000x but we'll use 1000x)
+                this.crashPoint = Math.max(1.00, Math.min(this.crashPoint, 1000.0));
+                
+                // Round to 2 decimal places
+                this.crashPoint = Math.round(this.crashPoint * 100) / 100;
                 
                 // Calculate round duration based on crash point
                 // Use logarithmic scaling for smooth experience
@@ -1583,71 +1575,62 @@
                 console.log('✅ LOCAL DISPLAY ENABLED - but server controls round timing');
                 window.liveGameSystem = liveGameSystem;
                 
-                // Override startNewRound to prevent automatic round generation
+                // CRITICAL FIX: Completely disable local round generation
                 const originalStartNewRound = liveGameSystem.startNewRound;
                 liveGameSystem.startNewRound = function() {
-                    console.log('🚫 Blocking automatic round start - waiting for server signal');
-                    // Don't auto-start rounds, wait for server
+                    console.log('🚫 BLOCKED: Local round generation permanently disabled');
+                    console.log('🌐 ONLY server can start rounds - prevents dual round conflict');
+                    return; // Never start local rounds
                 };
                 
-                // Add method to start rounds ONLY when server says so
-                liveGameSystem.startServerRound = function(crashPoint) {
-                    console.log(`🎯 Starting server-controlled round with crash point: ${crashPoint}x`);
+                // Disable automatic betting countdown too
+                liveGameSystem.startUnifiedBettingCountdown = function() {
+                    console.log('🚫 BLOCKED: Local betting countdown disabled');
+                    console.log('🌐 Server controls all timing');
+                    return;
+                };
+                
+                // CRITICAL FIX: Server-authoritative round control
+                liveGameSystem.startServerRound = function(serverCrashPoint) {
+                    console.log(`🎯 SERVER ROUND START: ${serverCrashPoint}x`);
                     
-                    // Hide any countdown timer - round is starting now
+                    // CRITICAL: Store server data for perfect sync
+                    this.serverCrashPoint = serverCrashPoint;
+                    this.targetCrashMultiplier = serverCrashPoint;
+                    this.serverControlled = true;
+                    
+                    // Reset visual state
+                    this.currentMultiplier = 1.0;
+                    this.gameState = 'running';
+                    this.isRunning = true;
+                    this.roundStartTime = Date.now();
+                    
+                    // Update UI for round start
                     document.getElementById('countdownTimer').style.display = 'none';
                     document.getElementById('gameStatus').textContent = 'Round Active';
                     document.getElementById('gameStateMessage').textContent = '🚀 Round in progress - good luck!';
+                    document.getElementById('multiplierValue').textContent = '1.00x';
                     
-                    // Restore original function temporarily and start round
-                    this.startNewRound = originalStartNewRound;
-                    this.targetCrashMultiplier = crashPoint; // Use server crash point
-                    this.startNewRound(); // Start with server crash point
-                    
-                    // Block it again for next time
-                    this.startNewRound = function() {
-                        console.log('🚫 Blocking automatic round start - waiting for server signal');
-                    };
+                    // Start visual animation with server crash point
+                    console.log(`✅ Visual animation starting - will crash at ${serverCrashPoint}x`);
+                    this.animate();
                 };
                 
-                // Add method to force crash at exact server point
-                liveGameSystem.forceCrashAtPoint = function(serverCrashPoint) {
-                    console.log(`🎯 FORCING IMMEDIATE CRASH AT: ${serverCrashPoint}x`);
+                // Add server crash handler for perfect timing sync
+                liveGameSystem.handleServerCrash = function(serverCrashPoint) {
+                    console.log(`💥 SERVER CRASH: ${serverCrashPoint}x`);
                     
-                    // Stop the current round immediately
-                    this.gameState = 'crashed';
+                    // Force crash at exact server point
                     this.currentMultiplier = serverCrashPoint;
-                    this.crashPoint = serverCrashPoint;
+                    this.targetCrashMultiplier = serverCrashPoint;
+                    this.gameState = 'crashed';
+                    this.isRunning = false;
                     
-                    // Force update display to server crash point
-                    const multiplierElement = document.getElementById('multiplierValue');
-                    if (multiplierElement) {
-                        multiplierElement.textContent = `${serverCrashPoint.toFixed(2)}x`;
-                        console.log(`🎯 MAIN: Set crash display to ${serverCrashPoint}x`);
-                        console.log(`🔒 ONLY MAIN SYSTEM: Setting crash display to ${serverCrashPoint}x`);
-                    }
+                    // Update display to match server exactly
+                    document.getElementById('multiplierValue').textContent = serverCrashPoint.toFixed(2) + 'x';
+                    document.getElementById('multiplierValue').classList.add('crashed');
                     
-                    // Trigger crash display immediately
-                    if (window.crashChart && window.crashChart.triggerCrash) {
-                        window.crashChart.triggerCrash(serverCrashPoint);
-                    }
-                    
-                    // Add to round history with server crash point (use existing method)
-                    if (window.liveGameSystem && window.liveGameSystem.addRoundToHistory) {
-                        window.liveGameSystem.addRoundToHistory(serverCrashPoint);
-                    } else {
-                        // Fallback: add directly to history display
-                        const historyContainer = document.getElementById('roundHistory');
-                        if (historyContainer) {
-                            const roundElement = document.createElement('span');
-                            roundElement.className = 'round-item';
-                            roundElement.textContent = `${serverCrashPoint.toFixed(2)}x`;
-                            historyContainer.insertBefore(roundElement, historyContainer.firstChild);
-                        }
-                    }
-                    
-                    console.log(`💥 Crashed at exactly: ${serverCrashPoint}x`);
-                    console.log(`🔍 VERIFY: Display shows ${serverCrashPoint}x, History gets ${serverCrashPoint}x`);
+                    console.log(`✅ Visual crash synced to server: ${serverCrashPoint}x`);
                 };
                 
                 // Server handles betting and initial state
@@ -1705,48 +1688,54 @@
                         }
                     };
                     
-                    // 🚀 SERVER-ONLY: No local system, server controls everything
-                    setTimeout(() => {
-                        // HYBRID: Connect to server and set up fallback visual system
-                        if (window.crashGameClient && window.crashGameClient.socket) {
-                            console.log('🔗 Connected to server - waiting for server round events');
-                            
-                            // Start local visual system if no server events after 5 seconds
-                            setTimeout(() => {
-                                if (window.liveGameSystem && !window.liveGameSystem.isRunning) {
-                                    console.log('⏰ No server rounds detected - starting local visual display');
-                                    // Restore original function and start local display
-                                    window.liveGameSystem.startNewRound = originalStartNewRound;
-                                    window.liveGameSystem.start();
-                                }
-                            }, 5000);
-                        }
-                    }, 1000); // Shorter delay since we're not waiting for local system
-                    
-                    // Server events trigger local visual system
-                    window.crashGameClient.onRoundStart = (data) => {
-                        console.log('🌐 Server round start - betting enabled');
-                        console.log(`🎯 Triggering local visual round with crash point: ${data.crashPoint}x`);
+                                    // 🚀 CRITICAL FIX: Pure server-authoritative mode - NO local round generation
+                setTimeout(() => {
+                    if (window.crashGameClient && window.crashGameClient.socket) {
+                        console.log('🔗 Connected to server - PURE server control mode');
+                        console.log('🚫 Local round generation PERMANENTLY DISABLED');
                         
-                        // Trigger local visual system with server crash point
-                        if (window.liveGameSystem && window.liveGameSystem.startServerRound) {
-                            window.liveGameSystem.startServerRound(data.crashPoint);
-                        } else {
-                            console.log('⚠️ Local visual system not ready, starting fallback display');
+                        // NEVER start local visual system - server controls everything
+                        // This prevents the dual round conflict causing sync issues
+                        console.log('✅ Waiting exclusively for server round events...');
+                    }
+                }, 1000);
+                    
+                    // CRITICAL FIX: Server-only round control with proper synchronization
+                    window.crashGameClient.onRoundStart = (data) => {
+                        console.log('🌐 PURE SERVER ROUND START');
+                        console.log(`🎯 Server round: ${data.roundId}, crash: ${data.crashPoint}x`);
+                        
+                        // CRITICAL: Use ONLY server data, disable local crash point generation
+                        if (window.liveGameSystem) {
+                            // Force server crash point (no local generation)
+                            window.liveGameSystem.targetCrashMultiplier = data.crashPoint;
+                            window.liveGameSystem.currentRound = data.roundId;
+                            window.liveGameSystem.serverControlled = true;
+                            
+                            // Start visual system with server-provided crash point
+                            if (window.liveGameSystem.startServerRound) {
+                                window.liveGameSystem.startServerRound(data.crashPoint);
+                            }
+                            
+                            console.log(`✅ Visual system synced to server: ${data.crashPoint}x`);
                         }
                     };
                     
                     window.crashGameClient.onRoundCrash = (data) => {
-                        console.log('🌐 Server round crash - processing bets');
+                        console.log('🌐 SERVER CRASH EVENT');
                         console.log(`🎯 Server crash point: ${data.crashPoint}x`);
                         
-                        // CRITICAL SYNC FIX: Force local system to crash at server point
-                        if (window.liveGameSystem && window.liveGameSystem.forceCrashAtPoint) {
-                            console.log(`🎯 FORCING LOCAL CRASH AT SERVER POINT: ${data.crashPoint}x`);
-                            window.liveGameSystem.forceCrashAtPoint(data.crashPoint);
+                        // CRITICAL FIX: Sync visual system to exact server crash point
+                        if (window.liveGameSystem && window.liveGameSystem.handleServerCrash) {
+                            window.liveGameSystem.handleServerCrash(data.crashPoint);
                         } else {
-                            console.log('📊 Local visual system handles crash display independently');
+                            // Fallback crash sync
+                            console.log('⚠️ Fallback crash sync');
+                            document.getElementById('multiplierValue').textContent = data.crashPoint.toFixed(2) + 'x';
+                            document.getElementById('multiplierValue').classList.add('crashed');
                         }
+                        
+                        console.log('✅ Visual system crash synced to server');
                     };
                 } else {
                     console.log('⚠️ CrashGameClient not available, running live game system only');

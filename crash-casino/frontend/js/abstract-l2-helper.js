@@ -9,10 +9,11 @@ class AbstractL2Helper {
     constructor() {
         this.chainId = 2741; // Abstract mainnet
         this.chainIdHex = '0xab5';
-        this.defaultGasPrice = '0x3B9ACA00'; // 1 gwei in hex
-        this.defaultGasLimit = '0x5208'; // 21000 in hex - proper for simple transfers on Abstract L2
+        this.defaultGasPrice = '0x5F5E100'; // 0.1 gwei in hex (100000000 wei) - MUCH lower for Abstract L2
+        this.defaultGasLimit = '0x5208'; // 21000 in hex - standard ETH transfer
         
-        console.log('🌐 Abstract L2 Helper initialized');
+        console.log('🌐 Abstract L2 Helper initialized with low-cost settings');
+        console.log(`💰 Default gas: ${parseInt(this.defaultGasLimit, 16)} limit, ${parseInt(this.defaultGasPrice, 16) / 1e9} gwei price`);
     }
 
     /**
@@ -74,19 +75,19 @@ class AbstractL2Helper {
         switch (priority) {
             case 'fast':
                 return {
-                    gasPrice: '0x77359400', // 2 gwei
-                    gas: '0x7530' // 30000 - higher for fast priority but reasonable
+                    gasPrice: '0xBEBC200', // 0.2 gwei (200000000 wei)
+                    gas: '0x7530' // 30000 - higher limit for fast
                 };
             case 'urgent':
                 return {
-                    gasPrice: '0xEE6B2800', // 4 gwei
-                    gas: '0x9C40' // 40000 - max for urgent
+                    gasPrice: '0x17D78400', // 0.4 gwei (400000000 wei)
+                    gas: '0xAFC8' // 45000 - highest limit
                 };
             case 'standard':
             default:
                 return {
-                    gasPrice: this.defaultGasPrice, // 1 gwei
-                    gas: this.defaultGasLimit // 21000 - standard ETH transfer
+                    gasPrice: this.defaultGasPrice, // 0.1 gwei
+                    gas: this.defaultGasLimit // 21000 - minimal for simple transfer
                 };
         }
     }

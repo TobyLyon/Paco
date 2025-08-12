@@ -9,6 +9,8 @@ class BetInterface {
         this.betAmount = 0.005; // Realistic default bet amount
         this.isPlacingBet = false;
         this.currentBet = null;
+        this.pendingTransactions = new Map(); // Track pending bets
+        this.activeBets = new Map(); // Track active bets in current round
         
         this.init();
     }
@@ -97,7 +99,7 @@ class BetInterface {
     }
 
     /**
-     * 🎯 Place bet
+     * 🎯 Place bet with comprehensive tracking
      */
     async placeBet() {
         if (!this.validateBetAmount() || this.isPlacingBet) {
@@ -126,27 +128,99 @@ class BetInterface {
             return;
         }
 
+        const betId = `bet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
         this.isPlacingBet = true;
-        this.updatePlaceBetButton('🔄 PLACING...');
+        this.updatePlaceBetButton('🔄 SENDING TX...');
 
         try {
+            // Add to pending transactions immediately for UI feedback
+            this.pendingTransactions.set(betId, {
+                amount: this.betAmount,
+                timestamp: Date.now(),
+                status: 'pending',
+                stage: 'sending'
+            });
+            
+            this.updateActiveBetsDisplay();
+            this.showNotification('🔄 Sending transaction to MetaMask...', 'pending');
+
             // Place bet through crash client
             const success = await window.crashGameClient.placeBet(this.betAmount);
             
             if (success) {
-                this.currentBet = {
+                // Update bet status to confirmed
+                this.pendingTransactions.set(betId, {
                     amount: this.betAmount,
-                    timestamp: Date.now()
-                };
+                    timestamp: Date.now(),
+                    status: 'confirmed',
+                    stage: 'confirmed',
+                    roundId: window.crashGameClient.currentRound
+                });
+                
+                // Move to active bets if we have round info
+                if (window.crashGameClient.currentRound) {
+                    this.activeBets.set(window.crashGameClient.currentRound, {
+                        id: betId,
+                        amount: this.betAmount,
+                        timestamp: Date.now(),
+                        roundId: window.crashGameClient.currentRound,
+                        status: 'active',
+                        multiplier: 1.00
+                    });
+                    
+                    this.currentBet = this.activeBets.get(window.crashGameClient.currentRound);
+                }
                 
                 this.showBetStatus();
-                this.showNotification(`✅ Bet placed: ${this.betAmount.toFixed(4)} ETH`, 'success');
+                this.showNotification(`✅ Bet confirmed: ${this.betAmount.toFixed(4)} ETH`, 'success');
+                this.updateActiveBetsDisplay();
+                
+                // Remove from pending after delay
+                setTimeout(() => {
+                    this.pendingTransactions.delete(betId);
+                    this.updateActiveBetsDisplay();
+                }, 3000);
+                
             } else {
-                this.showNotification('❌ Failed to place bet', 'error');
+                // Update to failed status
+                this.pendingTransactions.set(betId, {
+                    ...this.pendingTransactions.get(betId),
+                    status: 'failed',
+                    stage: 'failed'
+                });
+                
+                this.showNotification('❌ Transaction failed or rejected', 'error');
+                this.updateActiveBetsDisplay();
+                
+                // Remove failed bet after delay
+                setTimeout(() => {
+                    this.pendingTransactions.delete(betId);
+                    this.updateActiveBetsDisplay();
+                }, 5000);
             }
         } catch (error) {
             console.error('❌ Bet placement error:', error);
+            
+            // Update to error status
+            if (this.pendingTransactions.has(betId)) {
+                this.pendingTransactions.set(betId, {
+                    ...this.pendingTransactions.get(betId),
+                    status: 'error',
+                    stage: 'error',
+                    error: error.message
+                });
+            }
+            
             this.showNotification('❌ Error placing bet: ' + error.message, 'error');
+            this.updateActiveBetsDisplay();
+            
+            // Remove failed bet after delay
+            setTimeout(() => {
+                this.pendingTransactions.delete(betId);
+                this.updateActiveBetsDisplay();
+            }, 5000);
+            
         } finally {
             this.isPlacingBet = false;
             this.updatePlaceBetButton();
@@ -326,6 +400,169 @@ class BetInterface {
         this.isPlacingBet = false;
         this.hideBetStatus();
         this.validateBetAmount();
+    }
+
+    /**
+     * 📊 Update active bets display with visual feedback
+     */
+    updateActiveBetsDisplay() {
+        // Find or create the bets display container
+        let betsContainer = document.getElementById('activeBetsContainer');
+        if (!betsContainer) {
+            // Create the container if it doesn't exist
+            const betStatus = document.getElementById('betStatus');
+            if (betStatus) {
+                betsContainer = document.createElement('div');
+                betsContainer.id = 'activeBetsContainer';
+                betsContainer.className = 'active-bets-container';
+                betStatus.appendChild(betsContainer);
+            } else {
+                return; // No place to show the bets
+            }
+        }
+
+        // Clear existing content
+        betsContainer.innerHTML = '';
+
+        // Show pending transactions
+        if (this.pendingTransactions.size > 0) {
+            const pendingSection = document.createElement('div');
+            pendingSection.className = 'pending-bets-section';
+            pendingSection.innerHTML = '<div class="bets-section-title">⏳ Pending Transactions</div>';
+            
+            this.pendingTransactions.forEach((bet, betId) => {
+                const betElement = document.createElement('div');
+                betElement.className = `bet-item pending-bet ${bet.status}`;
+                
+                let statusIcon = '⏳';
+                let statusText = 'Pending';
+                
+                switch (bet.stage) {
+                    case 'sending':
+                        statusIcon = '📤';
+                        statusText = 'Sending to MetaMask...';
+                        break;
+                    case 'confirmed':
+                        statusIcon = '✅';
+                        statusText = 'Transaction Confirmed!';
+                        break;
+                    case 'failed':
+                        statusIcon = '❌';
+                        statusText = 'Transaction Failed';
+                        break;
+                    case 'error':
+                        statusIcon = '🚨';
+                        statusText = 'Transaction Error';
+                        break;
+                }
+                
+                betElement.innerHTML = `
+                    <div class="bet-item-header">
+                        <span class="bet-status-icon">${statusIcon}</span>
+                        <span class="bet-amount">${bet.amount.toFixed(4)} ETH</span>
+                    </div>
+                    <div class="bet-item-status">${statusText}</div>
+                    ${bet.error ? `<div class="bet-item-error">${bet.error}</div>` : ''}
+                `;
+                
+                pendingSection.appendChild(betElement);
+            });
+            
+            betsContainer.appendChild(pendingSection);
+        }
+
+        // Show active bets
+        if (this.activeBets.size > 0) {
+            const activeSection = document.createElement('div');
+            activeSection.className = 'active-bets-section';
+            activeSection.innerHTML = '<div class="bets-section-title">🎯 Active Bets</div>';
+            
+            this.activeBets.forEach((bet, roundId) => {
+                const betElement = document.createElement('div');
+                betElement.className = 'bet-item active-bet';
+                
+                const currentMultiplier = this.getCurrentMultiplier();
+                const potentialWin = (bet.amount * currentMultiplier).toFixed(4);
+                
+                betElement.innerHTML = `
+                    <div class="bet-item-header">
+                        <span class="bet-status-icon">🎯</span>
+                        <span class="bet-amount">${bet.amount.toFixed(4)} ETH</span>
+                    </div>
+                    <div class="bet-item-details">
+                        <div class="bet-multiplier">@ ${currentMultiplier.toFixed(2)}x</div>
+                        <div class="bet-potential-win">Potential: ${potentialWin} ETH</div>
+                    </div>
+                `;
+                
+                activeSection.appendChild(betElement);
+            });
+            
+            betsContainer.appendChild(activeSection);
+        }
+
+        // Show empty state if no bets
+        if (this.pendingTransactions.size === 0 && this.activeBets.size === 0) {
+            betsContainer.innerHTML = `
+                <div class="no-bets-message">
+                    <span class="no-bets-icon">🎲</span>
+                    <div class="no-bets-text">No active bets</div>
+                </div>
+            `;
+        }
+
+        // Update main bet status display
+        const betStatusElement = document.getElementById('betStatus');
+        if (betStatusElement) {
+            if (this.pendingTransactions.size > 0 || this.activeBets.size > 0) {
+                betStatusElement.style.display = 'block';
+            }
+        }
+    }
+
+    /**
+     * 🎯 Get current multiplier for display
+     */
+    getCurrentMultiplier() {
+        // Try to get from the main system's multiplier display
+        const multiplierElement = document.getElementById('multiplier');
+        if (multiplierElement) {
+            const text = multiplierElement.textContent || '1.00x';
+            const match = text.match(/(\d+\.?\d*)x/);
+            if (match) {
+                return parseFloat(match[1]);
+            }
+        }
+        return 1.00;
+    }
+
+    /**
+     * 🏆 Handle round end - update bet results
+     */
+    onRoundEnd(crashPoint) {
+        this.activeBets.forEach((bet, roundId) => {
+            if (bet.multiplier <= crashPoint) {
+                // Bet won
+                const winAmount = bet.amount * bet.multiplier;
+                this.showNotification(`🏆 Won ${winAmount.toFixed(4)} ETH!`, 'success');
+            } else {
+                // Bet lost
+                this.showNotification(`💸 Lost ${bet.amount.toFixed(4)} ETH`, 'error');
+            }
+        });
+
+        // Clear active bets for next round
+        this.activeBets.clear();
+        this.currentBet = null;
+        this.updateActiveBetsDisplay();
+    }
+
+    /**
+     * 🔄 Handle new round start
+     */
+    onRoundStart() {
+        // Clear any old data and prepare for new round
+        this.updateActiveBetsDisplay();
     }
 }
 

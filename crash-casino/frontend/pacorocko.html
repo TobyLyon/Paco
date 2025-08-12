@@ -491,6 +491,137 @@
             font-size: 10px !important;
         }
         
+        /* Active Bets Display Styles */
+        .active-bets-container {
+            margin-top: 8px;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+
+        .bets-section-title {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--restaurant-orange);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            text-align: center;
+        }
+
+        .bet-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            padding: 6px 8px;
+            margin-bottom: 4px;
+            border-left: 3px solid;
+            transition: all 0.2s ease;
+        }
+
+        .bet-item.pending-bet {
+            border-left-color: var(--restaurant-orange);
+            animation: betPulse 2s infinite;
+        }
+
+        .bet-item.confirmed {
+            border-left-color: var(--restaurant-green);
+        }
+
+        .bet-item.failed,
+        .bet-item.error {
+            border-left-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .bet-item.active-bet {
+            border-left-color: var(--restaurant-yellow);
+            background: rgba(251, 191, 36, 0.1);
+        }
+
+        .bet-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2px;
+        }
+
+        .bet-status-icon {
+            font-size: 12px;
+            margin-right: 4px;
+        }
+
+        .bet-amount {
+            font-family: 'Courier New', monospace;
+            font-weight: 700;
+            color: var(--restaurant-yellow);
+            font-size: 11px;
+        }
+
+        .bet-item-status {
+            font-size: 10px;
+            color: var(--restaurant-orange);
+            font-weight: 600;
+        }
+
+        .bet-item-error {
+            font-size: 9px;
+            color: #ef4444;
+            margin-top: 2px;
+            font-style: italic;
+        }
+
+        .bet-item-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 3px;
+        }
+
+        .bet-multiplier {
+            font-size: 10px;
+            color: var(--restaurant-green);
+            font-weight: 700;
+        }
+
+        .bet-potential-win {
+            font-size: 10px;
+            color: var(--restaurant-yellow);
+            font-family: 'Courier New', monospace;
+        }
+
+        .no-bets-message {
+            text-align: center;
+            padding: 12px;
+            opacity: 0.7;
+        }
+
+        .no-bets-icon {
+            font-size: 18px;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .no-bets-text {
+            font-size: 11px;
+            color: var(--restaurant-orange);
+            font-weight: 600;
+        }
+
+        @keyframes betPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        /* Pending and Active Section Spacing */
+        .pending-bets-section {
+            margin-bottom: 8px;
+        }
+
+        .active-bets-section {
+            margin-bottom: 4px;
+        }
+        
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .seed-display {

@@ -1514,6 +1514,10 @@
                             // Listen for server state response ONCE
                             window.crashGameClient.socket.once('gameState', (serverState) => {
                                 console.log('📡 Received server state:', serverState);
+                                console.log(`🔍 Debug sync conditions:`);
+                                console.log(`   isRunning: ${serverState.isRunning}`);
+                                console.log(`   currentMultiplier: ${serverState.currentMultiplier}`);
+                                console.log(`   phase: ${serverState.phase}`);
                                 
                                 // SIMPLIFIED: Check if server has an ACTIVE ROUND (multiplier > 1.0)
                                 const serverHasActiveRound = serverState.isRunning && serverState.currentMultiplier > 1.0;

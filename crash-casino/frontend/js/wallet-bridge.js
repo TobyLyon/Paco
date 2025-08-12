@@ -167,27 +167,59 @@ class WalletBridge {
     }
 
     /**
-     * 💸 Send transaction (compatibility method)
+     * 💸 Send transaction (compatibility method with RPC health checking)
      */
-    async sendTransaction(to, value) {
+    async sendTransaction(to, value, gasConfig = {}) {
         if (!this.isConnected || !this.signer) {
             throw new Error('Wallet not connected');
         }
 
         try {
-                                const tx = {
-                        to: to,
-                        value: ethers.parseEther(value.toString()),
-                        gasLimit: 21000, // Standard ETH transfer
-                    };
+            // Check RPC health before transaction
+            if (window.rpcHealthChecker) {
+                const healthyEndpoint = await window.rpcHealthChecker.findHealthyEndpoint();
+                console.log(`🏥 Using healthy RPC endpoint for transaction: ${healthyEndpoint}`);
+                
+                // If we switched endpoints, we may need to refresh the provider
+                const currentNetwork = await this.provider.getNetwork();
+                if (currentNetwork.chainId !== 2741n) {
+                    console.log('🔄 Network mismatch detected, ensuring Abstract L2...');
+                    await this.ensureAbstractNetwork();
+                }
+            }
 
-            console.log('📤 Sending transaction:', tx);
+            const tx = {
+                to: to,
+                value: ethers.parseEther(value.toString()),
+                gasLimit: gasConfig.gasLimit || 21000, // Use provided or default
+                ...gasConfig
+            };
+
+            console.log('📤 Sending transaction with RPC health check:', tx);
             const txResponse = await this.signer.sendTransaction(tx);
-            console.log('✅ Transaction sent:', txResponse.hash);
+            console.log('✅ Transaction sent successfully:', txResponse.hash);
+            
+            // Reset failed endpoints on successful transaction
+            if (window.rpcHealthChecker) {
+                window.rpcHealthChecker.resetFailedEndpoints();
+                console.log('🏥 RPC endpoints reset after successful transaction');
+            }
             
             return txResponse;
         } catch (error) {
             console.error('❌ Transaction failed:', error);
+            
+            // Record RPC failure if it's an RPC-related error
+            if (window.rpcHealthChecker && (
+                error.message.includes('Internal JSON-RPC error') ||
+                error.code === -32603 ||
+                error.message.includes('network error')
+            )) {
+                console.log('🔴 Recording RPC failure due to transaction error');
+                // Force find new healthy endpoint for next attempt
+                await window.rpcHealthChecker.findHealthyEndpoint();
+            }
+            
             throw error;
         }
     }

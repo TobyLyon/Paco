@@ -52,7 +52,7 @@ class RPCHealthChecker {
     }
 
     /**
-     * 🔄 Find the best working RPC endpoint
+     * 🔄 Find the best working RPC endpoint and switch MetaMask if needed
      */
     async findHealthyEndpoint() {
         if (this.checkInProgress) {
@@ -80,6 +80,10 @@ class RPCHealthChecker {
                 console.log(`🔍 Testing RPC endpoint: ${endpoint}`);
                 if (await this.checkEndpointHealth(endpoint)) {
                     console.log(`✅ Found healthy RPC endpoint: ${endpoint}`);
+                    
+                    // Switch MetaMask to the healthy endpoint
+                    await this.switchMetaMaskRPC(endpoint);
+                    
                     this.currentEndpoint = endpoint;
                     return endpoint;
                 }
@@ -91,10 +95,56 @@ class RPCHealthChecker {
             console.log('⚠️ All RPC endpoints failed, resetting and using original');
             this.failedEndpoints.clear();
             this.currentEndpoint = this.endpoints[0];
+            
+            // Try to switch back to original
+            await this.switchMetaMaskRPC(this.currentEndpoint);
+            
             return this.currentEndpoint;
 
         } finally {
             this.checkInProgress = false;
+        }
+    }
+
+    /**
+     * 🔄 Switch MetaMask RPC endpoint
+     */
+    async switchMetaMaskRPC(newEndpoint) {
+        if (!window.ethereum) {
+            console.log('⚠️ MetaMask not available for RPC switch');
+            return false;
+        }
+
+        try {
+            console.log(`🔄 Switching MetaMask RPC to: ${newEndpoint}`);
+            
+            // Try to switch the network's RPC URL
+            await window.ethereum.request({
+                method: 'wallet_addEthereumChain',
+                params: [{
+                    chainId: '0xab5', // 2741 in hex
+                    chainName: 'Abstract',
+                    nativeCurrency: {
+                        name: 'Ether',
+                        symbol: 'ETH',
+                        decimals: 18
+                    },
+                    rpcUrls: [newEndpoint],
+                    blockExplorerUrls: ['https://abscan.org']
+                }]
+            });
+            
+            console.log(`✅ MetaMask RPC switched to: ${newEndpoint}`);
+            return true;
+            
+        } catch (error) {
+            if (error.code === 4902) {
+                console.log('ℹ️ Abstract network already exists in MetaMask');
+                return true;
+            } else {
+                console.error('❌ Failed to switch MetaMask RPC:', error);
+                return false;
+            }
         }
     }
 

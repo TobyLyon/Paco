@@ -739,6 +739,17 @@ class CrashGameClient {
                     if (error.message.includes('Internal JSON-RPC error')) {
                         console.log('🔍 RPC Error detected - this is likely an Abstract Network issue');
                         
+                        // Trigger RPC health check and endpoint switching before final attempt
+                        if (window.rpcHealthChecker && attempts < maxAttempts) {
+                            console.log('🏥 Triggering RPC health check and endpoint switch...');
+                            try {
+                                await window.rpcHealthChecker.findHealthyEndpoint();
+                                console.log('✅ RPC endpoint switched, will retry transaction...');
+                            } catch (rpcError) {
+                                console.error('❌ RPC health check failed:', rpcError);
+                            }
+                        }
+                        
                         // If it's the last attempt, show user-friendly message
                         if (attempts === maxAttempts) {
                             console.log('💡 Abstract Network RPC Issue - Suggested solutions:');

@@ -1675,13 +1675,20 @@
                             console.log('🔗 Connected to server - server controls all rounds');
                             // NO local round generation - server handles everything
                             
-                            // Start local system as fallback if no server activity within 5 seconds
+                            // Start local system as fallback if no server activity within 10 seconds
                             setTimeout(() => {
                                 if (!window.crashGameClient.isConnected && window.liveGameSystem) {
-                                    console.log('⏰ No server connection after 5s, starting local fallback...');
+                                    console.log('⏰ No server connection after 10s, starting local fallback...');
+                                    // Allow local system to run only if server is truly disconnected
                                     window.liveGameSystem.start();
+                                } else if (window.crashGameClient.isConnected) {
+                                    console.log('🔗 Server connected - ensuring local system does NOT auto-generate rounds');
+                                    // Make sure local system is ready but not generating rounds
+                                    if (window.liveGameSystem && !window.liveGameSystem.isRunning) {
+                                        window.liveGameSystem.start();
+                                    }
                                 }
-                            }, 5000);
+                            }, 10000);
                         }
                     }, 1000);
                     
@@ -1689,6 +1696,16 @@
                     window.crashGameClient.onRoundStart = (data) => {
                         console.log('🌐 Server round start - betting enabled');
                         console.log(`🎯 Triggering local visual round with crash point: ${data.crashPoint}x`);
+                        
+                        // Clear any betting countdown when server round starts
+                        if (window.bettingCountdownInterval) {
+                            clearInterval(window.bettingCountdownInterval);
+                            console.log('⏰ Clearing betting countdown - server round starting');
+                        }
+                        
+                        // Hide countdown timer
+                        const countdownElement = document.getElementById('countdownTimer');
+                        if (countdownElement) countdownElement.style.display = 'none';
                         
                         // Trigger local visual system with server crash point
                         if (window.liveGameSystem && window.liveGameSystem.startServerRound) {
@@ -1717,9 +1734,64 @@
                         console.log('🌐 Server round crash - processing bets');
                         console.log(`🎯 Server crash point: ${data.crashPoint}x`);
                         
-                        // Local visual system should handle its own crash timing
-                        // Server crash is for betting results only
+                        // Start betting countdown after crash
+                        setTimeout(() => {
+                            console.log('🎰 Starting betting countdown for next round...');
+                            window.startBettingCountdown(15); // 15 second betting period
+                        }, 3000); // Wait 3 seconds after crash before starting countdown
+                        
                         console.log('📊 Local visual system handles crash display, server handles betting');
+                    };
+                    
+                    // Add betting countdown function
+                    window.startBettingCountdown = function(seconds) {
+                        console.log(`⏰ Starting ${seconds}s betting countdown`);
+                        
+                        // Clear any existing countdown
+                        if (window.bettingCountdownInterval) {
+                            clearInterval(window.bettingCountdownInterval);
+                        }
+                        
+                        // Update UI to show betting phase
+                        const gameStatusElement = document.getElementById('gameStatus');
+                        const gameStateMessageElement = document.getElementById('gameStateMessage');
+                        const countdownElement = document.getElementById('countdownTimer');
+                        const countdownValue = document.getElementById('countdownValue');
+                        
+                        if (gameStatusElement) gameStatusElement.textContent = 'Place Your Bets';
+                        if (countdownElement) countdownElement.style.display = 'block';
+                        
+                        // Enable betting interface
+                        if (window.betInterface && typeof window.betInterface.onGameStateChange === 'function') {
+                            window.betInterface.onGameStateChange('betting');
+                        }
+                        
+                        let remaining = seconds;
+                        window.bettingCountdownInterval = setInterval(() => {
+                            if (countdownValue) countdownValue.textContent = remaining;
+                            
+                            if (remaining > 0) {
+                                if (gameStateMessageElement) {
+                                    gameStateMessageElement.textContent = `🎰 Next round starting in ${remaining}s - Place your bets!`;
+                                }
+                            } else {
+                                if (gameStateMessageElement) {
+                                    gameStateMessageElement.textContent = '🚀 Round starting soon...';
+                                }
+                                // Disable betting when countdown ends
+                                if (window.betInterface && typeof window.betInterface.onGameStateChange === 'function') {
+                                    window.betInterface.onGameStateChange('pending');
+                                }
+                            }
+                            
+                            remaining--;
+                            
+                            if (remaining < -1) {
+                                clearInterval(window.bettingCountdownInterval);
+                                if (countdownElement) countdownElement.style.display = 'none';
+                                console.log('⏰ Betting countdown completed - waiting for server round');
+                            }
+                        }, 1000);
                     };
                 } else {
                     console.log('⚠️ CrashGameClient not available, running live game system only');

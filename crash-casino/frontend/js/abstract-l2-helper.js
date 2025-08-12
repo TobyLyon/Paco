@@ -1,39 +1,97 @@
 /**
- * 🌐 Abstract L2 Transaction Helper
+ * 🌐 Abstract L2 Transaction Helper (ZK Stack Implementation)
  * 
- * Specialized helper for Abstract L2 transaction format and compatibility
- * Addresses specific Abstract Network requirements that differ from standard Ethereum
+ * Abstract uses a unique ZK Stack architecture with gas refund mechanism
+ * Unlike traditional L1/L2, Abstract has dual-component fees + automatic refunds
+ * 
+ * CRITICAL: Abstract's fee structure is NOT like traditional EVM chains!
+ * - Offchain fee: Fixed ~$0.001 per transaction (ZK proof generation)
+ * - Onchain fee: Variable based on Ethereum L1 gas prices
+ * - Gas refund mechanism: Overpaid amounts automatically refunded by bootloader
  */
 
 class AbstractL2Helper {
     constructor() {
         this.chainId = 2741; // Abstract mainnet
         this.chainIdHex = '0xab5';
-        this.defaultGasPrice = '0x3B9ACA00'; // 1 gwei in hex
-        this.defaultGasLimit = '0x186A0'; // 100000 in hex
         
-        console.log('🌐 Abstract L2 Helper initialized');
+        // ABSTRACT ZK STACK SPECIFIC CONFIGURATION
+        // Users pay upfront, excess is refunded automatically by bootloader
+        this.abstractFeeStructure = {
+            // Fixed offchain component (independent of transaction complexity)
+            offchainFeeUSD: 0.001, // ~$0.001 for ZK proof generation and L2 state storage
+            
+            // Variable onchain component (influenced by Ethereum L1 gas prices)
+            onchainFeeVariable: true, // Depends on L1 gas price for proof verification
+            
+            // Gas refund mechanism (unique to Abstract ZK Stack)
+            hasGasRefund: true, // Bootloader refunds overpaid amounts
+            refundMechanism: 'automatic', // No user action required
+            
+            // ZK Stack specific parameters
+            gasPerPubdataDefault: 50000, // Max gas per byte of pubdata posted to L1
+            batchSealingFactor: true // Fees proportional to how close batch is to being sealed
+        };
+        
+        // Abstract transaction format (ZK Stack specific)
+        this.transactionFormat = {
+            // Standard EVM fields
+            usesGasField: true, // Uses 'gas' not 'gasLimit'
+            usesLegacyFormat: true, // No EIP-1559
+            requiresDataField: true, // Must include 'data' field even if empty
+            
+            // ZK Stack specific fields
+            gasPerPubdataLimit: '0xC350', // 50000 hex - controls L1 data posting cost
+            customAccountLogic: true // All accounts are smart contracts on Abstract
+        };
+        
+        // Recommended gas configuration for Abstract ZK Stack
+        // Note: Users are refunded for overpayment, so we can be generous with gas
+        this.recommendedGas = {
+            gasPrice: '0x3B9ACA00', // 1 gwei - reasonable starting point (will be refunded if overpaid)
+            gasLimit: '0x30D40', // 200k gas - generous limit (excess refunded)
+            gasPerPubdataLimit: '0xC350' // 50k default for pubdata
+        };
+        
+        console.log('🌐 Abstract ZK Stack Helper initialized');
+        console.log('💰 Fee structure: Fixed $0.001 offchain + variable onchain + automatic refunds');
+        console.log('🔄 Gas refund mechanism: Overpaid amounts automatically refunded by bootloader');
     }
 
     /**
-     * 🔧 Format transaction for Abstract L2 compatibility
+     * 🔧 Format transaction for Abstract ZK Stack
+     * 
+     * IMPORTANT: Abstract uses gas refund mechanism - overpayment is automatically refunded!
+     * This means we can be generous with gas limits to ensure transaction success.
      */
     formatTransaction(to, value, gasConfig = {}) {
-        // Abstract L2 requires specific transaction format
+        // Use recommended Abstract ZK Stack configuration
         const transaction = {
             to: to,
             value: this.toHex(value),
-            gasPrice: gasConfig.gasPrice || this.defaultGasPrice,
-            gas: gasConfig.gas || gasConfig.gasLimit || this.defaultGasLimit, // Abstract uses 'gas' not 'gasLimit'
-            data: '0x', // Required empty data field for Abstract L2
+            
+            // ZK Stack gas configuration (overpayment will be refunded)
+            gasPrice: gasConfig.gasPrice || this.recommendedGas.gasPrice,
+            gas: gasConfig.gas || gasConfig.gasLimit || this.recommendedGas.gasLimit,
+            
+            // Required for Abstract ZK Stack
+            data: gasConfig.data || '0x', // Must include data field
+            
+            // ZK Stack specific: controls cost of posting data to L1
+            gas_per_pubdata_limit: gasConfig.gas_per_pubdata_limit || this.recommendedGas.gasPerPubdataLimit
         };
 
-        // Remove any conflicting fields
-        delete transaction.gasLimit; // Abstract L2 uses 'gas'
-        delete transaction.maxFeePerGas; // No EIP-1559
-        delete transaction.maxPriorityFeePerGas; // No EIP-1559
+        // Remove conflicting EIP-1559 fields (Abstract uses legacy format)
+        delete transaction.gasLimit; // Use 'gas' field
+        delete transaction.maxFeePerGas; // Not supported
+        delete transaction.maxPriorityFeePerGas; // Not supported
+        delete transaction.type; // Legacy transaction type
 
-        console.log('🔧 Abstract L2 transaction formatted:', transaction);
+        console.log('🔧 Abstract ZK Stack transaction formatted:', transaction);
+        console.log('💰 Gas: price=' + parseInt(transaction.gasPrice, 16) / 1e9 + ' gwei, limit=' + parseInt(transaction.gas, 16));
+        console.log('📊 Pubdata limit:', parseInt(transaction.gas_per_pubdata_limit, 16));
+        console.log('🔄 Note: Excess gas will be automatically refunded by Abstract bootloader');
+        
         return transaction;
     }
 
@@ -68,27 +126,62 @@ class AbstractL2Helper {
     }
 
     /**
-     * 💰 Calculate Abstract L2 gas configuration
+     * 💰 Get Abstract ZK Stack gas configuration
+     * 
+     * IMPORTANT: Abstract has gas refund mechanism - we use generous limits
+     * Users are automatically refunded for overpayment by the bootloader
      */
-    calculateGasConfig(priority = 'standard') {
-        switch (priority) {
-            case 'fast':
-                return {
-                    gasPrice: '0x77359400', // 2 gwei
-                    gas: '0x249F0' // 150000
-                };
-            case 'urgent':
-                return {
-                    gasPrice: '0xEE6B2800', // 4 gwei
-                    gas: '0x30D40' // 200000
-                };
-            case 'standard':
-            default:
-                return {
-                    gasPrice: this.defaultGasPrice, // 1 gwei
-                    gas: this.defaultGasLimit // 100000
-                };
+    getAbstractGasConfig(urgency = 'standard') {
+        // Abstract ZK Stack recommended configuration
+        // Since excess is refunded, we can be generous to ensure success
+        const baseConfig = {
+            gasPrice: '0x3B9ACA00', // 1 gwei - reasonable for Abstract ZK Stack
+            gas: '0x30D40', // 200k gas - generous (excess refunded)
+            gas_per_pubdata_limit: '0xC350' // 50k default for pubdata
+        };
+
+        // For urgent transactions, we can increase gas price
+        // (still reasonable due to refund mechanism)
+        if (urgency === 'urgent') {
+            baseConfig.gasPrice = '0x77359400'; // 2 gwei for faster processing
+            baseConfig.gas = '0x493E0'; // 300k gas for complex operations
         }
+
+        console.log(`💰 Abstract ZK Stack gas config (${urgency}):`, {
+            gasPrice: parseInt(baseConfig.gasPrice, 16) / 1e9 + ' gwei',
+            gasLimit: parseInt(baseConfig.gas, 16),
+            pubdataLimit: parseInt(baseConfig.gas_per_pubdata_limit, 16),
+            note: 'Excess gas automatically refunded by Abstract bootloader'
+        });
+        
+        return baseConfig;
+    }
+
+    /**
+     * 💵 Estimate Abstract transaction cost
+     * 
+     * Note: Actual cost will be lower due to gas refund mechanism
+     */
+    estimateAbstractCost(gasConfig) {
+        // This is MAXIMUM cost - actual cost will be lower due to refunds
+        const gasPriceGwei = parseInt(gasConfig.gasPrice, 16) / 1e9;
+        const gasLimit = parseInt(gasConfig.gas, 16);
+        const maxGasCostETH = (gasPriceGwei * gasLimit) / 1e9;
+        
+        // Assume ETH price around $3000
+        const ethPriceUSD = 3000;
+        const maxOnchainCostUSD = maxGasCostETH * ethPriceUSD;
+        
+        // Add Abstract's fixed offchain fee
+        const maxTotalCostUSD = this.abstractFeeStructure.offchainFeeUSD + maxOnchainCostUSD;
+        
+        return {
+            maxCostUSD: maxTotalCostUSD,
+            offchainFeeUSD: this.abstractFeeStructure.offchainFeeUSD,
+            maxOnchainCostUSD: maxOnchainCostUSD,
+            note: 'Actual cost will be lower due to automatic gas refunds',
+            refundMechanism: 'Excess gas automatically refunded by Abstract bootloader'
+        };
     }
 
     /**

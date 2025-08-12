@@ -718,31 +718,32 @@ class CrashGameClient {
                     // Abstract Network uses LEGACY transaction format (not EIP-1559)
                     let gasConfig;
                     
-                    switch (attempts) {
-                        case 1:
-                            // First attempt: Abstract L2 optimized transaction
+                    // Use Abstract ZK Stack Helper for proper gas configuration
+                    const urgency = attempts >= 3 ? 'urgent' : 'standard';
+                    
+                    if (window.abstractL2Helper) {
+                        gasConfig = window.abstractL2Helper.getAbstractGasConfig(urgency);
+                        console.log(`📊 Attempt ${attempts}: Using Abstract ZK Stack config (${urgency})`);
+                        console.log('🔄 Note: Excess gas will be automatically refunded by Abstract bootloader');
+                    } else {
+                        // Fallback: Abstract ZK Stack configuration
+                        if (attempts >= 3) {
+                            // Urgent: Higher gas price for faster processing
                             gasConfig = {
-                                gasPrice: '0x3B9ACA00', // 1 gwei in hex for Abstract L2
-                                gas: '0x186A0' // 100000 in hex (Abstract uses 'gas' not 'gasLimit')
+                                gasPrice: '0x77359400', // 2 gwei for urgent transactions
+                                gas: '0x493E0', // 300k gas (excess refunded)
+                                gas_per_pubdata_limit: '0xC350' // 50k pubdata limit
                             };
-                            console.log('📊 Attempt 1: Abstract L2 optimized format');
-                            break;
-                        case 2:
-                            // Second attempt: Higher gas limit for Abstract L2
+                            console.log('📊 Attempt 3+: Abstract ZK Stack urgent mode (overpayment refunded)');
+                        } else {
+                            // Standard: Reasonable gas configuration
                             gasConfig = {
-                                gasPrice: '0x3B9ACA00', // 1 gwei in hex
-                                gas: '0x249F0' // 150000 in hex
+                                gasPrice: '0x3B9ACA00', // 1 gwei - reasonable for Abstract ZK Stack
+                                gas: '0x30D40', // 200k gas (excess refunded)
+                                gas_per_pubdata_limit: '0xC350' // 50k pubdata limit
                             };
-                            console.log('📊 Attempt 2: Abstract L2 with higher gas limit');
-                            break;
-                        case 3:
-                            // Third attempt: Maximum gas for Abstract L2 compatibility
-                            gasConfig = {
-                                gasPrice: '0x77359400', // 2 gwei in hex for reliability
-                                gas: '0x30D40' // 200000 in hex
-                            };
-                            console.log('📊 Attempt 3: Abstract L2 maximum compatibility mode');
-                            break;
+                            console.log('📊 Attempt 1-2: Abstract ZK Stack standard mode (overpayment refunded)');
+                        }
                     }
                     
                     // Streamlined transaction flow for production

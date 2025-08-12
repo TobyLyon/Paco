@@ -232,10 +232,20 @@ class WalletBridge {
                 });
                 console.log('✅ Abstract L2 gas estimation successful:', gasEstimate);
                 
-                // FIXED: Use simple 21k gas for ETH transfers (no buffer needed)
-                // Abstract L2 transfers should cost ~$0.001, not $0.90
-                metaMaskTx.gas = '0x5208'; // 21000 gas - standard ETH transfer
-                console.log(`🔧 Using standard gas limit: 21000 for ETH transfer`);
+                // FIXED: Use Abstract L2 Helper for optimal gas configuration
+                if (window.abstractL2Helper) {
+                    const optimalGas = window.abstractL2Helper.calculateGasConfig('standard', 'simple');
+                    metaMaskTx.gas = optimalGas.gas;
+                    metaMaskTx.gasPrice = optimalGas.gasPrice;
+                    metaMaskTx.gas_per_pubdata_limit = optimalGas.gas_per_pubdata_limit;
+                    console.log('🔧 Using Abstract L2 Helper optimal gas configuration');
+                } else {
+                    // Fallback: Abstract L2 ultra-low cost configuration
+                    metaMaskTx.gas = '0x5208'; // 21000 gas - standard ETH transfer
+                    metaMaskTx.gasPrice = '0x5F5E100'; // 0.1 gwei - Abstract L2 optimized
+                    metaMaskTx.gas_per_pubdata_limit = '0xC350'; // 50000 default
+                    console.log('🔧 Using fallback Abstract L2 ultra-low cost configuration');
+                }
                 
             } catch (gasError) {
                 console.log('⚠️ Gas estimation failed, using default:', gasError.message);

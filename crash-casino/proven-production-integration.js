@@ -9,8 +9,8 @@ const http = require('http');
 const path = require('path');
 const { Server } = require('socket.io');
 
-// Use the proven crash engine
-const ProvenCrashEngine = require('./backend/proven-crash-engine');
+// Use the EXACT reference crash engine (matches working implementation)
+const ReferenceCrashEngine = require('./backend/reference-crash-engine');
 
 // Keep existing wallet and database integrations
 let WalletIntegration = null;
@@ -91,11 +91,11 @@ class ProvenPacoRockoProduction {
                 });
             }
             
-            // Initialize proven crash engine
-            console.log('🎮 Starting proven crash engine...');
-            this.provenEngine = new ProvenCrashEngine(this.io, {
-                bettingPhaseDuration: 6000,  // 6 seconds (proven timing)
-                cashoutPhaseDuration: 3000   // 3 seconds (proven timing)
+            // Initialize REFERENCE crash engine (exact copy from working repo)
+            console.log('🎮 Starting REFERENCE crash engine (exact from working repo)...');
+            this.referenceEngine = new ReferenceCrashEngine(this.io, {
+                bettingPhaseDuration: 6000,  // 6 seconds (exact reference timing)
+                cashoutPhaseDuration: 3000   // 3 seconds (exact reference timing)
             });
             
             // Setup engine event listeners
@@ -121,33 +121,18 @@ class ProvenPacoRockoProduction {
     }
     
     /**
-     * 🎮 Setup proven engine event listeners
+     * 🎮 Setup reference engine event listeners (SIMPLIFIED - engine emits directly)
      */
     setupEngineListeners() {
-        this.provenEngine.on('roundCreated', (round) => {
-            this.gameStats.totalRounds++;
-            console.log(`🎲 Round ${round.id} created - Crash Point: ${round.crashPoint}x`);
-            
-            // Send compatible event for your existing frontend
-            this.io.emit('gameState', {
-                status: 'pending',
-                roundId: round.id,
-                timeUntilStart: 6000
-            });
-        });
-
-        this.provenEngine.on('roundStarted', (data) => {
-            console.log(`🚀 Round ${data.roundId} started`);
-            
-            // Send events compatible with your frontend
-            this.io.emit('roundStarted', {
-                roundId: data.roundId,
-                startTime: data.startTime,
-                crashPoint: data.crashPoint  // For client prediction
-            });
-            
-            this.io.emit('round_started', data); // Snake_case version
-        });
+        // Reference engine emits events directly to socket.io
+        // No need for complex event mapping - it uses the exact same events as working frontend
+        
+        console.log('🎮 Reference engine emits events directly (no mapping needed)');
+        console.log('📡 Events: start_betting_phase, start_multiplier_count, stop_multiplier_count');
+        
+        // Just track stats
+        this.gameStats.totalRounds = 0; // Engine will increment this via events
+    }
 
         this.provenEngine.on('multiplierUpdate', (data) => {
             // Send real-time multiplier updates

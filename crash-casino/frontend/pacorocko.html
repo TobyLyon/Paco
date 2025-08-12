@@ -1131,9 +1131,8 @@
                 
                 this.gameState = 'betting';
                 console.log('🎰 Local game entering BETTING phase');
-                let countdown = 15; // Extended to 15 seconds for MetaMask approval
                 
-                // Reset multiplier display
+                // Reset multiplier display only - no countdown timer
                 const multiplierElement = document.getElementById('multiplierValue');
                 if (multiplierElement) {
                     console.log(`🔍 BEFORE reset: multiplier shows "${multiplierElement.textContent}"`);
@@ -1142,31 +1141,15 @@
                     console.log(`🔄 AFTER reset: set to "${multiplierElement.textContent}"`);
                 }
                 
-                // Show unified countdown UI
-                document.getElementById('gameStatus').textContent = 'Place Your Bets';
-                document.getElementById('countdownTimer').style.display = 'block';
-                document.getElementById('countdownValue').textContent = countdown;
-                document.getElementById('gameStateMessage').textContent = `🎰 Next round starting in ${countdown}s - Place your bets now!`;
+                // DON'T create countdown timer - let server control it
+                console.log('🚫 Local countdown DISABLED - server controls timing');
+                console.log('⏰ Waiting for server round start event...');
                 
-                console.log('💰 Starting extended 15-second betting countdown for MetaMask approval...');
+                // Set initial state but don't start countdown
+                document.getElementById('gameStatus').textContent = 'Waiting for Server';
+                document.getElementById('gameStateMessage').textContent = '🌐 Waiting for server round...';
                 
-                this.countdownInterval = setInterval(() => {
-                    countdown--;
-                    document.getElementById('countdownValue').textContent = countdown;
-                    
-                    if (countdown > 0) {
-                        document.getElementById('gameStateMessage').textContent = `🎰 Next round starting in ${countdown}s - Place your bets now!`;
-                    } else {
-                        document.getElementById('gameStateMessage').textContent = `🚀 Round starting...`;
-                    }
-                    
-                    if (countdown <= 0) {
-                        clearInterval(this.countdownInterval);
-                        this.countdownInterval = null;
-                        document.getElementById('countdownTimer').style.display = 'none';
-                        this.startNewRound();
-                    }
-                }, 1000);
+                // NO countdown interval - server will trigger startNewRound via events
             },
             
             async startNewRound() {
@@ -1599,10 +1582,17 @@
                 // Add method to start rounds ONLY when server says so
                 liveGameSystem.startServerRound = function(crashPoint) {
                     console.log(`🎯 Starting server-controlled round with crash point: ${crashPoint}x`);
-                    // Restore original function temporarily
+                    
+                    // Hide any countdown timer - round is starting now
+                    document.getElementById('countdownTimer').style.display = 'none';
+                    document.getElementById('gameStatus').textContent = 'Round Active';
+                    document.getElementById('gameStateMessage').textContent = '🚀 Round in progress - good luck!';
+                    
+                    // Restore original function temporarily and start round
                     this.startNewRound = originalStartNewRound;
                     this.targetCrashMultiplier = crashPoint; // Use server crash point
                     this.startNewRound(); // Start with server crash point
+                    
                     // Block it again for next time
                     this.startNewRound = function() {
                         console.log('🚫 Blocking automatic round start - waiting for server signal');

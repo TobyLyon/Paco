@@ -202,42 +202,12 @@ class WalletBridge {
 
             console.log('📤 Sending transaction with RPC health check:', tx);
             
-            // Run comprehensive Abstract Network debugging
-            await this.testAbstractRPCCapabilities();
+            // Skip comprehensive debugging to avoid transaction interference
+            console.log('🚀 Streamlined transaction flow - skipping diagnostics...');
             
-            // DIAGNOSTIC: Test different transaction methods for Abstract Network
-            console.log('🔍 DIAGNOSTIC: Testing Abstract Network transaction capabilities...');
-            
-            // Method 1: Direct provider request (raw RPC)
-            let txResponse;
-            try {
-                console.log('📡 Testing Method 1: Direct RPC eth_sendTransaction...');
-                const rawTx = {
-                    from: await this.signer.getAddress(),
-                    to: tx.to,
-                    value: '0x' + BigInt(tx.value).toString(16),
-                    gas: '0x' + BigInt(tx.gasLimit).toString(16),
-                    gasPrice: '0x' + BigInt(tx.gasPrice).toString(16)
-                };
-                console.log('📡 Raw transaction object:', rawTx);
-                
-                const rawResult = await this.provider.send('eth_sendTransaction', [rawTx]);
-                console.log('✅ Method 1 SUCCESS - Raw RPC worked:', rawResult);
-                
-                // Return a transaction-like object
-                txResponse = {
-                    hash: rawResult,
-                    wait: async () => {
-                        return await this.provider.waitForTransaction(rawResult);
-                    }
-                };
-            } catch (rawError) {
-                console.log('❌ Method 1 FAILED - Raw RPC failed:', rawError.message);
-                
-                // Method 2: Standard signer (current method)
-                console.log('📡 Testing Method 2: Standard ethers signer...');
-                txResponse = await this.signer.sendTransaction(tx);
-            }
+            // Use standard ethers.js transaction method for reliability
+            console.log('🔗 Sending transaction via ethers.js signer...');
+            const txResponse = await this.signer.sendTransaction(tx);
             
             console.log('✅ Transaction sent successfully:', txResponse.hash);
             
@@ -1097,6 +1067,7 @@ class WalletBridge {
         try {
             if (this.signer && await this.signer.getAddress()) {
                 const testTx = {
+                    from: await this.signer.getAddress(), // Required for estimateGas
                     to: await this.signer.getAddress(), // Send to self
                     value: '0x1', // 1 wei
                     data: '0x'

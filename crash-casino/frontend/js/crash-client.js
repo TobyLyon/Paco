@@ -708,12 +708,12 @@ class CrashGameClient {
                             break;
                     }
                     
-                    // Debug current network state
+                    // Streamlined transaction flow for production
                     if (window.ethereum) {
-                        console.log('🔍 ABSTRACT NETWORK TRANSACTION DEBUG - Running comprehensive tests...');
+                        console.log('🚀 Preparing bet transaction for Abstract Network...');
                         
-                        // First, let's see what RPC endpoint MetaMask is actually using
-                        console.log('🔍 MetaMask RPC endpoint check...');
+                        // Quick verification before transaction
+                        console.log('🔍 Quick wallet check...');
                         console.log('🌐 window.ethereum.selectedAddress:', window.ethereum.selectedAddress);
                         console.log('🌐 window.ethereum.chainId:', window.ethereum.chainId);
                         console.log('🌐 window.ethereum.networkVersion:', window.ethereum.networkVersion);
@@ -727,18 +727,9 @@ class CrashGameClient {
                         let balanceEth;
                         
                         try {
-                            console.log('🧪 Step 1: Testing eth_chainId...');
+                            // Quick chain verification only
                             chainId = await window.ethereum.request({ method: 'eth_chainId' });
-                            console.log(`✅ eth_chainId SUCCESS: ${chainId}`);
-                            
-                            console.log('🧪 Step 2: Testing eth_getBalance...');
-                            const balance = await window.ethereum.request({ 
-                                method: 'eth_getBalance', 
-                                params: [this.playerAddress, 'latest'] 
-                            });
-                            balanceEth = parseInt(balance, 16) / 1e18;
-                            console.log(`✅ eth_getBalance SUCCESS: ${balanceEth.toFixed(6)} ETH`);
-                            console.log(`🌐 Network: ${chainId}, Balance: ${balanceEth.toFixed(6)} ETH`);
+                            console.log(`✅ Chain verified: ${chainId}`);
                         } catch (basicError) {
                             console.log(`🚨 CRITICAL: Basic RPC call failed: ${basicError.message}`);
                             console.log(`🚨 Error code: ${basicError.code}`);
@@ -747,36 +738,8 @@ class CrashGameClient {
                             throw basicError; // Re-throw to stop transaction
                         }
                         
-                        // Test RPC capabilities before transaction
-                        console.log('🧪 Testing Abstract Network RPC capabilities...');
-                        try {
-                            const gasPrice = await window.ethereum.request({ method: 'eth_gasPrice' });
-                            console.log(`✅ eth_gasPrice: ${gasPrice}`);
-                            
-                            const blockNumber = await window.ethereum.request({ method: 'eth_blockNumber' });
-                            console.log(`✅ eth_blockNumber: ${blockNumber}`);
-                            
-                            // Test gas estimation with minimal transaction
-                            const testTx = {
-                                from: this.playerAddress,
-                                to: this.playerAddress,
-                                value: '0x1', // 1 wei
-                                data: '0x'
-                            };
-                            console.log('🧪 Testing eth_estimateGas with minimal transaction...');
-                            const gasEstimate = await window.ethereum.request({ 
-                                method: 'eth_estimateGas', 
-                                params: [testTx] 
-                            });
-                            console.log(`✅ eth_estimateGas works: ${gasEstimate}`);
-                            
-                            // Skip test transaction - we know eth_sendTransaction works now
-                            console.log('🧪 Skipping test transaction - proceeding directly to main bet');
-                            console.log('✅ Abstract Network RPC debugging complete - all basic calls work');
-                            
-                        } catch (testError) {
-                            console.log(`❌ RPC testing failed: ${testError.message}`);
-                        }
+                        // Skip all RPC testing - proceed directly to transaction
+                        console.log('🚀 Skipping RPC diagnostics - proceeding to transaction...');
                         
                         // Check if we're on Abstract mainnet
                         if (chainId !== '0xab5') {
@@ -784,12 +747,7 @@ class CrashGameClient {
                             throw new Error('Please switch to Abstract mainnet (Chain ID: 0xab5)');
                         }
                         
-                        // Check if balance is sufficient for bet + gas
-                        const betAmountEth = parseInt(amount.toString(), 16) / 1e18;
-                        const estimatedGasEth = 0.001; // Conservative estimate
-                        if (balanceEth < (betAmountEth + estimatedGasEth)) {
-                            throw new Error(`Insufficient balance. Need ${(betAmountEth + estimatedGasEth).toFixed(6)} ETH, have ${balanceEth.toFixed(6)} ETH`);
-                        }
+                        // Balance check will be handled by MetaMask during transaction
                     }
                     
                     // Final debug before main transaction

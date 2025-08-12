@@ -76,7 +76,8 @@ class ProvenCrashEngine extends EventEmitter {
                 this.betting_phase = false;
                 this.game_phase = true;
                 
-                // Start of game: clients should begin client-driven display (no per-tick server stream)
+                // Start the multiplier count
+                this.io.emit('start_multiplier_count');
                 this.emit('roundStarted', {
                     roundId: this.current_round_id,
                     startTime: Date.now(),
@@ -93,7 +94,7 @@ class ProvenCrashEngine extends EventEmitter {
             
             // Check if we've reached the crash point (main logic runs every second)
             if (current_multiplier >= this.game_crash_value) {
-                // End of game: emit only crash event; clients stop local display
+                this.io.emit('stop_multiplier_count', this.game_crash_value.toFixed(2));
                 this.emit('roundCrashed', {
                     roundId: this.current_round_id,
                     crashPoint: this.game_crash_value,

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 Unified Sync Test - PacoRocko</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1a1a1a;
+            color: #fff;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .game-display {
+            background: #2a2a2a;
+            border: 2px solid #FFD700;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .multiplier {
+            font-size: 4em;
+            font-weight: bold;
+            color: #00ff00;
+            margin: 20px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .multiplier.crashed {
+            color: #ff4444;
+            animation: crashFlash 0.5s;
+        }
+        @keyframes crashFlash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        .game-status {
+            font-size: 1.5em;
+            margin: 10px 0;
+            color: #FFD700;
+        }
+        .game-message {
+            font-size: 1em;
+            margin: 10px 0;
+            color: #ccc;
+        }
+        .controls {
+            background: #333;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .input-group {
+            margin: 15px 0;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #FFD700;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #555;
+            border-radius: 5px;
+            background: #2a2a2a;
+            color: #fff;
+            font-size: 1em;
+        }
+        .btn {
+            background: #FFD700;
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            margin: 5px;
+            min-width: 120px;
+        }
+        .btn:hover {
+            background: #FFA500;
+        }
+        .btn:disabled {
+            background: #666;
+            color: #aaa;
+            cursor: not-allowed;
+        }
+        .connection-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .connected { background: #4CAF50; }
+        .disconnected { background: #f44336; }
+        .logs {
+            background: #000;
+            border: 1px solid #333;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+            height: 200px;
+            overflow-y: scroll;
+            font-size: 0.9em;
+        }
+        .log-entry {
+            margin: 2px 0;
+            padding: 2px 0;
+        }
+        .log-server { color: #4CAF50; }
+        .log-client { color: #2196F3; }
+        .log-error { color: #f44336; }
+        .log-warning { color: #FF9800; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Unified Sync Test - PacoRocko</h1>
+        <p>Testing the perfect sync implementation based on proven reference architecture</p>
+        
+        <div class="connection-status" id="connectionStatus">Connecting...</div>
+        
+        <div class="game-display">
+            <div class="multiplier" id="multiplierValue">1.00x</div>
+            <div class="game-status" id="gameStatus">Connecting...</div>
+            <div class="game-message" id="gameStateMessage">Initializing unified sync client...</div>
+        </div>
+        
+        <div class="controls">
+            <h3>🎮 Game Controls</h3>
+            <div class="input-group">
+                <label for="betAmount">Bet Amount (ETH):</label>
+                <input type="number" id="betAmount" value="0.01" step="0.001" min="0.001">
+            </div>
+            <div class="input-group">
+                <label for="payoutMultiplier">Auto Cashout Multiplier:</label>
+                <input type="number" id="payoutMultiplier" value="2.0" step="0.1" min="1.1">
+            </div>
+            <div>
+                <button class="btn" id="betButton" onclick="placeBet()" disabled>Place Bet</button>
+                <button class="btn" id="cashoutButton" onclick="cashOut()" disabled>Cash Out</button>
+                <button class="btn" onclick="reconnect()">Reconnect</button>
+            </div>
+        </div>
+        
+        <div class="logs">
+            <h4>📊 Event Logs (Server-Client Sync)</h4>
+            <div id="logContainer"></div>
+        </div>
+    </div>
+
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    
+    <!-- Unified Crash Client -->
+    <script src="js/unified-crash-client.js"></script>
+    
+    <script>
+        // Global variables
+        let crashClient = null;
+        let currentPhase = 'waiting';
+        let hasActiveBet = false;
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeUnifiedClient();
+        });
+        
+        /**
+         * 🚀 Initialize unified crash client
+         */
+        function initializeUnifiedClient() {
+            log('🚀 Initializing unified crash client...', 'client');
+            
+            crashClient = new UnifiedCrashClient();
+            
+            // Setup event handlers
+            crashClient.onBettingStart = handleBettingStart;
+            crashClient.onRoundStart = handleRoundStart;
+            crashClient.onRoundCrash = handleRoundCrash;
+            crashClient.onGameStateUpdate = handleGameStateUpdate;
+            
+            // Connect to server
+            const serverUrl = 'https://paco-x57j.onrender.com'; // Production server
+            crashClient.connect(serverUrl);
+            
+            // Update connection status
+            updateConnectionStatus();
+            
+            log('✅ Unified crash client initialized', 'client');
+        }
+        
+        /**
+         * 🎲 Handle betting phase start
+         */
+        function handleBettingStart() {
+            log('🎲 Betting phase started - 6 second countdown', 'server');
+            currentPhase = 'betting';
+            updateButtons();
+        }
+        
+        /**
+         * 🚀 Handle round start
+         */
+        function handleRoundStart(data) {
+            log(`🚀 Round ${data.roundId} started - multiplier climbing`, 'server');
+            currentPhase = 'game';
+            updateButtons();
+        }
+        
+        /**
+         * 💥 Handle round crash
+         */
+        function handleRoundCrash(data) {
+            log(`💥 Round crashed at ${data.crashValue.toFixed(2)}x`, 'server');
+            currentPhase = 'crashed';
+            hasActiveBet = false;
+            updateButtons();
+        }
+        
+        /**
+         * 📊 Handle game state update
+         */
+        function handleGameStateUpdate() {
+            log('📊 Game state update received from server', 'server');
+            updateConnectionStatus();
+        }
+        
+        /**
+         * 💰 Place a bet
+         */
+        function placeBet() {
+            if (!crashClient || !crashClient.isConnected) {
+                log('❌ Cannot bet: Not connected to server', 'error');
+                return;
+            }
+            
+            if (currentPhase !== 'betting') {
+                log('❌ Cannot bet: Not in betting phase', 'error');
+                return;
+            }
+            
+            const betAmount = parseFloat(document.getElementById('betAmount').value);
+            const payoutMultiplier = parseFloat(document.getElementById('payoutMultiplier').value);
+            
+            if (betAmount <= 0 || payoutMultiplier < 1.1) {
+                log('❌ Invalid bet parameters', 'error');
+                return;
+            }
+            
+            try {
+                crashClient.placeBet(betAmount, payoutMultiplier);
+                hasActiveBet = true;
+                updateButtons();
+                log(`💰 Bet placed: ${betAmount} ETH @ ${payoutMultiplier}x`, 'client');
+            } catch (error) {
+                log(`❌ Bet failed: ${error.message}`, 'error');
+            }
+        }
+        
+        /**
+         * 🏃 Cash out
+         */
+        function cashOut() {
+            if (!crashClient || !crashClient.isConnected) {
+                log('❌ Cannot cash out: Not connected to server', 'error');
+                return;
+            }
+            
+            if (currentPhase !== 'game' || !hasActiveBet) {
+                log('❌ Cannot cash out: No active bet or not in game phase', 'error');
+                return;
+            }
+            
+            try {
+                const state = crashClient.getCurrentState();
+                crashClient.cashOut();
+                hasActiveBet = false;
+                updateButtons();
+                log(`🏃 Cashed out at ${state.multiplier.toFixed(2)}x`, 'client');
+            } catch (error) {
+                log(`❌ Cashout failed: ${error.message}`, 'error');
+            }
+        }
+        
+        /**
+         * 🔄 Reconnect to server
+         */
+        function reconnect() {
+            log('🔄 Reconnecting to server...', 'client');
+            
+            if (crashClient) {
+                crashClient.disconnect();
+            }
+            
+            setTimeout(() => {
+                initializeUnifiedClient();
+            }, 1000);
+        }
+        
+        /**
+         * 🔄 Update button states
+         */
+        function updateButtons() {
+            const betButton = document.getElementById('betButton');
+            const cashoutButton = document.getElementById('cashoutButton');
+            
+            // Bet button: enabled only during betting phase and no active bet
+            betButton.disabled = !(currentPhase === 'betting' && !hasActiveBet && crashClient && crashClient.isConnected);
+            
+            // Cashout button: enabled only during game phase with active bet
+            cashoutButton.disabled = !(currentPhase === 'game' && hasActiveBet && crashClient && crashClient.isConnected);
+            
+            // Update button text based on state
+            if (hasActiveBet && currentPhase === 'game') {
+                const state = crashClient ? crashClient.getCurrentState() : { multiplier: 1.0 };
+                cashoutButton.textContent = `Cash Out (${state.multiplier.toFixed(2)}x)`;
+            } else {
+                cashoutButton.textContent = 'Cash Out';
+            }
+        }
+        
+        /**
+         * 📡 Update connection status
+         */
+        function updateConnectionStatus() {
+            const statusElement = document.getElementById('connectionStatus');
+            
+            if (crashClient && crashClient.isConnected) {
+                statusElement.textContent = 'Connected';
+                statusElement.className = 'connection-status connected';
+            } else {
+                statusElement.textContent = 'Disconnected';
+                statusElement.className = 'connection-status disconnected';
+            }
+            
+            updateButtons();
+        }
+        
+        /**
+         * 📝 Log events
+         */
+        function log(message, type = 'info') {
+            const logContainer = document.getElementById('logContainer');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            
+            // Keep only last 50 entries
+            while (logContainer.children.length > 50) {
+                logContainer.removeChild(logContainer.firstChild);
+            }
+            
+            // Also log to console
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+        
+        // Update buttons every second while game is running
+        setInterval(updateButtons, 1000);
+        
+        // Update connection status every 5 seconds
+        setInterval(updateConnectionStatus, 5000);
+    </script>
+</body>
+</html>

@@ -225,7 +225,44 @@ class CrashGameClient {
             this.updateConnectionStatus(false);
         });
 
-        // NOTE: Removed generic 'message' multiplexer to avoid duplicate handling.
+        // Handle compiled server message format (generic 'message' event with type field)
+        this.socket.on('message', (message) => {
+            // Reduce console spam - only log important events
+            if (message.type !== 'multiplierUpdate') {
+                console.log(`📨 Server message received:`, message.type, message.data);
+            }
+            
+            // Route based on message type
+            switch (message.type) {
+                case 'gameState':
+                    this.handleGameState(message.data);
+                    break;
+                    
+                case 'roundStarted':
+                    this.handleRoundStart(message.data);
+                    break;
+                    
+                case 'multiplierUpdate':
+                    this.handleMultiplierUpdate(message.data);
+                    break;
+                    
+                case 'roundCrashed':
+                    this.handleRoundCrash(message.data);
+                    break;
+                    
+                case 'betPlaced':
+                    this.handleBetPlaced(message.data);
+                    break;
+                    
+                case 'bettingPhase':
+                case 'betting_phase':
+                    this.handleBettingPhase(message.data);
+                    break;
+                    
+                default:
+                    console.log(`🔍 Unhandled message type: ${message.type}`);
+            }
+        });
 
         // PRODUCTION FIX: Use only one event listener per event type to prevent duplicates
         // Server should emit consistent event names (camelCase preferred)
@@ -235,6 +272,7 @@ class CrashGameClient {
         this.socket.on('roundCrashed', (data) => this.handleRoundCrash(data));
         this.socket.on('betPlaced', (data) => this.handleBetPlaced(data));
         this.socket.on('bettingPhase', (data) => this.handleBettingPhase(data));
+        this.socket.on('betting_phase', (data) => this.handleBettingPhase(data));
         
         this.socket.on('cashOut', (data) => this.handleCashOut(data));
 
@@ -325,16 +363,12 @@ class CrashGameClient {
      * 🎮 Handle game state updates
      */
     handleGameState(data) {
-        // Support both legacy and enhanced payloads (prefer standard 'phase')
-        const phase = data.phase || data.status || data.currentPhase || 'waiting';
+        // Support both legacy and enhanced payloads
+        const phase = data.status || data.currentPhase || 'waiting';
         
         // Map backend phases to frontend states
         if (phase === 'betting') {
             this.gameState = 'betting';  // Accepting bets
-            // Server-driven countdown, if provided
-            if (typeof data.timeUntilStart === 'number' && data.timeUntilStart > 0) {
-                this.startServerCountdown(Math.ceil(data.timeUntilStart / 1000));
-            }
         } else if (phase === 'waiting') {
             this.gameState = 'pending';  // Between rounds
         } else if (phase === 'running' || phase === 'flying') {
@@ -350,7 +384,26 @@ class CrashGameClient {
         
         console.log(`🎮 Game state updated: ${phase} → ${this.gameState}`);
         
-        // Removed local gentle sync to avoid competing sources of truth
+        // 🔄 SAFE SYNC: Only sync if local system is stable and there's a big difference
+        setTimeout(() => {
+            if (data.isRunning && data.currentMultiplier > 2.0 && window.liveGameSystem && window.liveGameSystem.isRunning) {
+                const localMultiplier = window.liveGameSystem.currentMultiplier || 1.0;
+                const serverMultiplier = data.currentMultiplier;
+                const difference = Math.abs(serverMultiplier - localMultiplier);
+                
+                // Only sync if there's a significant difference (>1.5x gap) to avoid constant adjustments
+                if (difference > 1.5) {
+                    console.log(`🔄 SAFE SYNC: Major difference (local: ${localMultiplier.toFixed(2)}x, server: ${serverMultiplier.toFixed(2)}x)`);
+                    
+                    // Gentle sync - don't force, just suggest
+                    if (window.liveGameSystem.updateMultiplierDisplay) {
+                        window.liveGameSystem.currentMultiplier = serverMultiplier;
+                        window.liveGameSystem.updateMultiplierDisplay(serverMultiplier);
+                        console.log(`✅ Gentle sync to ${serverMultiplier.toFixed(2)}x`);
+                    }
+                }
+            }
+        }, 1000); // Wait 1 second to ensure local system is stable
         
         // Update UI
         const roundIdElement = document.getElementById('currentRoundId');
@@ -406,10 +459,7 @@ class CrashGameClient {
             this.onRoundStart(data);
         }
         
-        // Client-driven smooth display, anchored to server start and crashPoint
-        this.startClientDrivenGameplay();
-
-        console.log('🎯 Server round start processed - starting client-driven smooth display');
+        console.log('🎯 Server round start processed - UI updated for running state');
     }
 
     /**
@@ -427,10 +477,23 @@ class CrashGameClient {
 
         // In smooth interpolation mode, let the animation loop handle updates
         if (this.interpolationActive) {
+            // Only log occasionally to reduce console spam
+            if (data.multiplier % 1 < 0.1 || data.multiplier > 5) {
+                console.log(`📡 Server Multiplier: ${data.multiplier.toFixed(2)}x (interpolating)`);
+            }
             return;
         }
         
-        // Fallback: Do not directly drive visuals here; client loop already runs
+        // Fallback: Direct update if interpolation isn't active
+        if (data.multiplier >= 1.0) {
+            const timeElapsed = (Date.now() - this.roundStartTime) / 1000;
+            this.updateVisualSystems(data.multiplier, timeElapsed);
+            
+            // Only log occasionally to reduce console spam
+            if (data.multiplier % 1 < 0.1 || data.multiplier > 5) {
+                console.log(`📡 Server Multiplier: ${data.multiplier.toFixed(2)}x (direct)`);
+            }
+        }
         
         // Always update potential winnings even if display is disabled
         if (this.playerBet && !this.playerBet.cashedOut) {
@@ -990,11 +1053,7 @@ class CrashGameClient {
         }
         
         // Start countdown for betting phase
-        // Defer to server to send timeUntilStart; don't start arbitrary local countdown
-        const countdownFromServer = typeof this.timeUntilStart === 'number' ? this.timeUntilStart : null;
-        if (countdownFromServer && countdownFromServer > 0) {
-            this.startServerCountdown(Math.ceil(countdownFromServer / 1000));
-        }
+        this.startCountdown(15); // 15 second countdown for betting
     }
 
     /**
@@ -1016,15 +1075,12 @@ class CrashGameClient {
         const interval = setInterval(() => {
             if (countdownValue) countdownValue.textContent = remaining;
             
-            const msgEl = document.getElementById('gameStateMessage');
-            if (msgEl) {
-                if (remaining > 5) {
-                    msgEl.textContent = `🎰 Place your bets! Round starts in ${remaining}s`;
-                } else if (remaining > 0) {
-                    msgEl.textContent = `🚀 Round starting in ${remaining}s - Last chance!`;
-                } else {
-                    msgEl.textContent = `🚀 Round starting now...`;
-                }
+            if (remaining > 5) {
+                document.getElementById('gameStateMessage').textContent = `🎰 Place your bets! Round starts in ${remaining}s`;
+            } else if (remaining > 0) {
+                document.getElementById('gameStateMessage').textContent = `🚀 Round starting in ${remaining}s - Last chance!`;
+            } else {
+                document.getElementById('gameStateMessage').textContent = `🚀 Round starting now...`;
             }
             
             remaining--;

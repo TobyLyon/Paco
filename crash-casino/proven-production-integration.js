@@ -9,8 +9,8 @@ const http = require('http');
 const path = require('path');
 const { Server } = require('socket.io');
 
-// Use the EXACT reference crash engine (matches working implementation)
-const ReferenceCrashEngine = require('./backend/reference-crash-engine');
+// Use the proven crash engine
+const ProvenCrashEngine = require('./backend/proven-crash-engine');
 
 // Keep existing wallet and database integrations
 let WalletIntegration = null;
@@ -91,11 +91,11 @@ class ProvenPacoRockoProduction {
                 });
             }
             
-            // Initialize REFERENCE crash engine (exact copy from working repo)
-            console.log('🎮 Starting REFERENCE crash engine (exact from working repo)...');
-            this.referenceEngine = new ReferenceCrashEngine(this.io, {
-                bettingPhaseDuration: 6000,  // 6 seconds (exact reference timing)
-                cashoutPhaseDuration: 3000   // 3 seconds (exact reference timing)
+            // Initialize proven crash engine
+            console.log('🎮 Starting proven crash engine...');
+            this.provenEngine = new ProvenCrashEngine(this.io, {
+                bettingPhaseDuration: 6000,  // 6 seconds (proven timing)
+                cashoutPhaseDuration: 3000   // 3 seconds (proven timing)
             });
             
             // Setup engine event listeners
@@ -121,18 +121,46 @@ class ProvenPacoRockoProduction {
     }
     
     /**
-     * 🎮 Setup reference engine event listeners (SIMPLIFIED - engine emits directly)
+     * 🎮 Setup proven engine event listeners
      */
     setupEngineListeners() {
-        // Reference engine emits events directly to socket.io
-        // No need for complex event mapping - it uses the exact same events as working frontend
-        
-        console.log('🎮 Reference engine emits events directly (no mapping needed)');
-        console.log('📡 Events: start_betting_phase, start_multiplier_count, stop_multiplier_count');
-        
-        // Just track stats
-        this.gameStats.totalRounds = 0; // Engine will increment this via events
-    }
+        this.provenEngine.on('roundCreated', (round) => {
+            this.gameStats.totalRounds++;
+            console.log(`🎲 Round ${round.id} created - Crash Point: ${round.crashPoint}x`);
+            
+            // REFERENCE COMPATIBLE: Send betting phase start
+            this.io.emit('start_betting_phase', {
+                roundId: round.id,
+                timeUntilStart: 6000 // 6 seconds like reference
+            });
+            
+            // Enhanced event for modern clients
+            this.io.emit('gameState', {
+                status: 'betting',
+                phase: 'betting',
+                roundId: round.id,
+                timeUntilStart: 6000
+            });
+        });
+
+        this.provenEngine.on('roundStarted', (data) => {
+            console.log(`🚀 Round ${data.roundId} started`);
+            
+            // REFERENCE COMPATIBLE: Send multiplier count start 
+            this.io.emit('start_multiplier_count', {
+                roundId: data.roundId,
+                startTime: data.startTime
+            });
+            
+            // Enhanced events for modern clients
+            this.io.emit('roundStarted', {
+                roundId: data.roundId,
+                startTime: data.startTime,
+                crashPoint: data.crashPoint  // For client prediction
+            });
+            
+            this.io.emit('round_started', data); // Snake_case version
+        });
 
         this.provenEngine.on('multiplierUpdate', (data) => {
             // Send real-time multiplier updates
@@ -149,7 +177,14 @@ class ProvenPacoRockoProduction {
             this.gameStats.totalVolume += data.totalPayout;
             console.log(`💥 Round ${data.roundId} crashed at ${data.crashPoint}x`);
             
-            // Send crash events
+            // REFERENCE COMPATIBLE: Send stop multiplier count
+            this.io.emit('stop_multiplier_count', data.crashPoint.toFixed(2));
+            
+            // REFERENCE COMPATIBLE: Send crash history update
+            const updatedHistory = this.getRecentCrashHistory();
+            this.io.emit('crash_history', updatedHistory);
+            
+            // Enhanced crash events for modern clients
             this.io.emit('roundCrashed', {
                 roundId: data.roundId,
                 crashPoint: data.crashPoint,
@@ -329,6 +364,17 @@ class ProvenPacoRockoProduction {
      */
     async setupDatabase() {
         console.log('🗄️ Database integration ready (using existing Supabase)');
+    }
+    
+    /**
+     * 📊 Get recent crash history (REFERENCE COMPATIBLE)
+     */
+    getRecentCrashHistory() {
+        const gameState = this.provenEngine?.getGameState() || {};
+        const history = gameState.history || [];
+        
+        // Return last 25 crash points like reference implementation
+        return history.slice(-25).map(round => round.crashPoint);
     }
     
     /**

@@ -20,8 +20,8 @@ fixer.fixEnvironmentVariables();
 
 console.log('✅ Environment fixes applied, continuing startup...');
 
-// Import the REFERENCE crash casino implementation (EXACT copy from working repo)
-const ReferencePacoRockoProduction = require('./crash-casino/reference-production-integration.js');
+// Import the PROVEN crash casino implementation (battle-tested from wbrandon25/Online-Crash-Gambling-Simulator)
+const ProvenPacoRockoProduction = require('./crash-casino/proven-production-integration.js');
 
 // Create Express app
 const app = express();
@@ -51,9 +51,9 @@ console.log('🎰 Initializing PacoRocko crash casino backend...');
 // Start the server
 const PORT = process.env.PORT || 3001;
 
-console.log('🎰 Creating REFERENCE PacoRocko Production instance (EXACT SYNC)...');
-const crashCasino = new ReferencePacoRockoProduction(app, {
-    jwtSecret: process.env.JWT_SECRET || 'paco-crash-reference-key-2025',
+console.log('🎰 Creating PROVEN PacoRocko Production instance...');
+const crashCasino = new ProvenPacoRockoProduction(app, {
+    jwtSecret: process.env.JWT_SECRET || 'paco-crash-proven-key-2025',
     corsOrigin: process.env.CORS_ORIGIN || "*",
     enableDatabase: true,
     enableSmartContracts: true
@@ -61,14 +61,13 @@ const crashCasino = new ReferencePacoRockoProduction(app, {
 
 console.log('🚀 Starting PacoRocko backend server...');
 crashCasino.start(PORT).then(async () => {
-    console.log(`✅ REFERENCE PacoRocko backend running on port ${PORT}`);
-    console.log(`🔗 WebSocket endpoint: wss://paco-x57j.onrender.com`);
+    console.log(`✅ PROVEN PacoRocko backend running on port ${PORT}`);
+    console.log(`🔗 WebSocket endpoint: wss://paco-x57j.onrender.com/crash-ws`);
     console.log(`🏥 Health check: https://paco-x57j.onrender.com/health`);
-    console.log(`🎰 REFERENCE crash casino ready for betting!`);
+    console.log(`🎰 PROVEN crash casino ready for betting!`);
     console.log('');
-    console.log('🎯 Using EXACT REFERENCE implementation from wbrandon25/Online-Crash-Gambling-Simulator');
-    console.log('🎯 PERFECT SYNC: Same events, same timing, same algorithm as working repo');
-    console.log('🔄 Events: start_betting_phase → start_multiplier_count → stop_multiplier_count');
+    console.log('🎯 Using proven implementation from wbrandon25/Online-Crash-Gambling-Simulator');
+    console.log('🎯 All gameplay issues should now be resolved!');
     
     // 🔧 Run comprehensive environment validation
     console.log('\n🔍 Running post-startup validation...');

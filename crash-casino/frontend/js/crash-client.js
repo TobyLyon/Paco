@@ -14,6 +14,7 @@ class CrashGameClient {
         this.playerBet = null;
         this.roundHistory = [];
         this.pendingRoundStart = null; // Store round start requests during countdown
+        this.queuedBet = null; // Store bet for next round
         
         // PURE CLIENT MODE: Always disable server multiplier updates for smooth gameplay
         this.disableMultiplierUpdates = true; // Server only handles start/stop, client handles display
@@ -223,6 +224,17 @@ class CrashGameClient {
                         if (window.betInterface && typeof window.betInterface.onGameStateChange === 'function') {
                             window.betInterface.onGameStateChange('betting');
                         }
+                        
+                        // AUTO-PLACE QUEUED BET (INITIAL)
+                        if (this.queuedBet) {
+                            console.log(`⚡ Auto-placing queued bet (initial): ${this.queuedBet.amount} ETH`);
+                            setTimeout(() => {
+                                if (this.gameState === 'betting') {
+                                    this.placeBet(this.queuedBet.amount);
+                                    this.queuedBet = null; // Clear the queue
+                                }
+                            }, 1000); // Wait 1 second to ensure betting phase is active
+                        }
                     }
                 }, 5000); // Wait 5 seconds for server events
             }
@@ -380,6 +392,17 @@ class CrashGameClient {
             // SERVER TRIGGERED BETTING: Start countdown when server says betting is open
             console.log('🎰 Server triggered betting phase - starting countdown');
             this.startCountdown(15); // Server says betting is open, start 15s countdown
+            
+            // AUTO-PLACE QUEUED BET
+            if (this.queuedBet) {
+                console.log(`⚡ Auto-placing queued bet: ${this.queuedBet.amount} ETH`);
+                setTimeout(() => {
+                    if (this.gameState === 'betting') {
+                        this.placeBet(this.queuedBet.amount);
+                        this.queuedBet = null; // Clear the queue
+                    }
+                }, 1000); // Wait 1 second to ensure betting phase is active
+            }
         } else if (phase === 'waiting') {
             this.gameState = 'waiting';  // Between rounds - show waiting state
         } else if (phase === 'running' || phase === 'flying') {
@@ -609,6 +632,17 @@ class CrashGameClient {
                     if (window.betInterface && typeof window.betInterface.onGameStateChange === 'function') {
                         window.betInterface.onGameStateChange('betting');
                     }
+                    
+                    // AUTO-PLACE QUEUED BET (FALLBACK)
+                    if (this.queuedBet) {
+                        console.log(`⚡ Auto-placing queued bet (fallback): ${this.queuedBet.amount} ETH`);
+                        setTimeout(() => {
+                            if (this.gameState === 'betting') {
+                                this.placeBet(this.queuedBet.amount);
+                                this.queuedBet = null; // Clear the queue
+                            }
+                        }, 1000); // Wait 1 second to ensure betting phase is active
+                    }
                 }
             }, 3000); // Wait 3 seconds for server betting signal
             
@@ -722,9 +756,23 @@ class CrashGameClient {
         } else {
             // Legacy mode: Use server state
             if (this.gameState === 'running' || this.gameState === 'crashed') {
-                this.showError(`Cannot bet now - round is ${this.gameState}`);
-                console.log(`🚫 Bet rejected - Round is "${this.gameState}"`);
-                return false;
+                console.log('⏰ Round in progress - queueing bet for next round');
+                
+                // Store bet for next round
+                this.queuedBet = {
+                    amount: amount,
+                    timestamp: Date.now()
+                };
+                
+                // Show user feedback
+                this.showNotification(
+                    '⏰ Round in progress - your bet is queued for the next round!',
+                    'info',
+                    3000
+                );
+                
+                console.log(`⏰ Bet queued for next round: ${amount} ETH`);
+                return true; // Allow the bet to proceed as queued
             }
             
             if (!['betting', 'waiting', 'pending', undefined].includes(this.gameState)) {

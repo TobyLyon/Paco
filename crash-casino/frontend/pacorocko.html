@@ -1632,8 +1632,19 @@
                         window.crashChart.triggerCrash(serverCrashPoint);
                     }
                     
-                    // Add to round history with server crash point
-                    this.addRoundToHistory(serverCrashPoint);
+                    // Add to round history with server crash point (use existing method)
+                    if (window.liveGameSystem && window.liveGameSystem.addRoundToHistory) {
+                        window.liveGameSystem.addRoundToHistory(serverCrashPoint);
+                    } else {
+                        // Fallback: add directly to history display
+                        const historyContainer = document.getElementById('roundHistory');
+                        if (historyContainer) {
+                            const roundElement = document.createElement('span');
+                            roundElement.className = 'round-item';
+                            roundElement.textContent = `${serverCrashPoint.toFixed(2)}x`;
+                            historyContainer.insertBefore(roundElement, historyContainer.firstChild);
+                        }
+                    }
                     
                     console.log(`💥 Crashed at exactly: ${serverCrashPoint}x`);
                     console.log(`🔍 VERIFY: Display shows ${serverCrashPoint}x, History gets ${serverCrashPoint}x`);

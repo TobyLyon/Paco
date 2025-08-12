@@ -42,8 +42,13 @@ class UnifiedCrashClient {
         
         this.socket = io(serverUrl, {
             transports: ['websocket', 'polling'],
-            timeout: 20000,
-            forceNew: true
+            timeout: 30000,
+            forceNew: false,  // FIXED: Don't force new connection - maintain stability
+            autoConnect: true,
+            reconnection: true,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1000,
+            reconnectionDelayMax: 5000
         });
         
         this.setupEventListeners();
@@ -61,6 +66,9 @@ class UnifiedCrashClient {
             console.log('✅ Connected to crash server');
             this.isConnected = true;
             this.requestGameState();
+            
+            // CRITICAL: Add UI update listeners immediately upon connection
+            this.addUIUpdateListeners();
         });
         
         this.socket.on('disconnect', () => {
@@ -386,6 +394,63 @@ class UnifiedCrashClient {
             roundId: this.roundId,
             connected: this.isConnected
         };
+    }
+    
+    /**
+     * 🎯 Add UI update listeners for direct DOM manipulation
+     */
+    addUIUpdateListeners() {
+        console.log('🎯 Adding direct UI update listeners...');
+        
+        // Listen for server events and update UI immediately
+        this.socket.on('start_betting_phase', () => {
+            console.log('🎲 SERVER: Betting phase started - updating UI');
+            const gameStatus = document.getElementById('gameStatus');
+            const gameMessage = document.getElementById('gameStateMessage');
+            
+            if (gameStatus) gameStatus.textContent = 'Betting Phase';
+            if (gameMessage) gameMessage.textContent = 'Place your bets! (6 seconds)';
+        });
+        
+        this.socket.on('start_multiplier_count', () => {
+            console.log('🚀 SERVER: Multiplier count started - updating UI');
+            const gameStatus = document.getElementById('gameStatus');
+            const gameMessage = document.getElementById('gameStateMessage');
+            
+            if (gameStatus) gameStatus.textContent = 'Round Running';
+            if (gameMessage) gameMessage.textContent = 'Multiplier climbing...';
+            
+            // Start local animation if available
+            if (window.liveGameSystem) {
+                window.liveGameSystem.gameState = 'running';
+                window.liveGameSystem.roundStartTime = Date.now();
+                window.liveGameSystem.animate();
+            }
+        });
+        
+        this.socket.on('stop_multiplier_count', (crashValue) => {
+            console.log('💥 SERVER: Round crashed at', crashValue + 'x - updating UI');
+            const gameStatus = document.getElementById('gameStatus');
+            const gameMessage = document.getElementById('gameStateMessage');
+            const multiplierElement = document.getElementById('multiplierValue');
+            
+            const finalCrash = parseFloat(crashValue);
+            
+            if (gameStatus) gameStatus.textContent = 'Crashed';
+            if (gameMessage) gameMessage.textContent = `Crashed at ${finalCrash.toFixed(2)}x`;
+            if (multiplierElement) {
+                multiplierElement.textContent = finalCrash.toFixed(2) + 'x';
+                multiplierElement.classList.add('crashed');
+            }
+            
+            // Update local system
+            if (window.liveGameSystem) {
+                window.liveGameSystem.gameState = 'crashed';
+                window.liveGameSystem.crashPoint = finalCrash;
+            }
+        });
+        
+        console.log('✅ Direct UI update listeners added successfully');
     }
     
     /**

@@ -1103,6 +1103,7 @@
     <script src="/crash-casino/frontend/js/rpc-health-checker.js"></script>
     <script src="/crash-casino/frontend/js/wallet-bridge.js"></script>
     <script src="/crash-casino/frontend/js/crash-client.js"></script>
+    <script src="/crash-casino/frontend/js/unified-crash-client.js"></script>
     <script src="/crash-casino/frontend/js/bet-interface.js"></script>
     <script src="/crash-casino/frontend/js/multiplier-display.js"></script>
     <script src="/crash-casino/frontend/js/crash-chart.js"></script>
@@ -1607,14 +1608,62 @@
                 console.log('📊 Loading round history from database...');
                 liveGameSystem.loadHistoryFromDatabase();
                 
-                // Initialize crash game client for BETTING ONLY - display controlled by local system
-                if (typeof CrashGameClient !== 'undefined') {
-                    console.log('🎰 Initializing crash game client for SERVER-ONLY control...');
-                    window.crashGameClient = new CrashGameClient();
+                // Initialize UNIFIED crash game client for perfect sync
+                console.log('🔍 Checking for UnifiedCrashClient...', typeof UnifiedCrashClient);
+                if (typeof UnifiedCrashClient !== 'undefined') {
+                    console.log('🎯 Initializing UNIFIED crash game client for perfect sync...');
+                    window.crashGameClient = new UnifiedCrashClient();
                     
-                    // ✅ ENABLE server multiplier updates - server controls everything
-                    window.crashGameClient.disableMultiplierUpdates = false;
-                    console.log('✅ Server multiplier updates ENABLED - server controls everything');
+                    // Connect to server
+                    window.crashGameClient.connect('https://paco-x57j.onrender.com');
+                    console.log('✅ Unified client connected - server authority established');
+                    
+                    // CRITICAL: Add direct event listeners after connection
+                    window.crashGameClient.socket.on('connect', () => {
+                        console.log('🔌 UNIFIED: Connected to server - adding direct listeners');
+                        
+                        // Add the critical direct event listeners
+                        window.crashGameClient.socket.on('start_betting_phase', () => {
+                            console.log('🎲 DIRECT EVENT: Betting phase started from server');
+                            document.getElementById('gameStatus').textContent = 'Betting Phase';
+                            document.getElementById('gameStateMessage').textContent = 'Place your bets! (6 seconds)';
+                        });
+                        
+                        window.crashGameClient.socket.on('start_multiplier_count', () => {
+                            console.log('🚀 DIRECT EVENT: Multiplier count started from server');
+                            document.getElementById('gameStatus').textContent = 'Round Running';
+                            document.getElementById('gameStateMessage').textContent = 'Multiplier climbing...';
+                            
+                            // Start local animation
+                            if (window.liveGameSystem) {
+                                window.liveGameSystem.gameState = 'running';
+                                window.liveGameSystem.roundStartTime = Date.now();
+                                window.liveGameSystem.animate();
+                            }
+                        });
+                        
+                        window.crashGameClient.socket.on('stop_multiplier_count', (crashValue) => {
+                            console.log('💥 DIRECT EVENT: Round crashed at', crashValue);
+                            const crash = parseFloat(crashValue);
+                            
+                            document.getElementById('gameStatus').textContent = 'Crashed';
+                            document.getElementById('gameStateMessage').textContent = `Crashed at ${crash.toFixed(2)}x`;
+                            
+                            // Update multiplier display
+                            const multiplierElement = document.getElementById('multiplierValue');
+                            if (multiplierElement) {
+                                multiplierElement.textContent = crash.toFixed(2) + 'x';
+                                multiplierElement.classList.add('crashed');
+                            }
+                            
+                            if (window.liveGameSystem) {
+                                window.liveGameSystem.gameState = 'crashed';
+                                window.liveGameSystem.crashPoint = crash;
+                            }
+                        });
+                        
+                        console.log('✅ DIRECT EVENT LISTENERS ADDED - should receive rounds now!');
+                    });
                     
                     // 🌐 RENDER STARTER PLAN: No sleep issues, server always running
                     console.log('💎 Render Starter Plan active - server never sleeps!');
@@ -1676,9 +1725,66 @@
                     window.crashGameClient.onRoundCrash = (data) => {
                         console.log('💥 Server round crashed at:', data.crashPoint + 'x');
                     };
+                    
+                    // Event listeners are now added in the connect callback above
+                    
                 } else {
-                    console.log('❌ CrashGameClient not available - no game system will run');
-                    console.log('🚫 Local system disabled - server-only mode');
+                    console.log('❌ UnifiedCrashClient not available - using fallback with CrashGameClient');
+                    
+                    // FALLBACK: Use old client but add the critical event listeners
+                    if (typeof CrashGameClient !== 'undefined') {
+                        console.log('🔄 Initializing fallback crash game client...');
+                        window.crashGameClient = new CrashGameClient();
+                        
+                        // Add event listeners to ANY socket connection
+                        setTimeout(() => {
+                            if (window.crashGameClient && window.crashGameClient.socket) {
+                                console.log('🎯 FALLBACK: Adding direct event listeners to old client');
+                                const socket = window.crashGameClient.socket;
+                                
+                                socket.on('start_betting_phase', () => {
+                                    console.log('🎲 FALLBACK EVENT: Betting phase started');
+                                    document.getElementById('gameStatus').textContent = 'Betting Phase';
+                                    document.getElementById('gameStateMessage').textContent = 'Place your bets!';
+                                });
+                                
+                                socket.on('start_multiplier_count', () => {
+                                    console.log('🚀 FALLBACK EVENT: Round started');
+                                    document.getElementById('gameStatus').textContent = 'Round Running';
+                                    document.getElementById('gameStateMessage').textContent = 'Multiplier climbing...';
+                                    
+                                    if (window.liveGameSystem) {
+                                        window.liveGameSystem.gameState = 'running';
+                                        window.liveGameSystem.roundStartTime = Date.now();
+                                        window.liveGameSystem.animate();
+                                    }
+                                });
+                                
+                                socket.on('stop_multiplier_count', (crashValue) => {
+                                    console.log('💥 FALLBACK EVENT: Round crashed at', crashValue);
+                                    const crash = parseFloat(crashValue);
+                                    
+                                    document.getElementById('gameStatus').textContent = 'Crashed';
+                                    document.getElementById('gameStateMessage').textContent = `Crashed at ${crash.toFixed(2)}x`;
+                                    
+                                    const multiplierElement = document.getElementById('multiplierValue');
+                                    if (multiplierElement) {
+                                        multiplierElement.textContent = crash.toFixed(2) + 'x';
+                                        multiplierElement.classList.add('crashed');
+                                    }
+                                    
+                                    if (window.liveGameSystem) {
+                                        window.liveGameSystem.gameState = 'crashed';
+                                        window.liveGameSystem.crashPoint = crash;
+                                    }
+                                });
+                                
+                                console.log('✅ FALLBACK: Direct event listeners added to old client');
+                            }
+                        }, 3000);
+                    } else {
+                        console.log('❌ No crash client available at all - major issue');
+                    }
                 }
             }, 1000);
             } catch (error) {

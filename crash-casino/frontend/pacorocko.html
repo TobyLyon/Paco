@@ -1527,7 +1527,7 @@
                                         console.log(`🔄 Server has ongoing betting phase (${phaseTimeRemaining.toFixed(1)}s remaining) - syncing local system`);
                                     }
                                     
-                                    // Start local system in sync mode - DON'T restart countdown
+                                    // Start local system in sync mode
                                     if (window.liveGameSystem && !window.liveGameSystem.isRunning) {
                                         console.log('🎮 Starting local system synced to server timing...');
                                         
@@ -1536,54 +1536,70 @@
                                         } else {
                                             console.log('⚠️ syncToServerState not available, using manual sync');
                                             
-                                            window.liveGameSystem.start();
-                                            
-                                            // Sync countdown to server if in betting phase  
-                                            if (serverState.phase === 'betting' && phaseTimeRemaining > 1) {
-                                                console.log(`🎯 Syncing local countdown to server timing (${phaseTimeRemaining.toFixed(1)}s remaining)`);
-                                                
-                                                setTimeout(() => {
-                                                    // Update countdown to match server
-                                                    const newCountdown = Math.ceil(phaseTimeRemaining);
-                                                    document.getElementById('countdownValue').textContent = newCountdown;
-                                                    document.getElementById('gameStateMessage').textContent = `🎰 Next round starting in ${newCountdown}s - Place your bets now!`;
-                                                    
-                                                    // Restart countdown interval with correct timing
-                                                    if (window.liveGameSystem.countdownInterval) {
-                                                        clearInterval(window.liveGameSystem.countdownInterval);
-                                                    }
-                                                    
-                                                    let syncedCountdown = newCountdown;
-                                                    window.liveGameSystem.countdownInterval = setInterval(() => {
-                                                        syncedCountdown--;
-                                                        document.getElementById('countdownValue').textContent = syncedCountdown;
-                                                        
-                                                        if (syncedCountdown > 0) {
-                                                            document.getElementById('gameStateMessage').textContent = `🎰 Next round starting in ${syncedCountdown}s - Place your bets now!`;
-                                                        } else {
-                                                            document.getElementById('gameStateMessage').textContent = `🚀 Round starting...`;
-                                                        }
-                                                        
-                                                        if (syncedCountdown <= 0) {
-                                                            clearInterval(window.liveGameSystem.countdownInterval);
-                                                            window.liveGameSystem.countdownInterval = null;
-                                                            document.getElementById('countdownTimer').style.display = 'none';
-                                                            window.liveGameSystem.startNewRound();
-                                                        }
-                                                    }, 1000);
-                                                    
-                                                    console.log(`🔄 Countdown synced to server: ${newCountdown}s`);
-                                                }, 100); // Small delay to let start() finish
-                                            }
-                                            
-                                            // Sync multiplier if round is running
+                                            // Check if server has an ACTIVE ROUND (multiplier > 1.0)
                                             if (serverState.isRunning && serverState.currentMultiplier > 1.0) {
+                                                console.log(`🚀 Server round active at ${serverState.currentMultiplier}x - joining mid-round`);
+                                                
+                                                // Skip betting phase and go straight to running round
+                                                window.liveGameSystem.isRunning = true;
+                                                window.liveGameSystem.currentPhase = 'running';
+                                                
+                                                // Set up display for running round
+                                                document.getElementById('gameStatus').textContent = 'Round Active';
+                                                document.getElementById('countdownTimer').style.display = 'none';
+                                                document.getElementById('gameStateMessage').textContent = '🚀 Round in progress - good luck!';
+                                                
+                                                // Start the round display with server multiplier
+                                                window.liveGameSystem.startNewRound();
+                                                
+                                                // Sync to server multiplier
                                                 setTimeout(() => {
                                                     if (window.liveGameSystem.updateMultiplier) {
                                                         window.liveGameSystem.updateMultiplier(serverState.currentMultiplier);
                                                         console.log(`🔄 Synced to server multiplier: ${serverState.currentMultiplier}x`);
                                                     }
-                                                }, 500);
+                                                }, 200);
+                                                
+                                            } else {
+                                                // Server in betting phase - sync countdown
+                                                console.log(`🎯 Server in betting phase - syncing countdown`);
+                                                window.liveGameSystem.start();
+                                                
+                                                // Sync countdown to server if in betting phase  
+                                                if (serverState.phase === 'betting' && phaseTimeRemaining > 1) {
+                                                    setTimeout(() => {
+                                                        // Update countdown to match server
+                                                        const newCountdown = Math.ceil(phaseTimeRemaining);
+                                                        document.getElementById('countdownValue').textContent = newCountdown;
+                                                        document.getElementById('gameStateMessage').textContent = `🎰 Next round starting in ${newCountdown}s - Place your bets now!`;
+                                                        
+                                                        // Restart countdown interval with correct timing
+                                                        if (window.liveGameSystem.countdownInterval) {
+                                                            clearInterval(window.liveGameSystem.countdownInterval);
+                                                        }
+                                                        
+                                                        let syncedCountdown = newCountdown;
+                                                        window.liveGameSystem.countdownInterval = setInterval(() => {
+                                                            syncedCountdown--;
+                                                            document.getElementById('countdownValue').textContent = syncedCountdown;
+                                                            
+                                                            if (syncedCountdown > 0) {
+                                                                document.getElementById('gameStateMessage').textContent = `🎰 Next round starting in ${syncedCountdown}s - Place your bets now!`;
+                                                            } else {
+                                                                document.getElementById('gameStateMessage').textContent = `🚀 Round starting...`;
+                                                            }
+                                                            
+                                                            if (syncedCountdown <= 0) {
+                                                                clearInterval(window.liveGameSystem.countdownInterval);
+                                                                window.liveGameSystem.countdownInterval = null;
+                                                                document.getElementById('countdownTimer').style.display = 'none';
+                                                                window.liveGameSystem.startNewRound();
+                                                            }
+                                                        }, 1000);
+                                                        
+                                                        console.log(`🔄 Countdown synced to server: ${newCountdown}s`);
+                                                    }, 100); // Small delay to let start() finish
+                                                }
                                             }
                                         }
                                     }

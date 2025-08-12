@@ -1612,9 +1612,9 @@
                     console.log('🎰 Initializing crash game client for SERVER-ONLY control...');
                     window.crashGameClient = new CrashGameClient();
                     
-                    // ✅ ENABLE server multiplier updates - server controls everything
-                    window.crashGameClient.disableMultiplierUpdates = false;
-                    console.log('✅ Server multiplier updates ENABLED - server controls everything');
+                    // ✅ CLIENT-DRIVEN DISPLAY: server controls phases; client renders multiplier
+                    window.crashGameClient.disableMultiplierUpdates = true;
+                    console.log('✅ Client-driven display enabled - server authoritative timing only');
                     
                     // 🌐 RENDER STARTER PLAN: No sleep issues, server always running
                     console.log('💎 Render Starter Plan active - server never sleeps!');

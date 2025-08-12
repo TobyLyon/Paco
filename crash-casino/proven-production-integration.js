@@ -130,7 +130,7 @@ class ProvenPacoRockoProduction {
             
             // Send compatible event for your existing frontend
             this.io.emit('gameState', {
-                status: 'pending',
+                phase: 'betting',
                 roundId: round.id,
                 timeUntilStart: 6000
             });
@@ -149,16 +149,7 @@ class ProvenPacoRockoProduction {
             this.io.emit('round_started', data); // Snake_case version
         });
 
-        this.provenEngine.on('multiplierUpdate', (data) => {
-            // Send real-time multiplier updates
-            this.io.emit('multiplierUpdate', {
-                roundId: data.roundId,
-                multiplier: data.multiplier,
-                elapsed: data.elapsed
-            });
-            
-            this.io.emit('multiplier_update', data); // Snake_case version
-        });
+        // NOTE: Do not forward per-tick multiplier from engine. Client renders smoothly itself.
 
         this.provenEngine.on('roundCrashed', (data) => {
             this.gameStats.totalVolume += data.totalPayout;

@@ -204,6 +204,14 @@ class CrashGameClient {
             this.isConnected = true;
             this.updateConnectionStatus(true);
             
+            // CRITICAL FIX: Start first round cycle when connected
+            setTimeout(() => {
+                if (this.gameState === 'waiting' || !this.gameState) {
+                    console.log('🚀 Starting initial betting cycle...');
+                    this.prepareForNextRound();
+                }
+            }, 2000); // Wait 2 seconds for full initialization
+            
             // Notify connection callback
             if (this.onGameStateUpdate) {
                 this.onGameStateUpdate({ connected: true, isConnected: true });
@@ -368,6 +376,15 @@ class CrashGameClient {
         
         console.log(`🎮 Game state updated: ${phase} → ${this.gameState}`);
         
+        // CRITICAL FIX: Update betting UI when game state changes
+        if (window.betInterface && typeof window.betInterface.onGameStateChange === 'function') {
+            console.log(`🎯 Updating bet interface for state: ${this.gameState}`);
+            window.betInterface.onGameStateChange(this.gameState);
+        }
+        
+        // Update visual indicators based on game state
+        this.updateGameStateUI(this.gameState);
+        
         // 🔄 SAFE SYNC: Only sync if local system is stable and there's a big difference
         setTimeout(() => {
             if (data.isRunning && data.currentMultiplier > 2.0 && window.liveGameSystem && window.liveGameSystem.isRunning) {
@@ -426,20 +443,30 @@ class CrashGameClient {
             mode: 'SERVER-BETTING-ONLY (local handles display)'
         });
         
-        // PRODUCTION FIX: Don't interfere with local visual system
-        // Local system already handles all visual aspects
+        // CRITICAL FIX: Update UI for round start
+        this.updateGameStateUI('running');
         
-        // Only handle betting-related UI (not visual multiplier)
-        if (this.playerBet && !this.playerBet.cashedOut) {
-            document.getElementById('cashOutBtn').style.display = 'block';
+        // Update bet interface for running state
+        if (window.betInterface && typeof window.betInterface.onGameStateChange === 'function') {
+            window.betInterface.onGameStateChange('running');
         }
+        
+        // Show cash out button if player has bet
+        if (this.playerBet && !this.playerBet.cashedOut) {
+            const cashOutBtn = document.getElementById('cashOutBtn');
+            if (cashOutBtn) cashOutBtn.style.display = 'block';
+        }
+        
+        // Hide countdown timer since round started
+        const countdownElement = document.getElementById('countdownTimer');
+        if (countdownElement) countdownElement.style.display = 'none';
         
         // Notify betting system only
         if (this.onRoundStart) {
             this.onRoundStart(data);
         }
         
-        console.log('🎯 Server event processed - local system continues visual control');
+        console.log('🎯 Server round start processed - UI updated for running state');
     }
 
     /**
@@ -517,6 +544,12 @@ class CrashGameClient {
         if (this.onRoundCrash) {
             this.onRoundCrash(data);
         }
+        
+        // CRITICAL FIX: Start countdown for next round after crash
+        setTimeout(() => {
+            console.log('🔄 Starting countdown for next round...');
+            this.prepareForNextRound();
+        }, 2000); // Wait 2 seconds after crash
         
         console.log('🎯 Server crash processed - local system handles all visual display');
         return;
@@ -987,44 +1020,85 @@ class CrashGameClient {
      */
     prepareForNextRound() {
         this.gameState = 'waiting';
-        document.getElementById('gameStatus').textContent = 'Waiting';
-        document.getElementById('gameStateMessage').textContent = 'Waiting for next round...';
-        document.getElementById('multiplierValue').textContent = '1.00x';
-        document.getElementById('betStatus').style.display = 'none';
-        document.getElementById('placeBetBtn').disabled = false;
+        console.log('🔄 Preparing for next round...');
         
-        // Start countdown
-        this.startCountdown(5);
+        // Reset UI elements
+        const gameStatusElement = document.getElementById('gameStatus');
+        const gameStateMessageElement = document.getElementById('gameStateMessage');
+        const multiplierElement = document.getElementById('multiplierValue');
+        const betStatusElement = document.getElementById('betStatus');
+        const placeBetBtnElement = document.getElementById('placeBetBtn');
+        
+        if (gameStatusElement) gameStatusElement.textContent = 'Next Round';
+        if (gameStateMessageElement) gameStateMessageElement.textContent = 'Preparing next round...';
+        if (multiplierElement) {
+            multiplierElement.textContent = '1.00x';
+            multiplierElement.classList.remove('crashed');
+        }
+        if (betStatusElement) betStatusElement.style.display = 'none';
+        if (placeBetBtnElement) {
+            placeBetBtnElement.disabled = false;
+            placeBetBtnElement.textContent = '🎯 PLACE BET';
+        }
+        
+        // Update bet interface state
+        if (window.betInterface && typeof window.betInterface.onGameStateChange === 'function') {
+            window.betInterface.onGameStateChange('waiting');
+        }
+        
+        // Start countdown for betting phase
+        this.startCountdown(15); // 15 second countdown for betting
     }
 
     /**
-     * ⏰ Start unified betting countdown (5 seconds)
+     * ⏰ Start unified betting countdown
      */
-    startCountdown(seconds = 5) {
+    startCountdown(seconds = 15) {
         const countdownElement = document.getElementById('countdownTimer');
         const countdownValue = document.getElementById('countdownValue');
         
-        countdownElement.style.display = 'block';
-        document.getElementById('gameStatus').textContent = 'Place Your Bets';
+        console.log(`⏰ Starting ${seconds}s countdown for betting phase`);
+        
+        if (countdownElement) countdownElement.style.display = 'block';
+        if (countdownValue) countdownValue.textContent = seconds;
+        
+        // Immediately enter betting phase
+        this.gameState = 'betting';
+        this.updateGameStateUI('betting');
+        
+        // Update bet interface to enable betting
+        if (window.betInterface && typeof window.betInterface.onGameStateChange === 'function') {
+            window.betInterface.onGameStateChange('betting');
+        }
         
         let remaining = seconds;
         const interval = setInterval(() => {
-            countdownValue.textContent = remaining;
+            if (countdownValue) countdownValue.textContent = remaining;
             
-            if (remaining > 0) {
-                document.getElementById('gameStateMessage').textContent = `🎰 Next round starting in ${remaining}s - Place your bets now!`;
+            if (remaining > 5) {
+                document.getElementById('gameStateMessage').textContent = `🎰 Place your bets! Round starts in ${remaining}s`;
+            } else if (remaining > 0) {
+                document.getElementById('gameStateMessage').textContent = `🚀 Round starting in ${remaining}s - Last chance!`;
             } else {
-                document.getElementById('gameStateMessage').textContent = `🚀 Round starting...`;
+                document.getElementById('gameStateMessage').textContent = `🚀 Round starting now...`;
             }
             
             remaining--;
             
             if (remaining < 0) {
                 clearInterval(interval);
-                countdownElement.style.display = 'none';
+                if (countdownElement) countdownElement.style.display = 'none';
+                
+                // Transition to pending/starting state
                 this.gameState = 'pending';
-                document.getElementById('gameStatus').textContent = 'Accepting Bets';
-                document.getElementById('gameStateMessage').textContent = 'Bets accepted!';
+                this.updateGameStateUI('pending');
+                
+                // Update bet interface to disable betting
+                if (window.betInterface && typeof window.betInterface.onGameStateChange === 'function') {
+                    window.betInterface.onGameStateChange('pending');
+                }
+                
+                console.log('⏰ Betting countdown completed - waiting for server round start');
             }
         }, 1000);
     }
@@ -1079,6 +1153,53 @@ class CrashGameClient {
         } else {
             statusIndicator.className = 'status-indicator offline';
             statusText.textContent = 'Disconnected';
+        }
+    }
+
+    /**
+     * 🎮 Update game state UI indicators
+     */
+    updateGameStateUI(gameState) {
+        const gameStatusElement = document.getElementById('gameStatus');
+        const gameStateMessageElement = document.getElementById('gameStateMessage');
+        const countdownElement = document.getElementById('countdownTimer');
+        
+        console.log(`🎨 Updating UI for game state: ${gameState}`);
+        
+        switch (gameState) {
+            case 'betting':
+                if (gameStatusElement) gameStatusElement.textContent = 'Place Your Bets';
+                if (gameStateMessageElement) gameStateMessageElement.textContent = '🎰 Betting phase active - place your bets now!';
+                if (countdownElement) countdownElement.style.display = 'none'; // Hide countdown, just show betting state
+                console.log('🎯 UI updated for BETTING phase');
+                break;
+                
+            case 'pending':
+                if (gameStatusElement) gameStatusElement.textContent = 'Round Starting';
+                if (gameStateMessageElement) gameStateMessageElement.textContent = '⏳ Round starting soon...';
+                if (countdownElement) countdownElement.style.display = 'none';
+                console.log('🎯 UI updated for PENDING phase');
+                break;
+                
+            case 'running':
+                if (gameStatusElement) gameStatusElement.textContent = 'Round Active';
+                if (gameStateMessageElement) gameStateMessageElement.textContent = '🚀 Round in progress - good luck!';
+                if (countdownElement) countdownElement.style.display = 'none';
+                console.log('🎯 UI updated for RUNNING phase');
+                break;
+                
+            case 'crashed':
+                if (gameStatusElement) gameStatusElement.textContent = 'Round Ended';
+                if (gameStateMessageElement) gameStateMessageElement.textContent = '💥 Round crashed - waiting for next round...';
+                if (countdownElement) countdownElement.style.display = 'none';
+                console.log('🎯 UI updated for CRASHED phase');
+                break;
+                
+            default:
+                if (gameStatusElement) gameStatusElement.textContent = 'Waiting';
+                if (gameStateMessageElement) gameStateMessageElement.textContent = '⏳ Waiting for next round...';
+                if (countdownElement) countdownElement.style.display = 'none';
+                console.log('🎯 UI updated for DEFAULT/WAITING state');
         }
     }
 

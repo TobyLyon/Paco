@@ -1639,7 +1639,7 @@
                     // CrashGameClient handles all events internally for clean architecture
                     console.log('🎯 Using CrashGameClient for all event handling (no duplicates)');
                     
-                    // PRODUCTION FIX: Add event synchronization
+                    // PRODUCTION FIX: Add event synchronization with UI updates
                     window.crashGameClient.onGameStateUpdate = (state) => {
                         if (state.connected) {
                             console.log('🔌 Connected to server - betting system ready');
@@ -1647,6 +1647,13 @@
                         } else {
                             console.log('🔌 Server disconnected - betting disabled');
                             console.log('🎯 Local system continues visual display');
+                        }
+                        
+                        // CRITICAL FIX: Sync game state with bet interface
+                        if (window.betInterface && typeof window.betInterface.onGameStateChange === 'function') {
+                            const gameState = window.crashGameClient.gameState || 'waiting';
+                            console.log(`🎮 Syncing bet interface with game state: ${gameState}`);
+                            window.betInterface.onGameStateChange(gameState);
                         }
                     };
                     

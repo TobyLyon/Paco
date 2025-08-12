@@ -188,10 +188,16 @@ class WalletBridge {
                 }
             }
 
+            // Get current fee data for Abstract L2 EIP-1559 compatibility
+            const feeData = await this.provider.getFeeData();
+            
             const tx = {
                 to: to,
                 value: ethers.parseEther(value.toString()),
-                gasLimit: gasConfig.gasLimit || 21000, // Use provided or default
+                maxFeePerGas: gasConfig.maxFeePerGas || feeData.maxFeePerGas,
+                maxPriorityFeePerGas: gasConfig.maxPriorityFeePerGas || feeData.maxPriorityFeePerGas,
+                gasLimit: gasConfig.gasLimit || 100000, // Increased for L2 transactions
+                type: 2, // EIP-1559 transaction type for Abstract Network
                 ...gasConfig
             };
 

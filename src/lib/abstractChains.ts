@@ -30,6 +30,9 @@ export const abstract = defineChain({
       webSocket: ['wss://api.mainnet.abs.xyz/ws'],
     },
   },
+  fees: {
+    defaultPriorityFee: 100000000n, // 0.1 gwei - Abstract Network has very low fees
+  },
   blockExplorers: {
     default: {
       name: 'Abscan',

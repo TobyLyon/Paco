@@ -659,29 +659,42 @@ class CrashGameClient {
                 console.log(`🔄 Transaction attempt ${attempts}/${maxAttempts}`);
                 
                 try {
-                    // Different gas strategies for each attempt
+                    // Standard EIP-1559 gas configuration for Abstract Network (all attempts use same fees)
                     let gasConfig;
+                    
+                    // Get current fee data from Abstract Network
+                    const feeData = await window.realWeb3Modal.provider.getFeeData();
+                    
                     switch (attempts) {
                         case 1:
-                            // First attempt: Let MetaMask estimate everything
-                            gasConfig = {};
-                            console.log('📊 Attempt 1: MetaMask auto-estimation');
+                            // First attempt: Standard EIP-1559 with network fee data
+                            gasConfig = {
+                                maxFeePerGas: feeData.maxFeePerGas,
+                                maxPriorityFeePerGas: feeData.maxPriorityFeePerGas,
+                                gasLimit: 100000,
+                                type: 2
+                            };
+                            console.log('📊 Attempt 1: Standard Abstract Network EIP-1559 fees');
                             break;
                         case 2:
-                            // Second attempt: Manual gas limit with auto price
+                            // Second attempt: Same fees, different gas limit
                             gasConfig = {
-                                gasLimit: 100000,
-                                gasPrice: null
+                                maxFeePerGas: feeData.maxFeePerGas,
+                                maxPriorityFeePerGas: feeData.maxPriorityFeePerGas,
+                                gasLimit: 150000, // Higher gas limit for complex transactions
+                                type: 2
                             };
-                            console.log('📊 Attempt 2: Manual gas limit 100k');
+                            console.log('📊 Attempt 2: Standard fees with higher gas limit');
                             break;
                         case 3:
-                            // Third attempt: Conservative manual settings
+                            // Third attempt: Same fees, maximum gas limit
                             gasConfig = {
-                                gasLimit: 21000, // Standard ETH transfer
-                                gasPrice: '20000000000' // 20 gwei
+                                maxFeePerGas: feeData.maxFeePerGas,
+                                maxPriorityFeePerGas: feeData.maxPriorityFeePerGas,
+                                gasLimit: 200000, // Maximum gas limit for L2
+                                type: 2
                             };
-                            console.log('📊 Attempt 3: Conservative settings');
+                            console.log('📊 Attempt 3: Standard fees with maximum gas limit');
                             break;
                     }
                     
@@ -735,9 +748,12 @@ class CrashGameClient {
                         console.log('⚠️ NetworkHealthMonitor not available');
                     }
                     
-                    // Analyze error type
-                    if (error.message.includes('Internal JSON-RPC error')) {
-                        console.log('🔍 RPC Error detected - this is likely an Abstract Network issue');
+                    // Analyze error type - now handles EIP-1559 specific errors
+                    if (error.message.includes('Internal JSON-RPC error') || 
+                        error.message.includes('transaction type not supported') ||
+                        error.message.includes('maxFeePerGas') ||
+                        error.message.includes('EIP-1559')) {
+                        console.log('🔍 Transaction format error detected - likely EIP-1559 compatibility issue');
                         
                         // Trigger RPC health check and endpoint switching before final attempt
                         if (window.rpcHealthChecker && attempts < maxAttempts) {

@@ -70,7 +70,28 @@ class RPCHealthChecker {
                 throw new Error(`Wrong chain ID: ${chainData.result}, expected 0xab5`);
             }
 
-            // Test 3: Gas estimation capability (this often fails when transaction RPCs are broken)
+            // Test 3: EIP-1559 fee data capability (better for L2 networks like Abstract)
+            const feeResponse = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    jsonrpc: '2.0',
+                    method: 'eth_feeHistory',
+                    params: [4, 'latest', [25, 50, 75]], // Get fee history for EIP-1559
+                    id: 3
+                }),
+                timeout: 5000
+            });
+
+            const feeData = await feeResponse.json();
+            // Check if fee history works (required for EIP-1559 transactions)
+            if (feeData.error && feeData.error.message && feeData.error.message.includes('Internal JSON-RPC error')) {
+                throw new Error(`Fee history failed with Internal JSON-RPC error`);
+            }
+            
+            // Also test gas estimation with EIP-1559 format
             const gasResponse = await fetch(endpoint, {
                 method: 'POST',
                 headers: {
@@ -82,9 +103,10 @@ class RPCHealthChecker {
                     params: [{
                         to: '0x1f8B1c4D05eF17Ebaa1E572426110146691e6C5a',
                         value: '0x1',
+                        type: '0x2', // EIP-1559 transaction type
                         data: '0x'
                     }],
-                    id: 3
+                    id: 4
                 }),
                 timeout: 5000
             });
@@ -93,7 +115,7 @@ class RPCHealthChecker {
             // Note: We expect this might error for various reasons (insufficient balance, etc.)
             // But if it errors with "Internal JSON-RPC error", that's a bad sign
             if (gasData.error && gasData.error.message && gasData.error.message.includes('Internal JSON-RPC error')) {
-                throw new Error(`Gas estimation failed with Internal JSON-RPC error`);
+                throw new Error(`EIP-1559 gas estimation failed with Internal JSON-RPC error`);
             }
 
             console.log(`✅ RPC endpoint ${endpoint} passed all health checks`);

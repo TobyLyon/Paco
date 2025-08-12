@@ -205,9 +205,35 @@ class WalletBridge {
             // Skip comprehensive debugging to avoid transaction interference
             console.log('🚀 Streamlined transaction flow - skipping diagnostics...');
             
-            // Use standard ethers.js transaction method for reliability
-            console.log('🔗 Sending transaction via ethers.js signer...');
-            const txResponse = await this.signer.sendTransaction(tx);
+            // Abstract Network: Use direct MetaMask request instead of ethers.js
+            console.log('🔗 Sending transaction via direct MetaMask request for Abstract Network...');
+            
+            // Convert to MetaMask-compatible format
+            const metaMaskTx = {
+                from: await this.signer.getAddress(),
+                to: tx.to,
+                value: '0x' + BigInt(tx.value).toString(16),
+                gas: '0x' + BigInt(tx.gasLimit).toString(16),
+                gasPrice: '0x' + BigInt(tx.gasPrice).toString(16)
+            };
+            
+            console.log('📡 MetaMask transaction object:', metaMaskTx);
+            
+            // Send via direct MetaMask request
+            const txHash = await window.ethereum.request({
+                method: 'eth_sendTransaction',
+                params: [metaMaskTx]
+            });
+            
+            console.log('✅ Transaction sent via MetaMask:', txHash);
+            
+            // Create ethers-compatible response
+            const txResponse = {
+                hash: txHash,
+                wait: async () => {
+                    return await this.provider.waitForTransaction(txHash);
+                }
+            };
             
             console.log('✅ Transaction sent successfully:', txResponse.hash);
             

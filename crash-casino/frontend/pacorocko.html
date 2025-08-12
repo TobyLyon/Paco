@@ -1233,45 +1233,17 @@
             },
             
             animate() {
-                if (!this.isRunning || this.gameState !== 'running') return;
+                console.log('🚫 LOCAL ANIMATE DISABLED - Server controls all multiplier updates');
+                console.log('🎯 Only server can crash rounds - local animation blocked');
+                // COMPLETELY DISABLED - Server handles all multiplier updates and crashes
+                return;
                 
-                const elapsed = Date.now() - this.roundStartTime;
-                this.timeElapsed = elapsed / 1000; // Convert to seconds for chart
-                
-                // ORIGINAL SMOOTH MULTIPLIER PROGRESSION (what was working before)
-                // Classic exponential growth - smooth and predictable
-                this.currentMultiplier = 1.0024 * Math.pow(1.0718, this.timeElapsed);
-                
-                // Check if we've reached the crash point
-                if (this.currentMultiplier >= this.crashPoint) {
-                    this.currentMultiplier = this.crashPoint; // Set to exact crash point
-                    this.gameState = 'crashed';
-                    this.crash();
-                    return;
-                }
-                
-                // Update display safely - SIMPLIFIED like original
-                try {
-                    const multiplierElement = document.getElementById('multiplierValue');
-                    if (multiplierElement) {
-                        multiplierElement.textContent = this.currentMultiplier.toFixed(2) + 'x';
-                    }
-                    
-                    // Update chart with time and multiplier data
-                    if (window.crashChart && window.crashChart.chart) {
-                        window.crashChart.addDataPoint(this.timeElapsed, this.currentMultiplier);
-                    }
-                    
-                    // Skip multiplier display system - let main game handle it directly
-                    
-                    // Update animations
-                    updatePacoMood(this.currentMultiplier, true, false);
-                } catch (error) {
-                    console.log('Update error:', error);
-                }
-                
-                // Continue animation
-                this.animationFrame = requestAnimationFrame(() => this.animate());
+                // OLD CODE DISABLED:
+                // if (!this.isRunning || this.gameState !== 'running') return;
+                // const elapsed = Date.now() - this.roundStartTime;
+                // this.timeElapsed = elapsed / 1000;
+                // this.currentMultiplier = 1.0024 * Math.pow(1.0718, this.timeElapsed);
+                // ... etc - ALL LOCAL ROUND LOGIC DISABLED
             },
             
             async crash() {
@@ -1309,9 +1281,10 @@
                 // Update animations with the same crash point
                 updatePacoMood(crashedAt, false, true);
                 
-                // 🚫 DISABLED: Server controls all round history  
-                console.log(`🎯 Server handles crash point ${crashedAt.toFixed(2)}x - no local history`);
-                // await this.addToHistory(crashedAt); // DISABLED
+                // 🚫 COMPLETELY DISABLED: Server controls everything
+                console.log(`🚫 LOCAL CRASH DISABLED - Server handles all crashes`);
+                console.log(`🎯 Ignoring local crash point ${crashedAt.toFixed(2)}x`);
+                return; // Exit immediately - don't do anything
                 
                 console.log(`💥 Crashed at exactly: ${crashedAt.toFixed(2)}x`);
                 console.log(`🔍 VERIFY: Display shows ${multiplierElement ? multiplierElement.textContent : 'N/A'}, History gets ${crashedAt.toFixed(2)}x`);

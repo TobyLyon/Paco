@@ -315,14 +315,16 @@ class CrashGameClient {
             
             console.log('✅ UI updated for round start');
             
-            // Force start visual systems
+            // 🚫 DISABLED: No local visual systems - server controls everything
             if (window.liveGameSystem) {
-                console.log('🎯 FORCING: Starting liveGameSystem animation');
-                window.liveGameSystem.isRunning = true;  // CRITICAL: Must set this to true!
-                window.liveGameSystem.gameState = 'running';
-                window.liveGameSystem.roundStartTime = Date.now();
-                window.liveGameSystem.animate();
-                console.log('✅ liveGameSystem fully activated');
+                console.log('🚫 SKIPPING: liveGameSystem animation (server-only mode)');
+                console.log('🎯 Server handles all multiplier updates and crashes');
+                // NO LOCAL ANIMATION:
+                // window.liveGameSystem.isRunning = true;
+                // window.liveGameSystem.gameState = 'running';
+                // window.liveGameSystem.roundStartTime = Date.now();
+                // window.liveGameSystem.animate(); // DISABLED
+                console.log('✅ Local animation disabled - server authority only');
             }
             
             // Force start chart

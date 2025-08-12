@@ -1502,17 +1502,43 @@
                 document.getElementById('loadingScreen').style.display = 'none';
                 document.getElementById('gameContainer').style.display = 'block';
                 
-                // Initialize crash visualizer (supports both chart and rocket)
-                console.log('🎮 Initializing crash visualizer...');
-                if (typeof CrashVisualizer !== 'undefined') {
-                    window.crashChart = new CrashVisualizer();
-                    console.log('✅ Crash visualizer initialized');
-                } else {
-                    console.error('❌ CrashVisualizer not loaded, falling back to chart');
-                    if (typeof Chart !== 'undefined' && typeof CrashChart !== 'undefined') {
+                // Initialize BOTH chart and visualizer systems properly
+                console.log('🎮 Initializing chart and visualizer systems...');
+                
+                // 1. Initialize the actual chart (for line display)
+                console.log('🔍 Checking chart dependencies:', {
+                    'Chart.js available': typeof Chart !== 'undefined',
+                    'CrashChart available': typeof CrashChart !== 'undefined',
+                    'Canvas element exists': !!document.getElementById('multiplierChart')
+                });
+                
+                if (typeof Chart !== 'undefined' && typeof CrashChart !== 'undefined') {
+                    try {
                         window.crashChart = new CrashChart();
-                        console.log('✅ Crash chart fallback initialized');
+                        console.log('✅ CrashChart initialized for line display');
+                        console.log('📊 Chart state after creation:', {
+                            hasChart: !!window.crashChart.chart,
+                            hasCanvas: !!window.crashChart.canvas,
+                            isRunning: window.crashChart.isRunning
+                        });
+                    } catch (error) {
+                        console.error('💥 Error creating CrashChart:', error);
+                        window.crashChart = null;
                     }
+                } else {
+                    console.error('❌ CrashChart not available - line will not display');
+                    console.log('Missing dependencies:', {
+                        'Chart.js': typeof Chart === 'undefined' ? 'MISSING' : 'OK',
+                        'CrashChart': typeof CrashChart === 'undefined' ? 'MISSING' : 'OK'
+                    });
+                }
+                
+                // 2. Initialize the visualizer (for view switching)
+                if (typeof CrashVisualizer !== 'undefined') {
+                    window.crashVisualizer = new CrashVisualizer();
+                    console.log('✅ CrashVisualizer initialized for view switching');
+                } else {
+                    console.error('❌ CrashVisualizer not loaded - view switching disabled');
                 }
                 
                 // Check current value before initializing

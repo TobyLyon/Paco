@@ -6,6 +6,9 @@
 
 class CrashChart {
     constructor() {
+        console.log('🎯 CrashChart: Starting initialization...');
+        console.log('🔍 Chart.js version:', typeof Chart !== 'undefined' ? (Chart.version || 'Available') : 'NOT AVAILABLE');
+        
         this.chart = null;
         this.canvas = null;
         this.ctx = null;

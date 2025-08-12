@@ -743,8 +743,13 @@ class CrashGameClient {
                         if (window.rpcHealthChecker && attempts < maxAttempts) {
                             console.log('🏥 Triggering RPC health check and endpoint switch...');
                             try {
-                                await window.rpcHealthChecker.findHealthyEndpoint();
-                                console.log('✅ RPC endpoint switched, will retry transaction...');
+                                // Mark current endpoint as failed due to transaction error
+                                window.rpcHealthChecker.failedEndpoints.add(window.rpcHealthChecker.currentEndpoint);
+                                console.log(`🔴 Marking ${window.rpcHealthChecker.currentEndpoint} as failed due to transaction error`);
+                                
+                                // Find a different healthy endpoint
+                                const newEndpoint = await window.rpcHealthChecker.findHealthyEndpoint();
+                                console.log(`✅ RPC endpoint switched to: ${newEndpoint}, will retry transaction...`);
                             } catch (rpcError) {
                                 console.error('❌ RPC health check failed:', rpcError);
                             }

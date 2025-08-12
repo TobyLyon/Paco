@@ -334,6 +334,13 @@ class CrashGameClient {
             if (window.crashChart) {
                 console.log('📈 FORCING: Starting crash chart');
                 window.crashChart.startNewRound();
+                console.log('📊 Chart state after start:', {
+                    isRunning: window.crashChart.isRunning,
+                    hasChart: !!window.crashChart.chart,
+                    hasRoundStartTime: !!window.crashChart.roundStartTime
+                });
+            } else {
+                console.log('❌ crashChart not found - chart visuals will not work');
             }
             
             console.log('🎮 ROUND START COMPLETE - All systems should be running');
@@ -1275,6 +1282,12 @@ class CrashGameClient {
      */
     startServerDrivenVisuals() {
         console.log('🎮 Starting server-driven visual animation...');
+        console.log('🔍 Available visual systems:', {
+            crashChart: !!window.crashChart,
+            crashVisualizer: !!window.crashVisualizer,
+            multiplierDisplay: !!window.multiplierDisplay,
+            updatePacoMood: typeof updatePacoMood === 'function'
+        });
         
         if (this.visualAnimationFrame) {
             cancelAnimationFrame(this.visualAnimationFrame);
@@ -1328,12 +1341,26 @@ class CrashGameClient {
                 multiplierElement.textContent = multiplier.toFixed(2) + 'x';
             }
             
-            // 2. Update chart
-            if (window.crashChart && typeof window.crashChart.addDataPoint === 'function') {
-                window.crashChart.addDataPoint(elapsed, multiplier);
+            // 2. Update chart system (CRITICAL for line indicator)
+            if (window.crashChart) {
+                if (typeof window.crashChart.addDataPoint === 'function') {
+                    if (window.crashChart.isRunning && window.crashChart.chart) {
+                        window.crashChart.addDataPoint(elapsed, multiplier);
+                    } else if (!window.crashChart.isRunning) {
+                        console.log('📈 Chart not running - attempting to start');
+                        window.crashChart.startNewRound();
+                        if (window.crashChart.isRunning) {
+                            window.crashChart.addDataPoint(elapsed, multiplier);
+                        }
+                    }
+                } else {
+                    console.log('❌ crashChart.addDataPoint not available');
+                }
+            } else {
+                console.log('❌ window.crashChart not available');
             }
             
-            // 3. Update rocket/visualizer
+            // 3. Update rocket/visualizer system
             if (window.crashVisualizer && typeof window.crashVisualizer.updatePosition === 'function') {
                 window.crashVisualizer.updatePosition(elapsed, multiplier);
             }
@@ -1350,6 +1377,7 @@ class CrashGameClient {
             
         } catch (error) {
             console.log('📊 Visual update error:', error);
+            console.log('🔍 Error details:', error.stack);
         }
     }
 

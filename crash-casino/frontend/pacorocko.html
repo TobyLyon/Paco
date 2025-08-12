@@ -1718,6 +1718,31 @@
                     // Start countdown for next round after crash
                     setTimeout(() => {
                         console.log('⏰ Starting countdown for next round after crash');
+                        
+                        // Show countdown immediately 
+                        document.getElementById('gameStatus').textContent = 'Place Your Bets';
+                        document.getElementById('countdownTimer').style.display = 'block';
+                        document.getElementById('gameStateMessage').textContent = '🎰 Next round starting in 5s - Place your bets now!';
+                        
+                        let remaining = 5;
+                        const countdownInterval = setInterval(() => {
+                            document.getElementById('countdownValue').textContent = remaining;
+                            
+                            if (remaining > 0) {
+                                document.getElementById('gameStateMessage').textContent = `🎰 Next round starting in ${remaining}s - Place your bets now!`;
+                            } else {
+                                document.getElementById('gameStateMessage').textContent = `🚀 Round starting...`;
+                            }
+                            
+                            remaining--;
+                            
+                            if (remaining < 0) {
+                                clearInterval(countdownInterval);
+                                document.getElementById('countdownTimer').style.display = 'none';
+                            }
+                        }, 1000);
+                        
+                        // Also try the crash client countdown as backup
                         if (window.crashGameClient && window.crashGameClient.startCountdown) {
                             window.crashGameClient.startCountdown(5);
                         }

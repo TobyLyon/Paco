@@ -208,19 +208,57 @@ class WalletBridge {
                         // Try Abstract Network compatible transaction using ethers.js with minimal params
             console.log('🔗 Sending transaction via optimized ethers.js for Abstract Network...');
             
-            // Use minimal transaction object to avoid Abstract Network compatibility issues
-            const minimalTx = {
+            // Abstract Network specific transaction format with required gas_per_pubdata_limit
+            const abstractTx = {
                 to: tx.to,
                 value: tx.value,
                 gasLimit: tx.gasLimit,
                 gasPrice: tx.gasPrice,
-                // No nonce, no chainId - let ethers.js handle these automatically
+                // Abstract Network specific parameter - CRITICAL for transaction success
+                customData: {
+                    gasPerPubdata: 50000, // Abstract Network requirement
+                    factoryDeps: []
+                },
+                // Let ethers.js handle nonce and chainId automatically
             };
 
-            console.log('📡 Minimal transaction object for Abstract:', minimalTx);
+            console.log('📡 Abstract Network transaction object:', abstractTx);
 
-            // Send via standard ethers.js (let it handle the low-level details)
-            const txResponse = await this.signer.sendTransaction(minimalTx);
+            // Try Abstract Network compatible transaction
+            let txResponse;
+            try {
+                // Method 1: Try ethers.js with Abstract Network parameters
+                console.log('🔄 Method 1: Ethers.js with Abstract Network customData...');
+                txResponse = await this.signer.sendTransaction(abstractTx);
+            } catch (ethersError) {
+                console.log('❌ Method 1 failed, trying direct wallet request...', ethersError.message);
+                
+                // Method 2: Direct wallet request with minimal parameters (bypass ethers.js)
+                console.log('🔄 Method 2: Direct wallet request (bypass ethers.js)...');
+                
+                const directTx = {
+                    from: await this.signer.getAddress(),
+                    to: tx.to,
+                    value: '0x' + tx.value.toString(16),
+                    gas: '0x' + tx.gasLimit.toString(16),
+                    gasPrice: '0x' + tx.gasPrice.toString(16)
+                };
+                
+                console.log('📡 Direct wallet transaction:', directTx);
+                
+                const txHash = await window.ethereum.request({
+                    method: 'eth_sendTransaction',
+                    params: [directTx]
+                });
+                
+                // Create ethers-compatible response
+                txResponse = {
+                    hash: txHash,
+                    wait: async () => {
+                        return await this.provider.waitForTransaction(txHash);
+                    }
+                };
+            }
             
             console.log('✅ Transaction sent successfully:', txResponse.hash);
             

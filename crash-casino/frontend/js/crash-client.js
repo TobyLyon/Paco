@@ -644,8 +644,9 @@ class CrashGameClient {
             }
             
             // Get current wallet address for RPC debugging
-            this.playerAddress = window.realWeb3Modal.getAddress() || window.ethereum.selectedAddress;
+            this.playerAddress = window.ethereum.selectedAddress;
             console.log('🔗 Player address for debugging:', this.playerAddress);
+            console.log('🔍 Debug realWeb3Modal methods:', Object.keys(window.realWeb3Modal || {}));
             
             if (!this.playerAddress) {
                 console.log('⚠️ No player address found, attempting to get from MetaMask...');

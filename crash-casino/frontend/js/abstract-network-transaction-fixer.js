@@ -7,9 +7,10 @@
 
 class AbstractNetworkTransactionFixer {
     constructor() {
-        // Use ONLY official Abstract RPC to prevent wallet warnings
+        // Use reliable Abstract RPC endpoints that actually work for transactions
         this.alternativeEndpoints = [
-            'https://api.mainnet.abs.xyz' // Official Abstract RPC only
+            'https://abstract-mainnet.g.alchemy.com/public', // Alchemy public - better tx support
+            'https://api.mainnet.abs.xyz' // Official Abstract RPC (fallback)
         ];
         
         this.currentEndpointIndex = 0;

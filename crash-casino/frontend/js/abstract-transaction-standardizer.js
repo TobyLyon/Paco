@@ -171,38 +171,38 @@ class AbstractTransactionStandardizer {
             
             console.log('🚀 Sending standardized Abstract transaction:', standardTx);
             
-            // 5. Send via MetaMask with retry logic for Abstract RPC issues
+            // 5. Send via MetaMask with timeout to prevent endless popups
             let txHash;
+            
+            // Set a timeout to prevent endless confirmation popups
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('Transaction timeout - preventing endless popups')), 30000); // 30 second timeout
+            });
+            
             try {
-                console.log('🚀 Attempting transaction with current RPC...');
-                txHash = await window.ethereum.request({
+                console.log('🚀 Attempting transaction with 30s timeout...');
+                
+                const txPromise = window.ethereum.request({
                     method: 'eth_sendTransaction',
                     params: [standardTx]
                 });
-            } catch (rpcError) {
-                console.error('❌ Transaction failed with current RPC:', rpcError);
                 
-                // If it's an RPC error, try forcing a simple transaction format
-                if (rpcError.code === -32603 || rpcError.message.includes('Internal JSON-RPC error')) {
-                    console.log('🔄 RPC error detected, trying simplified transaction format...');
-                    
-                    // Ultra-simple transaction format for problematic RPCs
-                    const simpleTx = {
-                        from: standardTx.from,
-                        to: standardTx.to,
-                        value: standardTx.value,
-                        gas: '0x5208', // 21000 - minimum gas
-                        gasPrice: '0x3B9ACA00' // 1 gwei
-                    };
-                    
-                    console.log('🔧 Trying ultra-simple format:', simpleTx);
-                    txHash = await window.ethereum.request({
-                        method: 'eth_sendTransaction',
-                        params: [simpleTx]
-                    });
-                } else {
-                    throw rpcError;
+                txHash = await Promise.race([txPromise, timeoutPromise]);
+                
+            } catch (rpcError) {
+                console.error('❌ Transaction failed:', rpcError);
+                
+                // Check if user rejected the transaction
+                if (rpcError.code === 4001) {
+                    throw new Error('User rejected transaction');
                 }
+                
+                // If it's an RPC timeout or internal error, don't retry
+                if (rpcError.message?.includes('timeout') || rpcError.code === -32603) {
+                    throw new Error('RPC transaction failed - avoiding endless popups');
+                }
+                
+                throw rpcError;
             }
             
             console.log('✅ Transaction successful:', txHash);

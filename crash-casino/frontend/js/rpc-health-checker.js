@@ -7,6 +7,7 @@
 class RPCHealthChecker {
     constructor() {
         this.endpoints = [
+            'https://abstract-mainnet.g.alchemy.com/public', // Alchemy public RPC - better transaction support
             'https://api.mainnet.abs.xyz'     // Official Abstract mainnet RPC from docs.abs.xyz
         ];
         this.currentEndpoint = this.endpoints[0];

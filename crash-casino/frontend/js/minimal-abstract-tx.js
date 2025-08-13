@@ -30,6 +30,7 @@ class MinimalAbstractTx {
             
             // ABSOLUTE MINIMAL transaction object
             const minimalTx = {
+                from: accounts[0], // Required: sender address
                 to: to,
                 value: '0x' + valueWei.toString(16)
             };

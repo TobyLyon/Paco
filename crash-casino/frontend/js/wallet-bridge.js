@@ -204,28 +204,30 @@ class WalletBridge {
             // ABSTRACT NETWORK FIX: Use proper ZK Stack transaction format
             const fromAddress = await this.signer.getAddress();
             
-            // Use Abstract L2 helper for proper transaction formatting
+            // Use Abstract L2 helper for transaction formatting, but remove non-standard fields
             let tx;
             if (window.abstractL2Helper) {
                 console.log('🔧 Using Abstract L2 Helper for transaction formatting');
                 tx = window.abstractL2Helper.formatTransactionForAbstract({
                     to: to,
                     value: value,
-                    gasLimit: 100000, // Increased for Abstract Network ZK processing
-                    gasPriceGwei: 0.5  // 0.5 gwei - balanced for Abstract Network
+                    gasLimit: 100000,
+                    gasPriceGwei: 0.5
                 });
-                tx.from = fromAddress; // Add from address
+                tx.from = fromAddress;
+                // Strip non-standard fields to satisfy MetaMask/RPC
+                delete tx.gas_per_pubdata_limit;
+                delete tx.maxFeePerGas; // ensure legacy path
+                delete tx.maxPriorityFeePerGas;
             } else {
-                // Fallback to manual formatting
                 console.log('⚠️ Abstract L2 Helper not available, using manual formatting');
                 tx = {
                     from: fromAddress,
                     to: to,
                     value: '0x' + ethers.parseEther(value.toString()).toString(16),
-                    gas: '0x186A0', // 100000 in hex
-                    gasPrice: '0x1DCD6500', // 0.5 gwei in hex
-                    data: '0x',
-                    gas_per_pubdata_limit: '0xC350' // 50000 - required for Abstract Network
+                    gas: '0x186A0',
+                    gasPrice: '0x1DCD6500',
+                    data: '0x'
                 };
             }
             
@@ -239,8 +241,9 @@ class WalletBridge {
             // Abstract Network: Use direct MetaMask request instead of ethers.js
             console.log('🔗 Sending transaction via direct MetaMask request for Abstract Network...');
             
-            // Use the pre-formatted transaction directly
-            const metaMaskTx = tx;
+            // Use the pre-formatted transaction directly (sanitized)
+            const metaMaskTx = { ...tx };
+            delete metaMaskTx.gas_per_pubdata_limit;
             
             console.log('📡 MetaMask transaction object:', metaMaskTx);
             
@@ -265,37 +268,18 @@ class WalletBridge {
                 // Continue with default gas limit
             }
             
-            // 🚀 USE TRANSACTION FIXER: Try multiple RPC endpoints
-            console.log('🚀 Using Abstract Network Transaction Fixer for multi-endpoint attempt...');
-            
+            // Direct MetaMask send with sanitized legacy tx
+            console.log('📡 Sending transaction via MetaMask:', metaMaskTx);
+            console.log('🔍 Transaction fields:', Object.keys(metaMaskTx));
             try {
-                const fixerResult = await window.abstractNetworkTransactionFixer.attemptTransactionWithFallbacks({
-                    to: to,
-                    value: value,
-                    gasLimit: 100000,
-                    gasPriceGwei: 0.5
+                txHash = await window.ethereum.request({
+                    method: 'eth_sendTransaction',
+                    params: [metaMaskTx]
                 });
-                
-                txHash = fixerResult.txHash;
-                console.log(`✅ Transaction successful via ${fixerResult.endpoint}: ${txHash}`);
-                
-            } catch (fixerError) {
-                console.log('❌ All RPC endpoints failed, falling back to original method...');
-                
-                // Fallback to original method
-                console.log('📡 Fallback: Sending transaction via MetaMask:', metaMaskTx);
-                console.log('🔍 Transaction fields:', Object.keys(metaMaskTx));
-                
-                try {
-                    txHash = await window.ethereum.request({
-                        method: 'eth_sendTransaction',
-                        params: [metaMaskTx]
-                    });
-                    console.log('✅ Transaction sent via fallback method');
-                } catch (zkError) {
-                    console.log('❌ Transaction failed:', zkError.message);
-                    throw zkError;
-                }
+                console.log('✅ Transaction sent');
+            } catch (zkError) {
+                console.log('❌ Transaction failed:', zkError.message);
+                throw zkError;
             }
             
             console.log('✅ Transaction sent via MetaMask:', txHash);

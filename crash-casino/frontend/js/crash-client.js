@@ -301,6 +301,12 @@ class CrashGameClient {
             this.roundStartTime = Date.now();
             this.currentMultiplier = 1.0;
             
+            // Notify bet interface of state change
+            if (window.betInterface && typeof window.betInterface.onGameStateChange === 'function') {
+                window.betInterface.onGameStateChange('running');
+                console.log('🎮 Notified bet interface: game state = running');
+            }
+            
             // Hide countdown timer when round starts
             const countdownElement = document.getElementById('countdownTimer');
             if (countdownElement) {
@@ -369,11 +375,30 @@ class CrashGameClient {
                 console.log('💥 Multiplier display updated with crash styling');
             }
             
+            // CRITICAL: Handle player bet conclusion
+            if (this.playerBet && !this.playerBet.cashedOut) {
+                console.log('💸 Player bet lost in crash - clearing bet state');
+                this.playerBet = null; // Clear the bet since it was lost
+            }
+            
+            // Hide cash out button immediately
+            const cashOutBtn = document.getElementById('cashOutBtn');
+            if (cashOutBtn) {
+                cashOutBtn.style.display = 'none';
+                console.log('🚫 Cash out button hidden - round ended');
+            }
+            
             // Update UI status
             const gameStatus = document.getElementById('gameStatus');
             const gameMessage = document.getElementById('gameStateMessage');
             if (gameStatus) gameStatus.textContent = 'Crashed';
             if (gameMessage) gameMessage.textContent = `Crashed at ${crash.toFixed(2)}x`;
+            
+            // Notify bet interface of crashed state
+            if (window.betInterface && typeof window.betInterface.onGameStateChange === 'function') {
+                window.betInterface.onGameStateChange('crashed');
+                console.log('🎮 Notified bet interface: game state = crashed');
+            }
             
             // Update local system
             if (window.liveGameSystem) {
@@ -567,6 +592,25 @@ class CrashGameClient {
         console.log('🎲 Betting phase started - waiting for server countdown');
         this.gameState = 'betting';
         
+        // CRITICAL: Reset bet state for new round
+        if (this.playerBet) {
+            console.log('🧹 Clearing previous round bet state for new betting phase');
+            this.playerBet = null;
+        }
+        
+        // Hide cash out button for new round
+        const cashOutBtn = document.getElementById('cashOutBtn');
+        if (cashOutBtn) {
+            cashOutBtn.style.display = 'none';
+            console.log('🚫 Cash out button hidden - new betting phase');
+        }
+        
+        // Notify bet interface of betting state
+        if (window.betInterface && typeof window.betInterface.onGameStateChange === 'function') {
+            window.betInterface.onGameStateChange('betting');
+            console.log('🎮 Notified bet interface: game state = betting');
+        }
+        
         // 🚫 REMOVED: No local countdown - server controls timing
         // this.startCountdown(6); // DISABLED
         
@@ -610,7 +654,12 @@ class CrashGameClient {
         // Show cash out button if player has bet
         if (this.playerBet && !this.playerBet.cashedOut) {
             const cashOutBtn = document.getElementById('cashOutBtn');
-            if (cashOutBtn) cashOutBtn.style.display = 'block';
+            if (cashOutBtn) {
+                cashOutBtn.style.display = 'block';
+                console.log('💰 Cash out button shown - round started with active bet');
+            }
+        } else {
+            console.log('🚫 No active bet for cash out button');
         }
         
         // Hide countdown timer since round started
@@ -748,9 +797,28 @@ class CrashGameClient {
             this.playerBet.cashedOut = true;
             this.playerBet.multiplier = data.multiplier;
             this.playerBet.payout = data.payout;
+            console.log('✅ Player successfully cashed out - clearing bet state');
+            
+            // Clear the bet after successful cash out
+            setTimeout(() => {
+                this.playerBet = null;
+                console.log('🧹 Bet state cleared after successful cash out');
+            }, 2000); // Give time to show the success message
         }
         
-        document.getElementById('cashOutBtn').style.display = 'none';
+        // Hide cash out button immediately
+        const cashOutBtn = document.getElementById('cashOutBtn');
+        if (cashOutBtn) {
+            cashOutBtn.style.display = 'none';
+            console.log('🚫 Cash out button hidden - successfully cashed out');
+        }
+        
+        // Notify bet interface that bet concluded successfully
+        if (window.betInterface && typeof window.betInterface.onCashOut === 'function') {
+            window.betInterface.onCashOut(data);
+            console.log('🎮 Notified bet interface of successful cash out');
+        }
+        
         this.showNotification(`✅ Cashed out at ${data.multiplier.toFixed(2)}x for ${data.payout.toFixed(4)} ETH!`, 'success');
     }
 
@@ -1077,6 +1145,22 @@ class CrashGameClient {
 
             // Update UI
             document.getElementById('yourBetAmount').textContent = amount.toFixed(4) + ' ETH';
+            
+            // Show cash out button if round is running
+            const cashOutBtn = document.getElementById('cashOutBtn');
+            if (cashOutBtn && this.gameState === 'running') {
+                cashOutBtn.style.display = 'block';
+                console.log('💰 Cash out button displayed - bet confirmed');
+            }
+            
+            // Notify bet interface about successful bet
+            if (window.betInterface && typeof window.betInterface.onBetPlaced === 'function') {
+                window.betInterface.onBetPlaced({
+                    amount: amount,
+                    txHash: receipt.transactionHash
+                });
+                console.log('🎯 Bet interface notified of successful bet placement');
+            }
             document.getElementById('potentialWin').textContent = amount.toFixed(4) + ' ETH';
             document.getElementById('betStatus').style.display = 'block';
             document.getElementById('placeBetBtn').disabled = true;

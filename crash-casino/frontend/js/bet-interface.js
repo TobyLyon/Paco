@@ -324,11 +324,17 @@ class BetInterface {
      * 🏃‍♂️ Cash out current bet
      */
     cashOut() {
-        if (!this.currentBet || !window.crashGameClient) {
+        // Check for active bet in either bet interface or crash client
+        const hasActiveBet = this.currentBet || (window.crashGameClient && window.crashGameClient.playerBet && !window.crashGameClient.playerBet.cashedOut);
+        
+        if (!hasActiveBet || !window.crashGameClient) {
+            console.log('🚫 No active bet to cash out or crash client not available');
+            this.showNotification('❌ No active bet to cash out', 'error');
             return;
         }
 
         try {
+            console.log('🏃‍♂️ Cashing out bet via crash client...');
             window.crashGameClient.cashOut();
             
             // Hide cash out button
@@ -336,6 +342,10 @@ class BetInterface {
             if (cashOutBtn) {
                 cashOutBtn.style.display = 'none';
             }
+            
+            // Clear current bet
+            this.currentBet = null;
+            
         } catch (error) {
             console.error('❌ Cash out error:', error);
             this.showNotification('❌ Error cashing out: ' + error.message, 'error');
@@ -443,8 +453,14 @@ class BetInterface {
                     placeBetBtn.disabled = true;
                     placeBetBtn.textContent = '🔒 ROUND ACTIVE';
                 }
-                if (cashOutBtn && this.currentBet) {
+                
+                // Show cash out button if player has bet (check both currentBet and crash client's playerBet)
+                const hasActiveBet = this.currentBet || (window.crashGameClient && window.crashGameClient.playerBet && !window.crashGameClient.playerBet.cashedOut);
+                if (cashOutBtn && hasActiveBet) {
                     cashOutBtn.style.display = 'block';
+                    console.log('💰 Cash out button displayed - running state with active bet');
+                } else {
+                    console.log('🚫 No cash out button - no active bet found');
                 }
                 break;
                 
@@ -458,11 +474,34 @@ class BetInterface {
                     cashOutBtn.style.display = 'none';
                 }
                 
-                // Clear current bet after a delay
+                // CRITICAL: Clear current bet immediately when round crashes
+                if (this.currentBet) {
+                    console.log('🧹 Clearing bet interface currentBet - round crashed');
+                    this.currentBet = null;
+                }
+                
+                // Clear UI after a delay
                 setTimeout(() => {
                     this.hideBetStatus();
                     this.validateBetAmount();
                 }, 3000);
+                break;
+                
+            case 'betting':
+                // New betting phase - reset for new round
+                if (placeBetBtn) {
+                    placeBetBtn.disabled = false;
+                    placeBetBtn.textContent = '🎯 PLACE BET';
+                }
+                if (cashOutBtn) {
+                    cashOutBtn.style.display = 'none';
+                }
+                
+                // Clear any lingering bet state
+                if (this.currentBet) {
+                    console.log('🧹 Clearing bet interface currentBet - new betting phase');
+                    this.currentBet = null;
+                }
                 break;
         }
     }

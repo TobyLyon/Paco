@@ -135,7 +135,7 @@ class AbstractL2Helper {
         // Abstract ZK Stack recommended configuration
         // Since excess is refunded, we can be generous to ensure success
         const baseConfig = {
-            gasPrice: '0x5F5E100', // 0.1 gwei - Ultra-low for Abstract's dual fee structure
+            gasPrice: '0x2A05F200', // 0.7 gwei - Higher than current network rate for reliability
             gas: '0x5208', // 21k gas - Standard ETH transfer minimum (bootloader refunds excess)
             gas_per_pubdata_limit: '0x4E20' // 20k pubdata - Minimal for simple transfers
         };
@@ -243,12 +243,24 @@ class AbstractL2Helper {
             try {
                 console.log(`🚀 Abstract L2 transaction attempt ${attempt}/${maxRetries}`);
                 
+                // DEBUG: Log the exact transaction object being sent
+                console.log('🔍 EXACT TRANSACTION OBJECT BEING SENT TO METAMASK:');
+                console.log('📋 Transaction fields:', Object.keys(transaction));
+                console.log('📋 Full transaction object:', JSON.stringify(transaction, null, 2));
+                
                 // Validate transaction format
                 const validation = this.validateTransaction(transaction);
                 if (!validation.isValid) {
+                    console.error('❌ Transaction validation failed:', validation.errors);
                     throw new Error('Transaction validation failed: ' + validation.errors.join(', '));
                 }
+                console.log('✅ Transaction validation passed');
 
+                // DEBUG: Log MetaMask request details
+                console.log('🔗 Sending to MetaMask via eth_sendTransaction...');
+                console.log('📤 Request method: eth_sendTransaction');
+                console.log('📤 Request params length:', [transaction].length);
+                
                 // Send via MetaMask
                 const txHash = await window.ethereum.request({
                     method: 'eth_sendTransaction',

@@ -25,8 +25,11 @@ class CrashVisualizer {
         console.log('🎮 Initializing crash visualizer...');
         
         try {
-            // Initialize chart system
-            if (typeof CrashChart !== 'undefined') {
+            // Use existing chart system if available, otherwise create new one
+            if (window.crashChart && window.crashChart.chart) {
+                this.chart = window.crashChart;
+                console.log('✅ Using existing chart system (avoiding canvas reuse)');
+            } else if (typeof CrashChart !== 'undefined') {
                 this.chart = new CrashChart();
                 console.log('✅ Chart system initialized');
             } else {
@@ -88,9 +91,6 @@ class CrashVisualizer {
         
         // Save setting
         localStorage.setItem('crashVisualizerMode', this.useRocket ? 'rocket' : 'chart');
-        
-        // Update toggle button text
-        this.updateToggleButton();
         
         console.log(`🔄 Switched to: ${this.useRocket ? 'Rocket' : 'Chart'}`);
         return true;

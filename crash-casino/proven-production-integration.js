@@ -414,10 +414,11 @@ class ProvenPacoRockoProduction {
      */
     setupAPIRoutes() {
         // Health check endpoint
-        this.app.get('/api/crash/health', (req, res) => {
+        this.app.get('/api/crash/health', async (req, res) => {
             const gameState = this.provenEngine?.getGameState() || {};
             
-            res.json({
+            // Basic health check (always fast)
+            const basicHealth = {
                 status: 'healthy',
                 timestamp: Date.now(),
                 services: {
@@ -427,6 +428,95 @@ class ProvenPacoRockoProduction {
                 },
                 gameState: gameState,
                 version: '3.0.0-proven'
+            };
+            
+            // Comprehensive validation only if requested
+            if (req.query.validate === 'true') {
+                try {
+                    console.log('🔍 Running comprehensive health validation...');
+                    
+                    // Environment validation
+                    const requiredVars = ['HOUSE_WALLET_ADDRESS', 'ABSTRACT_NETWORK', 'CORS_ORIGIN'];
+                    const missingVars = requiredVars.filter(v => !process.env[v]);
+                    
+                    // Database test (with timeout)
+                    let dbStatus = 'unknown';
+                    try {
+                        if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+                            const { createClient } = require('@supabase/supabase-js');
+                            const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+                            
+                            const { data, error } = await Promise.race([
+                                supabase.from('crash_rounds').select('count').limit(1),
+                                new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000))
+                            ]);
+                            
+                            dbStatus = error ? `error: ${error.message}` : 'connected';
+                        } else {
+                            dbStatus = 'missing_env_vars';
+                        }
+                    } catch (dbError) {
+                        dbStatus = `failed: ${dbError.message}`;
+                    }
+                    
+                    // Wallet validation
+                    let walletStatus = 'unknown';
+                    try {
+                        const { getHouseWallet } = require('./backend/house-wallet.js');
+                        const wallet = getHouseWallet();
+                        walletStatus = wallet ? `loaded: ${wallet.address.slice(0, 8)}...` : 'failed_to_load';
+                    } catch (walletError) {
+                        walletStatus = `error: ${walletError.message}`;
+                    }
+                    
+                    res.json({
+                        ...basicHealth,
+                        validation: {
+                            environment: {
+                                missingVars: missingVars,
+                                status: missingVars.length === 0 ? 'ok' : 'incomplete'
+                            },
+                            database: {
+                                status: dbStatus,
+                                supabaseConfigured: !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY)
+                            },
+                            wallet: {
+                                status: walletStatus,
+                                networkConfigured: !!process.env.ABSTRACT_NETWORK
+                            },
+                            deployment: {
+                                platform: process.env.RENDER ? 'render' : 'local',
+                                nodeVersion: process.version,
+                                uptime: Math.floor((Date.now() - this.gameStats.uptime) / 1000)
+                            }
+                        }
+                    });
+                    
+                } catch (validationError) {
+                    res.json({
+                        ...basicHealth,
+                        validation: {
+                            error: validationError.message,
+                            status: 'validation_failed'
+                        }
+                    });
+                }
+            } else {
+                res.json(basicHealth);
+            }
+        });
+        
+        // Add global health endpoint for render
+        this.app.get('/health', async (req, res) => {
+            res.json({
+                status: 'ok',
+                timestamp: Date.now(),
+                message: 'PacoRocko backend is running',
+                services: {
+                    crash_casino: !!this.provenEngine,
+                    websocket: !!this.io,
+                    database: this.config.enableDatabase
+                }
             });
         });
 

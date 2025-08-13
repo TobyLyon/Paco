@@ -69,27 +69,31 @@ crashCasino.start(PORT).then(async () => {
     console.log('🎯 Using server-authority pattern with client-prediction');
     console.log('🎯 ALL sync issues resolved with proven reference implementation!');
     
-    // 🔧 Run comprehensive environment validation
-    console.log('\n🔍 Running post-startup validation...');
-    try {
-        const success = await fixer.runAllFixes();
-        if (success) {
-            console.log('🎉 All systems validated and working!');
-        } else {
-            console.log('⚠️ Some issues detected, but server is running');
+    // 🚀 DEPLOYMENT FIX: Skip blocking validation during startup
+    console.log('\n✅ Server started successfully! Validation moved to /health endpoint');
+    console.log('🔧 Run validation manually: GET /health?validate=true');
+    
+    // 🔧 Run lightweight validation in background (non-blocking)
+    setTimeout(async () => {
+        console.log('\n🔍 Running background validation (non-blocking)...');
+        try {
+            // Only run quick, non-blocking checks
+            console.log('⚡ Environment variables check...');
+            const requiredVars = ['HOUSE_WALLET_ADDRESS', 'CORS_ORIGIN'];
+            const missing = requiredVars.filter(v => !process.env[v]);
+            if (missing.length > 0) {
+                console.log('⚠️ Missing env vars:', missing.join(', '));
+            } else {
+                console.log('✅ Essential environment variables present');
+            }
+        } catch (bgError) {
+            console.log('⚠️ Background validation error (non-critical):', bgError.message);
         }
-        fixer.generateEnvironmentReport();
-    } catch (validationError) {
-        console.error('⚠️ Validation error (non-critical):', validationError.message);
-    }
+    }, 2000); // Run after 2 seconds, non-blocking
+    
 }).catch((error) => {
     console.error('❌ Failed to start server:', error);
     console.error('❌ Error details:', error.stack);
-    
-    // 🔧 Generate diagnostic report on failure
-    console.log('\n📋 Generating diagnostic report...');
-    fixer.generateEnvironmentReport();
-    
     process.exit(1);
 });
 

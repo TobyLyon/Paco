@@ -392,9 +392,8 @@ class WalletBridge {
                         decimals: 18
                     },
                     rpcUrls: [
-                        'https://api.mainnet.abs.xyz',
-                        'https://rpc.abs.xyz'
-                        // Removed Alchemy demo - doesn't support Abstract ZK Stack fields
+                        'https://api.mainnet.abs.xyz'
+                        // Using only official Abstract RPC to prevent wallet warnings
                     ],
                     blockExplorerUrls: ['https://abscan.org']
                 }]

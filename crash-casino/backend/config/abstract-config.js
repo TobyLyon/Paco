@@ -20,14 +20,10 @@ const abstractNetworks = {
     mainnet: {
         chainId: 2741, // Abstract Mainnet
         name: 'Abstract',
-        rpcUrl: process.env.ABSTRACT_RPC_URL || 'https://snowy-restless-film.abstract-mainnet.quiknode.pro/0d86d78bd448a138a16e65ee68b783a6d41bde5c/',
+        rpcUrl: process.env.ABSTRACT_RPC_URL || 'https://api.mainnet.abs.xyz',
         alternativeRpcUrls: [
-            'https://snowy-restless-film.abstract-mainnet.quiknode.pro/0d86d78bd448a138a16e65ee68b783a6d41bde5c/', // PREMIUM: QuickNode
-            'https://api.mainnet.abs.xyz',
-            'https://rpc.abs.xyz',
-            'https://abstract.drpc.org',
-            'https://abstract-mainnet.rpc.thirdweb.com',
-            'https://abstract.blockpi.network/v1/rpc/public'
+            'https://api.mainnet.abs.xyz'
+            // Using only official Abstract RPC to prevent wallet warnings
         ],
         wsUrl: 'wss://api.mainnet.abs.xyz', 
         explorer: 'https://abscan.org',

@@ -509,7 +509,7 @@ class ProvenPacoRockoProduction {
         // Add global health endpoint for render
         this.app.get('/health', async (req, res) => {
             res.json({
-                status: 'ok',
+                status: 'OK',  // Fixed: Use uppercase OK for Render compatibility
                 timestamp: Date.now(),
                 message: 'PacoRocko backend is running',
                 services: {

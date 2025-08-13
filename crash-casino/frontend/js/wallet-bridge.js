@@ -182,30 +182,14 @@ class WalletBridge {
             
             // Use Abstract L2 helper for transaction formatting, but remove non-standard fields
             let tx;
-            if (window.abstractL2Helper) {
-                console.log('🔧 Using Abstract L2 Helper for transaction formatting');
-                tx = window.abstractL2Helper.formatTransactionForAbstract({
-                    to: to,
-                    value: value,
-                    gasLimit: 100000,
-                    gasPriceGwei: 0.5
-                });
-                tx.from = fromAddress;
-                // Strip non-standard fields to satisfy MetaMask/RPC
-                delete tx.gas_per_pubdata_limit;
-                delete tx.maxFeePerGas; // ensure legacy path
-                delete tx.maxPriorityFeePerGas;
-            } else {
-                console.log('⚠️ Abstract L2 Helper not available, using manual formatting');
-                tx = {
-                    from: fromAddress,
-                    to: to,
-                    value: '0x' + ethers.parseEther(value.toString()).toString(16),
-                    gas: '0x186A0',
-                    gasPrice: '0x1DCD6500',
-                    data: '0x'
-                };
-            }
+            // Ultra-minimal transaction - let MetaMask estimate ALL gas parameters
+            console.log('🎯 Using minimal transaction format - MetaMask will estimate gas');
+            tx = {
+                from: fromAddress,
+                to: to,
+                value: '0x' + ethers.parseEther(value.toString()).toString(16),
+                data: '0x'
+            };
             
             console.log('📊 Using legacy transaction format for Abstract Network compatibility');
 
@@ -217,9 +201,8 @@ class WalletBridge {
             // Abstract Network: Use direct MetaMask request instead of ethers.js
             console.log('🔗 Sending transaction via direct MetaMask request for Abstract Network...');
             
-            // Use the pre-formatted transaction directly (sanitized)
+            // Use the pre-formatted transaction directly (already minimal)
             const metaMaskTx = { ...tx };
-            delete metaMaskTx.gas_per_pubdata_limit;
             
             console.log('📡 MetaMask transaction object:', metaMaskTx);
             

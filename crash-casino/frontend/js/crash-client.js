@@ -215,6 +215,27 @@ class CrashGameClient {
             this.socket.onAny((eventName, ...args) => {
                 console.log(`📡 SOCKET EVENT RECEIVED: ${eventName}`, args);
             });
+
+            // 💰 Listen for automatic payout notifications
+            this.socket.on('payoutSuccess', (data) => {
+                console.log('💰 Automatic payout successful:', data);
+                this.showNotification(
+                    `💰 Payout Received! ${data.payout.toFixed(4)} ETH sent to your wallet`,
+                    'success',
+                    8000
+                );
+                this.showTransactionStatus('success', 'Payout Sent', `Transaction: ${data.txHash}`);
+            });
+
+            this.socket.on('payoutFailed', (data) => {
+                console.error('❌ Automatic payout failed:', data);
+                this.showNotification(
+                    `❌ Payout Failed: ${data.error}`,
+                    'error',
+                    8000
+                );
+            });
+
             this.updateConnectionStatus(true);
             
             // Server will initiate rounds - no local initiation needed

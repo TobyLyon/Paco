@@ -196,9 +196,56 @@ class ProvenPacoRockoProduction {
             this.io.emit('bet_placed', data); // Snake_case version
         });
 
-        this.provenEngine.on('playerCashedOut', (data) => {
+        this.provenEngine.on('playerCashedOut', async (data) => {
             console.log(`💸 Player cashed out: ${data.playerId} @ ${data.multiplier}x`);
             
+            // AUTOMATIC PAYOUT: Process blockchain transaction
+            if (this.walletIntegration && data.payout > 0) {
+                try {
+                    console.log(`💰 Processing automatic payout: ${data.payout.toFixed(4)} ETH to ${data.playerId}`);
+                    
+                    const payoutResult = await this.walletIntegration.processWinnerPayout(
+                        data.playerId,        // Player address
+                        data.betAmount || 0.001, // Original bet amount
+                        data.multiplier,      // Cashout multiplier
+                        data.roundId         // Round ID for tracking
+                    );
+                    
+                    if (payoutResult.success) {
+                        console.log(`✅ Automatic payout successful: ${payoutResult.txHash}`);
+                        
+                        // Notify player of successful payout
+                        this.io.emit('payoutSuccess', {
+                            roundId: data.roundId,
+                            playerId: data.playerId,
+                            payout: data.payout,
+                            txHash: payoutResult.txHash,
+                            multiplier: data.multiplier
+                        });
+                    } else {
+                        console.error(`❌ Automatic payout failed: ${payoutResult.error}`);
+                        
+                        // Notify player of payout failure
+                        this.io.emit('payoutFailed', {
+                            roundId: data.roundId,
+                            playerId: data.playerId,
+                            error: payoutResult.error
+                        });
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ Payout processing error:', error);
+                    
+                    // Notify player of payout failure
+                    this.io.emit('payoutFailed', {
+                        roundId: data.roundId,
+                        playerId: data.playerId,
+                        error: error.message
+                    });
+                }
+            }
+            
+            // Send cashout event to all clients
             this.io.emit('playerCashedOut', {
                 roundId: data.roundId,
                 playerId: data.playerId,
@@ -228,7 +275,7 @@ class ProvenPacoRockoProduction {
                 history: gameState.history
             });
             
-            // Handle betting
+            // Handle betting (old event name)
             socket.on('placeBet', async (data) => {
                 try {
                     const { amount, payoutMultiplier, walletAddress } = data;
@@ -244,7 +291,8 @@ class ProvenPacoRockoProduction {
                         socket.id, 
                         walletAddress, 
                         amount, 
-                        payoutMultiplier
+                        payoutMultiplier,
+                        walletAddress // Pass player address
                     );
                     
                     if (success) {
@@ -256,6 +304,50 @@ class ProvenPacoRockoProduction {
                     socket.emit('error', { message: error.message });
                 }
             });
+
+            // Handle betting (new event name from frontend)
+            socket.on('place_bet', async (data) => {
+                try {
+                    const { betAmount, autoPayoutMultiplier, txHash, blockNumber, playerAddress } = data;
+                    
+                    // Validate bet data
+                    if (!betAmount || !playerAddress || !txHash) {
+                        socket.emit('error', { message: 'Invalid bet data' });
+                        return;
+                    }
+                    
+                    // Use auto payout multiplier or default to high value for manual cashout
+                    const payoutMultiplier = autoPayoutMultiplier || 1000.0;
+                    
+                    console.log(`🎲 Processing bet: ${betAmount} ETH from ${playerAddress} (tx: ${txHash})`);
+                    
+                    // Store player address on socket for cashouts
+                    socket.playerAddress = playerAddress;
+                    
+                    // Place bet using proven engine with player address
+                    const success = this.provenEngine.placeBet(
+                        playerAddress,    // Use address as player ID
+                        playerAddress.slice(0, 8) + '...', // Short username
+                        parseFloat(betAmount), 
+                        payoutMultiplier,
+                        playerAddress     // Pass player address for payouts
+                    );
+                    
+                    if (success) {
+                        socket.emit('betSuccess', { 
+                            amount: betAmount, 
+                            payoutMultiplier,
+                            txHash,
+                            playerAddress
+                        });
+                        console.log(`✅ Bet placed successfully for ${playerAddress}`);
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ Bet placement error:', error.message);
+                    socket.emit('error', { message: error.message });
+                }
+            });
             
             // Handle manual cashout
             socket.on('cashOut', () => {
@@ -263,6 +355,32 @@ class ProvenPacoRockoProduction {
                     const success = this.provenEngine.manualCashout(socket.id);
                     if (success) {
                         socket.emit('cashOutSuccess');
+                    } else {
+                        socket.emit('error', { message: 'Cannot cash out now' });
+                    }
+                } catch (error) {
+                    console.error('❌ Cashout error:', error.message);
+                    socket.emit('error', { message: error.message });
+                }
+            });
+
+            // Handle manual cashout (new event name)
+            socket.on('cash_out', () => {
+                try {
+                    // For the new frontend, we need to find the player by their address
+                    // Since we're using address as playerId now, this should work
+                    const playerAddress = socket.playerAddress || socket.id;
+                    
+                    console.log(`🏃‍♂️ Manual cashout requested by ${playerAddress}`);
+                    
+                    const success = this.provenEngine.manualCashout(playerAddress);
+                    if (success) {
+                        socket.emit('cashout_success', {
+                            message: 'Cashed out successfully',
+                            multiplier: success.multiplier,
+                            payout: success.payout
+                        });
+                        console.log(`✅ Manual cashout successful for ${playerAddress}`);
                     } else {
                         socket.emit('error', { message: 'Cannot cash out now' });
                     }

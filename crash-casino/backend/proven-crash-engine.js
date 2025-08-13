@@ -217,9 +217,11 @@ class ProvenCrashEngine extends EventEmitter {
                 
                 this.emit('playerCashedOut', {
                     roundId: this.current_round_id,
-                    playerId: bettorData.the_user_id,
+                    playerId: bettorData.player_address || bettorData.the_user_id, // Use address for payouts
+                    username: bettorData.the_username,
                     multiplier: bettorData.payout_multiplier,
-                    payout: payout
+                    payout: payout,
+                    betAmount: bettorData.bet_amount
                 });
                 
                 console.log(`💰 Player ${bettorData.the_username} cashed out at ${bettorData.payout_multiplier}x for ${payout.toFixed(4)} ETH`);
@@ -230,7 +232,7 @@ class ProvenCrashEngine extends EventEmitter {
     /**
      * 🎲 Place a bet (during betting phase)
      */
-    placeBet(playerId, username, betAmount, payoutMultiplier) {
+    placeBet(playerId, username, betAmount, payoutMultiplier, playerAddress = null) {
         if (!this.betting_phase) {
             throw new Error('Not in betting phase');
         }
@@ -250,7 +252,8 @@ class ProvenCrashEngine extends EventEmitter {
             payout_multiplier: payoutMultiplier,
             cashout_multiplier: null,
             profit: null,
-            b_bet_live: true
+            b_bet_live: true,
+            player_address: playerAddress || playerId // Store player address for payouts
         };
         
         this.live_bettors_table.push(betInfo);
@@ -302,13 +305,19 @@ class ProvenCrashEngine extends EventEmitter {
                     
                     this.emit('playerCashedOut', {
                         roundId: this.current_round_id,
-                        playerId: playerId,
+                        playerId: bettorObject.player_address || playerId,
+                        username: bettorObject.the_username,
                         multiplier: current_multiplier,
-                        payout: bettorObject.bet_amount * current_multiplier
+                        payout: bettorObject.bet_amount * current_multiplier,
+                        betAmount: bettorObject.bet_amount
                     });
                     
                     console.log(`💸 Manual cashout: ${bettorObject.the_username} @ ${current_multiplier}x`);
-                    return true;
+                    return {
+                        multiplier: current_multiplier,
+                        payout: bettorObject.bet_amount * current_multiplier,
+                        betAmount: bettorObject.bet_amount
+                    };
                 }
             }
         }

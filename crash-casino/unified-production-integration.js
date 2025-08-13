@@ -276,10 +276,44 @@ class UnifiedPacoRockoProduction {
             currentMultiplier
         );
         
-        // Process wallet transaction if wallet integration available
-        if (this.walletIntegration && cashoutResult) {
-            // Handle wallet credit
-            console.log(`💳 Processing wallet cashout for ${player.playerId}`);
+        // AUTOMATIC PAYOUT: Process wallet transaction if cashout successful
+        if (this.walletIntegration && cashoutResult && cashoutResult.payout > 0) {
+            try {
+                console.log(`💰 Processing automatic cashout payout: ${cashoutResult.payout.toFixed(4)} ETH to ${player.playerId}`);
+                
+                const payoutResult = await this.walletIntegration.processWinnerPayout(
+                    player.playerId,           // Player address
+                    cashoutResult.betAmount || 0.001, // Original bet amount
+                    currentMultiplier,         // Cashout multiplier
+                    gameState.roundId          // Round ID for tracking
+                );
+                
+                if (payoutResult.success) {
+                    console.log(`✅ Automatic cashout payout successful: ${payoutResult.txHash}`);
+                    
+                    // Include payout info in cashout response
+                    cashoutResult.payoutTxHash = payoutResult.txHash;
+                    cashoutResult.payoutSuccess = true;
+                    
+                    // Notify all clients of successful payout
+                    this.io.emit('payoutSuccess', {
+                        roundId: gameState.roundId,
+                        playerId: player.playerId,
+                        payout: cashoutResult.payout,
+                        txHash: payoutResult.txHash,
+                        multiplier: currentMultiplier
+                    });
+                } else {
+                    console.error(`❌ Automatic cashout payout failed: ${payoutResult.error}`);
+                    cashoutResult.payoutSuccess = false;
+                    cashoutResult.payoutError = payoutResult.error;
+                }
+                
+            } catch (error) {
+                console.error('❌ Cashout payout processing error:', error);
+                cashoutResult.payoutSuccess = false;
+                cashoutResult.payoutError = error.message;
+            }
         }
         
         socket.emit('cashoutSuccess', {

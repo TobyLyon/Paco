@@ -252,23 +252,45 @@ class WalletBridge {
                 // Continue with default gas limit
             }
             
-            // ABSTRACT L2 FIX: Use helper for optimized transaction submission
+            // CRITICAL FIX: Try standard Ethereum format first, then ZK format if needed
             console.log('📡 Sending Abstract L2 transaction:', metaMaskTx);
-            console.log('🔍 DEBUG: Transaction fields before AbstractL2Helper:', Object.keys(metaMaskTx));
+            console.log('🔍 DEBUG: Transaction fields before send:', Object.keys(metaMaskTx));
             console.log('🔍 DEBUG: gas_per_pubdata_limit present?', 'gas_per_pubdata_limit' in metaMaskTx);
             console.log('🔍 DEBUG: gas_per_pubdata_limit value:', metaMaskTx.gas_per_pubdata_limit);
             
-            if (window.abstractL2Helper) {
-                // Use Abstract L2 helper with built-in retry logic
-                txHash = await window.abstractL2Helper.sendTransaction(metaMaskTx, 3);
-                console.log('🌐 Transaction sent via Abstract L2 Helper');
-            } else {
-                // Fallback to direct MetaMask request
+            try {
+                if (window.abstractL2Helper) {
+                    // Use Abstract L2 helper with progressive format retry
+                    txHash = await window.abstractL2Helper.sendTransaction(metaMaskTx, 3);
+                    console.log('🌐 Transaction sent via Abstract L2 Helper');
+                } else {
+                    // Fallback: Try standard format first
+                    console.log('🔧 Fallback: Using standard Ethereum transaction format');
+                    const standardTx = {
+                        from: metaMaskTx.from,
+                        to: metaMaskTx.to,
+                        value: metaMaskTx.value,
+                        gas: metaMaskTx.gas,
+                        gasPrice: metaMaskTx.gasPrice,
+                        data: metaMaskTx.data
+                        // No gas_per_pubdata_limit in standard format
+                    };
+                    
+                    txHash = await window.ethereum.request({
+                        method: 'eth_sendTransaction',
+                        params: [standardTx]
+                    });
+                    console.log('✅ Transaction sent via standard Ethereum format');
+                }
+            } catch (standardError) {
+                console.log('⚠️ Standard format failed, trying with ZK fields:', standardError.message);
+                
+                // Final fallback: Direct MetaMask request with ZK fields
                 txHash = await window.ethereum.request({
                     method: 'eth_sendTransaction',
                     params: [metaMaskTx]
                 });
-                console.log('⚠️ Transaction sent via fallback method');
+                console.log('✅ Transaction sent via ZK format fallback');
             }
             
             console.log('✅ Transaction sent via MetaMask:', txHash);

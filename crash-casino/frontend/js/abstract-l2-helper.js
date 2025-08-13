@@ -243,28 +243,44 @@ class AbstractL2Helper {
             try {
                 console.log(`🚀 Abstract L2 transaction attempt ${attempt}/${maxRetries}`);
                 
+                // CRITICAL FIX: Create standard Ethereum transaction format first
+                let cleanTransaction = {
+                    from: transaction.from,
+                    to: transaction.to,
+                    value: transaction.value,
+                    gas: transaction.gas,
+                    gasPrice: transaction.gasPrice,
+                    data: transaction.data || '0x'
+                };
+                
+                // Only add ZK-specific fields on retry attempts, not first attempt
+                if (attempt > 1 && transaction.gas_per_pubdata_limit) {
+                    cleanTransaction.gas_per_pubdata_limit = transaction.gas_per_pubdata_limit;
+                    console.log(`🔧 Attempt ${attempt}: Adding ZK Stack field gas_per_pubdata_limit`);
+                } else {
+                    console.log(`🔧 Attempt ${attempt}: Using STANDARD Ethereum transaction format (no ZK fields)`);
+                }
+                
                 // DEBUG: Log the exact transaction object being sent
                 console.log('🔍 EXACT TRANSACTION OBJECT BEING SENT TO METAMASK:');
-                console.log('📋 Transaction fields:', Object.keys(transaction));
-                console.log('📋 Full transaction object:', JSON.stringify(transaction, null, 2));
+                console.log('📋 Transaction fields:', Object.keys(cleanTransaction));
+                console.log('📋 Full transaction object:', JSON.stringify(cleanTransaction, null, 2));
                 
-                // Validate transaction format
-                const validation = this.validateTransaction(transaction);
-                if (!validation.isValid) {
-                    console.error('❌ Transaction validation failed:', validation.errors);
-                    throw new Error('Transaction validation failed: ' + validation.errors.join(', '));
+                // Use simplified validation for standard format
+                if (!cleanTransaction.from || !cleanTransaction.to || !cleanTransaction.value) {
+                    throw new Error('Missing required transaction fields: from, to, value');
                 }
                 console.log('✅ Transaction validation passed');
 
                 // DEBUG: Log MetaMask request details
                 console.log('🔗 Sending to MetaMask via eth_sendTransaction...');
                 console.log('📤 Request method: eth_sendTransaction');
-                console.log('📤 Request params length:', [transaction].length);
+                console.log('📤 Request params length:', [cleanTransaction].length);
                 
                 // Send via MetaMask
                 const txHash = await window.ethereum.request({
                     method: 'eth_sendTransaction',
-                    params: [transaction]
+                    params: [cleanTransaction]
                 });
 
                 console.log('✅ Abstract L2 transaction successful:', txHash);

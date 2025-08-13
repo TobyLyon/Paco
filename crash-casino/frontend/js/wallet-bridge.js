@@ -193,7 +193,7 @@ class WalletBridge {
                 to: to,
                 value: ethers.parseEther(value.toString()),
                 gas: '0x5208', // 21000 gas - standard for simple ETH transfers
-                gasPrice: '0x2A05F200', // 0.7 gwei - Higher than network rate for reliability
+                gasPrice: '0x5F5E100', // 0.1 gwei - Proven working gas price
                 data: '0x' // Required empty data field for transfers
             };
             
@@ -209,9 +209,6 @@ class WalletBridge {
             
             // Convert to Abstract L2 MetaMask-compatible format
             const fromAddress = await this.signer.getAddress();
-            // Get the correct nonce for the transaction
-            const nonce = await this.provider.getTransactionCount(fromAddress, 'pending');
-            console.log('🔢 Current nonce for transaction:', nonce);
             
             const metaMaskTx = {
                 from: fromAddress,
@@ -219,8 +216,8 @@ class WalletBridge {
                 value: typeof tx.value === 'string' ? tx.value : '0x' + BigInt(tx.value).toString(16),
                 gas: typeof tx.gas === 'string' ? tx.gas : '0x' + BigInt(tx.gas || tx.gasLimit || 100000).toString(16),
                 gasPrice: typeof tx.gasPrice === 'string' ? tx.gasPrice : '0x' + BigInt(tx.gasPrice).toString(16),
-                data: '0x', // Abstract L2 requires data field
-                nonce: '0x' + nonce.toString(16) // Explicit nonce for Abstract L2
+                data: '0x' // Abstract L2 requires data field
+                // Let MetaMask handle nonce automatically
             };
             
             console.log('📡 MetaMask transaction object:', metaMaskTx);
@@ -245,7 +242,7 @@ class WalletBridge {
                 } else {
                     // Fallback: Abstract L2 reliable configuration
                     metaMaskTx.gas = '0x5208'; // 21000 gas - standard ETH transfer
-                    metaMaskTx.gasPrice = '0x2A05F200'; // 0.7 gwei - Higher for reliability
+                    metaMaskTx.gasPrice = '0x5F5E100'; // 0.1 gwei - Proven working gas price
                     metaMaskTx.gas_per_pubdata_limit = '0x4E20'; // 20000 - conservative for simple transfers
                     console.log('🔧 Using fallback Abstract L2 reliable configuration');
                 }

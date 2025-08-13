@@ -135,7 +135,7 @@ class AbstractL2Helper {
         // Abstract ZK Stack recommended configuration
         // Since excess is refunded, we can be generous to ensure success
         const baseConfig = {
-            gasPrice: '0x2A05F200', // 0.7 gwei - Higher than current network rate for reliability
+            gasPrice: '0x5F5E100', // 0.1 gwei - Proven working gas price
             gas: '0x5208', // 21k gas - Standard ETH transfer minimum (bootloader refunds excess)
             gas_per_pubdata_limit: '0x4E20' // 20k pubdata - Minimal for simple transfers
         };

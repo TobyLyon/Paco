@@ -1030,6 +1030,34 @@ class CrashGameClient {
                             
                         } catch (standardizerError) {
                             console.error('❌ Standardized transaction failed:', standardizerError);
+                            
+                            // Try minimal transaction as last resort
+                            if (window.minimalAbstractTx) {
+                                try {
+                                    console.log('🔧 Trying MINIMAL transaction format as last resort...');
+                                    const minimalResult = await window.minimalAbstractTx.sendMinimalTransaction(
+                                        houseWallet,
+                                        amount
+                                    );
+                                    
+                                    console.log('✅ MINIMAL transaction successful:', minimalResult.txHash);
+                                    
+                                    // Notify server immediately with transaction hash
+                                    this.socket.emit('place_bet', {
+                                        amount: amount,
+                                        roundId: this.currentRoundId,
+                                        txHash: minimalResult.txHash,
+                                        timestamp: Date.now()
+                                    });
+                                    
+                                    return; // Success - exit the retry loop
+                                    
+                                } catch (minimalError) {
+                                    console.error('❌ MINIMAL transaction also failed:', minimalError);
+                                    // Continue to manual fallback
+                                }
+                            }
+                            
                             // Fall back to manual transaction handling below
                         }
                     }

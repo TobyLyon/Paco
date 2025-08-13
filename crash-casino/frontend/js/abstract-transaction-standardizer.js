@@ -10,12 +10,11 @@ class AbstractTransactionStandardizer {
         this.CHAIN_ID = '0xab5'; // 2741 in hex (lowercase for consistency)
         this.CHAIN_ID_DECIMAL = 2741;
         
-        // Standard ZK Stack configuration that works reliably
+        // Minimal configuration that works with Abstract RPC
         this.DEFAULT_CONFIG = {
-            gasPrice: '0x3B9ACA00', // 1 gwei - reliable for Abstract
-            gas: '0x186A0', // 100k gas - sufficient for most operations
-            gas_per_pubdata_limit: '0xC350', // 50k - required for ZK Stack
-            data: '0x' // Required field
+            gasPrice: '0x5F5E100', // 0.1 gwei - ultra low for Abstract
+            gas: '0x5208', // 21k gas - minimum for ETH transfers
+            data: '0x' // Required field (simple transfers)
         };
         
         console.log('🔧 Abstract Transaction Standardizer initialized');
@@ -40,15 +39,14 @@ class AbstractTransactionStandardizer {
             throw new Error('Missing "from" field - transaction needs sender address');
         }
         
-        // Start with a clean transaction object
+        // Start with MINIMAL transaction object for Abstract compatibility
         const standardTx = {
             from: transaction.from,
             to: transaction.to,
             value: this.normalizeValue(transaction.value),
             gasPrice: transaction.gasPrice || this.DEFAULT_CONFIG.gasPrice,
-            gas: transaction.gas || transaction.gasLimit || this.DEFAULT_CONFIG.gas,
-            data: transaction.data || this.DEFAULT_CONFIG.data,
-            gas_per_pubdata_limit: transaction.gas_per_pubdata_limit || this.DEFAULT_CONFIG.gas_per_pubdata_limit
+            gas: transaction.gas || transaction.gasLimit || this.DEFAULT_CONFIG.gas
+            // Removed data and gas_per_pubdata_limit - try minimal format first
         };
 
         // Remove any conflicting fields that cause issues
@@ -173,11 +171,39 @@ class AbstractTransactionStandardizer {
             
             console.log('🚀 Sending standardized Abstract transaction:', standardTx);
             
-            // 5. Send via MetaMask
-            const txHash = await window.ethereum.request({
-                method: 'eth_sendTransaction',
-                params: [standardTx]
-            });
+            // 5. Send via MetaMask with retry logic for Abstract RPC issues
+            let txHash;
+            try {
+                console.log('🚀 Attempting transaction with current RPC...');
+                txHash = await window.ethereum.request({
+                    method: 'eth_sendTransaction',
+                    params: [standardTx]
+                });
+            } catch (rpcError) {
+                console.error('❌ Transaction failed with current RPC:', rpcError);
+                
+                // If it's an RPC error, try forcing a simple transaction format
+                if (rpcError.code === -32603 || rpcError.message.includes('Internal JSON-RPC error')) {
+                    console.log('🔄 RPC error detected, trying simplified transaction format...');
+                    
+                    // Ultra-simple transaction format for problematic RPCs
+                    const simpleTx = {
+                        from: standardTx.from,
+                        to: standardTx.to,
+                        value: standardTx.value,
+                        gas: '0x5208', // 21000 - minimum gas
+                        gasPrice: '0x3B9ACA00' // 1 gwei
+                    };
+                    
+                    console.log('🔧 Trying ultra-simple format:', simpleTx);
+                    txHash = await window.ethereum.request({
+                        method: 'eth_sendTransaction',
+                        params: [simpleTx]
+                    });
+                } else {
+                    throw rpcError;
+                }
+            }
             
             console.log('✅ Transaction successful:', txHash);
             return { success: true, txHash };

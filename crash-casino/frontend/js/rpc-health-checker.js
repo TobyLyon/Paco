@@ -7,13 +7,7 @@
 class RPCHealthChecker {
     constructor() {
         this.endpoints = [
-            'https://snowy-restless-film.abstract-mainnet.quiknode.pro/0d86d78bd448a138a16e65ee68b783a6d41bde5c/', // PREMIUM: QuickNode endpoint
-            'https://rpc.abs.xyz',             // Try secondary first - may have better transaction support
-            'https://api.mainnet.abs.xyz',     // Primary official endpoint
-            'https://abstract.drpc.org',       // dRPC provider for Abstract
-            'https://abstract-mainnet.rpc.thirdweb.com',  // Thirdweb RPC
-            'https://1rpc.io/abs',             // 1RPC provider
-            'https://abstract.gateway.tenderly.co' // Tenderly gateway
+            'https://api.mainnet.abs.xyz'     // Official Abstract mainnet RPC only
         ];
         this.currentEndpoint = this.endpoints[0];
         this.failedEndpoints = new Set();

@@ -7,15 +7,9 @@
 
 class AbstractNetworkTransactionFixer {
     constructor() {
-        // Alternative RPC endpoints that may have better transaction support
+        // Use ONLY official Abstract RPC to prevent wallet warnings
         this.alternativeEndpoints = [
-            'https://snowy-restless-film.abstract-mainnet.quiknode.pro/0d86d78bd448a138a16e65ee68b783a6d41bde5c/', // PREMIUM: QuickNode endpoint
-            'https://rpc.abs.xyz',
-            'https://abstract.drpc.org', 
-            'https://abstract-mainnet.rpc.thirdweb.com',
-            'https://1rpc.io/abs',
-            'https://abstract.gateway.tenderly.co',
-            'https://api.mainnet.abs.xyz'
+            'https://api.mainnet.abs.xyz' // Official Abstract RPC only
         ];
         
         this.currentEndpointIndex = 0;

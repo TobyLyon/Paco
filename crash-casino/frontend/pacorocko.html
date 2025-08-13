@@ -33,6 +33,8 @@
     <!-- Simple Transaction Test (test what worked before) -->
     <script src="/crash-casino/frontend/js/simple-transaction-test.js?v=2025-01-12"></script>
     <script src="/crash-casino/frontend/js/abstract-network-transaction-fixer.js?v=2025-01-12"></script>
+    <!-- Abstract Transaction Standardizer (CRITICAL FIX for wrong network errors) -->
+    <script src="/crash-casino/frontend/js/abstract-transaction-standardizer.js?v=2025-01-12"></script>
     
     <!-- Abstract Global Wallet (AGW) - Official Integration -->
     <!-- AGW will be loaded from node_modules via our integration script -->
@@ -1056,7 +1058,7 @@
         // Abstract L2 Network Configuration - OPTIMIZED FOR LOW FEES
         window.ABSTRACT_NETWORKS = {
             mainnet: {
-                chainId: '0xAB5', // 2741 in hex
+                chainId: '0xab5', // 2741 in hex (lowercase for consistency)
                 chainName: 'Abstract',
                 nativeCurrency: {
                     name: 'Ether',

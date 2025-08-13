@@ -69,8 +69,9 @@ class RPCHealthChecker {
                 throw new Error(`Chain ID Error: ${chainData.error.message}`);
             }
 
-            // Verify it's Abstract mainnet (chain ID 2741 = 0xab5)
-            if (chainData.result !== '0xab5') {
+            // Verify it's Abstract mainnet (chain ID 2741 = 0xab5) - normalize case
+            const normalizedChainId = chainData.result.toLowerCase();
+            if (normalizedChainId !== '0xab5') {
                 throw new Error(`Wrong chain ID: ${chainData.result}, expected 0xab5`);
             }
 

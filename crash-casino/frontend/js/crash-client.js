@@ -1002,47 +1002,37 @@ class CrashGameClient {
                         }
                     }
                     
-                    // Streamlined transaction flow for production
-                    if (window.ethereum) {
-                        console.log('🚀 Preparing bet transaction for Abstract Network...');
-                        
-                        // Quick verification before transaction
-                        console.log('🔍 Quick wallet check...');
-                        console.log('🌐 window.ethereum.selectedAddress:', window.ethereum.selectedAddress);
-                        console.log('🌐 window.ethereum.chainId:', window.ethereum.chainId);
-                        console.log('🌐 window.ethereum.networkVersion:', window.ethereum.networkVersion);
-                        
-                        // Check if MetaMask has different RPC than our health checker
-                        if (window.ethereum.connection && window.ethereum.connection.url) {
-                            console.log('🔗 MetaMask connection URL:', window.ethereum.connection.url);
-                        }
-                        
-                        let chainId;
-                        let balanceEth;
+                    // Streamlined transaction flow using standardizer
+                    if (window.ethereum && window.abstractTransactionStandardizer) {
+                        console.log('🚀 Using Abstract Transaction Standardizer for reliable transactions...');
                         
                         try {
-                            // Quick chain verification only
-                            chainId = await window.ethereum.request({ method: 'eth_chainId' });
-                            console.log(`✅ Chain verified: ${chainId}`);
-                        } catch (basicError) {
-                            console.log(`🚨 CRITICAL: Basic RPC call failed: ${basicError.message}`);
-                            console.log(`🚨 Error code: ${basicError.code}`);
-                            console.log(`🚨 Error data:`, basicError.data);
-                            console.log(`🚨 This means Abstract Network RPC is completely broken!`);
-                            throw basicError; // Re-throw to stop transaction
+                            // Use the standardized transaction system
+                            const result = await window.abstractTransactionStandardizer.sendStandardizedTransaction({
+                                to: this.houseWallet,
+                                value: '0x' + ethers.parseEther(amount.toString()).toString(16)
+                            });
+                            
+                            console.log('✅ Standardized transaction successful:', result.txHash);
+                            
+                            // Notify server immediately with transaction hash
+                            this.socket.emit('place_bet', {
+                                amount: amount,
+                                roundId: this.currentRoundId,
+                                txHash: result.txHash,
+                                timestamp: Date.now()
+                            });
+                            
+                            return; // Success - exit the retry loop
+                            
+                        } catch (standardizerError) {
+                            console.error('❌ Standardized transaction failed:', standardizerError);
+                            // Fall back to manual transaction handling below
                         }
-                        
-                        // Skip all RPC testing - proceed directly to transaction
-                        console.log('🚀 Skipping RPC diagnostics - proceeding to transaction...');
-                        
-                        // Check if we're on Abstract mainnet
-                        if (chainId !== '0xab5') {
-                            console.log('⚠️ Not on Abstract mainnet (0xab5). Current chain:', chainId);
-                            throw new Error('Please switch to Abstract mainnet (Chain ID: 0xab5)');
-                        }
-                        
-                        // Balance check will be handled by MetaMask during transaction
                     }
+                    
+                    // Fallback: Manual transaction handling
+                    console.log('🔄 Falling back to manual transaction handling...');
                     
                     // Final debug before main transaction
                     console.log('🚀 SENDING MAIN BETTING TRANSACTION...');

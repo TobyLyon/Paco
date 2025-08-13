@@ -25,6 +25,21 @@ class AbstractTransactionStandardizer {
      * 🎯 Standardize ANY transaction for Abstract ZK Stack
      */
     standardizeTransaction(transaction) {
+        console.log('🔍 INPUT TRANSACTION:', transaction);
+        console.log('🔍 Transaction fields:', Object.keys(transaction));
+        console.log('🔍 From:', transaction.from);
+        console.log('🔍 To:', transaction.to);
+        console.log('🔍 Value:', transaction.value);
+        
+        // CRITICAL: Validate required fields
+        if (!transaction.to) {
+            throw new Error('Missing "to" field - this would create a contract deployment!');
+        }
+        
+        if (!transaction.from) {
+            throw new Error('Missing "from" field - transaction needs sender address');
+        }
+        
         // Start with a clean transaction object
         const standardTx = {
             from: transaction.from,
@@ -44,6 +59,8 @@ class AbstractTransactionStandardizer {
         delete standardTx.nonce; // Let MetaMask handle nonce
 
         console.log('🔧 Transaction standardized for Abstract ZK Stack:', standardTx);
+        console.log('🔍 Recipient address:', standardTx.to);
+        console.log('🔍 Value (wei):', standardTx.value);
         
         return standardTx;
     }
@@ -54,22 +71,37 @@ class AbstractTransactionStandardizer {
     normalizeValue(value) {
         if (!value) return '0x0';
         
-        // If already hex
+        console.log('🔍 Normalizing value:', value, 'type:', typeof value);
+        
+        // If already hex and valid
         if (typeof value === 'string' && value.startsWith('0x')) {
+            console.log('✅ Value already in hex format:', value);
             return value;
         }
         
-        // If numeric string or number
-        if (!isNaN(value)) {
-            return '0x' + parseInt(value).toString(16);
+        // If small decimal number (likely ETH amount)
+        if (!isNaN(value) && parseFloat(value) < 1000) {
+            const weiValue = ethers.parseEther(value.toString());
+            const hexValue = '0x' + weiValue.toString(16);
+            console.log('✅ Converted ETH to wei hex:', value, 'ETH ->', hexValue, 'wei');
+            return hexValue;
         }
         
-        // If ethers BigNumber or similar
+        // If ethers BigNumber or similar (large numbers)
         if (typeof value === 'object' && value.toString) {
-            return '0x' + BigInt(value.toString()).toString(16);
+            const hexValue = '0x' + BigInt(value.toString()).toString(16);
+            console.log('✅ Converted BigInt to hex:', value.toString(), '->', hexValue);
+            return hexValue;
         }
         
-        // Fallback
+        // If large string number (wei amounts)
+        if (typeof value === 'string' && /^\d+$/.test(value)) {
+            const hexValue = '0x' + BigInt(value).toString(16);
+            console.log('✅ Converted wei string to hex:', value, '->', hexValue);
+            return hexValue;
+        }
+        
+        console.error('❌ Could not normalize value:', value);
         return '0x0';
     }
 
@@ -107,7 +139,29 @@ class AbstractTransactionStandardizer {
                 throw new Error('No wallet connected');
             }
             
-            // 3. Prepare standardized transaction
+            // 3. Check Abstract ETH balance
+            console.log('🔍 Checking Abstract ETH balance...');
+            try {
+                const balanceHex = await window.ethereum.request({
+                    method: 'eth_getBalance',
+                    params: [accounts[0], 'latest']
+                });
+                const balanceWei = BigInt(balanceHex);
+                const balanceEth = parseFloat(ethers.formatEther(balanceWei));
+                console.log(`💰 Abstract ETH Balance: ${balanceEth} ETH (${balanceWei} wei)`);
+                
+                // Check if sufficient balance
+                const requiredEth = parseFloat(transactionParams.value || 0);
+                if (balanceEth < requiredEth) {
+                    throw new Error(`Insufficient Abstract ETH balance. Have: ${balanceEth} ETH, Need: ${requiredEth} ETH`);
+                }
+                console.log(`✅ Sufficient balance for ${requiredEth} ETH transaction`);
+            } catch (balanceError) {
+                console.error('❌ Failed to check balance:', balanceError);
+                // Continue anyway, let MetaMask handle it
+            }
+            
+            // 4. Prepare standardized transaction
             const transaction = {
                 from: accounts[0],
                 to: transactionParams.to,
@@ -119,7 +173,7 @@ class AbstractTransactionStandardizer {
             
             console.log('🚀 Sending standardized Abstract transaction:', standardTx);
             
-            // 4. Send via MetaMask
+            // 5. Send via MetaMask
             const txHash = await window.ethereum.request({
                 method: 'eth_sendTransaction',
                 params: [standardTx]

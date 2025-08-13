@@ -1008,9 +1008,12 @@ class CrashGameClient {
                         
                         try {
                             // Use the standardized transaction system
+                            console.log('💰 Bet amount:', amount, 'ETH');
+                            console.log('🏠 House wallet:', houseWallet);
+                            
                             const result = await window.abstractTransactionStandardizer.sendStandardizedTransaction({
-                                to: this.houseWallet,
-                                value: '0x' + ethers.parseEther(amount.toString()).toString(16)
+                                to: houseWallet,
+                                value: amount // Pass raw amount, let standardizer handle conversion
                             });
                             
                             console.log('✅ Standardized transaction successful:', result.txHash);

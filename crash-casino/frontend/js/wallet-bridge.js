@@ -366,8 +366,8 @@ class WalletBridge {
                     },
                     rpcUrls: [
                         'https://api.mainnet.abs.xyz',
-                        'https://rpc.abs.xyz',
-                        'https://abstract-mainnet.g.alchemy.com/v2/demo'
+                        'https://rpc.abs.xyz'
+                        // Removed Alchemy demo - doesn't support Abstract ZK Stack fields
                     ],
                     blockExplorerUrls: ['https://abscan.org']
                 }]

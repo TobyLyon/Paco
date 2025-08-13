@@ -138,6 +138,13 @@ class BetInterface {
             return;
         }
 
+        // Prevent multiple simultaneous transactions
+        if (this.isPlacingBet || this.currentTxId) {
+            console.log('🚫 Transaction already in progress, preventing duplicate');
+            this.showNotification('⏳ Transaction already in progress...', 'warning');
+            return;
+        }
+
         const betId = `bet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         
         this.isPlacingBet = true;

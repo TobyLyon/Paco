@@ -265,10 +265,22 @@ class AbstractL2Helper {
                     throw new Error(`Abstract L2 transaction failed after ${maxRetries} attempts: ${error.message}`);
                 }
 
-                // For Abstract L2 specific errors, adjust gas conservatively
-                if (error.message.includes('Internal JSON-RPC error') || 
-                    error.message.includes('gas') ||
-                    error.code === -32603) {
+                // Check if this is a user rejection or RPC error that shouldn't be retried
+                if (error.code === 4001 || error.message?.includes('User denied') || 
+                    error.message?.includes('User rejected')) {
+                    console.log('🚫 Transaction rejected by user - not retrying');
+                    throw error;
+                }
+
+                // Check for Internal JSON-RPC error (often means RPC issue, not gas)
+                if (error.message.includes('Internal JSON-RPC error') || error.code === -32603) {
+                    console.log('🚫 Internal JSON-RPC error detected - this is usually an RPC issue, not gas');
+                    console.log('💡 Try refreshing the page or switching RPC endpoints');
+                    throw error;
+                }
+
+                // For gas-related errors only, adjust gas conservatively
+                if (error.message.includes('gas')) {
                     
                     console.log('🔧 Adjusting gas for Abstract L2 compatibility...');
                     
@@ -284,6 +296,10 @@ class AbstractL2Helper {
                     
                     console.log(`🔧 Updated gas: ${newGas}, gasPrice: ${(newGasPrice / 1e9).toFixed(1)} gwei`);
                     console.log('💡 Remember: Abstract bootloader refunds excess gas automatically');
+                } else {
+                    // For non-gas errors, don't retry
+                    console.log('🚫 Non-gas related error - not retrying');
+                    throw error;
                 }
 
                 // Wait before retry

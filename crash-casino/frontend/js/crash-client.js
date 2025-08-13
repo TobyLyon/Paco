@@ -1080,11 +1080,44 @@ class CrashGameClient {
                         console.log('⚠️ NetworkHealthMonitor not available');
                     }
                     
-                    // Analyze error type - now handles EIP-1559 specific errors
-                    if (error.message.includes('Internal JSON-RPC error') || 
-                        error.message.includes('transaction type not supported') ||
-                        error.message.includes('maxFeePerGas') ||
-                        error.message.includes('EIP-1559')) {
+                    // Check for user rejection first
+                    if (error.code === 4001 || error.message?.includes('User denied') || 
+                        error.message?.includes('User rejected')) {
+                        console.log('🚫 User rejected transaction - stopping all attempts');
+                        this.showNotification('❌ Transaction cancelled by user', 'error');
+                        this.showTransactionStatus('cancelled', 'Transaction Cancelled', 'User rejected the transaction');
+                        return false;
+                    }
+
+                    // Analyze error type - now handles EIP-1559 specific errors and RPC issues
+                    if (error.message.includes('Internal JSON-RPC error')) {
+                        console.log('🔍 Internal JSON-RPC error detected - this is usually an RPC issue, not transaction format');
+                        
+                        // Only try RPC switching once for Internal JSON-RPC errors
+                        if (window.rpcHealthChecker && attempts === 1) {
+                            console.log('🏥 Attempting one RPC endpoint switch for Internal JSON-RPC error...');
+                            try {
+                                // Mark current endpoint as failed due to transaction error
+                                window.rpcHealthChecker.failedEndpoints.add(window.rpcHealthChecker.currentEndpoint);
+                                console.log(`🔴 Marking ${window.rpcHealthChecker.currentEndpoint} as failed due to RPC error`);
+                                
+                                // Find a different healthy endpoint
+                                const newEndpoint = await window.rpcHealthChecker.findHealthyEndpoint();
+                                console.log(`✅ RPC endpoint switched to: ${newEndpoint}, will retry once...`);
+                            } catch (rpcError) {
+                                console.error('❌ RPC health check failed:', rpcError);
+                                // Don't retry if RPC switching fails
+                                this.showNotification('❌ Network RPC error - try refreshing the page', 'error');
+                                return false;
+                            }
+                        } else {
+                            console.log('🚫 Internal JSON-RPC error persists after RPC switch - stopping');
+                            this.showNotification('❌ Network RPC error - try refreshing the page or switching networks', 'error');
+                            return false;
+                        }
+                    } else if (error.message.includes('transaction type not supported') ||
+                               error.message.includes('maxFeePerGas') ||
+                               error.message.includes('EIP-1559')) {
                         console.log('🔍 Transaction format error detected - likely EIP-1559 compatibility issue');
                         
                         // Trigger RPC health check and endpoint switching before final attempt

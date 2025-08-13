@@ -1093,28 +1093,11 @@ class CrashGameClient {
                     if (error.message.includes('Internal JSON-RPC error')) {
                         console.log('🔍 Internal JSON-RPC error detected - this is usually an RPC issue, not transaction format');
                         
-                        // Only try RPC switching once for Internal JSON-RPC errors
-                        if (window.rpcHealthChecker && attempts === 1) {
-                            console.log('🏥 Attempting one RPC endpoint switch for Internal JSON-RPC error...');
-                            try {
-                                // Mark current endpoint as failed due to transaction error
-                                window.rpcHealthChecker.failedEndpoints.add(window.rpcHealthChecker.currentEndpoint);
-                                console.log(`🔴 Marking ${window.rpcHealthChecker.currentEndpoint} as failed due to RPC error`);
-                                
-                                // Find a different healthy endpoint
-                                const newEndpoint = await window.rpcHealthChecker.findHealthyEndpoint();
-                                console.log(`✅ RPC endpoint switched to: ${newEndpoint}, will retry once...`);
-                            } catch (rpcError) {
-                                console.error('❌ RPC health check failed:', rpcError);
-                                // Don't retry if RPC switching fails
-                                this.showNotification('❌ Network RPC error - try refreshing the page', 'error');
-                                return false;
-                            }
-                        } else {
-                            console.log('🚫 Internal JSON-RPC error persists after RPC switch - stopping');
-                            this.showNotification('❌ Network RPC error - try refreshing the page or switching networks', 'error');
-                            return false;
-                        }
+                        // For Internal JSON-RPC errors, don't retry - this is usually an RPC or network issue
+                        console.log('🚫 Internal JSON-RPC error detected - this is an RPC/network issue, not a transaction problem');
+                        this.showNotification('❌ Network RPC error - try refreshing the page or switching networks', 'error');
+                        this.showTransactionStatus('error', 'Network Error', 'Internal JSON-RPC error - try refreshing the page');
+                        return false;
                     } else if (error.message.includes('transaction type not supported') ||
                                error.message.includes('maxFeePerGas') ||
                                error.message.includes('EIP-1559')) {

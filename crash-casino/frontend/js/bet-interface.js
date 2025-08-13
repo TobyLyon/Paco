@@ -237,6 +237,12 @@ class BetInterface {
                 error.message.includes('cancelled') ||
                 error.code === 4001
             );
+
+            // Check if this was an Internal JSON-RPC error (network issue)
+            const isRpcError = error.message && (
+                error.message.includes('Internal JSON-RPC error') ||
+                error.code === -32603
+            );
             
             if (isCancellation) {
                 console.log('🚫 User cancelled transaction:', betId);
@@ -255,6 +261,16 @@ class BetInterface {
                     this.cancelledTransactions.delete(betId);
                     console.log('🔄 Cleared cancellation flag for:', betId);
                 }, 30000);
+                
+            } else if (isRpcError) {
+                console.log('🚫 RPC error detected - network issue:', betId);
+                
+                // Clean up the failed transaction immediately
+                this.pendingTransactions.delete(betId);
+                this.currentTxId = null;
+                
+                this.showNotification('❌ Network error - try refreshing the page', 'error');
+                this.updateActiveBetsDisplay();
                 
             } else {
                 // Handle other errors normally

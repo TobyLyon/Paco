@@ -1243,11 +1243,7 @@ class CrashGameClient {
                 url: 'https://api.mainnet.abs.xyz',
                 chainId: '0xab5'
             },
-            {
-                name: 'Abstract Mainnet (Alternative)',
-                url: 'https://rpc.abs.xyz', 
-                chainId: '0xab5'
-            }
+            // No alternates to avoid wallet warnings
         ];
         
         console.log('🔗 Alternative Abstract RPC endpoints you can try:');
@@ -1261,7 +1257,7 @@ class CrashGameClient {
         console.log('3. Try changing RPC URL to one above');
         console.log('4. Chain ID: 2741 (0xab5)');
         console.log('5. Currency: ETH');
-        console.log('6. Block Explorer: https://explorer.abs.xyz');
+                console.log('6. Block Explorer: https://abscan.org');
         
         // Also show a user notification
         this.showNotification(

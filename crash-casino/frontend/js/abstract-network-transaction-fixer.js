@@ -9,12 +9,6 @@ class AbstractNetworkTransactionFixer {
     constructor() {
         // Alternative RPC endpoints that may have better transaction support
         this.alternativeEndpoints = [
-            'https://snowy-restless-film.abstract-mainnet.quiknode.pro/0d86d78bd448a138a16e65ee68b783a6d41bde5c/', // PREMIUM: QuickNode endpoint
-            'https://rpc.abs.xyz',
-            'https://abstract.drpc.org', 
-            'https://abstract-mainnet.rpc.thirdweb.com',
-            'https://1rpc.io/abs',
-            'https://abstract.gateway.tenderly.co',
             'https://api.mainnet.abs.xyz'
         ];
         
@@ -86,6 +80,7 @@ class AbstractNetworkTransactionFixer {
      */
     async updateMetaMaskRPC(endpoint) {
         try {
+            const official = 'https://api.mainnet.abs.xyz';
             await window.ethereum.request({
                 method: 'wallet_addEthereumChain',
                 params: [{
@@ -96,13 +91,13 @@ class AbstractNetworkTransactionFixer {
                         symbol: 'ETH',
                         decimals: 18
                     },
-                    rpcUrls: [endpoint],
+                    rpcUrls: [official],
                     blockExplorerUrls: ['https://abscan.org']
                 }]
             });
-            console.log(`🔄 MetaMask updated to: ${endpoint}`);
+            console.log(`🔄 MetaMask updated to official RPC: ${official}`);
         } catch (error) {
-            console.log(`⚠️ Could not update MetaMask to ${endpoint}:`, error.message);
+            console.log(`⚠️ Could not update MetaMask to official RPC:`, error.message);
         }
     }
 

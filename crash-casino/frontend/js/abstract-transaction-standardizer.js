@@ -7,8 +7,8 @@
 
 class AbstractTransactionStandardizer {
     constructor() {
-        this.CHAIN_ID = '0xab5'; // 2741 in hex (lowercase for consistency)
-        this.CHAIN_ID_DECIMAL = 2741;
+        this.CHAIN_ID = '0xab5'; // 2741 in hex - Official Abstract mainnet
+        this.CHAIN_ID_DECIMAL = 2741; // Official Abstract mainnet chain ID
         
         // Minimal configuration that works with Abstract RPC
         this.DEFAULT_CONFIG = {

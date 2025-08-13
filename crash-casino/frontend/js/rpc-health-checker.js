@@ -7,7 +7,7 @@
 class RPCHealthChecker {
     constructor() {
         this.endpoints = [
-            'https://api.mainnet.abs.xyz'     // Official Abstract mainnet RPC only
+            'https://api.mainnet.abs.xyz'     // Official Abstract mainnet RPC from docs.abs.xyz
         ];
         this.currentEndpoint = this.endpoints[0];
         this.failedEndpoints = new Set();

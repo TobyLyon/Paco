@@ -253,13 +253,8 @@ class AbstractL2Helper {
                     data: transaction.data || '0x'
                 };
                 
-                // Only add ZK-specific fields on retry attempts, not first attempt
-                if (attempt > 1 && transaction.gas_per_pubdata_limit) {
-                    cleanTransaction.gas_per_pubdata_limit = transaction.gas_per_pubdata_limit;
-                    console.log(`🔧 Attempt ${attempt}: Adding ZK Stack field gas_per_pubdata_limit`);
-                } else {
-                    console.log(`🔧 Attempt ${attempt}: Using STANDARD Ethereum transaction format (no ZK fields)`);
-                }
+                // 🧪 SIMPLIFIED: Always use standard Ethereum format (like original working version)
+                console.log(`🔧 Attempt ${attempt}: Using standard Ethereum transaction format`);
                 
                 // DEBUG: Log the exact transaction object being sent
                 console.log('🔍 EXACT TRANSACTION OBJECT BEING SENT TO METAMASK:');

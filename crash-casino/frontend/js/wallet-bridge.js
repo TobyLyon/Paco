@@ -232,31 +232,18 @@ class WalletBridge {
                 });
                 console.log('✅ Abstract L2 gas estimation successful:', gasEstimate);
                 
-                // FIXED: Use Abstract L2 Helper for optimal gas configuration
-                if (window.abstractL2Helper && typeof window.abstractL2Helper.getAbstractGasConfig === 'function') {
-                    const optimalGas = window.abstractL2Helper.getAbstractGasConfig('standard');
-                    metaMaskTx.gas = optimalGas.gas;
-                    metaMaskTx.gasPrice = optimalGas.gasPrice;
-                    metaMaskTx.gas_per_pubdata_limit = optimalGas.gas_per_pubdata_limit;
-                    console.log('🔧 Using Abstract L2 Helper optimal gas configuration');
-                } else {
-                    // Fallback: Abstract L2 reliable configuration
-                    metaMaskTx.gas = '0x5208'; // 21000 gas - standard ETH transfer
-                    metaMaskTx.gasPrice = '0x5F5E100'; // 0.1 gwei - Proven working gas price
-                    metaMaskTx.gas_per_pubdata_limit = '0x4E20'; // 20000 - conservative for simple transfers
-                    console.log('🔧 Using fallback Abstract L2 reliable configuration');
-                }
+                // 🧪 TESTING: MINIMAL TRANSACTION (like original working version)
+                // Only add absolute minimum - let MetaMask handle gas estimation
+                console.log('🧪 Using minimal transaction format - letting MetaMask estimate gas');
                 
             } catch (gasError) {
                 console.log('⚠️ Gas estimation failed, using default:', gasError.message);
                 // Continue with default gas limit
             }
             
-            // CRITICAL FIX: Try standard Ethereum format first, then ZK format if needed
-            console.log('📡 Sending Abstract L2 transaction:', metaMaskTx);
-            console.log('🔍 DEBUG: Transaction fields before send:', Object.keys(metaMaskTx));
-            console.log('🔍 DEBUG: gas_per_pubdata_limit present?', 'gas_per_pubdata_limit' in metaMaskTx);
-            console.log('🔍 DEBUG: gas_per_pubdata_limit value:', metaMaskTx.gas_per_pubdata_limit);
+            // 🧪 RESTORED: Simple transaction format (like original working version)
+            console.log('📡 Sending transaction via MetaMask:', metaMaskTx);
+            console.log('🔍 Transaction fields:', Object.keys(metaMaskTx));
             
             try {
                 if (window.abstractL2Helper) {
@@ -293,17 +280,8 @@ class WalletBridge {
                     });
                     console.log('✅ Transaction sent via ZK format fallback');
                 } catch (zkError) {
-                    console.log('⚠️ ZK format also failed, using manual signing:', zkError.message);
-                    
-                    // FINAL FALLBACK: Manual transaction signing
-                    if (window.manualSigner) {
-                        console.log('🔑 Using manual transaction signer as final fallback');
-                        const manualResult = await window.manualSigner.sendTransaction(to, value, gasConfig);
-                        txHash = manualResult.hash;
-                        console.log('✅ Transaction sent via manual signing');
-                    } else {
-                        throw new Error('All transaction methods failed and manual signer not available');
-                    }
+                    console.log('❌ All transaction formats failed:', zkError.message);
+                    throw zkError; // Don't try manual signing - that's not what worked before
                 }
             }
             

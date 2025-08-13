@@ -1,42 +1,85 @@
 /**
  * Abstract L2 Chain Configurations
  * 
- * Using wagmi's built-in chains for better wallet compatibility
- * This prevents RPC warnings in MetaMask and other wallets
+ * Official RPC endpoints for Abstract mainnet and testnet
+ * Built for production use with wagmi v2 + viem
  */
 
-import { abstractTestnet } from 'wagmi/chains'
+import { defineChain } from 'viem'
 
 /**
  * Abstract Mainnet (Chain ID: 2741)
  * 
- * Since wagmi doesn't have built-in mainnet yet, we use minimal config
- * that matches official endpoints to avoid wallet warnings
+ * Official production network for Abstract L2
  */
-export const abstract = {
+export const abstract = defineChain({
   id: 2741,
   name: 'Abstract',
   nativeCurrency: {
+    decimals: 18,
     name: 'Ether',
     symbol: 'ETH',
-    decimals: 18,
   },
   rpcUrls: {
-    default: { http: ['https://api.mainnet.abs.xyz'] },
-    public: { http: ['https://api.mainnet.abs.xyz'] },
+    default: {
+      http: ['https://api.mainnet.abs.xyz'],
+      webSocket: ['wss://api.mainnet.abs.xyz/ws'],
+    },
+  },
+  fees: {
+    defaultPriorityFee: 100000000n, // 0.1 gwei - Abstract Network has very low fees
   },
   blockExplorers: {
-    default: { name: 'Abscan', url: 'https://abscan.org' },
+    default: {
+      name: 'Abscan',
+      url: 'https://abscan.org',
+      apiUrl: 'https://abscan.org/api',
+    },
+  },
+  contracts: {
+    // Add standard Abstract L2 contracts when available
+    multicall3: {
+      address: '0xcA11bde05977b3631167028862bE2a173976CA11',
+      blockCreated: 1,
+    },
   },
   testnet: false,
-} as const
+})
 
 /**
- * Abstract Testnet - Using wagmi built-in for best compatibility
+ * Abstract Sepolia Testnet (Chain ID: 11124)
  * 
- * This prevents wallet RPC warnings since it's a recognized chain
+ * Official testnet for Abstract L2 development
  */
-export const abstractSepolia = abstractTestnet
+export const abstractSepolia = defineChain({
+  id: 11124,
+  name: 'Abstract Sepolia',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'Ether',
+    symbol: 'ETH',
+  },
+  rpcUrls: {
+    default: {
+      http: ['https://api.testnet.abs.xyz'],
+      webSocket: ['wss://api.testnet.abs.xyz/ws'],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Abstract Sepolia Explorer',
+      url: 'https://sepolia.abscan.org',
+      apiUrl: 'https://sepolia.abscan.org/api',
+    },
+  },
+  contracts: {
+    multicall3: {
+      address: '0xcA11bde05977b3631167028862bE2a173976CA11',
+      blockCreated: 1,
+    },
+  },
+  testnet: true,
+})
 
 /**
  * Get the appropriate chain based on environment

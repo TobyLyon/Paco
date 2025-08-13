@@ -7,10 +7,15 @@
 
 class AbstractNetworkTransactionFixer {
     constructor() {
-        // Use reliable Abstract RPC endpoints that actually work for transactions
+        // Alternative RPC endpoints that may have better transaction support
         this.alternativeEndpoints = [
-            'https://abstract-mainnet.g.alchemy.com/public', // Alchemy public - better tx support
-            'https://api.mainnet.abs.xyz' // Official Abstract RPC (fallback)
+            'https://snowy-restless-film.abstract-mainnet.quiknode.pro/0d86d78bd448a138a16e65ee68b783a6d41bde5c/', // PREMIUM: QuickNode endpoint
+            'https://rpc.abs.xyz',
+            'https://abstract.drpc.org', 
+            'https://abstract-mainnet.rpc.thirdweb.com',
+            'https://1rpc.io/abs',
+            'https://abstract.gateway.tenderly.co',
+            'https://api.mainnet.abs.xyz'
         ];
         
         this.currentEndpointIndex = 0;

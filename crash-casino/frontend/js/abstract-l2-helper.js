@@ -355,12 +355,8 @@ class AbstractL2Helper {
         try {
             const chainId = await window.ethereum.request({ method: 'eth_chainId' });
             
-            // Normalize chain ID to lowercase for comparison
-            const normalizedChainId = chainId.toLowerCase();
-            const expectedChainId = this.chainIdHex.toLowerCase();
-            
-            if (normalizedChainId !== expectedChainId) {
-                throw new Error(`Wrong network. Expected Abstract L2 (${expectedChainId}), got ${normalizedChainId}`);
+            if (chainId !== this.chainIdHex) {
+                throw new Error(`Wrong network. Expected Abstract L2 (${this.chainIdHex}), got ${chainId}`);
             }
 
             console.log('✅ Abstract L2 network verified');

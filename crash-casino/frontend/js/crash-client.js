@@ -449,7 +449,6 @@ class CrashGameClient {
         this.socket.on('multiplierUpdate', (data) => this.handleMultiplierUpdate(data));
         this.socket.on('roundCrashed', (data) => this.handleRoundCrash(data));
         this.socket.on('betPlaced', (data) => this.handleBetPlaced(data));
-        this.socket.on('betSuccess', (data) => this.handleBetSuccess(data)); // Fixed: Listen for server bet confirmation
         this.socket.on('bettingPhase', (data) => this.handleBettingPhase(data));
         this.socket.on('betting_phase', (data) => this.handleBettingPhase(data));
         
@@ -795,64 +794,6 @@ class CrashGameClient {
     }
 
     /**
-     * ✅ Handle bet success confirmation from server
-     */
-    handleBetSuccess(data) {
-        console.log('✅ Server confirmed bet success:', data);
-        
-        // Set active bet for this round
-        this.activeBet = {
-            amount: data.amount,
-            multiplier: data.payoutMultiplier || 1000.0,
-            txHash: data.txHash,
-            playerAddress: data.playerAddress,
-            roundId: this.currentRoundId,
-            isActive: true
-        };
-        
-        // Show success notification
-        this.showNotification(`🎯 Bet Active: ${data.amount} ETH @ ${data.payoutMultiplier}x`, 'success', 5000);
-        
-        // Update UI to show active bet with cash out button
-        this.updateBetInterface();
-        
-        console.log('🎮 Active bet set for round:', this.currentRoundId);
-    }
-
-    /**
-     * 🎯 Update betting interface based on active bet
-     */
-    updateBetInterface() {
-        const cashOutBtn = document.getElementById('cashOutBtn');
-        
-        if (this.activeBet && this.activeBet.isActive && this.gameState === 'running') {
-            // Show cash out button for active bet during game
-            if (cashOutBtn) {
-                cashOutBtn.style.display = 'block';
-                console.log('💰 Cash out button shown - active bet in running round');
-            }
-            
-            // Update bet amount display
-            const yourBetElement = document.getElementById('yourBetAmount');
-            if (yourBetElement) {
-                yourBetElement.textContent = `${this.activeBet.amount.toFixed(4)} ETH`;
-            }
-            
-            // Notify bet interface if available
-            if (window.betInterface && window.betInterface.showBetStatus) {
-                window.betInterface.showBetStatus();
-            }
-            
-        } else {
-            // Hide cash out button when no active bet
-            if (cashOutBtn) {
-                cashOutBtn.style.display = 'none';
-                console.log('🚫 Cash out button hidden - no active bet');
-            }
-        }
-    }
-
-    /**
      * 🎰 Handle betting phase started by server
      */
     // REMOVED DUPLICATE: handleBettingPhase method was defined twice, 
@@ -1061,70 +1002,47 @@ class CrashGameClient {
                         }
                     }
                     
-                    // Streamlined transaction flow using standardizer
-                    if (window.ethereum && window.abstractTransactionStandardizer) {
-                        console.log('🚀 Using Abstract Transaction Standardizer for reliable transactions...');
+                    // Streamlined transaction flow for production
+                    if (window.ethereum) {
+                        console.log('🚀 Preparing bet transaction for Abstract Network...');
+                        
+                        // Quick verification before transaction
+                        console.log('🔍 Quick wallet check...');
+                        console.log('🌐 window.ethereum.selectedAddress:', window.ethereum.selectedAddress);
+                        console.log('🌐 window.ethereum.chainId:', window.ethereum.chainId);
+                        console.log('🌐 window.ethereum.networkVersion:', window.ethereum.networkVersion);
+                        
+                        // Check if MetaMask has different RPC than our health checker
+                        if (window.ethereum.connection && window.ethereum.connection.url) {
+                            console.log('🔗 MetaMask connection URL:', window.ethereum.connection.url);
+                        }
+                        
+                        let chainId;
+                        let balanceEth;
                         
                         try {
-                            // Use the standardized transaction system
-                            console.log('💰 Bet amount:', amount, 'ETH');
-                            console.log('🏠 House wallet:', houseWallet);
-                            
-                            const result = await window.abstractTransactionStandardizer.sendStandardizedTransaction({
-                                to: houseWallet,
-                                value: amount // Pass raw amount, let standardizer handle conversion
-                            });
-                            
-                            console.log('✅ Standardized transaction successful:', result.txHash);
-                            
-                            // Notify server immediately with transaction hash
-                            this.socket.emit('place_bet', {
-                                betAmount: amount,              // Fixed: server expects 'betAmount'
-                                autoPayoutMultiplier: 1000.0,   // Fixed: add required field
-                                txHash: result.txHash,
-                                playerAddress: this.playerAddress, // Fixed: add required field
-                                blockNumber: null               // Fixed: add optional field
-                            });
-                            
-                            return; // Success - exit the retry loop
-                            
-                        } catch (standardizerError) {
-                            console.error('❌ Standardized transaction failed:', standardizerError);
-                            
-                            // Try minimal transaction as last resort
-                            if (window.minimalAbstractTx) {
-                                try {
-                                    console.log('🔧 Trying MINIMAL transaction format as last resort...');
-                                    const minimalResult = await window.minimalAbstractTx.sendMinimalTransaction(
-                                        houseWallet,
-                                        amount
-                                    );
-                                    
-                                    console.log('✅ MINIMAL transaction successful:', minimalResult.txHash);
-                                    
-                                    // Notify server immediately with transaction hash
-                                    this.socket.emit('place_bet', {
-                                        betAmount: amount,              // Fixed: server expects 'betAmount'
-                                        autoPayoutMultiplier: 1000.0,   // Fixed: add required field
-                                        txHash: minimalResult.txHash,
-                                        playerAddress: this.playerAddress, // Fixed: add required field
-                                        blockNumber: null               // Fixed: add optional field
-                                    });
-                                    
-                                    return; // Success - exit the retry loop
-                                    
-                                } catch (minimalError) {
-                                    console.error('❌ MINIMAL transaction also failed:', minimalError);
-                                    // Continue to manual fallback
-                                }
-                            }
-                            
-                            // Fall back to manual transaction handling below
+                            // Quick chain verification only
+                            chainId = await window.ethereum.request({ method: 'eth_chainId' });
+                            console.log(`✅ Chain verified: ${chainId}`);
+                        } catch (basicError) {
+                            console.log(`🚨 CRITICAL: Basic RPC call failed: ${basicError.message}`);
+                            console.log(`🚨 Error code: ${basicError.code}`);
+                            console.log(`🚨 Error data:`, basicError.data);
+                            console.log(`🚨 This means Abstract Network RPC is completely broken!`);
+                            throw basicError; // Re-throw to stop transaction
                         }
+                        
+                        // Skip all RPC testing - proceed directly to transaction
+                        console.log('🚀 Skipping RPC diagnostics - proceeding to transaction...');
+                        
+                        // Check if we're on Abstract mainnet
+                        if (chainId !== '0xab5') {
+                            console.log('⚠️ Not on Abstract mainnet (0xab5). Current chain:', chainId);
+                            throw new Error('Please switch to Abstract mainnet (Chain ID: 0xab5)');
+                        }
+                        
+                        // Balance check will be handled by MetaMask during transaction
                     }
-                    
-                    // Fallback: Manual transaction handling
-                    console.log('🔄 Falling back to manual transaction handling...');
                     
                     // Final debug before main transaction
                     console.log('🚀 SENDING MAIN BETTING TRANSACTION...');

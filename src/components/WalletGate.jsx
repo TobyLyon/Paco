@@ -3,6 +3,8 @@ import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { motion } from 'framer-motion'
 import { Shield, Chicken, Crown, Zap, Network } from 'lucide-react'
 import { useAbstractChain } from './WalletProviders.tsx'
+import useChainGuard from '../hooks/useChainGuard'
+import AGWConnect from './AGWConnect'
 
 export default function WalletGate({ hasAccess, loading }) {
   return (
@@ -58,6 +60,7 @@ export default function WalletGate({ hasAccess, loading }) {
 
 function ConnectState() {
   const { isAbstract, targetChain } = useAbstractChain()
+  const guard = useChainGuard(2741)
   
   return (
     <div className="text-center space-y-4">
@@ -75,7 +78,15 @@ function ConnectState() {
         <div className="bg-orange-900 bg-opacity-50 rounded-lg p-3 mb-4">
           <div className="flex items-center justify-center space-x-2 text-orange-300">
             <Network size={16} />
-            <span className="text-sm">Will auto-switch to {targetChain.name}</span>
+            <span className="text-sm">Not on Abstract. Click below to add/switch.</span>
+          </div>
+          <div className="flex justify-center mt-2">
+            <button
+              onClick={guard.addOrSwitch}
+              className="pixel-button text-xs px-3 py-1 bg-yellow-500 text-gray-900 hover:bg-yellow-400"
+            >
+              Add/Switch to Abstract
+            </button>
           </div>
         </div>
       )}
@@ -158,6 +169,10 @@ function ConnectState() {
             )
           }}
         </ConnectButton.Custom>
+      </div>
+
+      <div className="mt-4">
+        <AGWConnect />
       </div>
     </div>
   )

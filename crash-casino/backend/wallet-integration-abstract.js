@@ -44,7 +44,7 @@ class AbstractWalletIntegration {
             
             // Verify network
             const network = await this.provider.getNetwork();
-            console.log(`✅ Connected to ${config.currentNetwork.name} (Chain ID: ${network.chainId})`);
+            console.log(`✅ Connected to ${config.currentNetwork.name} (Chain ID: ${Number(network.chainId)})`);
             
             // Initialize house wallet
             await this.houseWallet.init();
@@ -270,6 +270,42 @@ class AbstractWalletIntegration {
                 success: false,
                 error: error.message
             };
+        }
+    }
+
+    /**
+     * 💸 Process winner payout (used by unified-production-integration)
+     */
+    async processWinnerPayout(playerAddress, originalBetEth, multiplier, roundId) {
+        try {
+            const { ethers } = require('ethers');
+            const bet = Number(originalBetEth)
+            const mult = Number(multiplier)
+            if (!Number.isFinite(bet) || bet <= 0 || !Number.isFinite(mult) || mult < 1) {
+                throw new Error('Invalid payout parameters')
+            }
+            const payoutWei = ethers.parseEther((bet * mult).toString())
+            const receipt = await this.houseWallet.processPayout(
+                playerAddress,
+                payoutWei,
+                roundId
+            )
+            if (this.supabase) {
+                await this.supabase
+                    .from('payouts')
+                    .insert({
+                        bet_id: null,
+                        user_id: null,
+                        amount_wei: payoutWei.toString(),
+                        dest_address: playerAddress.toLowerCase(),
+                        tx_hash: receipt.hash,
+                        status: 'confirmed'
+                    })
+            }
+            return { success: true, txHash: receipt.hash }
+        } catch (error) {
+            console.error('❌ processWinnerPayout failed:', error)
+            return { success: false, error: error.message }
         }
     }
     

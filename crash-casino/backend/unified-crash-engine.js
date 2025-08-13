@@ -44,6 +44,14 @@ class UnifiedCrashEngine extends EventEmitter {
         // Countdown synchronization
         this.lastCountdownSecond = -1;
         
+        // Commit-reveal RNG
+        this.currentCommit = null;
+        this.currentServerSeed = null;
+        this.currentNonce = 0;
+
+        // Pause control
+        this.paused = false;
+
         console.log('🎯 Unified Crash Engine initialized with server authority');
     }
     
@@ -66,6 +74,9 @@ class UnifiedCrashEngine extends EventEmitter {
      * 🔄 Main game loop - EXACT implementation from reference
      */
     async loopUpdate() {
+        if (this.paused || process.env.PAUSE_ENGINE === '1') {
+            return;
+        }
         const time_elapsed = (Date.now() - this.phase_start_time) / 1000.0;
         
         if (this.betting_phase) {
@@ -144,8 +155,8 @@ class UnifiedCrashEngine extends EventEmitter {
                 this.cashout_phase = false;
                 this.betting_phase = true;
                 
-                // Generate new crash value (HIDDEN from client until crash)
-                this.generateCrashValue();
+                // Generate new commit for next round
+                this.prepareCommitForNextRound();
                 
                 // Emit events for new round (CLIENT LISTENS TO THESE)
                 this.io.emit('update_user');
@@ -155,7 +166,7 @@ class UnifiedCrashEngine extends EventEmitter {
                 
                 this.emit('roundCreated', {
                     id: this.current_round_id,
-                    crashPoint: this.game_crash_value  // For internal use only
+                    commitHash: this.currentCommit
                 });
                 
                 // Reset for new round
@@ -163,7 +174,7 @@ class UnifiedCrashEngine extends EventEmitter {
                 this.active_player_id_list = [];
                 this.phase_start_time = Date.now();
                 
-                console.log(`🎲 New betting phase started - Next crash: ${this.game_crash_value.toFixed(2)}x (HIDDEN)`);
+                console.log(`🎲 New betting phase started - Commit published: ${this.currentCommit}`);
             }
         }
     }
@@ -171,26 +182,27 @@ class UnifiedCrashEngine extends EventEmitter {
     /**
      * 🎲 Generate crash value - CORRECTED Bustabit algorithm with 1% house edge
      */
-    generateCrashValue() {
-        // CORRECTED: Proper Bustabit algorithm with 1% house edge
-        const randomValue = Math.random();
-        
-        // House edge configuration
-        const houseEdge = 0.01; // 1% house edge (industry standard)
-        const houseEdgeMultiplier = 1 - houseEdge;
-        
-        // Bustabit's proven formula: creates proper exponential distribution
-        // This ensures: ~50% crash before 2x, ~25% before 3x, ~12.5% before 4x, etc.
-        this.game_crash_value = Math.floor((100 * houseEdgeMultiplier) / randomValue) / 100;
-        
-        // Apply bounds (Bustabit caps at 1,000,000x but we'll use 1000x)
-        this.game_crash_value = Math.max(this.config.minCrashValue, 
-                                       Math.min(this.game_crash_value, this.config.maxCrashValue));
-        
-        // Round to 2 decimal places
-        this.game_crash_value = Math.round(this.game_crash_value * 100) / 100;
-        
-        console.log(`🎯 Generated crash point: ${this.game_crash_value.toFixed(2)}x (server-only)`);
+    prepareCommitForNextRound() {
+        const crypto = require('crypto');
+        this.currentServerSeed = crypto.randomBytes(32).toString('hex');
+        this.currentNonce += 1;
+        const preimage = `${this.currentServerSeed}|${this.current_round_id}|${this.currentNonce}`;
+        this.currentCommit = crypto.createHash('sha256').update(preimage).digest('hex');
+        // Set hidden crash value now from serverSeed
+        this.game_crash_value = this.calculateCrashFromSeed(this.currentServerSeed);
+    }
+
+    calculateCrashFromSeed(serverSeed) {
+        const { keccak256 } = require('ethers');
+        const hash = keccak256(`0x${serverSeed}`);
+        // Map hash -> multiplier with house edge and bounds
+        // Use first 52 bits to avoid modulo bias
+        const bigint = BigInt(hash);
+        const r = Number(bigint % (2n ** 52n)) / Number(2n ** 52n);
+        const houseEdge = 0.01;
+        const raw = Math.floor((100 * (1 - houseEdge)) / Math.max(r, 1e-12)) / 100;
+        const capped = Math.max(this.config.minCrashValue, Math.min(raw, this.config.maxCrashValue));
+        return Math.round(capped * 100) / 100;
     }
     
     /**
@@ -317,6 +329,10 @@ class UnifiedCrashEngine extends EventEmitter {
         }
         console.log('🛑 Unified crash engine stopped');
     }
+
+    pause() { this.paused = true; }
+    resume() { this.paused = false; }
+    isPaused() { return this.paused || process.env.PAUSE_ENGINE === '1'; }
 }
 
 module.exports = UnifiedCrashEngine;

@@ -6,6 +6,10 @@
     "scripts": {
         "start": "node server.js",
         "dev": "node dev-server.js",
+        "dev:local": "node server.js",
+        "dev:fork": "echo anvil fork not wired; use viem fork scripts",
+        "seed:hotwallet": "node -e \"console.log('stub: seed house wallet locally')\"",
+        "test:e2e": "node -e \"console.log('stub: e2e to be implemented')\"",
         "serve": "npx serve --cors -s . -l 3000",
         "build": "node build.js",
         "preview": "npm run build && npx serve -s public -l 4173",

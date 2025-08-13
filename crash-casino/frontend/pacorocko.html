@@ -33,10 +33,6 @@
     <!-- Simple Transaction Test (test what worked before) -->
     <script src="/crash-casino/frontend/js/simple-transaction-test.js?v=2025-01-12"></script>
     <script src="/crash-casino/frontend/js/abstract-network-transaction-fixer.js?v=2025-01-12"></script>
-    <!-- Abstract Transaction Standardizer (CRITICAL FIX for wrong network errors) -->
-    <script src="/crash-casino/frontend/js/abstract-transaction-standardizer.js?v=2025-01-12"></script>
-    <!-- Minimal Abstract Transaction Sender (last resort for RPC issues) -->
-    <script src="/crash-casino/frontend/js/minimal-abstract-tx.js?v=2025-01-12"></script>
     
     <!-- Abstract Global Wallet (AGW) - Official Integration -->
     <!-- AGW will be loaded from node_modules via our integration script -->
@@ -1060,7 +1056,7 @@
         // Abstract L2 Network Configuration - OPTIMIZED FOR LOW FEES
         window.ABSTRACT_NETWORKS = {
             mainnet: {
-                chainId: '0xab5', // 2741 in hex (lowercase for consistency)
+                chainId: '0xAB5', // 2741 in hex
                 chainName: 'Abstract',
                 nativeCurrency: {
                     name: 'Ether',
@@ -1068,8 +1064,11 @@
                     decimals: 18
                 },
                 rpcUrls: [
-                    'https://api.mainnet.abs.xyz'
-                    // Using only official Abstract RPC to prevent wallet warnings
+                    'https://snowy-restless-film.abstract-mainnet.quiknode.pro/0d86d78bd448a138a16e65ee68b783a6d41bde5c/',
+                    'https://api.mainnet.abs.xyz',
+                    'https://rpc.abs.xyz',
+                    'https://abstract.drpc.org',
+                    'https://abstract-mainnet.rpc.thirdweb.com'
                 ],
                 blockExplorerUrls: ['https://abscan.org'],
                 // Abstract L2 specific optimizations

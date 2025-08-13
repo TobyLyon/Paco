@@ -1,6 +1,7 @@
 import { useAccount, useConnect, useDisconnect, useChainId } from 'wagmi'
 import { useEffect } from 'react'
 import { useAbstractChain } from '../components/WalletProviders.tsx'
+import useChainGuard from './useChainGuard'
 
 export default function useWallet() {
   const { address, isConnected, isConnecting, status } = useAccount()
@@ -8,6 +9,7 @@ export default function useWallet() {
   const { disconnect } = useDisconnect()
   const chainId = useChainId()
   const { isAbstract, targetChain, currentChain } = useAbstractChain()
+  const chainGuard = useChainGuard(2741)
 
   // Log connection state changes
   useEffect(() => {
@@ -40,6 +42,7 @@ export default function useWallet() {
     formatAddress: (addr) => addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : '',
     isWalletReady: isConnected && address && isAbstract,
     isWrongNetwork: isConnected && !isAbstract,
+    addOrSwitchAbstract: chainGuard.addOrSwitch,
     
     // Wallet connection status helpers
     isConnecting: status === 'connecting',

@@ -30,6 +30,10 @@ npm start                    # Start main site (localhost:3000)
 - **Location**: `crash-casino/frontend/pacorocko.html`
 - **Backend**: Node.js + Socket.IO + Abstract wallet integration
 - **Features**: Provably fair multiplayer crash gambling
+  - Wallets: AGW (email/passkey) + EOA via RainbowKit/wagmi
+  - Network guard: auto-detect and add/switch to chain 2741
+  - No-contract custody: deposits to house wallet, off-chain bets, native payouts
+  - Proofs: GET `/proof/:roundId` to verify serverSeed and multiplier
 
 ### **4. NFT-Gated Farm Game**
 - **Files**: `src/App.jsx` + Phaser.js scenes
@@ -52,6 +56,7 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_key
 HOUSE_WALLET_ADDRESS=0x1f8B1c4D05eF17Ebaa1E572426110146691e6C5a
 HOUSE_WALLET_PRIVATE_KEY=your_private_key
 ABSTRACT_NETWORK=mainnet
+ABSTRACT_RPC_URL=https://api.mainnet.abs.xyz
 WALLETCONNECT_PROJECT_ID=your_project_id
 ```
 

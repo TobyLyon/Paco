@@ -48,3 +48,9 @@ Your production database is still using the old schema!
 3. ✅ Your casino is then 100% production ready!
 
 **Current Status**: Casino works perfectly, just needs this one database field fix! 🎯
+
+## Abstract Mainnet Crash Enhancements
+- Added mainnet chain object (2741) with RPC `https://api.mainnet.abs.xyz` and explorer `https://abscan.org`.
+- Implemented `useChainGuard` hook and MetaMask Add/Switch helper; wired into `WalletGate`.
+- Added AGW connect (email/passkey) via `@abstract-foundation/agw-client` in `src/components/AGWConnect.tsx`.
+- Enabled commit-reveal RNG with `/proof/:roundId` endpoint for verifiability.

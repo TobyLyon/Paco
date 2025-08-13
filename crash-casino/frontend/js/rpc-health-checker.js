@@ -7,8 +7,13 @@
 class RPCHealthChecker {
     constructor() {
         this.endpoints = [
-            'https://abstract-mainnet.g.alchemy.com/public', // Alchemy public RPC - better transaction support
-            'https://api.mainnet.abs.xyz'     // Official Abstract mainnet RPC from docs.abs.xyz
+            'https://snowy-restless-film.abstract-mainnet.quiknode.pro/0d86d78bd448a138a16e65ee68b783a6d41bde5c/', // PREMIUM: QuickNode endpoint
+            'https://rpc.abs.xyz',             // Try secondary first - may have better transaction support
+            'https://api.mainnet.abs.xyz',     // Primary official endpoint
+            'https://abstract.drpc.org',       // dRPC provider for Abstract
+            'https://abstract-mainnet.rpc.thirdweb.com',  // Thirdweb RPC
+            'https://1rpc.io/abs',             // 1RPC provider
+            'https://abstract.gateway.tenderly.co' // Tenderly gateway
         ];
         this.currentEndpoint = this.endpoints[0];
         this.failedEndpoints = new Set();
@@ -64,9 +69,8 @@ class RPCHealthChecker {
                 throw new Error(`Chain ID Error: ${chainData.error.message}`);
             }
 
-            // Verify it's Abstract mainnet (chain ID 2741 = 0xab5) - normalize case
-            const normalizedChainId = chainData.result.toLowerCase();
-            if (normalizedChainId !== '0xab5') {
+            // Verify it's Abstract mainnet (chain ID 2741 = 0xab5)
+            if (chainData.result !== '0xab5') {
                 throw new Error(`Wrong chain ID: ${chainData.result}, expected 0xab5`);
             }
 

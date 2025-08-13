@@ -116,33 +116,44 @@ CREATE TABLE IF NOT EXISTS crash_players (
 );
 
 -- Casino Game Rounds
-CREATE TABLE IF NOT EXISTS crash_rounds (
+CREATE TABLE IF NOT EXISTS rounds (
+    id TEXT PRIMARY KEY,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    commit_hash TEXT NOT NULL,
+    seed_revealed TEXT,
+    crash_point_ppm BIGINT,
+    started_at TIMESTAMPTZ,
+    settled_at TIMESTAMPTZ,
+    status TEXT DEFAULT 'pending'
+);
+
+-- User and wallet linking (for custody and payouts)
+CREATE TABLE IF NOT EXISTS profiles (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    
-    -- Round data
-    round_number BIGSERIAL,
-    crash_multiplier DECIMAL(8,2) NOT NULL,
-    crash_timestamp TIMESTAMPTZ NOT NULL,
-    
-    -- Provably fair
-    server_seed TEXT NOT NULL,
-    client_seed TEXT,
-    nonce INTEGER NOT NULL,
-    hash TEXT NOT NULL,
-    
-    -- Stats
-    total_bets INTEGER DEFAULT 0,
-    total_wagered DECIMAL(18,8) DEFAULT 0,
-    total_paid_out DECIMAL(18,8) DEFAULT 0,
-    house_edge_profit DECIMAL(18,8) DEFAULT 0,
-    
-    -- Timing
-    betting_phase_start TIMESTAMPTZ DEFAULT NOW(),
-    flying_phase_start TIMESTAMPTZ,
-    round_end TIMESTAMPTZ,
-    
-    CONSTRAINT valid_multiplier CHECK (crash_multiplier >= 1.0)
+    nickname TEXT,
+    country TEXT,
+    agw_id TEXT,
+    eoa_address TEXT UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS wallet_links (
+    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    wallet_type TEXT CHECK (wallet_type IN ('AGW','EOA')),
+    address TEXT,
+    primary_wallet BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    PRIMARY KEY (user_id, wallet_type, address)
+);
+
+CREATE TABLE IF NOT EXISTS deposits (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    user_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
+    tx_hash TEXT,
+    amount_wei TEXT,
+    status TEXT CHECK (status IN ('pending','confirmed')) DEFAULT 'pending',
+    confirmed_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Casino Bets
@@ -152,7 +163,7 @@ CREATE TABLE IF NOT EXISTS crash_bets (
     
     -- References
     player_id UUID NOT NULL REFERENCES crash_players(id) ON DELETE CASCADE,
-    round_id UUID NOT NULL REFERENCES crash_rounds(id) ON DELETE CASCADE,
+    round_id TEXT NOT NULL REFERENCES rounds(id) ON DELETE CASCADE,
     
     -- Bet details
     bet_amount DECIMAL(18,8) NOT NULL,
@@ -174,23 +185,50 @@ CREATE TABLE IF NOT EXISTS crash_bets (
 );
 
 -- Casino Payouts (for accounting)
-CREATE TABLE IF NOT EXISTS crash_payouts (
+CREATE TABLE IF NOT EXISTS payouts (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     
     -- References
-    bet_id UUID NOT NULL REFERENCES crash_bets(id) ON DELETE CASCADE,
-    player_id UUID NOT NULL REFERENCES crash_players(id) ON DELETE CASCADE,
+    bet_id UUID,
+    user_id UUID,
     
     -- Payout details
-    amount DECIMAL(18,8) NOT NULL,
-    transaction_hash TEXT,
-    status TEXT DEFAULT 'pending', -- pending, completed, failed
+    amount_wei TEXT,
+    dest_address TEXT,
+    tx_hash TEXT,
+    status TEXT DEFAULT 'queued', -- queued, sent, confirmed, failed
     
     -- Blockchain confirmation
-    block_number BIGINT,
-    gas_used INTEGER,
-    gas_price DECIMAL(18,8)
+    attempts INTEGER DEFAULT 0,
+    last_error TEXT
+);
+
+CREATE TABLE IF NOT EXISTS ledger_entries (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    account TEXT CHECK (account IN ('user','house')) NOT NULL,
+    user_id UUID,
+    delta_wei TEXT NOT NULL,
+    ref_type TEXT,
+    ref_id TEXT
+);
+
+CREATE TABLE IF NOT EXISTS limits (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    max_bet_wei TEXT,
+    max_liability_factor REAL,
+    per_user_cooldown_ms BIGINT,
+    round_cap INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS webhook_events (
+    id TEXT PRIMARY KEY,
+    type TEXT,
+    payload JSONB,
+    cursor_block TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- ===================================================================
@@ -252,9 +290,9 @@ CREATE TABLE IF NOT EXISTS chat_messages (
 ALTER TABLE game_scores ENABLE ROW LEVEL SECURITY;
 ALTER TABLE paco_orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE crash_players ENABLE ROW LEVEL SECURITY;
-ALTER TABLE crash_rounds ENABLE ROW LEVEL SECURITY;
+ALTER TABLE rounds ENABLE ROW LEVEL SECURITY;
 ALTER TABLE crash_bets ENABLE ROW LEVEL SECURITY;
-ALTER TABLE crash_payouts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE payouts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE chat_users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE chat_messages ENABLE ROW LEVEL SECURITY;
 
@@ -269,9 +307,11 @@ CREATE POLICY "Anyone can create orders" ON paco_orders FOR INSERT WITH CHECK (t
 
 -- Crash Casino: Authenticated users only
 CREATE POLICY "Authenticated users can view their crash data" ON crash_players FOR ALL USING (wallet_address = auth.jwt() ->> 'wallet_address');
-CREATE POLICY "Anyone can view crash rounds" ON crash_rounds FOR SELECT USING (true);
+CREATE POLICY "Anyone can view crash rounds" ON rounds FOR SELECT USING (true);
 CREATE POLICY "Users can view their own bets" ON crash_bets FOR ALL USING (player_id IN (SELECT id FROM crash_players WHERE wallet_address = auth.jwt() ->> 'wallet_address'));
-CREATE POLICY "Users can view their own payouts" ON crash_payouts FOR SELECT USING (player_id IN (SELECT id FROM crash_players WHERE wallet_address = auth.jwt() ->> 'wallet_address'));
+CREATE POLICY "Users can view their own payouts" ON payouts FOR SELECT USING (
+    user_id = auth.uid() OR dest_address = (auth.jwt() ->> 'wallet_address')
+);
 
 -- Chat: Public read, authenticated write
 CREATE POLICY "Anyone can view chat messages" ON chat_messages FOR SELECT USING (NOT is_deleted);
@@ -292,7 +332,7 @@ CREATE INDEX IF NOT EXISTS idx_game_scores_created_at ON game_scores(created_at 
 
 -- Crash Casino indexes
 CREATE INDEX IF NOT EXISTS idx_crash_players_wallet ON crash_players(wallet_address);
-CREATE INDEX IF NOT EXISTS idx_crash_rounds_created ON crash_rounds(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_rounds_created ON rounds(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_crash_bets_player_round ON crash_bets(player_id, round_id);
 CREATE INDEX IF NOT EXISTS idx_crash_bets_round ON crash_bets(round_id);
 
@@ -308,7 +348,7 @@ CREATE INDEX IF NOT EXISTS idx_chat_users_wallet ON chat_users(wallet_address);
 
 -- Enable realtime for live features
 ALTER PUBLICATION supabase_realtime ADD TABLE game_scores;
-ALTER PUBLICATION supabase_realtime ADD TABLE crash_rounds;
+ALTER PUBLICATION supabase_realtime ADD TABLE rounds;
 ALTER PUBLICATION supabase_realtime ADD TABLE crash_bets;
 ALTER PUBLICATION supabase_realtime ADD TABLE chat_messages;
 
@@ -418,7 +458,7 @@ SELECT
     tableowner
 FROM pg_tables 
 WHERE schemaname = 'public' 
-    AND tablename IN ('game_scores', 'paco_orders', 'crash_players', 'crash_rounds', 'crash_bets', 'chat_messages', 'chat_users')
+    AND tablename IN ('game_scores', 'paco_orders', 'crash_players', 'rounds', 'crash_bets', 'payouts', 'chat_messages', 'chat_users')
 ORDER BY tablename;
 
 -- Check functions

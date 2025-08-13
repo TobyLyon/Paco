@@ -125,18 +125,52 @@ class UnifiedPacoRockoProduction {
      * 🎧 Setup crash engine event listeners
      */
     setupEngineListeners() {
-        this.crashEngine.on('roundCreated', (round) => {
+        this.crashEngine.on('roundCreated', async (round) => {
             this.gameStats.totalRounds++;
-            console.log(`🎲 Round ${round.id} created - Server authority established`);
+            console.log(`🎲 Round ${round.id} created - Commit ${round.commitHash}`);
+            // Persist commit to Supabase
+            try {
+                if (this.walletIntegration?.supabase) {
+                    await this.walletIntegration.supabase
+                        .from('rounds')
+                        .insert({
+                            id: String(round.id),
+                            commit_hash: round.commitHash,
+                            status: 'pending',
+                            started_at: new Date().toISOString()
+                        })
+                }
+            } catch (e) {
+                console.warn('RDS: failed to insert round commit', e?.message)
+            }
         });
 
         this.crashEngine.on('roundStarted', (data) => {
             console.log(`🚀 Round ${data.roundId} started - Clients will sync automatically`);
         });
 
-        this.crashEngine.on('roundCrashed', (data) => {
+        this.crashEngine.on('roundCrashed', async (data) => {
             this.gameStats.totalVolume += data.totalPayout || 0;
             console.log(`💥 Round ${data.roundId} crashed at ${data.crashPoint}x - Perfect sync maintained`);
+            // Reveal serverSeed and persist
+            try {
+                const serverSeed = this.crashEngine.currentServerSeed
+                const commit = this.crashEngine.currentCommit
+                if (this.walletIntegration?.supabase) {
+                    await this.walletIntegration.supabase
+                        .from('rounds')
+                        .update({
+                            seed_revealed: serverSeed,
+                            crash_point_ppm: Math.round(Number(data.crashPoint) * 1_000_000),
+                            settled_at: new Date().toISOString(),
+                            status: 'settled'
+                        })
+                        .eq('id', String(data.roundId))
+                }
+                this.io.emit('round_reveal', { roundId: data.roundId, serverSeed, commit })
+            } catch (e) {
+                console.warn('RDS: failed to reveal round', e?.message)
+            }
         });
         
         console.log('🎧 Crash engine event listeners configured');
@@ -231,6 +265,22 @@ class UnifiedPacoRockoProduction {
         // Validate bet
         if (!bet_amount || !payout_multiplier || bet_amount <= 0 || payout_multiplier < 1) {
             throw new Error('Invalid bet parameters');
+        }
+
+        // Pre-bet solvency check
+        try {
+            if (this.walletIntegration?.getHouseInfo) {
+                const info = await this.walletIntegration.getHouseInfo()
+                const balanceEth = parseFloat(info.balance || '0')
+                const maxLiabilityFactor = parseFloat(process.env.MAX_LIABILITY_FACTOR || '0.25')
+                const potentialPayout = Number(bet_amount) * Number(payout_multiplier)
+                const maxLiability = balanceEth * maxLiabilityFactor
+                if (potentialPayout > maxLiability) {
+                    throw new Error('Bet exceeds solvency limit')
+                }
+            }
+        } catch (e) {
+            throw new Error(e?.message || 'Solvency check failed')
         }
         
         // Process bet through crash engine

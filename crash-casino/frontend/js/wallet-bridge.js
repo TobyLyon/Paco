@@ -233,8 +233,8 @@ class WalletBridge {
                 console.log('✅ Abstract L2 gas estimation successful:', gasEstimate);
                 
                 // FIXED: Use Abstract L2 Helper for optimal gas configuration
-                if (window.abstractL2Helper) {
-                    const optimalGas = window.abstractL2Helper.calculateGasConfig('standard', 'simple');
+                if (window.abstractL2Helper && typeof window.abstractL2Helper.getAbstractGasConfig === 'function') {
+                    const optimalGas = window.abstractL2Helper.getAbstractGasConfig('standard');
                     metaMaskTx.gas = optimalGas.gas;
                     metaMaskTx.gasPrice = optimalGas.gasPrice;
                     metaMaskTx.gas_per_pubdata_limit = optimalGas.gas_per_pubdata_limit;

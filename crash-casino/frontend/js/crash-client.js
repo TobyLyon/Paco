@@ -229,6 +229,14 @@ class CrashGameClient {
             console.log('🔌 Disconnected from crash game server');
             this.isConnected = false;
             this.updateConnectionStatus(false);
+            
+            // Auto-reconnect after 2 seconds if not manually disconnected
+            setTimeout(() => {
+                if (!this.isConnected && this.socket && !this.socket.connected) {
+                    console.log('🔄 Attempting automatic reconnection...');
+                    this.socket.connect();
+                }
+            }, 2000);
         });
 
         this.socket.on('connect_error', (error) => {
@@ -795,14 +803,28 @@ class CrashGameClient {
                 console.log(`⚠️ Local game state unclear (${localGameState}), allowing bet`);
             }
         } else {
-            // Legacy mode: Use server state
-            if (this.gameState === 'running' || this.gameState === 'crashed') {
-                this.showError(`Cannot bet now - round is ${this.gameState}`);
-                console.log(`🚫 Bet rejected - Round is "${this.gameState}"`);
+            // Legacy mode: Use server state with improved timing tolerance
+            if (this.gameState === 'crashed') {
+                this.showError(`Cannot bet now - round crashed`);
+                console.log(`🚫 Bet rejected - Round crashed`);
                 return false;
             }
             
-            if (!['betting', 'waiting', 'pending', undefined].includes(this.gameState)) {
+            if (this.gameState === 'running') {
+                // More lenient: Allow betting in first few seconds of round
+                const timeSinceRoundStart = this.roundStartTime ? (Date.now() - this.roundStartTime) / 1000 : 999;
+                const currentMultiplier = this.getCurrentDisplayMultiplier();
+                
+                if (timeSinceRoundStart < 2.0 && currentMultiplier < 1.1) {
+                    console.log(`✅ Late bet allowed - Round just started (${timeSinceRoundStart.toFixed(1)}s, ${currentMultiplier.toFixed(2)}x)`);
+                } else {
+                    this.showError(`Too late to bet - round is at ${currentMultiplier.toFixed(2)}x`);
+                    console.log(`🚫 Bet rejected - Round too advanced (${timeSinceRoundStart.toFixed(1)}s, ${currentMultiplier.toFixed(2)}x)`);
+                    return false;
+                }
+            }
+            
+            if (!['betting', 'waiting', 'pending', 'running', undefined].includes(this.gameState)) {
                 this.showError(`Cannot bet now - game state: "${this.gameState}"`);
                 console.log(`🚫 Bet rejected - Game state: "${this.gameState}"`);
                 return false;
@@ -1731,4 +1753,5 @@ class CrashGameClient {
 // Global instance
 window.CrashGameClient = CrashGameClient;
 
+// Note: Initialization is handled in the HTML file to avoid conflicts
 // Note: Initialization is handled in the HTML file to avoid conflicts

@@ -188,14 +188,33 @@ class WalletBridge {
                 }
             }
 
-            // SIMPLIFIED: Use standard ETH transfer format for Abstract L2
-            const tx = {
-                to: to,
-                value: ethers.parseEther(value.toString()),
-                gas: '0x5208', // 21000 gas - standard for simple ETH transfers
-                gasPrice: '0x5F5E100', // 0.1 gwei - Proven working gas price
-                data: '0x' // Required empty data field for transfers
-            };
+            // ABSTRACT NETWORK FIX: Use proper ZK Stack transaction format
+            const fromAddress = await this.signer.getAddress();
+            
+            // Use Abstract L2 helper for proper transaction formatting
+            let tx;
+            if (window.abstractL2Helper) {
+                console.log('🔧 Using Abstract L2 Helper for transaction formatting');
+                tx = window.abstractL2Helper.formatTransactionForAbstract({
+                    to: to,
+                    value: value,
+                    gasLimit: 100000, // Increased for Abstract Network ZK processing
+                    gasPriceGwei: 0.5  // 0.5 gwei - balanced for Abstract Network
+                });
+                tx.from = fromAddress; // Add from address
+            } else {
+                // Fallback to manual formatting
+                console.log('⚠️ Abstract L2 Helper not available, using manual formatting');
+                tx = {
+                    from: fromAddress,
+                    to: to,
+                    value: '0x' + ethers.parseEther(value.toString()).toString(16),
+                    gas: '0x186A0', // 100000 in hex
+                    gasPrice: '0x1DCD6500', // 0.5 gwei in hex
+                    data: '0x',
+                    gas_per_pubdata_limit: '0xC350' // 50000 - required for Abstract Network
+                };
+            }
             
             console.log('📊 Using legacy transaction format for Abstract Network compatibility');
 
@@ -207,18 +226,8 @@ class WalletBridge {
             // Abstract Network: Use direct MetaMask request instead of ethers.js
             console.log('🔗 Sending transaction via direct MetaMask request for Abstract Network...');
             
-            // Convert to Abstract L2 MetaMask-compatible format
-            const fromAddress = await this.signer.getAddress();
-            
-            const metaMaskTx = {
-                from: fromAddress,
-                to: tx.to,
-                value: typeof tx.value === 'string' ? tx.value : '0x' + BigInt(tx.value).toString(16),
-                gas: typeof tx.gas === 'string' ? tx.gas : '0x' + BigInt(tx.gas || tx.gasLimit || 100000).toString(16),
-                gasPrice: typeof tx.gasPrice === 'string' ? tx.gasPrice : '0x' + BigInt(tx.gasPrice).toString(16),
-                data: '0x' // Abstract L2 requires data field
-                // Let MetaMask handle nonce automatically
-            };
+            // Use the pre-formatted transaction directly
+            const metaMaskTx = tx;
             
             console.log('📡 MetaMask transaction object:', metaMaskTx);
             
@@ -232,9 +241,11 @@ class WalletBridge {
                 });
                 console.log('✅ Abstract L2 gas estimation successful:', gasEstimate);
                 
-                // 🧪 TESTING: MINIMAL TRANSACTION (like original working version)
-                // Only add absolute minimum - let MetaMask handle gas estimation
-                console.log('🧪 Using minimal transaction format - letting MetaMask estimate gas');
+                // Verify ZK fields are present
+                if (!metaMaskTx.gas_per_pubdata_limit) {
+                    metaMaskTx.gas_per_pubdata_limit = '0xC350'; // 50000 - Higher limit for Abstract Network
+                    console.log('🔧 Added missing gas_per_pubdata_limit field for Abstract Network');
+                }
                 
             } catch (gasError) {
                 console.log('⚠️ Gas estimation failed, using default:', gasError.message);

@@ -7,11 +7,11 @@
 class RPCHealthChecker {
     constructor() {
         this.endpoints = [
-            'https://rpc.abs.xyz',  // Try secondary endpoint first
-            'https://api.mainnet.abs.xyz',
-            'https://rpc.startale.com/astar',  // Alternative RPC provider
-            'https://mainnet-rpc.abs.xyz'      // Alternative endpoint pattern
-            // Added more endpoints in case primary/secondary have transaction issues
+            'https://api.mainnet.abs.xyz',     // Primary official endpoint
+            'https://rpc.abs.xyz',             // Secondary official endpoint
+            'https://abstract.drpc.org',       // dRPC provider for Abstract
+            'https://abstract-mainnet.rpc.thirdweb.com',  // Thirdweb RPC
+            'https://abstract.blockpi.network/v1/rpc/public'  // BlockPI provider
         ];
         this.currentEndpoint = this.endpoints[0];
         this.failedEndpoints = new Set();

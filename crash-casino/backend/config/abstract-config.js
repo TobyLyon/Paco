@@ -24,7 +24,9 @@ const abstractNetworks = {
         alternativeRpcUrls: [
             'https://api.mainnet.abs.xyz',
             'https://rpc.abs.xyz',
-            'https://abstract-mainnet.g.alchemy.com/v2/demo'
+            'https://abstract.drpc.org',
+            'https://abstract-mainnet.rpc.thirdweb.com',
+            'https://abstract.blockpi.network/v1/rpc/public'
         ],
         wsUrl: 'wss://api.mainnet.abs.xyz', 
         explorer: 'https://abscan.org',

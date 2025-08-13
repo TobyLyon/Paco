@@ -236,6 +236,22 @@ class AbstractL2Helper {
     }
 
     /**
+     * 🎯 Format transaction for Abstract Network ZK Stack
+     */
+    formatTransactionForAbstract(params) {
+        const { to, value, gasLimit = 100000, gasPriceGwei = 0.5 } = params;
+        
+        return {
+            to: to,
+            value: '0x' + ethers.parseEther(value.toString()).toString(16),
+            gas: '0x' + gasLimit.toString(16),
+            gasPrice: '0x' + Math.floor(gasPriceGwei * 1e9).toString(16),
+            data: '0x',
+            gas_per_pubdata_limit: '0xC350' // 50000 - required for Abstract Network ZK Stack
+        };
+    }
+
+    /**
      * 🔄 Send transaction with Abstract L2 retry logic
      */
     async sendTransaction(transaction, maxRetries = 3) {
@@ -243,7 +259,7 @@ class AbstractL2Helper {
             try {
                 console.log(`🚀 Abstract L2 transaction attempt ${attempt}/${maxRetries}`);
                 
-                // CRITICAL FIX: Create standard Ethereum transaction format first
+                // CRITICAL FIX: Create Abstract Network ZK Stack transaction format
                 let cleanTransaction = {
                     from: transaction.from,
                     to: transaction.to,
@@ -251,7 +267,7 @@ class AbstractL2Helper {
                     gas: transaction.gas,
                     gasPrice: transaction.gasPrice,
                     data: transaction.data || '0x',
-                    gas_per_pubdata_limit: transaction.gas_per_pubdata_limit || '0x4E20'
+                    gas_per_pubdata_limit: transaction.gas_per_pubdata_limit || '0xC350' // 50000 for Abstract Network
                 };
                 
                 // 🎯 FIXED: Use ZK format since that's what actually works with Abstract Network
@@ -310,12 +326,12 @@ class AbstractL2Helper {
                     
                     // Conservative increase for Abstract L2 (remember: excess is refunded)
                     const currentGas = parseInt(transaction.gas, 16);
-                    const newGas = Math.min(currentGas + 15000, 60000); // Cap at 60k gas
+                    const newGas = Math.min(currentGas + 20000, 150000); // Higher limit for Abstract Network
                     transaction.gas = '0x' + newGas.toString(16);
                     
-                    // Minimal gas price increase (keep fees ultra-low)
+                    // Minimal gas price increase (keep fees reasonable)
                     const currentGasPrice = parseInt(transaction.gasPrice, 16);
-                    const newGasPrice = Math.min(currentGasPrice * 3, 1000000000); // Cap at 1 gwei
+                    const newGasPrice = Math.min(currentGasPrice * 2, 2000000000); // Cap at 2 gwei
                     transaction.gasPrice = '0x' + newGasPrice.toString(16);
                     
                     console.log(`🔧 Updated gas: ${newGas}, gasPrice: ${(newGasPrice / 1e9).toFixed(1)} gwei`);

@@ -908,7 +908,7 @@ class CrashGameClient {
             if (this.gameState === 'running') {
                 // More lenient: Allow betting in first few seconds of round
                 const timeSinceRoundStart = this.roundStartTime ? (Date.now() - this.roundStartTime) / 1000 : 999;
-                const currentMultiplier = this.getCurrentDisplayMultiplier();
+                const currentMultiplier = this.currentMultiplier || 1.0;
                 
                 if (timeSinceRoundStart < 2.0 && currentMultiplier < 1.1) {
                     console.log(`✅ Late bet allowed - Round just started (${timeSinceRoundStart.toFixed(1)}s, ${currentMultiplier.toFixed(2)}x)`);

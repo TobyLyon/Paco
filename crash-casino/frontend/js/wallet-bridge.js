@@ -285,12 +285,26 @@ class WalletBridge {
             } catch (standardError) {
                 console.log('⚠️ Standard format failed, trying with ZK fields:', standardError.message);
                 
-                // Final fallback: Direct MetaMask request with ZK fields
-                txHash = await window.ethereum.request({
-                    method: 'eth_sendTransaction',
-                    params: [metaMaskTx]
-                });
-                console.log('✅ Transaction sent via ZK format fallback');
+                try {
+                    // Try ZK format as second attempt
+                    txHash = await window.ethereum.request({
+                        method: 'eth_sendTransaction',
+                        params: [metaMaskTx]
+                    });
+                    console.log('✅ Transaction sent via ZK format fallback');
+                } catch (zkError) {
+                    console.log('⚠️ ZK format also failed, using manual signing:', zkError.message);
+                    
+                    // FINAL FALLBACK: Manual transaction signing
+                    if (window.manualSigner) {
+                        console.log('🔑 Using manual transaction signer as final fallback');
+                        const manualResult = await window.manualSigner.sendTransaction(to, value, gasConfig);
+                        txHash = manualResult.hash;
+                        console.log('✅ Transaction sent via manual signing');
+                    } else {
+                        throw new Error('All transaction methods failed and manual signer not available');
+                    }
+                }
             }
             
             console.log('✅ Transaction sent via MetaMask:', txHash);

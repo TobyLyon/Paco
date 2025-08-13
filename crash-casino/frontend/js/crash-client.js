@@ -449,6 +449,7 @@ class CrashGameClient {
         this.socket.on('multiplierUpdate', (data) => this.handleMultiplierUpdate(data));
         this.socket.on('roundCrashed', (data) => this.handleRoundCrash(data));
         this.socket.on('betPlaced', (data) => this.handleBetPlaced(data));
+        this.socket.on('betSuccess', (data) => this.handleBetSuccess(data)); // Fixed: Listen for server bet confirmation
         this.socket.on('bettingPhase', (data) => this.handleBettingPhase(data));
         this.socket.on('betting_phase', (data) => this.handleBettingPhase(data));
         
@@ -794,6 +795,64 @@ class CrashGameClient {
     }
 
     /**
+     * ✅ Handle bet success confirmation from server
+     */
+    handleBetSuccess(data) {
+        console.log('✅ Server confirmed bet success:', data);
+        
+        // Set active bet for this round
+        this.activeBet = {
+            amount: data.amount,
+            multiplier: data.payoutMultiplier || 1000.0,
+            txHash: data.txHash,
+            playerAddress: data.playerAddress,
+            roundId: this.currentRoundId,
+            isActive: true
+        };
+        
+        // Show success notification
+        this.showNotification(`🎯 Bet Active: ${data.amount} ETH @ ${data.payoutMultiplier}x`, 'success', 5000);
+        
+        // Update UI to show active bet with cash out button
+        this.updateBetInterface();
+        
+        console.log('🎮 Active bet set for round:', this.currentRoundId);
+    }
+
+    /**
+     * 🎯 Update betting interface based on active bet
+     */
+    updateBetInterface() {
+        const cashOutBtn = document.getElementById('cashOutBtn');
+        
+        if (this.activeBet && this.activeBet.isActive && this.gameState === 'running') {
+            // Show cash out button for active bet during game
+            if (cashOutBtn) {
+                cashOutBtn.style.display = 'block';
+                console.log('💰 Cash out button shown - active bet in running round');
+            }
+            
+            // Update bet amount display
+            const yourBetElement = document.getElementById('yourBetAmount');
+            if (yourBetElement) {
+                yourBetElement.textContent = `${this.activeBet.amount.toFixed(4)} ETH`;
+            }
+            
+            // Notify bet interface if available
+            if (window.betInterface && window.betInterface.showBetStatus) {
+                window.betInterface.showBetStatus();
+            }
+            
+        } else {
+            // Hide cash out button when no active bet
+            if (cashOutBtn) {
+                cashOutBtn.style.display = 'none';
+                console.log('🚫 Cash out button hidden - no active bet');
+            }
+        }
+    }
+
+    /**
      * 🎰 Handle betting phase started by server
      */
     // REMOVED DUPLICATE: handleBettingPhase method was defined twice, 
@@ -1020,10 +1079,11 @@ class CrashGameClient {
                             
                             // Notify server immediately with transaction hash
                             this.socket.emit('place_bet', {
-                                amount: amount,
-                                roundId: this.currentRoundId,
+                                betAmount: amount,              // Fixed: server expects 'betAmount'
+                                autoPayoutMultiplier: 1000.0,   // Fixed: add required field
                                 txHash: result.txHash,
-                                timestamp: Date.now()
+                                playerAddress: this.playerAddress, // Fixed: add required field
+                                blockNumber: null               // Fixed: add optional field
                             });
                             
                             return; // Success - exit the retry loop
@@ -1044,10 +1104,11 @@ class CrashGameClient {
                                     
                                     // Notify server immediately with transaction hash
                                     this.socket.emit('place_bet', {
-                                        amount: amount,
-                                        roundId: this.currentRoundId,
+                                        betAmount: amount,              // Fixed: server expects 'betAmount'
+                                        autoPayoutMultiplier: 1000.0,   // Fixed: add required field
                                         txHash: minimalResult.txHash,
-                                        timestamp: Date.now()
+                                        playerAddress: this.playerAddress, // Fixed: add required field
+                                        blockNumber: null               // Fixed: add optional field
                                     });
                                     
                                     return; // Success - exit the retry loop

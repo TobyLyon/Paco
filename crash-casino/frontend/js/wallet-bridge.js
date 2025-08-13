@@ -246,43 +246,16 @@ class WalletBridge {
             console.log('🔍 Transaction fields:', Object.keys(metaMaskTx));
             
             try {
-                if (window.abstractL2Helper) {
-                    // Use Abstract L2 helper with progressive format retry
-                    txHash = await window.abstractL2Helper.sendTransaction(metaMaskTx, 3);
-                    console.log('🌐 Transaction sent via Abstract L2 Helper');
-                } else {
-                    // Fallback: Try standard format first
-                    console.log('🔧 Fallback: Using standard Ethereum transaction format');
-                    const standardTx = {
-                        from: metaMaskTx.from,
-                        to: metaMaskTx.to,
-                        value: metaMaskTx.value,
-                        gas: metaMaskTx.gas,
-                        gasPrice: metaMaskTx.gasPrice,
-                        data: metaMaskTx.data
-                        // No gas_per_pubdata_limit in standard format
-                    };
-                    
-                    txHash = await window.ethereum.request({
-                        method: 'eth_sendTransaction',
-                        params: [standardTx]
-                    });
-                    console.log('✅ Transaction sent via standard Ethereum format');
-                }
-            } catch (standardError) {
-                console.log('⚠️ Standard format failed, trying with ZK fields:', standardError.message);
-                
-                try {
-                    // Try ZK format as second attempt
-                    txHash = await window.ethereum.request({
-                        method: 'eth_sendTransaction',
-                        params: [metaMaskTx]
-                    });
-                    console.log('✅ Transaction sent via ZK format fallback');
-                } catch (zkError) {
-                    console.log('❌ All transaction formats failed:', zkError.message);
-                    throw zkError; // Don't try manual signing - that's not what worked before
-                }
+                // 🎯 FIXED: Use ZK format FIRST since that's what actually works
+                console.log('🔧 Using ZK format (known working) as primary attempt');
+                txHash = await window.ethereum.request({
+                    method: 'eth_sendTransaction',
+                    params: [metaMaskTx]
+                });
+                console.log('✅ Transaction sent via ZK format (primary)');
+            } catch (zkError) {
+                console.log('❌ Transaction failed:', zkError.message);
+                throw zkError;
             }
             
             console.log('✅ Transaction sent via MetaMask:', txHash);

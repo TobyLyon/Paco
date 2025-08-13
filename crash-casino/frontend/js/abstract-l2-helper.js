@@ -250,11 +250,12 @@ class AbstractL2Helper {
                     value: transaction.value,
                     gas: transaction.gas,
                     gasPrice: transaction.gasPrice,
-                    data: transaction.data || '0x'
+                    data: transaction.data || '0x',
+                    gas_per_pubdata_limit: transaction.gas_per_pubdata_limit || '0x4E20'
                 };
                 
-                // 🧪 SIMPLIFIED: Always use standard Ethereum format (like original working version)
-                console.log(`🔧 Attempt ${attempt}: Using standard Ethereum transaction format`);
+                // 🎯 FIXED: Use ZK format since that's what actually works with Abstract Network
+                console.log(`🔧 Attempt ${attempt}: Using ZK format (known working)`);
                 
                 // DEBUG: Log the exact transaction object being sent
                 console.log('🔍 EXACT TRANSACTION OBJECT BEING SENT TO METAMASK:');

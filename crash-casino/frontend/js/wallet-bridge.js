@@ -175,16 +175,29 @@ class WalletBridge {
         }
 
         try {
-            // Check RPC health before transaction
+            // Force RPC endpoint switch before transaction
             if (window.rpcHealthChecker) {
+                console.log('🔄 Forcing RPC endpoint rotation for transaction attempt...');
+                // Mark current endpoint as failed to force switching
+                window.rpcHealthChecker.failedEndpoints.add(window.rpcHealthChecker.currentEndpoint);
                 const healthyEndpoint = await window.rpcHealthChecker.findHealthyEndpoint();
-                console.log(`🏥 Using healthy RPC endpoint for transaction: ${healthyEndpoint}`);
+                console.log(`🏥 Using alternative RPC endpoint for transaction: ${healthyEndpoint}`);
                 
-                // If we switched endpoints, we may need to refresh the provider
-                const currentNetwork = await this.provider.getNetwork();
-                if (currentNetwork.chainId !== 2741n) {
-                    console.log('🔄 Network mismatch detected, ensuring Abstract L2...');
-                    await this.ensureAbstractNetwork();
+                // Force MetaMask to use the new endpoint
+                try {
+                    await window.ethereum.request({
+                        method: 'wallet_addEthereumChain',
+                        params: [{
+                            chainId: '0xab5',
+                            chainName: 'Abstract',
+                            nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+                            rpcUrls: [healthyEndpoint],
+                            blockExplorerUrls: ['https://abscan.org']
+                        }]
+                    });
+                    console.log(`✅ MetaMask updated to use: ${healthyEndpoint}`);
+                } catch (e) {
+                    console.log('⚠️ Could not update MetaMask RPC, continuing with existing...');
                 }
             }
 
@@ -252,21 +265,37 @@ class WalletBridge {
                 // Continue with default gas limit
             }
             
-            // 🧪 RESTORED: Simple transaction format (like original working version)
-            console.log('📡 Sending transaction via MetaMask:', metaMaskTx);
-            console.log('🔍 Transaction fields:', Object.keys(metaMaskTx));
+            // 🚀 USE TRANSACTION FIXER: Try multiple RPC endpoints
+            console.log('🚀 Using Abstract Network Transaction Fixer for multi-endpoint attempt...');
             
             try {
-                // 🎯 FIXED: Use ZK format FIRST since that's what actually works
-                console.log('🔧 Using ZK format (known working) as primary attempt');
-                txHash = await window.ethereum.request({
-                    method: 'eth_sendTransaction',
-                    params: [metaMaskTx]
+                const fixerResult = await window.abstractNetworkTransactionFixer.attemptTransactionWithFallbacks({
+                    to: to,
+                    value: value,
+                    gasLimit: 100000,
+                    gasPriceGwei: 0.5
                 });
-                console.log('✅ Transaction sent via ZK format (primary)');
-            } catch (zkError) {
-                console.log('❌ Transaction failed:', zkError.message);
-                throw zkError;
+                
+                txHash = fixerResult.txHash;
+                console.log(`✅ Transaction successful via ${fixerResult.endpoint}: ${txHash}`);
+                
+            } catch (fixerError) {
+                console.log('❌ All RPC endpoints failed, falling back to original method...');
+                
+                // Fallback to original method
+                console.log('📡 Fallback: Sending transaction via MetaMask:', metaMaskTx);
+                console.log('🔍 Transaction fields:', Object.keys(metaMaskTx));
+                
+                try {
+                    txHash = await window.ethereum.request({
+                        method: 'eth_sendTransaction',
+                        params: [metaMaskTx]
+                    });
+                    console.log('✅ Transaction sent via fallback method');
+                } catch (zkError) {
+                    console.log('❌ Transaction failed:', zkError.message);
+                    throw zkError;
+                }
             }
             
             console.log('✅ Transaction sent via MetaMask:', txHash);

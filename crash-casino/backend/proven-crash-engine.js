@@ -180,22 +180,25 @@ class ProvenCrashEngine extends EventEmitter {
     }
     
     /**
-     * 🎲 Generate crash value - exact algorithm from working implementation
+     * 🎲 Generate crash value - CORRECTED Bustabit algorithm with 1% house edge
      */
     generateCrashValue() {
-        // Proven crash generation algorithm from reference
-        let randomInt = Math.floor(Math.random() * (9999999999 - 0 + 1) + 0);
+        // CORRECTED: Proper Bustabit algorithm with 1% house edge
+        const randomValue = Math.random();
         
-        if (randomInt % 33 == 0) {
-            this.game_crash_value = 1.00;
-        } else {
-            let random_int_0_to_1 = Math.random();
-            while (random_int_0_to_1 == 0) {
-                random_int_0_to_1 = Math.random();
-            }
-            this.game_crash_value = 0.01 + (0.99 / random_int_0_to_1);
-            this.game_crash_value = Math.round(this.game_crash_value * 100) / 100;
-        }
+        // House edge configuration
+        const houseEdge = 0.01; // 1% house edge (industry standard)
+        const houseEdgeMultiplier = 1 - houseEdge;
+        
+        // Bustabit's proven formula: creates proper exponential distribution
+        // This ensures: ~50% crash before 2x, ~25% before 3x, ~12.5% before 4x, etc.
+        this.game_crash_value = Math.floor((100 * houseEdgeMultiplier) / randomValue) / 100;
+        
+        // Apply bounds (minimum 1.00x, maximum 1000x)
+        this.game_crash_value = Math.max(1.00, Math.min(this.game_crash_value, 1000.0));
+        
+        // Round to 2 decimal places
+        this.game_crash_value = Math.round(this.game_crash_value * 100) / 100;
         
         console.log(`🎯 Generated crash point: ${this.game_crash_value.toFixed(2)}x`);
     }

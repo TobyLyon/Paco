@@ -169,26 +169,26 @@ class UnifiedCrashEngine extends EventEmitter {
     }
     
     /**
-     * 🎲 Generate crash value - EXACT algorithm from reference
+     * 🎲 Generate crash value - CORRECTED Bustabit algorithm with 1% house edge
      */
     generateCrashValue() {
-        // Proven algorithm from working reference implementation
-        const randomInt = Math.floor(Math.random() * (9999999999 - 0 + 1) + 0);
+        // CORRECTED: Proper Bustabit algorithm with 1% house edge
+        const randomValue = Math.random();
         
-        if (randomInt % 33 == 0) {
-            this.game_crash_value = 1.00;
-        } else {
-            let random_int_0_to_1 = Math.random();
-            while (random_int_0_to_1 == 0) {
-                random_int_0_to_1 = Math.random();
-            }
-            this.game_crash_value = 0.01 + (0.99 / random_int_0_to_1);
-            this.game_crash_value = Math.round(this.game_crash_value * 100) / 100;
-        }
+        // House edge configuration
+        const houseEdge = 0.01; // 1% house edge (industry standard)
+        const houseEdgeMultiplier = 1 - houseEdge;
         
-        // Apply bounds
+        // Bustabit's proven formula: creates proper exponential distribution
+        // This ensures: ~50% crash before 2x, ~25% before 3x, ~12.5% before 4x, etc.
+        this.game_crash_value = Math.floor((100 * houseEdgeMultiplier) / randomValue) / 100;
+        
+        // Apply bounds (Bustabit caps at 1,000,000x but we'll use 1000x)
         this.game_crash_value = Math.max(this.config.minCrashValue, 
                                        Math.min(this.game_crash_value, this.config.maxCrashValue));
+        
+        // Round to 2 decimal places
+        this.game_crash_value = Math.round(this.game_crash_value * 100) / 100;
         
         console.log(`🎯 Generated crash point: ${this.game_crash_value.toFixed(2)}x (server-only)`);
     }

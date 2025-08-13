@@ -840,6 +840,39 @@ body {
     transform: none;
 }
 
+/* Bet buttons container */
+.bet-buttons-container {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+}
+
+.bet-buttons-container .place-bet-btn {
+    flex: 1;
+}
+
+/* Cancel bet button */
+.cancel-bet-btn {
+    padding: 16px 12px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    font-family: var(--font-display);
+    background: linear-gradient(45deg, #ef4444, #dc2626);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-red);
+    min-width: 80px;
+}
+
+.cancel-bet-btn:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(45deg, #dc2626, #b91c1c);
+    box-shadow: var(--shadow-red), 0 6px 16px rgba(239, 68, 68, 0.3);
+}
+
 .bet-status {
     margin-top: 15px;
     padding: 10px;

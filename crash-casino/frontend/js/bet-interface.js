@@ -11,6 +11,8 @@ class BetInterface {
         this.currentBet = null;
         this.pendingTransactions = new Map(); // Track pending bets
         this.activeBets = new Map(); // Track active bets in current round
+        this.cancelledTransactions = new Set(); // Track cancelled transactions to prevent respamming
+        this.currentTxId = null; // Track current transaction ID
         
         this.init();
     }
@@ -51,6 +53,14 @@ class BetInterface {
         if (placeBetBtn) {
             placeBetBtn.addEventListener('click', () => {
                 this.placeBet();
+            });
+        }
+
+        // Cancel bet button
+        const cancelBetBtn = document.getElementById('cancelBetBtn');
+        if (cancelBetBtn) {
+            cancelBetBtn.addEventListener('click', () => {
+                this.cancelCurrentTransaction();
             });
         }
 
@@ -132,14 +142,25 @@ class BetInterface {
         
         this.isPlacingBet = true;
         this.updatePlaceBetButton('🔄 SENDING TX...');
+        
+        // Track this transaction
+        this.currentTxId = betId;
 
         try {
+            // Check if this bet was previously cancelled
+            if (this.cancelledTransactions.has(betId)) {
+                console.log('🚫 Bet was cancelled, not proceeding');
+                this.showNotification('❌ Bet was cancelled', 'error');
+                return;
+            }
+            
             // Add to pending transactions immediately for UI feedback
             this.pendingTransactions.set(betId, {
                 amount: this.betAmount,
                 timestamp: Date.now(),
                 status: 'pending',
-                stage: 'sending'
+                stage: 'sending',
+                txId: betId
             });
             
             this.updateActiveBetsDisplay();
@@ -202,30 +223,101 @@ class BetInterface {
         } catch (error) {
             console.error('❌ Bet placement error:', error);
             
-            // Update to error status
-            if (this.pendingTransactions.has(betId)) {
-                this.pendingTransactions.set(betId, {
-                    ...this.pendingTransactions.get(betId),
-                    status: 'error',
-                    stage: 'error',
-                    error: error.message
-                });
-            }
+            // Check if this was a user cancellation
+            const isCancellation = error.message && (
+                error.message.includes('User denied') || 
+                error.message.includes('rejected') ||
+                error.message.includes('cancelled') ||
+                error.code === 4001
+            );
             
-            this.showNotification('❌ Error placing bet: ' + error.message, 'error');
-            this.updateActiveBetsDisplay();
-            
-            // Remove failed bet after delay
-            setTimeout(() => {
+            if (isCancellation) {
+                console.log('🚫 User cancelled transaction:', betId);
+                // Mark this transaction as cancelled to prevent respamming
+                this.cancelledTransactions.add(betId);
+                
+                // Clean up the cancelled transaction immediately
                 this.pendingTransactions.delete(betId);
+                this.currentTxId = null;
+                
+                this.showNotification('❌ Transaction cancelled by user', 'warning');
                 this.updateActiveBetsDisplay();
-            }, 5000);
+                
+                // Clear cancellation after 30 seconds (prevents permanent blocking)
+                setTimeout(() => {
+                    this.cancelledTransactions.delete(betId);
+                    console.log('🔄 Cleared cancellation flag for:', betId);
+                }, 30000);
+                
+            } else {
+                // Handle other errors normally
+                if (this.pendingTransactions.has(betId)) {
+                    this.pendingTransactions.set(betId, {
+                        ...this.pendingTransactions.get(betId),
+                        status: 'error',
+                        stage: 'error',
+                        error: error.message
+                    });
+                }
+                
+                this.showNotification('❌ Error placing bet: ' + error.message, 'error');
+                this.updateActiveBetsDisplay();
+                
+                // Remove failed bet after delay
+                setTimeout(() => {
+                    this.pendingTransactions.delete(betId);
+                    this.updateActiveBetsDisplay();
+                }, 5000);
+            }
             
         } finally {
             this.isPlacingBet = false;
+            this.currentTxId = null; // Clear current transaction
             this.updatePlaceBetButton();
             this.validateBetAmount();
         }
+    }
+
+    /**
+     * 🚫 Cancel current transaction and clear MetaMask spam
+     */
+    cancelCurrentTransaction() {
+        if (this.currentTxId) {
+            console.log('🚫 Manually cancelling current transaction:', this.currentTxId);
+            
+            // Mark as cancelled
+            this.cancelledTransactions.add(this.currentTxId);
+            
+            // Clear pending transaction
+            this.pendingTransactions.delete(this.currentTxId);
+            
+            // Reset betting state
+            this.isPlacingBet = false;
+            this.currentTxId = null;
+            
+            // Update UI
+            this.updatePlaceBetButton();
+            this.updateActiveBetsDisplay();
+            
+            // Show notification
+            this.showNotification('🚫 Current transaction cancelled', 'warning');
+            
+            console.log('✅ Transaction cancelled and state cleared');
+            return true;
+        }
+        
+        console.log('⚠️ No current transaction to cancel');
+        return false;
+    }
+
+    /**
+     * 🧹 Clear all cancelled transactions (reset spam protection)
+     */
+    clearCancelledTransactions() {
+        const count = this.cancelledTransactions.size;
+        this.cancelledTransactions.clear();
+        console.log(`🧹 Cleared ${count} cancelled transaction flags`);
+        this.showNotification(`🧹 Cleared ${count} cancelled transactions`, 'info');
     }
 
     /**
@@ -294,15 +386,33 @@ class BetInterface {
     }
 
     /**
-     * 🔄 Update place bet button
+     * 🔄 Update place bet button and cancel button visibility
      */
     updatePlaceBetButton(text = null) {
         const placeBetBtn = document.getElementById('placeBetBtn');
+        const cancelBetBtn = document.getElementById('cancelBetBtn');
+        
         if (placeBetBtn) {
             if (text) {
                 placeBetBtn.textContent = text;
+                placeBetBtn.disabled = this.isPlacingBet;
             } else {
-                placeBetBtn.textContent = '🎯 PLACE BET';
+                if (this.isPlacingBet) {
+                    placeBetBtn.textContent = '🔄 PLACING BET...';
+                    placeBetBtn.disabled = true;
+                } else {
+                    placeBetBtn.textContent = '🎯 PLACE BET';
+                    placeBetBtn.disabled = false;
+                }
+            }
+        }
+        
+        // Show/hide cancel button based on transaction state
+        if (cancelBetBtn) {
+            if (this.isPlacingBet && this.currentTxId) {
+                cancelBetBtn.style.display = 'inline-block';
+            } else {
+                cancelBetBtn.style.display = 'none';
             }
         }
     }

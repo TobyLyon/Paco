@@ -787,9 +787,14 @@
                     </div>
                 </div>
                 
-                <button id="placeBetBtn" class="place-bet-btn">
-                    🎯 PLACE BET
-                </button>
+                <div class="bet-buttons-container">
+                    <button id="placeBetBtn" class="place-bet-btn">
+                        🎯 PLACE BET
+                    </button>
+                    <button id="cancelBetBtn" class="cancel-bet-btn" style="display: none;">
+                        🚫 CANCEL
+                    </button>
+                </div>
                 
                 <div class="bet-status" id="betStatus" style="display: none;">
                     <div class="current-bet-info">
@@ -1578,7 +1583,14 @@
                 
                 // DISABLED: No local game system - server provides everything
                 console.log('🚫 Local game system DISABLED - using server-only data');
-                // liveGameSystem.loadHistoryFromDatabase(); // DISABLED - causes conflicts
+                
+                // ✅ ENABLE: Load round history from Supabase on page refresh
+                console.log('📊 Loading round history from Supabase database...');
+                if (liveGameSystem && typeof liveGameSystem.loadHistoryFromDatabase === 'function') {
+                    liveGameSystem.loadHistoryFromDatabase();
+                } else {
+                    console.warn('⚠️ liveGameSystem.loadHistoryFromDatabase not available');
+                }
                 
                 // Initialize crash game client - USE THE WORKING SYSTEM
                 if (typeof CrashGameClient !== 'undefined') {

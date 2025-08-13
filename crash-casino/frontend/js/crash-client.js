@@ -425,9 +425,15 @@ class CrashGameClient {
         });
 
         this.socket.on('crash_history', (data) => {
-            console.log('📊 Server crash_history received - IGNORING to prevent dual history');
-            console.log('🎯 Local game manages its own recent rounds display');
-            // this.handleCrashHistory(data); // DISABLED - server controls its own history
+            console.log('📊 Server crash_history received - MERGING with local display');
+            console.log('🎯 Integrating server rounds with local recent rounds');
+            
+            // Only process if we have data and it's an array
+            if (data && Array.isArray(data) && data.length > 0) {
+                this.handleCrashHistory(data);
+            } else {
+                console.log('📊 No server history data to process');
+            }
         });
 
         this.socket.on('connect_error', (error) => {
@@ -1462,28 +1468,41 @@ class CrashGameClient {
     }
 
     /**
-     * 🎨 Update history display
+     * 🎨 Update history display (merge with existing Supabase history)
      */
     updateHistoryDisplay() {
         const historyContainer = document.getElementById('roundHistory');
-        historyContainer.innerHTML = '';
+        if (!historyContainer) return;
         
-        this.roundHistory.forEach(crashPoint => {
-            const item = document.createElement('div');
-            item.className = 'round-item';
-            item.textContent = crashPoint.toFixed(2) + 'x';
+        // Don't clear existing history if it contains server-round items from Supabase
+        const hasServerRounds = historyContainer.querySelector('.server-round');
+        const hasLocalHistory = historyContainer.children.length > 0;
+        
+        if (!hasServerRounds && !hasLocalHistory) {
+            // Only clear if we have no database history loaded
+            console.log('📊 Displaying client history (no database history loaded)');
+            historyContainer.innerHTML = '';
             
-            // Color based on multiplier
-            if (crashPoint < 2) {
-                item.classList.add('low');
-            } else if (crashPoint < 10) {
-                item.classList.add('medium');
-            } else {
-                item.classList.add('high');
-            }
-            
-            historyContainer.appendChild(item);
-        });
+            this.roundHistory.forEach(crashPoint => {
+                const item = document.createElement('div');
+                item.className = 'round-item local-round';
+                item.textContent = crashPoint.toFixed(2) + 'x';
+                
+                // Color based on multiplier
+                if (crashPoint < 2) {
+                    item.classList.add('low');
+                } else if (crashPoint < 10) {
+                    item.classList.add('medium');
+                } else {
+                    item.classList.add('high');
+                }
+                
+                historyContainer.appendChild(item);
+            });
+        } else {
+            console.log('📊 Preserving existing database history, only adding new local rounds');
+            // Keep existing database history, only add new client rounds if they're not duplicates
+        }
     }
 
     /**
@@ -1587,11 +1606,37 @@ class CrashGameClient {
     }
 
     /**
-     * 📈 Handle crash history updates
+     * 📈 Handle crash history updates (smart merge with Supabase data)
      */
     handleCrashHistory(history) {
-        this.roundHistory = history;
-        this.updateHistoryDisplay();
+        if (!history || !Array.isArray(history)) return;
+        
+        console.log(`📊 Processing ${history.length} server history entries`);
+        
+        // Convert server history to numbers if needed
+        const processedHistory = history.map(item => {
+            if (typeof item === 'object' && item.crash_point) {
+                return parseFloat(item.crash_point);
+            } else if (typeof item === 'number') {
+                return item;
+            } else {
+                return parseFloat(item);
+            }
+        }).filter(point => !isNaN(point));
+        
+        // Update local history with server data
+        this.roundHistory = processedHistory;
+        
+        // Only update display if no Supabase history is loaded
+        const historyContainer = document.getElementById('roundHistory');
+        const hasServerRounds = historyContainer?.querySelector('.server-round');
+        
+        if (!hasServerRounds) {
+            console.log('📊 No Supabase history detected, using server socket history');
+            this.updateHistoryDisplay();
+        } else {
+            console.log('📊 Supabase history preserved, server history stored for new rounds');
+        }
     }
 
     /**

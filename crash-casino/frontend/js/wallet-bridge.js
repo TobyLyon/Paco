@@ -175,31 +175,7 @@ class WalletBridge {
         }
 
         try {
-            // Force RPC endpoint switch before transaction
-            if (window.rpcHealthChecker) {
-                console.log('🔄 Forcing RPC endpoint rotation for transaction attempt...');
-                // Mark current endpoint as failed to force switching
-                window.rpcHealthChecker.failedEndpoints.add(window.rpcHealthChecker.currentEndpoint);
-                const healthyEndpoint = await window.rpcHealthChecker.findHealthyEndpoint();
-                console.log(`🏥 Using alternative RPC endpoint for transaction: ${healthyEndpoint}`);
-                
-                // Force MetaMask to use the new endpoint
-                try {
-                    await window.ethereum.request({
-                        method: 'wallet_addEthereumChain',
-                        params: [{
-                            chainId: '0xab5',
-                            chainName: 'Abstract',
-                            nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-                            rpcUrls: [healthyEndpoint],
-                            blockExplorerUrls: ['https://abscan.org']
-                        }]
-                    });
-                    console.log(`✅ MetaMask updated to use: ${healthyEndpoint}`);
-                } catch (e) {
-                    console.log('⚠️ Could not update MetaMask RPC, continuing with existing...');
-                }
-            }
+            // Skip RPC endpoint switching; use wallet's configured network (we already set official RPC)
 
             // ABSTRACT NETWORK FIX: Use proper ZK Stack transaction format
             const fromAddress = await this.signer.getAddress();
@@ -249,24 +225,7 @@ class WalletBridge {
             
             // ABSTRACT L2 FIX: Enhanced transaction submission with proper error handling
             let txHash;
-            try {
-                // First, try gas estimation with Abstract L2 format
-                const gasEstimate = await window.ethereum.request({
-                    method: 'eth_estimateGas',
-                    params: [metaMaskTx]
-                });
-                console.log('✅ Abstract L2 gas estimation successful:', gasEstimate);
-                
-                // Verify ZK fields are present
-                if (!metaMaskTx.gas_per_pubdata_limit) {
-                    metaMaskTx.gas_per_pubdata_limit = '0xC350'; // 50000 - Higher limit for Abstract Network
-                    console.log('🔧 Added missing gas_per_pubdata_limit field for Abstract Network');
-                }
-                
-            } catch (gasError) {
-                console.log('⚠️ Gas estimation failed, using default:', gasError.message);
-                // Continue with default gas limit
-            }
+            // Let MetaMask estimate gas; do not add non-standard fields
             
             // Direct MetaMask send with sanitized legacy tx
             console.log('📡 Sending transaction via MetaMask:', metaMaskTx);

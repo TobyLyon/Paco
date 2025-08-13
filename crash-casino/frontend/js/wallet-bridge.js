@@ -243,7 +243,7 @@ class WalletBridge {
                     // Fallback: Abstract L2 ultra-low cost configuration
                     metaMaskTx.gas = '0x5208'; // 21000 gas - standard ETH transfer
                     metaMaskTx.gasPrice = '0x5F5E100'; // 0.1 gwei - Abstract L2 optimized
-                    metaMaskTx.gas_per_pubdata_limit = '0xC350'; // 50000 default
+                    metaMaskTx.gas_per_pubdata_limit = '0x4E20'; // 20000 - ultra-low for simple transfers
                     console.log('🔧 Using fallback Abstract L2 ultra-low cost configuration');
                 }
                 

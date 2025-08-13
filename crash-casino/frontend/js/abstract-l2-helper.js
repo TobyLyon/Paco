@@ -191,6 +191,11 @@ class AbstractL2Helper {
     validateTransaction(tx) {
         const errors = [];
 
+        // Required fields for Abstract L2
+        if (!tx.from || !tx.from.startsWith('0x') || tx.from.length !== 42) {
+            errors.push('from address is required for Abstract L2');
+        }
+
         if (!tx.to || !tx.to.startsWith('0x') || tx.to.length !== 42) {
             errors.push('Invalid recipient address');
         }
@@ -207,6 +212,7 @@ class AbstractL2Helper {
             errors.push('Invalid gas format (must be hex)');
         }
 
+        // Abstract L2 specific validations
         if (tx.gasLimit) {
             errors.push('Use "gas" instead of "gasLimit" for Abstract L2');
         }
@@ -217,6 +223,10 @@ class AbstractL2Helper {
 
         if (!tx.data) {
             errors.push('Missing required "data" field for Abstract L2');
+        }
+
+        if (!tx.gas_per_pubdata_limit) {
+            errors.push('gas_per_pubdata_limit is required for Abstract L2');
         }
 
         return {
@@ -255,24 +265,25 @@ class AbstractL2Helper {
                     throw new Error(`Abstract L2 transaction failed after ${maxRetries} attempts: ${error.message}`);
                 }
 
-                // For Abstract L2 specific errors, adjust gas
+                // For Abstract L2 specific errors, adjust gas conservatively
                 if (error.message.includes('Internal JSON-RPC error') || 
                     error.message.includes('gas') ||
                     error.code === -32603) {
                     
                     console.log('🔧 Adjusting gas for Abstract L2 compatibility...');
                     
-                    // Increase gas progressively
+                    // Conservative increase for Abstract L2 (remember: excess is refunded)
                     const currentGas = parseInt(transaction.gas, 16);
-                    const newGas = Math.floor(currentGas * 1.5);
+                    const newGas = Math.min(currentGas + 15000, 60000); // Cap at 60k gas
                     transaction.gas = '0x' + newGas.toString(16);
                     
-                    // Increase gas price slightly
+                    // Minimal gas price increase (keep fees ultra-low)
                     const currentGasPrice = parseInt(transaction.gasPrice, 16);
-                    const newGasPrice = Math.floor(currentGasPrice * 1.2);
+                    const newGasPrice = Math.min(currentGasPrice * 3, 1000000000); // Cap at 1 gwei
                     transaction.gasPrice = '0x' + newGasPrice.toString(16);
                     
-                    console.log(`🔧 Updated gas: ${newGas}, gasPrice: ${newGasPrice}`);
+                    console.log(`🔧 Updated gas: ${newGas}, gasPrice: ${(newGasPrice / 1e9).toFixed(1)} gwei`);
+                    console.log('💡 Remember: Abstract bootloader refunds excess gas automatically');
                 }
 
                 // Wait before retry

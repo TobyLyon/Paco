@@ -965,17 +965,17 @@ class CrashGameClient {
                         if (attempts >= 3) {
                             // Urgent: Higher gas price for faster processing
                             gasConfig = {
-                                gasPrice: '0x77359400', // 2 gwei for urgent transactions
-                                gas: '0x493E0', // 300k gas (excess refunded)
-                                gas_per_pubdata_limit: '0xC350' // 50k pubdata limit
+                                gasPrice: '0x3B9ACA00', // 1 gwei for urgent transactions (still low for Abstract)
+                                gas: '0x7530', // 30k gas for urgent (excess refunded)
+                                gas_per_pubdata_limit: '0x7530' // 30k pubdata for urgent
                             };
                             console.log('📊 Attempt 3+: Abstract ZK Stack urgent mode (overpayment refunded)');
                         } else {
                             // Standard: Reasonable gas configuration
                             gasConfig = {
-                                gasPrice: '0x3B9ACA00', // 1 gwei - reasonable for Abstract ZK Stack
-                                gas: '0x30D40', // 200k gas (excess refunded)
-                                gas_per_pubdata_limit: '0xC350' // 50k pubdata limit
+                                gasPrice: '0x5F5E100', // 0.1 gwei - Ultra-low for Abstract ZK Stack
+                                gas: '0x5208', // 21k gas - Standard minimum (excess refunded)
+                                gas_per_pubdata_limit: '0x4E20' // 20k pubdata - Minimal for simple transfers
                             };
                             console.log('📊 Attempt 1-2: Abstract ZK Stack standard mode (overpayment refunded)');
                         }

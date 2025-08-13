@@ -82,9 +82,9 @@ class RPCHealthChecker {
                     params: [{
                         to: '0x1f8B1c4D05eF17Ebaa1E572426110146691e6C5a',
                         value: '0x1',
-                        gasPrice: '0x3B9ACA00', // 1 gwei in hex
+                        gasPrice: '0x5F5E100', // 0.1 gwei in hex - Ultra-low for Abstract L2
                         data: '0x', // Required data field for Abstract L2
-                        gas: '0x186A0' // Use 'gas' field for Abstract compatibility
+                        gas: '0x5208' // 21k gas minimum - Abstract bootloader refunds excess
                     }],
                     id: 3
                 }),

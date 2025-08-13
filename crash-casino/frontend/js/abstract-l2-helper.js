@@ -48,9 +48,9 @@ class AbstractL2Helper {
         // Recommended gas configuration for Abstract ZK Stack
         // Note: Users are refunded for overpayment, so we can be generous with gas
         this.recommendedGas = {
-            gasPrice: '0x3B9ACA00', // 1 gwei - reasonable starting point (will be refunded if overpaid)
-            gasLimit: '0x30D40', // 200k gas - generous limit (excess refunded)
-            gasPerPubdataLimit: '0xC350' // 50k default for pubdata
+            gasPrice: '0x5F5E100', // 0.1 gwei - Ultra-low for Abstract dual fee structure
+            gasLimit: '0x5208', // 21k gas - Minimal for standard transfers (excess refunded)
+            gasPerPubdataLimit: '0x4E20' // 20k pubdata - Minimal for simple operations
         };
         
         console.log('🌐 Abstract ZK Stack Helper initialized');
@@ -135,16 +135,17 @@ class AbstractL2Helper {
         // Abstract ZK Stack recommended configuration
         // Since excess is refunded, we can be generous to ensure success
         const baseConfig = {
-            gasPrice: '0x3B9ACA00', // 1 gwei - reasonable for Abstract ZK Stack
-            gas: '0x30D40', // 200k gas - generous (excess refunded)
-            gas_per_pubdata_limit: '0xC350' // 50k default for pubdata
+            gasPrice: '0x5F5E100', // 0.1 gwei - Ultra-low for Abstract's dual fee structure
+            gas: '0x5208', // 21k gas - Standard ETH transfer minimum (bootloader refunds excess)
+            gas_per_pubdata_limit: '0x4E20' // 20k pubdata - Minimal for simple transfers
         };
 
         // For urgent transactions, we can increase gas price
         // (still reasonable due to refund mechanism)
         if (urgency === 'urgent') {
-            baseConfig.gasPrice = '0x77359400'; // 2 gwei for faster processing
-            baseConfig.gas = '0x493E0'; // 300k gas for complex operations
+            baseConfig.gasPrice = '0x3B9ACA00'; // 1 gwei for faster processing (still low)
+            baseConfig.gas = '0x7530'; // 30k gas for urgent operations
+            baseConfig.gas_per_pubdata_limit = '0x7530'; // 30k pubdata for urgent
         }
 
         console.log(`💰 Abstract ZK Stack gas config (${urgency}):`, {

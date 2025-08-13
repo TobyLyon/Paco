@@ -683,14 +683,14 @@ body {
 }
 
 .cash-out-btn {
-    padding: 18px 50px;
-    font-size: 1.4rem;
+    padding: 16px 24px;
+    font-size: 1.2rem;
     font-weight: 700;
     font-family: var(--font-display);
     background: linear-gradient(45deg, var(--restaurant-green), var(--restaurant-yellow));
     color: var(--text-dark);
     border: none;
-    border-radius: 15px;
+    border-radius: 12px;
     cursor: pointer;
     transition: var(--transition-base);
     box-shadow: var(--shadow-green);
@@ -699,6 +699,10 @@ body {
     letter-spacing: 1px;
     position: relative;
     overflow: hidden;
+    max-width: 150px;
+    white-space: nowrap;
+    margin: 10px auto 0;
+    display: block;
 }
 
 .cash-out-btn::before {
@@ -717,13 +721,15 @@ body {
 }
 
 .cash-out-btn:hover {
-    transform: translateY(-4px) scale(1.05);
-    box-shadow: var(--shadow-green), 0 10px 30px rgba(16, 185, 129, 0.5);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-green), 0 8px 20px rgba(16, 185, 129, 0.4);
     background: linear-gradient(45deg, var(--restaurant-yellow), var(--restaurant-orange));
+    filter: brightness(1.1);
 }
 
 .cash-out-btn:active {
-    transform: translateY(-2px) scale(1.02);
+    transform: translateY(-1px);
+    filter: brightness(0.95);
 }
 
 @keyframes cashOutPulse {
@@ -845,11 +851,14 @@ body {
     display: flex;
     gap: 8px;
     width: 100%;
+    margin-bottom: 10px;
 }
 
 .bet-buttons-container .place-bet-btn {
     flex: 1;
 }
+
+
 
 /* Cancel bet button */
 .cancel-bet-btn {

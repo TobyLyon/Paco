@@ -193,7 +193,7 @@ class WalletBridge {
                 to: to,
                 value: ethers.parseEther(value.toString()),
                 gas: '0x5208', // 21000 gas - standard for simple ETH transfers
-                gasPrice: '0x3B9ACA00', // 1 gwei - appropriate for Abstract L2
+                gasPrice: '0x5F5E100', // 0.1 gwei - Ultra-low for Abstract L2 dual fee structure
                 data: '0x' // Required empty data field for transfers
             };
             

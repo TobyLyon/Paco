@@ -503,6 +503,14 @@ class CrashGameClient {
             this.showError('Connection failed. Retrying...');
         });
 
+        this.socket.on('error', (error) => {
+            console.error('🚨 SERVER ERROR during cashout:', error);
+            console.error('🚨 Error type:', typeof error);
+            console.error('🚨 Error details:', JSON.stringify(error, null, 2));
+            console.error('🚨 Error message:', error?.message || 'No message');
+            console.error('🚨 Error stack:', error?.stack || 'No stack');
+        });
+
         // Setup heartbeat
         setInterval(() => {
             if (this.socket && this.isConnected) {

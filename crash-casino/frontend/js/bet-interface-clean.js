@@ -59,27 +59,12 @@ class BetInterface {
 
             window.crashGameClient.socket.on('cashoutSuccess', (data) => {
                 console.log('💰 Cashout success received:', data);
-                
-                // Clear player bet state in crash client
-                if (window.crashGameClient.playerBet) {
-                    window.crashGameClient.playerBet.cashedOut = true;
-                    window.crashGameClient.playerBet.multiplier = data.multiplier;
-                    window.crashGameClient.playerBet.payout = data.payout;
-                    console.log('✅ Player bet marked as cashed out');
-                }
-                
-                // Add winnings to balance
-                const winnings = data.payout || (data.multiplier * (this.activeOrders.get('current')?.amount || 0));
-                this.addWinnings(winnings);
-                
-                // Update orders to show cashed out
-                this.handleCashoutEvent({
-                    playerId: window.ethereum?.selectedAddress || window.realWeb3Modal?.address,
-                    multiplier: data.multiplier,
-                    payout: winnings
-                });
-                
-                this.showNotification(`🎉 Cashed out at ${data.multiplier.toFixed(2)}x for ${winnings.toFixed(4)} ETH!`, 'success');
+                this.handleSuccessfulCashout(data);
+            });
+            
+            window.crashGameClient.socket.on('balanceWinnings', (data) => {
+                console.log('💰 Balance winnings received from server:', data);
+                this.handleSuccessfulCashout(data);
             });
 
             window.crashGameClient.socket.on('stop_multiplier_count', (data) => {
@@ -94,8 +79,11 @@ class BetInterface {
 
             // Listen for errors
             window.crashGameClient.socket.on('error', (data) => {
-                console.error('❌ Socket error:', data);
-                this.showNotification(`❌ Error: ${data.message}`, 'error');
+                console.error('❌ Socket error received:', data);
+                console.error('❌ Error details:', JSON.stringify(data, null, 2));
+                console.error('❌ Error message:', data?.message);
+                console.error('❌ Full error object:', data);
+                this.showNotification(`❌ Cashout Error: ${data?.message || 'Unknown error'}`, 'error');
             });
         }
     }
@@ -334,6 +322,136 @@ class BetInterface {
         } else {
             this.showNotification('❌ Cannot cash out - game not connected', 'error');
         }
+    }
+
+    /**
+     * 🎉 Handle successful cashout with visual feedback
+     */
+    handleSuccessfulCashout(data) {
+        console.log('🎉 Processing successful cashout:', data);
+        
+        // Clear player bet state in crash client
+        if (window.crashGameClient.playerBet) {
+            window.crashGameClient.playerBet.cashedOut = true;
+            window.crashGameClient.playerBet.multiplier = data.multiplier;
+            window.crashGameClient.playerBet.payout = data.payout || data.winnings;
+            console.log('✅ Player bet marked as cashed out');
+        }
+        
+        // Calculate winnings
+        const winnings = data.payout || data.winnings || (data.multiplier * (this.activeOrders.get('current')?.amount || 0));
+        const multiplier = data.multiplier || 0;
+        
+        // Add winnings to balance
+        if (winnings > 0) {
+            this.addWinnings(winnings);
+            console.log(`💰 Added ${winnings.toFixed(4)} ETH to balance`);
+        }
+        
+        // Update orders to show cashed out
+        this.handleCashoutEvent({
+            playerId: window.ethereum?.selectedAddress || window.realWeb3Modal?.address,
+            multiplier: multiplier,
+            payout: winnings
+        });
+        
+        // Show success notification with celebration
+        this.showCashoutSuccess(multiplier, winnings);
+        
+        // Refresh balance display
+        this.refreshBalance();
+    }
+
+    /**
+     * 🎊 Show animated cashout success notification
+     */
+    showCashoutSuccess(multiplier, winnings) {
+        // Show main notification
+        this.showNotification(
+            `🎉 CASHED OUT! ${multiplier.toFixed(2)}x → +${winnings.toFixed(4)} ETH`, 
+            'success', 
+            5000
+        );
+        
+        // Create animated success overlay
+        this.createCashoutCelebration(multiplier, winnings);
+        
+        console.log(`🎊 Cashout celebration: ${multiplier.toFixed(2)}x for ${winnings.toFixed(4)} ETH`);
+    }
+
+    /**
+     * ✨ Create visual celebration for cashout
+     */
+    createCashoutCelebration(multiplier, winnings) {
+        // Create celebration overlay
+        const celebration = document.createElement('div');
+        celebration.className = 'cashout-celebration';
+        celebration.innerHTML = `
+            <div class="celebration-content">
+                <div class="celebration-icon">💰</div>
+                <div class="celebration-title">CASHED OUT!</div>
+                <div class="celebration-multiplier">${multiplier.toFixed(2)}x</div>
+                <div class="celebration-winnings">+${winnings.toFixed(4)} ETH</div>
+            </div>
+        `;
+        
+        // Add celebration styles
+        celebration.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10000;
+            background: linear-gradient(45deg, #10b981, #fbbf24);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(16, 185, 129, 0.4);
+            animation: cashoutPop 3s ease-out forwards;
+            pointer-events: none;
+            text-align: center;
+            color: white;
+            font-family: var(--font-display, sans-serif);
+        `;
+        
+        // Add CSS animation
+        if (!document.querySelector('#cashout-celebration-styles')) {
+            const styles = document.createElement('style');
+            styles.id = 'cashout-celebration-styles';
+            styles.textContent = `
+                @keyframes cashoutPop {
+                    0% { 
+                        opacity: 0; 
+                        transform: translate(-50%, -50%) scale(0.5); 
+                    }
+                    20% { 
+                        opacity: 1; 
+                        transform: translate(-50%, -50%) scale(1.1); 
+                    }
+                    80% { 
+                        opacity: 1; 
+                        transform: translate(-50%, -50%) scale(1); 
+                    }
+                    100% { 
+                        opacity: 0; 
+                        transform: translate(-50%, -50%) scale(0.8); 
+                    }
+                }
+                .celebration-icon { font-size: 48px; margin-bottom: 10px; }
+                .celebration-title { font-size: 24px; font-weight: bold; margin-bottom: 10px; }
+                .celebration-multiplier { font-size: 32px; font-weight: bold; color: #fbbf24; margin-bottom: 5px; }
+                .celebration-winnings { font-size: 18px; opacity: 0.9; }
+            `;
+            document.head.appendChild(styles);
+        }
+        
+        document.body.appendChild(celebration);
+        
+        // Remove after animation
+        setTimeout(() => {
+            if (celebration.parentNode) {
+                celebration.parentNode.removeChild(celebration);
+            }
+        }, 3000);
     }
 
     /**

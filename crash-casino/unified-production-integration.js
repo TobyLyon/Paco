@@ -105,6 +105,9 @@ class UnifiedPacoRockoProduction {
             // Setup socket connection handlers
             this.setupSocketHandlers();
             
+            // Setup balance API routes
+            this.setupBalanceAPIRoutes();
+            
             // Start the engine
             this.crashEngine.start();
             
@@ -317,6 +320,97 @@ class UnifiedPacoRockoProduction {
         });
         
         console.log('🔌 Socket connection handlers configured');
+    }
+    
+    /**
+     * 🏦 Setup Balance API routes
+     */
+    setupBalanceAPIRoutes() {
+        console.log('🏦 Setting up Balance API routes...');
+        
+        try {
+            // Initialize BalanceAPI
+            const { BalanceAPI } = require('./backend/balance-api');
+            this.balanceAPI = new BalanceAPI(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+            console.log('✅ BalanceAPI initialized successfully');
+            
+            // Get user balance
+            this.app.get('/api/balance/:address', async (req, res) => {
+                try {
+                    if (!this.balanceAPI) {
+                        return res.status(503).json({ error: 'Balance API not initialized' });
+                    }
+                    const balance = await this.balanceAPI.getBalance(req.params.address);
+                    res.json({ balance });
+                } catch (error) {
+                    console.error('Balance check error:', error);
+                    res.status(500).json({ error: 'Could not fetch balance' });
+                }
+            });
+
+            // Check for new deposits
+            this.app.get('/api/deposits/check/:address', async (req, res) => {
+                try {
+                    if (!this.balanceAPI) {
+                        return res.status(503).json({ error: 'Balance API not initialized' });
+                    }
+                    const newDeposits = await this.balanceAPI.checkNewDeposits(req.params.address);
+                    res.json({ newDeposits });
+                } catch (error) {
+                    console.error('Deposit check error:', error);
+                    res.status(500).json({ error: 'Could not check deposits' });
+                }
+            });
+
+            // Register deposit (for frontend tracking)
+            this.app.post('/api/deposit/register', async (req, res) => {
+                try {
+                    // This endpoint is for frontend deposit tracking
+                    // The actual deposit processing is handled by the deposit indexer
+                    console.log('📝 Deposit registration request:', req.body);
+                    res.json({ success: true, message: 'Deposit registered for tracking' });
+                } catch (error) {
+                    console.error('Deposit registration error:', error);
+                    res.status(500).json({ error: 'Could not register deposit' });
+                }
+            });
+
+            // Place bet with balance
+            this.app.post('/api/bet/balance', async (req, res) => {
+                try {
+                    if (!this.balanceAPI) {
+                        return res.status(503).json({ error: 'Balance API not initialized' });
+                    }
+                    const { playerAddress, amount } = req.body;
+                    const result = await this.balanceAPI.placeBetWithBalance(playerAddress, amount);
+                    res.json(result);
+                } catch (error) {
+                    console.error('Balance bet error:', error);
+                    res.status(400).json({ error: error.message });
+                }
+            });
+
+            // Process withdrawal
+            this.app.post('/api/withdraw', async (req, res) => {
+                try {
+                    if (!this.balanceAPI) {
+                        return res.status(503).json({ error: 'Balance API not initialized' });
+                    }
+                    const { playerAddress, amount } = req.body;
+                    const result = await this.balanceAPI.processWithdrawal(playerAddress, amount, this.walletIntegration);
+                    res.json(result);
+                } catch (error) {
+                    console.error('Withdrawal error:', error);
+                    res.status(500).json({ error: 'Could not process withdrawal' });
+                }
+            });
+            
+            console.log('✅ Balance API routes configured');
+            
+        } catch (error) {
+            console.error('❌ Failed to setup Balance API routes:', error.message);
+            console.error('📍 Balance API will not be available');
+        }
     }
     
     /**

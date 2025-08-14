@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Balance System Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1e293b;
+            color: #e2e8f0;
+        }
+        .test-section {
+            background: rgba(23, 25, 35, 0.8);
+            border: 1px solid rgba(71, 85, 105, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success { background-color: rgba(34, 197, 94, 0.2); border: 1px solid rgba(34, 197, 94, 0.5); }
+        .error { background-color: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.5); }
+        .info { background-color: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.5); }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #2563eb; }
+        .api-test {
+            background: rgba(30, 41, 59, 0.6);
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Balance System Fix Test</h1>
+    
+    <div class="test-section">
+        <h2>🔍 API Endpoint Tests</h2>
+        <p>Test if the balance API endpoints are now working (should return data instead of 404)</p>
+        
+        <div class="api-test">
+            <h3>Test Balance API</h3>
+            <button onclick="testBalanceAPI()">Test /api/balance/{address}</button>
+            <div id="balanceResult" class="status info">Click test button to check balance API</div>
+        </div>
+        
+        <div class="api-test">
+            <h3>Test Deposits API</h3>
+            <button onclick="testDepositsAPI()">Test /api/deposits/check/{address}</button>
+            <div id="depositsResult" class="status info">Click test button to check deposits API</div>
+        </div>
+        
+        <div class="api-test">
+            <h3>Test Register API</h3>
+            <button onclick="testRegisterAPI()">Test /api/deposit/register</button>
+            <div id="registerResult" class="status info">Click test button to check register API</div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>📊 Expected Results</h2>
+        <div class="status success">
+            <strong>✅ FIXED:</strong> All API endpoints should return JSON responses instead of 404 errors
+        </div>
+        <div class="status info">
+            <strong>📝 Before Fix:</strong> Frontend logs showed "404 (Not Found)" for all /api/ endpoints
+        </div>
+        <div class="status info">
+            <strong>🔧 After Fix:</strong> Added balance API routes to UnifiedPacoRockoProduction class
+        </div>
+    </div>
+
+    <script>
+        const testAddress = '0x2e215a36c9fa606e9408b7e7094e687f9d8b06a6'; // Your test address
+        
+        async function testBalanceAPI() {
+            const resultDiv = document.getElementById('balanceResult');
+            resultDiv.className = 'status info';
+            resultDiv.textContent = 'Testing balance API...';
+            
+            try {
+                const response = await fetch(`/api/balance/${testAddress}`);
+                
+                if (response.status === 404) {
+                    resultDiv.className = 'status error';
+                    resultDiv.textContent = '❌ Still getting 404 - API routes not loaded yet';
+                } else if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.className = 'status success';
+                    resultDiv.textContent = `✅ API Working! Balance: ${data.balance} ETH`;
+                } else {
+                    const errorData = await response.json();
+                    resultDiv.className = 'status info';
+                    resultDiv.textContent = `⚠️ API responding but error: ${errorData.error}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'status error';
+                resultDiv.textContent = `❌ Network error: ${error.message}`;
+            }
+        }
+        
+        async function testDepositsAPI() {
+            const resultDiv = document.getElementById('depositsResult');
+            resultDiv.className = 'status info';
+            resultDiv.textContent = 'Testing deposits API...';
+            
+            try {
+                const response = await fetch(`/api/deposits/check/${testAddress}`);
+                
+                if (response.status === 404) {
+                    resultDiv.className = 'status error';
+                    resultDiv.textContent = '❌ Still getting 404 - API routes not loaded yet';
+                } else if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.className = 'status success';
+                    resultDiv.textContent = `✅ API Working! Found ${data.newDeposits?.length || 0} recent deposits`;
+                } else {
+                    const errorData = await response.json();
+                    resultDiv.className = 'status info';
+                    resultDiv.textContent = `⚠️ API responding but error: ${errorData.error}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'status error';
+                resultDiv.textContent = `❌ Network error: ${error.message}`;
+            }
+        }
+        
+        async function testRegisterAPI() {
+            const resultDiv = document.getElementById('registerResult');
+            resultDiv.className = 'status info';
+            resultDiv.textContent = 'Testing register API...';
+            
+            try {
+                const response = await fetch('/api/deposit/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        depositId: 'test-123',
+                        txHash: '0xtest',
+                        walletAddress: testAddress,
+                        amount: 0.001
+                    })
+                });
+                
+                if (response.status === 404) {
+                    resultDiv.className = 'status error';
+                    resultDiv.textContent = '❌ Still getting 404 - API routes not loaded yet';
+                } else if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.className = 'status success';
+                    resultDiv.textContent = `✅ API Working! Response: ${data.message}`;
+                } else {
+                    const errorData = await response.json();
+                    resultDiv.className = 'status info';
+                    resultDiv.textContent = `⚠️ API responding but error: ${errorData.error}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'status error';
+                resultDiv.textContent = `❌ Network error: ${error.message}`;
+            }
+        }
+        
+        // Auto-test when page loads
+        setTimeout(() => {
+            testBalanceAPI();
+            setTimeout(() => testDepositsAPI(), 1000);
+            setTimeout(() => testRegisterAPI(), 2000);
+        }, 1000);
+    </script>
+</body>
+</html>

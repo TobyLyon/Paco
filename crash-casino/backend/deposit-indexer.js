@@ -11,9 +11,9 @@ function createClient() {
   return createPublicClient({ chain: ABSTRACT, transport: http(ABSTRACT.rpcUrls.default.http[0]) })
 }
 
-async function indexDeposits({ supabase, houseAddress, minConfirmations = 1, windowBlocks = 2000n }) {
+async function indexDeposits({ supabase, hotWalletAddress, minConfirmations = 1, windowBlocks = 2000n }) {
   const client = createClient()
-  const toLower = houseAddress.toLowerCase()
+  const toLower = hotWalletAddress.toLowerCase()
 
   // get latest processed block
   let fromBlock
@@ -45,7 +45,7 @@ async function indexDeposits({ supabase, houseAddress, minConfirmations = 1, win
       const amountETH = parseFloat(amountWei) / 1e18
       const fromAddress = tx.from.toLowerCase()
       
-      console.log(`💰 Processing deposit: ${amountETH.toFixed(6)} ETH from ${fromAddress}`)
+      console.log(`💰 Processing hot wallet deposit: ${amountETH.toFixed(6)} ETH from ${fromAddress} to ${toLower}`)
 
       // Check if already processed
       const { data: existingDeposit } = await supabase

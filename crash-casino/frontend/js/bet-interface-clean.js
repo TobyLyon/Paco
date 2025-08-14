@@ -512,7 +512,7 @@ class BetInterface {
      */
     async processDeposit(amount) {
         const walletAddress = window.ethereum?.selectedAddress || window.realWeb3Modal?.address;
-        const houseWallet = '0x1f8B1c4D05eF17Ebaa1E572426110146691e6C5a';
+        const hotWallet = '0x02B4bFbA6D16308F5B40A5DF1f136C9472da52FF'; // Hot wallet for game balance deposits
 
         if (!walletAddress) {
             throw new Error('No wallet connected');
@@ -523,11 +523,11 @@ class BetInterface {
             const depositId = Date.now().toString();
             
             // Send transaction through wallet bridge
-            console.log(`💳 Sending deposit: ${amount} ETH to ${houseWallet}`);
+            console.log(`💳 Sending deposit: ${amount} ETH to hot wallet ${hotWallet}`);
             
             if (window.realWeb3Modal && typeof window.realWeb3Modal.sendTransaction === 'function') {
                 // Use the wallet bridge's sendTransaction method
-                const txHash = await window.realWeb3Modal.sendTransaction(houseWallet, amount);
+                const txHash = await window.realWeb3Modal.sendTransaction(hotWallet, amount);
                 
                 this.showNotification('📤 Transaction sent! Waiting for confirmation...', 'info');
                 
@@ -539,7 +539,7 @@ class BetInterface {
             } else if (window.realWeb3Modal && window.realWeb3Modal.signer) {
                 // Fallback to direct signer method
                 const tx = await window.realWeb3Modal.signer.sendTransaction({
-                    to: houseWallet,
+                    to: hotWallet,
                     value: ethers.parseEther(amount.toString()),
                     data: '0x' + Buffer.from(depositId).toString('hex') // Encode depositId for attribution
                 });

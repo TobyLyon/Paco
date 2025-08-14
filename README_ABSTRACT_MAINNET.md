@@ -47,17 +47,21 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
 **Fund Flow:**
 ```
-📥 Deposits → House Wallet
-     ↓ (manual transfer)
+📥 Game Balance Deposits → Hot Wallet (instant use)
 💰 Hot Wallet (operational) 
      ↓ (excess funds)
 🔒 Safe Wallet (long-term storage)
+
+📥 Large Deposits → House Wallet (cold storage)
+     ↓ (manual transfer for funding)
+💰 Hot Wallet (when operational funds needed)
 ```
 
 **Operational Guidelines:**
-- Keep hot wallet balance between 0.5-5 ETH for operations
-- Transfer excess funds: Hot → Safe Wallet (not back to house)
-- House wallet is for deposits only - never send operational funds there
+- **Game balance deposits** go directly to hot wallet for instant use
+- Keep hot wallet balance between 0.5-5 ETH for operations  
+- Transfer excess funds: Hot → Safe Wallet (for security)
+- House wallet for large/manual deposits and cold storage
 - Monitor all three wallets via `/admin/wallet-status`
 
 

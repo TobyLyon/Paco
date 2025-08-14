@@ -368,6 +368,35 @@ app.get('/admin/hot-wallet', requireAdmin, async (req, res) => {
 // Initialize crash casino backend
 console.log('🎰 Initializing PacoRocko crash casino backend...');
 
+// Start deposit indexer for hot wallet (balance deposits)
+const { indexDeposits } = require('./crash-casino/backend/deposit-indexer');
+const { createClient } = require('@supabase/supabase-js');
+
+if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+    const hotWalletAddress = process.env.HOT_WALLET_ADDRESS || '0x02B4bFbA6D16308F5B40A5DF1f136C9472da52FF';
+    
+    // Run deposit indexer every 30 seconds
+    setInterval(async () => {
+        try {
+            const result = await indexDeposits({ 
+                supabase, 
+                hotWalletAddress,
+                minConfirmations: 1 
+            });
+            if (result.scanned > 0) {
+                console.log(`📥 Deposit indexer scanned ${result.scanned} blocks`);
+            }
+        } catch (error) {
+            console.error('❌ Deposit indexer error:', error.message);
+        }
+    }, 30000); // 30 seconds
+    
+    console.log(`📥 Deposit indexer started for hot wallet: ${hotWalletAddress}`);
+} else {
+    console.warn('⚠️ Supabase not configured - deposit indexer disabled');
+}
+
 // Start the server
 const PORT = process.env.PORT || 3001;
 

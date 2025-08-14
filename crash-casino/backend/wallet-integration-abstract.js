@@ -236,11 +236,11 @@ class AbstractWalletIntegration {
             const winAmount = parseEther((betAmount * multiplier).toFixed(18)); // Convert to BigInt Wei
             const playerAddress = playerId; // Assuming playerId is the actual wallet address
 
-            // Use HOT WALLET for payouts (not house wallet)
-            const hotWalletKey = process.env.HOT_WALLET_PRIVATE_KEY || process.env.HOUSE_WALLET_PRIVATE_KEY;
-            if (!hotWalletKey) {
-                throw new Error('Hot wallet private key not configured');
-            }
+                    // Use HOT WALLET for payouts (not house wallet)
+        const hotWalletKey = process.env.HOT_WALLET_PRIVATE_KEY;
+        if (!hotWalletKey) {
+            throw new Error('HOT_WALLET_PRIVATE_KEY environment variable not configured');
+        }
 
             // Initialize Viem wallet client for sending transactions
             const hotAccount = privateKeyToAccount(hotWalletKey);
@@ -251,12 +251,22 @@ class AbstractWalletIntegration {
             });
 
             console.log(`💸 Processing payout: ${winAmount.toString()} wei (${(betAmount * multiplier).toFixed(4)} ETH) to ${playerAddress}`);
+            console.log(`🔥 Using hot wallet: ${hotAccount.address}`);
 
             // Check hot wallet balance (critical for payouts)
             const hotBalance = await walletClient.getBalance({ address: hotAccount.address });
             if (hotBalance < winAmount) {
                 console.error(`🚨 Insufficient hot wallet balance! Need: ${winAmount.toString()}, Have: ${hotBalance.toString()}`);
-                throw new Error('Insufficient hot wallet balance for payout - please fund hot wallet');
+                console.error(`💡 Fund hot wallet from house wallet: 0x1f8B1c4D05eF17Ebaa1E572426110146691e6C5a`);
+                throw new Error('Insufficient hot wallet balance for payout - transfer funds from house wallet');
+            }
+
+            // Warn if hot wallet balance will be low after this payout
+            const balanceAfterPayout = hotBalance - winAmount;
+            const lowThreshold = parseEther('0.5'); // 0.5 ETH threshold
+            if (balanceAfterPayout < lowThreshold) {
+                console.warn(`⚠️ Hot wallet will be low after payout: ${(Number(balanceAfterPayout) / 1e18).toFixed(4)} ETH remaining`);
+                console.warn(`💡 Consider funding hot wallet from house wallet soon`);
             }
 
             // Send transaction using viem

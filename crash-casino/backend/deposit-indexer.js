@@ -39,18 +39,63 @@ async function indexDeposits({ supabase, houseAddress, minConfirmations = 1, win
     for (const tx of block.transactions) {
       if (!tx.to) continue
       if (tx.to.toLowerCase() !== toLower) continue
-      // Attribute deposit
+      // Professional attribution: extract user from tx.from (sender)
       const txHash = tx.hash
       const amountWei = tx.value.toString()
+      const amountETH = parseFloat(amountWei) / 1e18
+      const fromAddress = tx.from.toLowerCase()
+      
+      console.log(`💰 Processing deposit: ${amountETH.toFixed(6)} ETH from ${fromAddress}`)
 
-      // Upsert deposit
-      await supabase.from('deposits').upsert({
-        id: txHash,
-        tx_hash: txHash,
-        amount_wei: amountWei,
-        status: 'confirmed',
-        confirmed_at: new Date().toISOString(),
-      })
+      // Check if already processed
+      const { data: existingDeposit } = await supabase
+        .from('balance_deposits')
+        .select('id')
+        .eq('tx_hash', txHash)
+        .single()
+      
+      if (existingDeposit) {
+        console.log(`⚠️ Deposit ${txHash} already processed, skipping`)
+        continue
+      }
+
+      // Get current balance for this user
+      let currentBalance = 0
+      const { data: balanceData } = await supabase
+        .from('user_balances')
+        .select('balance')
+        .eq('address', fromAddress)
+        .single()
+      
+      if (balanceData) {
+        currentBalance = parseFloat(balanceData.balance)
+      }
+
+      const newBalance = currentBalance + amountETH
+
+      // Update user balance
+      await supabase
+        .from('user_balances')
+        .upsert({
+          address: fromAddress,
+          balance: newBalance,
+          updated_at: new Date().toISOString()
+        })
+
+      // Record deposit in balance_deposits table
+      await supabase
+        .from('balance_deposits')
+        .insert({
+          tx_hash: txHash,
+          from_address: fromAddress,
+          amount: amountETH,
+          balance_before: currentBalance,
+          balance_after: newBalance,
+          status: 'confirmed',
+          created_at: new Date().toISOString()
+        })
+
+      console.log(`✅ Deposit credited: ${fromAddress} +${amountETH} ETH (balance: ${currentBalance} → ${newBalance})`)
     }
     scanned++
   }

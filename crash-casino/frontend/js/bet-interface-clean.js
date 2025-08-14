@@ -418,48 +418,45 @@ class BetInterface {
      * 🏦 Show deposit modal
      */
     showDepositModal() {
-        const walletAddress = window.ethereum?.selectedAddress || window.realWeb3Modal?.address;
-        const houseWallet = '0x1f8B1c4D05eF17Ebaa1E572426110146691e6C5a'; // Cold storage - deposits only
-        const memo = walletAddress.slice(-8);
-
         const modalHTML = `
             <div id="depositModal" class="modal-overlay">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h3>🏦 Deposit to Game Balance</h3>
+                        <h3>💳 Add Funds to Game Balance</h3>
                         <button class="modal-close">&times;</button>
                     </div>
                     
-                    <div class="deposit-instructions">
-                        <div class="instruction-step">
-                            <h4>1. Send ETH to House Wallet:</h4>
-                            <div class="address-box">
-                                <code>${houseWallet}</code>
-                                <button class="copy-btn" data-copy="${houseWallet}">📋 Copy</button>
-                            </div>
+                    <div class="deposit-form">
+                        <div class="current-balance">
+                            <p>Current Balance: <strong>${this.userBalance.toFixed(4)} ETH</strong></p>
                         </div>
                         
-                        <div class="instruction-step">
-                            <h4>2. Include this memo for attribution:</h4>
-                            <div class="memo-box">
-                                <code>${memo}</code>
-                                <button class="copy-btn" data-copy="${memo}">📋 Copy</button>
+                        <div class="form-group">
+                            <label>Amount to Deposit:</label>
+                            <input type="number" id="depositAmount" min="0.001" step="0.001" placeholder="0.01">
+                            <div class="quick-amounts">
+                                <button class="quick-amount" data-amount="0.01">0.01 ETH</button>
+                                <button class="quick-amount" data-amount="0.05">0.05 ETH</button>
+                                <button class="quick-amount" data-amount="0.1">0.1 ETH</button>
+                                <button class="quick-amount" data-amount="0.5">0.5 ETH</button>
                             </div>
                         </div>
                         
                         <div class="deposit-benefits">
-                            <h4>✨ Benefits:</h4>
+                            <h4>✨ Why use game balance?</h4>
                             <ul>
-                                <li>⚡ Instant betting (no transaction delays)</li>
-                                <li>💸 Lower gas costs</li>
+                                <li>⚡ Instant betting - no transaction delays</li>
+                                <li>💸 Lower gas fees - one deposit covers many bets</li>
                                 <li>🚀 Seamless gaming experience</li>
                             </ul>
                         </div>
                         
                         <div class="deposit-note">
-                            <p>💡 Funds will be credited automatically once confirmed on-chain</p>
-                            <p>⏱️ Usually takes 1-2 minutes</p>
+                            <p>💡 Funds are credited automatically after blockchain confirmation</p>
+                            <p>⏱️ Usually takes 1-2 minutes on Abstract Network</p>
                         </div>
+                        
+                        <button id="confirmDeposit" class="confirm-btn">💳 Deposit Funds</button>
                     </div>
                 </div>
             </div>
@@ -467,6 +464,136 @@ class BetInterface {
 
         document.body.insertAdjacentHTML('beforeend', modalHTML);
         this.setupModalHandlers('depositModal');
+        this.setupDepositHandlers();
+    }
+
+    /**
+     * 🔧 Setup deposit-specific handlers
+     */
+    setupDepositHandlers() {
+        const depositInput = document.getElementById('depositAmount');
+        const confirmBtn = document.getElementById('confirmDeposit');
+
+        // Quick amount buttons
+        document.querySelectorAll('.quick-amount').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const amount = parseFloat(btn.dataset.amount);
+                depositInput.value = amount.toFixed(3);
+            });
+        });
+
+        // Confirm deposit
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', async () => {
+                const amount = parseFloat(depositInput.value);
+                if (!amount || amount <= 0) {
+                    this.showNotification('Please enter a valid deposit amount', 'error');
+                    return;
+                }
+
+                confirmBtn.disabled = true;
+                confirmBtn.textContent = '⏳ Processing...';
+
+                try {
+                    await this.processDeposit(amount);
+                    document.getElementById('depositModal').remove();
+                } catch (error) {
+                    this.showNotification(`Deposit failed: ${error.message}`, 'error');
+                } finally {
+                    confirmBtn.disabled = false;
+                    confirmBtn.textContent = '💳 Deposit Funds';
+                }
+            });
+        }
+    }
+
+    /**
+     * 💳 Process deposit transaction
+     */
+    async processDeposit(amount) {
+        const walletAddress = window.ethereum?.selectedAddress || window.realWeb3Modal?.address;
+        const houseWallet = '0x1f8B1c4D05eF17Ebaa1E572426110146691e6C5a';
+
+        if (!walletAddress) {
+            throw new Error('No wallet connected');
+        }
+
+        try {
+            // Create unique transaction identifier for attribution
+            const depositId = Date.now().toString();
+            
+            // Send transaction through wallet bridge
+            console.log(`💳 Sending deposit: ${amount} ETH to ${houseWallet}`);
+            
+            if (window.realWeb3Modal && typeof window.realWeb3Modal.sendTransaction === 'function') {
+                // Use the wallet bridge's sendTransaction method
+                const txHash = await window.realWeb3Modal.sendTransaction(houseWallet, amount);
+                
+                this.showNotification('📤 Transaction sent! Waiting for confirmation...', 'info');
+                
+                // Register deposit with backend for attribution
+                await this.registerDeposit(depositId, txHash, walletAddress, amount);
+                
+                this.showNotification(`✅ Deposit successful! ${amount} ETH will be credited shortly.`, 'success');
+                
+            } else if (window.realWeb3Modal && window.realWeb3Modal.signer) {
+                // Fallback to direct signer method
+                const tx = await window.realWeb3Modal.signer.sendTransaction({
+                    to: houseWallet,
+                    value: ethers.parseEther(amount.toString()),
+                    data: '0x' + Buffer.from(depositId).toString('hex') // Encode depositId for attribution
+                });
+
+                this.showNotification('📤 Transaction sent! Waiting for confirmation...', 'info');
+                
+                // Wait for confirmation
+                const receipt = await tx.wait();
+                
+                if (receipt.status === 1) {
+                    // Register deposit with backend for attribution
+                    await this.registerDeposit(depositId, tx.hash, walletAddress, amount);
+                    
+                    this.showNotification(`✅ Deposit successful! ${amount} ETH will be credited shortly.`, 'success');
+                } else {
+                    throw new Error('Transaction failed on blockchain');
+                }
+                
+            } else {
+                throw new Error('Wallet not properly connected - please reconnect your wallet');
+            }
+            
+        } catch (error) {
+            console.error('Deposit error:', error);
+            if (error.code === 4001) {
+                throw new Error('Transaction cancelled by user');
+            } else {
+                throw new Error(error.message || 'Deposit transaction failed');
+            }
+        }
+    }
+
+    /**
+     * 📝 Register deposit with backend for attribution
+     */
+    async registerDeposit(depositId, txHash, walletAddress, amount) {
+        try {
+            const response = await fetch('/api/deposit/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    depositId,
+                    txHash,
+                    walletAddress,
+                    amount
+                })
+            });
+
+            if (!response.ok) {
+                console.warn('Failed to register deposit with backend');
+            }
+        } catch (error) {
+            console.warn('Failed to register deposit:', error);
+        }
     }
 
     /**

@@ -159,7 +159,7 @@ app.get('/admin/hot', requireAdmin, async (req, res) => {
             transport: http(abstract.rpcUrls.default.http[0]),
         });
         
-        const hotWalletAddress = process.env.HOT_WALLET_ADDRESS || process.env.HOUSE_WALLET_ADDRESS;
+        const hotWalletAddress = process.env.HOT_WALLET_ADDRESS || '0x02B4bFbA6D16308F5B40A5DF1f136C9472da52FF';
         const hotBalance = await publicClient.getBalance({ address: hotWalletAddress });
         
         const response = {
@@ -237,6 +237,131 @@ app.post('/api/withdraw', async (req, res) => {
     } catch (error) {
         console.error('Withdrawal error:', error);
         res.status(400).json({ error: error.message });
+    }
+});
+
+// Register deposit for attribution
+app.post('/api/deposit/register', async (req, res) => {
+    try {
+        const { depositId, txHash, walletAddress, amount } = req.body;
+        
+        // Store pending deposit for attribution
+        const pendingDeposit = {
+            depositId,
+            txHash,
+            walletAddress: walletAddress.toLowerCase(),
+            amount: parseFloat(amount),
+            timestamp: new Date().toISOString(),
+            status: 'pending'
+        };
+        
+        // Store in a pending deposits cache or database
+        // The deposit indexer will pick this up and attribute it properly
+        console.log(`📝 Registered pending deposit:`, pendingDeposit);
+        
+        // Could store in Redis or database for deposit indexer to process
+        // For now, just log it - the indexer will detect by transaction data
+        
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Deposit registration error:', error);
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// Three-wallet monitoring endpoint
+app.get('/admin/wallet-status', requireAdmin, async (req, res) => {
+    try {
+        const { createPublicClient, http } = require('viem');
+        const { abstract } = require('./src/lib/abstractChains');
+        
+        const publicClient = createPublicClient({
+            chain: abstract,
+            transport: http(abstract.rpcUrls.default.http[0]),
+        });
+        
+        const hotWalletAddress = process.env.HOT_WALLET_ADDRESS || '0x02B4bFbA6D16308F5B40A5DF1f136C9472da52FF';
+        const houseWalletAddress = process.env.HOUSE_WALLET_ADDRESS || '0x1f8B1c4D05eF17Ebaa1E572426110146691e6C5a';
+        const safeWalletAddress = process.env.SAFE_WALLET_ADDRESS || '0x7A4223A412e455821c4D9480A80fcC0624924c27';
+        
+        const [hotBalance, houseBalance, safeBalance] = await Promise.all([
+            publicClient.getBalance({ address: hotWalletAddress }),
+            publicClient.getBalance({ address: houseWalletAddress }),
+            publicClient.getBalance({ address: safeWalletAddress })
+        ]);
+        
+        const hotETH = Number(hotBalance) / 1e18;
+        const houseETH = Number(houseBalance) / 1e18;
+        const safeETH = Number(safeBalance) / 1e18;
+        const totalETH = hotETH + houseETH + safeETH;
+        
+        // Operational recommendations
+        let recommendations = [];
+        if (hotETH < 0.5) recommendations.push('🚨 HOT WALLET LOW - Fund from house wallet');
+        if (hotETH > 5.0) recommendations.push('💰 HOT WALLET HIGH - Transfer excess to safe wallet');
+        if (houseETH > 10.0) recommendations.push('🏦 HOUSE WALLET HIGH - Consider transferring to safe wallet');
+        if (recommendations.length === 0) recommendations.push('✅ All wallet balances within recommended ranges');
+        
+        res.json({
+            wallets: {
+                hot: {
+                    address: hotWalletAddress,
+                    balance: hotBalance.toString(),
+                    balanceETH: hotETH.toFixed(6),
+                    purpose: 'Operational (payouts/withdrawals)',
+                    recommended: '0.5 - 5.0 ETH',
+                    status: hotETH < 0.5 ? 'LOW' : hotETH > 5.0 ? 'HIGH' : 'OK'
+                },
+                house: {
+                    address: houseWalletAddress,
+                    balance: houseBalance.toString(),
+                    balanceETH: houseETH.toFixed(6),
+                    purpose: 'Cold storage (deposits only)',
+                    recommended: 'Transfer periodically to hot/safe',
+                    status: houseETH > 10.0 ? 'HIGH' : 'OK'
+                },
+                safe: {
+                    address: safeWalletAddress,
+                    balance: safeBalance.toString(),
+                    balanceETH: safeETH.toFixed(6),
+                    purpose: 'Deep cold storage (excess funds)',
+                    recommended: 'Long-term holdings',
+                    status: 'SECURE'
+                }
+            },
+            summary: {
+                totalBalance: totalETH.toFixed(6) + ' ETH',
+                distribution: {
+                    hot: ((hotETH / totalETH) * 100).toFixed(1) + '%',
+                    house: ((houseETH / totalETH) * 100).toFixed(1) + '%',
+                    safe: ((safeETH / totalETH) * 100).toFixed(1) + '%'
+                }
+            },
+            recommendations
+        });
+    } catch (error) {
+        console.error('Wallet status check error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Legacy hot wallet endpoint (for backwards compatibility)
+app.get('/admin/hot-wallet', requireAdmin, async (req, res) => {
+    try {
+        // Redirect to new comprehensive endpoint
+        const response = await fetch(`${req.protocol}://${req.get('host')}/admin/wallet-status`, {
+            headers: { ...req.headers }
+        });
+        const data = await response.json();
+        
+        // Return just hot wallet info for legacy compatibility
+        res.json({
+            hotWallet: data.wallets.hot,
+            recommendation: data.recommendations[0] || 'Status OK'
+        });
+    } catch (error) {
+        console.error('Legacy hot wallet check error:', error);
+        res.status(500).json({ error: error.message });
     }
 });
 

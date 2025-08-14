@@ -8,10 +8,16 @@ import GameHUD from './components/GameHUD'
 import PhaserGame from './components/PhaserGame'
 import LoadingScreen from './components/LoadingScreen'
 
+// Trades feature (feature flagged)
+import TradesApp from './trades/TradesApp'
+
 // Hooks
 import useWallet from './hooks/useWallet'
 import useNFTOwnership from './hooks/useNFTOwnership'
 import useGameState from './hooks/useGameState'
+
+// Feature flags
+const TRADES_ENABLED = import.meta.env.VITE_TRADES_ENABLED === 'true'
 
 function App() {
   const [isGameReady, setIsGameReady] = useState(false)
@@ -50,6 +56,11 @@ function App() {
               gameState={gameState}
             />
           } />
+
+          {/* Trades feature route (feature flagged) */}
+          {TRADES_ENABLED && (
+            <Route path="/trades/*" element={<TradesApp />} />
+          )}
 
           <Route path="*" element={<Navigate to="/" replace />} />  
         </Routes>

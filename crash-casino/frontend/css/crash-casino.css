@@ -683,8 +683,8 @@ body {
 }
 
 .cash-out-btn {
-    padding: 16px 24px;
-    font-size: 1.2rem;
+    padding: 12px 18px;
+    font-size: 1rem;
     font-weight: 700;
     font-family: var(--font-display);
     background: linear-gradient(45deg, var(--restaurant-green), var(--restaurant-yellow));
@@ -696,13 +696,16 @@ body {
     box-shadow: var(--shadow-green);
     animation: cashOutPulse 2s infinite alternate;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 0.8px;
     position: relative;
     overflow: hidden;
-    max-width: 150px;
+    min-width: 120px;
+    max-width: 160px;
     white-space: nowrap;
     margin: 10px auto 0;
     display: block;
+    text-align: center;
+    line-height: 1.2;
 }
 
 .cash-out-btn::before {

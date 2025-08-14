@@ -38,6 +38,9 @@ class UnifiedCrashEngine extends EventEmitter {
         this.live_bettors_table = [];
         this.active_player_id_list = [];
         
+        // Bet queue system for next round
+        this.queuedBets = new Map(); // playerId -> bet data
+        
         // Game loop
         this.gameLoopInterval = null;
         
@@ -158,6 +161,9 @@ class UnifiedCrashEngine extends EventEmitter {
                 // Generate new commit for next round
                 this.prepareCommitForNextRound();
                 
+                // 🚀 PROCESS QUEUED BETS from previous round
+                this.processQueuedBets();
+                
                 // Emit events for new round (CLIENT LISTENS TO THESE)
                 this.io.emit('update_user');
                 this.io.emit('crash_history', this.previous_crashes);
@@ -225,21 +231,37 @@ class UnifiedCrashEngine extends EventEmitter {
     }
     
     /**
-     * 💸 Place a bet for a player
+     * 💸 Place a bet for a player (with intelligent queueing)
      */
     async placeBet(playerId, playerName, betAmount, payoutMultiplier) {
-        // Allow 5-second grace period for network/processing delays
-        const time_elapsed = (Date.now() - this.phase_start_time) / 1000.0;
-        const graceWindow = this.betting_phase || (this.game_phase && time_elapsed < 5);
-        
-        if (!graceWindow) {
-            throw new Error('Betting window closed');
-        }
-        
+        // Check if player already has active bet
         if (this.active_player_id_list.includes(playerId)) {
             throw new Error('Player already has active bet');
         }
         
+        // Check if player already has queued bet
+        if (this.queuedBets.has(playerId)) {
+            throw new Error('Player already has bet queued for next round');
+        }
+        
+        // SMART TIMING: Check current game phase
+        const time_elapsed = (Date.now() - this.phase_start_time) / 1000.0;
+        const inBettingPhase = this.betting_phase;
+        const graceWindow = this.game_phase && time_elapsed < 5;
+        
+        // If in betting phase or grace window, place bet immediately
+        if (inBettingPhase || graceWindow) {
+            return this.placeBetImmediate(playerId, playerName, betAmount, payoutMultiplier);
+        }
+        
+        // If not in betting phase, queue bet for next round
+        return this.queueBetForNextRound(playerId, playerName, betAmount, payoutMultiplier);
+    }
+    
+    /**
+     * 💰 Place bet immediately (during betting phase)
+     */
+    placeBetImmediate(playerId, playerName, betAmount, payoutMultiplier) {
         // Add player to active list
         this.active_player_id_list.push(playerId);
         
@@ -259,8 +281,75 @@ class UnifiedCrashEngine extends EventEmitter {
         // Emit to all clients
         this.io.emit('receive_live_betting_table', JSON.stringify(this.live_bettors_table));
         
-        console.log(`💰 Bet placed: ${playerName} - ${betAmount} @ ${payoutMultiplier}x`);
-        return betInfo;
+        console.log(`💰 Bet placed immediately: ${playerName} - ${betAmount} @ ${payoutMultiplier}x`);
+        return { success: true, type: 'immediate', betInfo };
+    }
+    
+    /**
+     * 🕐 Queue bet for next round
+     */
+    queueBetForNextRound(playerId, playerName, betAmount, payoutMultiplier) {
+        const queuedBet = {
+            playerId,
+            playerName,
+            betAmount,
+            payoutMultiplier,
+            timestamp: Date.now()
+        };
+        
+        this.queuedBets.set(playerId, queuedBet);
+        
+        console.log(`🕐 Bet queued for next round: ${playerName} - ${betAmount} @ ${payoutMultiplier}x`);
+        
+        // Notify client that bet was queued
+        return { 
+            success: true, 
+            type: 'queued', 
+            message: 'Bet queued for next round',
+            queuedBet 
+        };
+    }
+    
+    /**
+     * 🚀 Process queued bets when new betting phase starts
+     */
+    processQueuedBets() {
+        if (this.queuedBets.size === 0) return;
+        
+        console.log(`🚀 Processing ${this.queuedBets.size} queued bets for new round`);
+        
+        for (const [playerId, queuedBet] of this.queuedBets) {
+            try {
+                // Place the queued bet immediately
+                const result = this.placeBetImmediate(
+                    queuedBet.playerId,
+                    queuedBet.playerName,
+                    queuedBet.betAmount,
+                    queuedBet.payoutMultiplier
+                );
+                
+                console.log(`✅ Queued bet processed: ${queuedBet.playerName}`);
+                
+                // Notify client that queued bet was processed
+                this.io.emit('queuedBetProcessed', {
+                    playerId: playerId,
+                    betInfo: result.betInfo
+                });
+                
+            } catch (error) {
+                console.error(`❌ Failed to process queued bet for ${queuedBet.playerName}:`, error.message);
+                
+                // Notify client of failure (could refund here)
+                this.io.emit('queuedBetFailed', {
+                    playerId: playerId,
+                    error: error.message
+                });
+            }
+        }
+        
+        // Clear processed queue
+        this.queuedBets.clear();
+        console.log('🧹 Queued bets cleared');
     }
     
     /**

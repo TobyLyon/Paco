@@ -75,6 +75,25 @@ class BetInterface {
                 this.updateOrdersDisplay();
             });
 
+            // Handle bet queue events
+            window.crashGameClient.socket.on('betQueued', (data) => {
+                console.log('🕐 Bet queued for next round:', data);
+                this.showNotification(`🕐 Bet queued for next round: ${data.queuedBet.betAmount} ETH`, 'info', 3000);
+                this.addQueuedOrder(data.queuedBet);
+            });
+
+            window.crashGameClient.socket.on('queuedBetProcessed', (data) => {
+                console.log('✅ Queued bet processed:', data);
+                this.showNotification(`✅ Queued bet placed: ${data.betInfo.bet_amount} ETH`, 'success', 2000);
+                this.updateQueuedOrderToActive(data.playerId, data.betInfo);
+            });
+
+            window.crashGameClient.socket.on('queuedBetFailed', (data) => {
+                console.log('❌ Queued bet failed:', data);
+                this.showNotification(`❌ Queued bet failed: ${data.error}`, 'error', 5000);
+                this.removeQueuedOrder(data.playerId);
+            });
+
             // Listen for errors
             window.crashGameClient.socket.on('error', (data) => {
                 console.error('❌ Socket error received:', data);
@@ -1261,6 +1280,57 @@ class BetInterface {
         this.activeOrders.clear();
         
         console.log('✅ Active orders cleared for fresh round');
+    }
+
+    /**
+     * 🕐 Add queued order to display
+     */
+    addQueuedOrder(queuedBet) {
+        const orderId = `queued_${queuedBet.playerId}_${Date.now()}`;
+        
+        this.activeOrders.set(orderId, {
+            id: orderId,
+            amount: queuedBet.betAmount,
+            multiplier: queuedBet.payoutMultiplier,
+            status: 'queued',
+            timestamp: queuedBet.timestamp,
+            playerId: queuedBet.playerId
+        });
+        
+        this.updateOrdersDisplay();
+        console.log(`🕐 Added queued order: ${queuedBet.betAmount} ETH`);
+    }
+
+    /**
+     * ✅ Update queued order to active when processed
+     */
+    updateQueuedOrderToActive(playerId, betInfo) {
+        // Find and update the queued order
+        for (const [orderId, order] of this.activeOrders) {
+            if (order.playerId === playerId && order.status === 'queued') {
+                order.status = 'active';
+                order.betInfo = betInfo;
+                console.log(`✅ Updated queued order to active: ${orderId}`);
+                break;
+            }
+        }
+        
+        this.updateOrdersDisplay();
+    }
+
+    /**
+     * ❌ Remove queued order if failed
+     */
+    removeQueuedOrder(playerId) {
+        for (const [orderId, order] of this.activeOrders) {
+            if (order.playerId === playerId && order.status === 'queued') {
+                this.activeOrders.delete(orderId);
+                console.log(`❌ Removed failed queued order: ${orderId}`);
+                break;
+            }
+        }
+        
+        this.updateOrdersDisplay();
     }
 
     /**

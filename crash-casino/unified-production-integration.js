@@ -491,14 +491,28 @@ class UnifiedPacoRockoProduction {
             payout_multiplier
         );
         
+        // Handle different bet result types
+        if (betResult.type === 'immediate') {
+            console.log(`💰 Bet placed immediately: ${effectiveUsername} - ${bet_amount} @ ${payout_multiplier}x`);
+            socket.emit('betSuccess', {
+                type: 'immediate',
+                message: 'Bet placed successfully',
+                betInfo: betResult.betInfo
+            });
+        } else if (betResult.type === 'queued') {
+            console.log(`🕐 Bet queued: ${effectiveUsername} - ${bet_amount} @ ${payout_multiplier}x`);
+            socket.emit('betQueued', {
+                type: 'queued',
+                message: 'Bet queued for next round',
+                queuedBet: betResult.queuedBet
+            });
+        }
+        
         // Process wallet transaction if wallet integration available
         if (this.walletIntegration) {
             // Handle wallet deduction
-            console.log(`💳 Processing wallet transaction for ${player.playerId}`);
+            console.log(`💳 Processing wallet transaction for ${effectivePlayerId}`);
         }
-        
-        socket.emit('betSuccess', betResult);
-        console.log(`💰 Bet processed: ${player.playerId} - ${bet_amount} @ ${payout_multiplier}x`);
     }
     
     /**

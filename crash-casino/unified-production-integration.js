@@ -85,15 +85,10 @@ class UnifiedPacoRockoProduction {
             
             // Initialize wallet integration
             if (WalletIntegration) {
-                if (typeof WalletIntegration === 'function') {
-                    this.walletIntegration = WalletIntegration();
-                } else {
-                    this.walletIntegration = new WalletIntegration({
-                        supabaseUrl: process.env.SUPABASE_URL,
-                        supabaseServiceKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
-                        enableDatabase: this.config.enableDatabase
-                    });
-                }
+                this.walletIntegration = new WalletIntegration(
+                    process.env.SUPABASE_URL,
+                    process.env.SUPABASE_SERVICE_ROLE_KEY
+                );
                 console.log('✅ Wallet integration initialized');
             }
             

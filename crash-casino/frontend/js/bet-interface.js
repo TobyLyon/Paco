@@ -14,16 +14,39 @@ class BetInterface {
         this.cancelledTransactions = new Set(); // Track cancelled transactions to prevent respamming
         this.currentTxId = null; // Track current transaction ID
         
+        // Balance system
+        this.userBalance = 0;
+        this.bettingMode = 'transaction'; // 'transaction' or 'balance'
+        this.balanceInitialized = false;
+        
         this.init();
     }
 
     /**
      * 🚀 Initialize bet interface
      */
-    init() {
+    async init() {
         console.log('🎯 Initializing bet interface...');
         this.setupEventListeners();
         this.updateBetDisplay();
+        
+        // Initialize balance system when wallet connects
+        if (window.ethereum?.selectedAddress || window.realWeb3Modal?.address) {
+            await this.initializeBalance();
+        }
+        
+        // Listen for wallet connection events
+        window.addEventListener('walletConnected', async () => {
+            await this.initializeBalance();
+        });
+
+        // Listen for balance winnings from socket
+        if (window.crashGameClient?.socket) {
+            window.crashGameClient.socket.on('balanceWinnings', (data) => {
+                console.log('🎉 Balance winnings received:', data);
+                this.addWinnings(data.winnings);
+            });
+        }
     }
 
     /**
@@ -71,6 +94,30 @@ class BetInterface {
                 this.cashOut();
             });
         }
+
+        // Mode toggle button
+        const modeToggleBtn = document.getElementById('bettingModeToggle');
+        if (modeToggleBtn) {
+            modeToggleBtn.addEventListener('click', () => {
+                this.toggleBettingMode();
+            });
+        }
+
+        // Deposit button
+        const depositBtn = document.getElementById('depositBtn');
+        if (depositBtn) {
+            depositBtn.addEventListener('click', () => {
+                this.showDepositModal();
+            });
+        }
+
+        // Withdraw button
+        const withdrawBtn = document.getElementById('withdrawBtn');
+        if (withdrawBtn) {
+            withdrawBtn.addEventListener('click', () => {
+                this.showWithdrawModal();
+            });
+        }
     }
 
     /**
@@ -116,7 +163,12 @@ class BetInterface {
             return;
         }
 
-        // Check if crash client is available and connected for betting
+        // Check betting mode and use appropriate method
+        if (this.balanceInitialized && this.bettingMode === 'balance') {
+            return await this.placeBetWithBalance(this.betAmount);
+        }
+
+        // Check if crash client is available and connected for transaction betting
         if (!window.crashGameClient) {
             this.showNotification('❌ Betting system not initialized', 'error');
             return;
@@ -735,6 +787,467 @@ class BetInterface {
     onRoundStart() {
         // Clear any old data and prepare for new round
         this.updateActiveBetsDisplay();
+    }
+
+    /**
+     * 🏦 Initialize balance system
+     */
+    async initializeBalance() {
+        if (this.balanceInitialized) return;
+        
+        const walletAddress = window.ethereum?.selectedAddress || window.realWeb3Modal?.address;
+        if (!walletAddress) {
+            console.warn('No wallet connected for balance initialization');
+            return;
+        }
+
+        try {
+            console.log('🏦 Initializing balance system for:', walletAddress);
+            
+            // Load current balance
+            const response = await fetch(`/api/balance/${walletAddress}`);
+            if (response.ok) {
+                const data = await response.json();
+                this.userBalance = parseFloat(data.balance || 0);
+                console.log(`💰 Loaded balance: ${this.userBalance} ETH`);
+            } else {
+                this.userBalance = 0;
+                console.log('💰 No existing balance found, starting with 0');
+            }
+
+            this.balanceInitialized = true;
+            this.updateBalanceDisplay();
+            this.createBalanceUI();
+            this.startBalanceMonitoring();
+            
+        } catch (error) {
+            console.error('❌ Failed to initialize balance:', error);
+            this.userBalance = 0;
+        }
+    }
+
+    /**
+     * 🎯 Toggle between transaction and balance betting modes
+     */
+    toggleBettingMode() {
+        if (!this.balanceInitialized) {
+            this.showNotification('Balance system not available', 'error');
+            return;
+        }
+
+        this.bettingMode = this.bettingMode === 'transaction' ? 'balance' : 'transaction';
+        this.updateBettingModeDisplay();
+        this.updateBetDisplay();
+        
+        const mode = this.bettingMode === 'balance' ? 'Balance' : 'Transaction';
+        this.showNotification(`🔄 Switched to ${mode} mode`, 'info');
+    }
+
+    /**
+     * 💸 Place bet using balance
+     */
+    async placeBetWithBalance(amount) {
+        if (this.userBalance < amount) {
+            throw new Error(`Insufficient balance. You have ${this.userBalance.toFixed(4)} ETH, need ${amount} ETH`);
+        }
+
+        const walletAddress = window.ethereum?.selectedAddress || window.realWeb3Modal?.address;
+        
+        // Optimistically update balance
+        const originalBalance = this.userBalance;
+        this.userBalance -= amount;
+        this.updateBalanceDisplay();
+
+        try {
+            const response = await fetch('/api/bet/balance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    playerAddress: walletAddress,
+                    amount: amount
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Balance bet failed');
+            }
+
+            const result = await response.json();
+            console.log(`💰 Balance bet placed: ${amount} ETH (remaining: ${this.userBalance.toFixed(4)} ETH)`);
+            
+            // Emit bet event for crash client
+            if (window.crashGameClient && window.crashGameClient.socket) {
+                window.crashGameClient.socket.emit('place_bet', {
+                    betAmount: amount,
+                    playerAddress: walletAddress,
+                    useBalance: true
+                });
+            }
+            
+            return result;
+
+        } catch (error) {
+            // Revert balance on error
+            this.userBalance = originalBalance;
+            this.updateBalanceDisplay();
+            throw error;
+        }
+    }
+
+    /**
+     * 💰 Add winnings to balance
+     */
+    addWinnings(amount) {
+        this.userBalance += amount;
+        this.updateBalanceDisplay();
+        this.showNotification(`🎉 +${amount.toFixed(4)} ETH added to balance!`, 'success');
+    }
+
+    /**
+     * 📊 Update balance display
+     */
+    updateBalanceDisplay() {
+        const balanceElement = document.getElementById('userBalance');
+        if (balanceElement) {
+            balanceElement.textContent = `${this.userBalance.toFixed(4)} ETH`;
+        }
+
+        const balanceSection = document.getElementById('balanceSection');
+        if (balanceSection) {
+            balanceSection.style.display = this.balanceInitialized ? 'block' : 'none';
+        }
+    }
+
+    /**
+     * 🎨 Update betting mode display
+     */
+    updateBettingModeDisplay() {
+        const modeToggle = document.getElementById('bettingModeToggle');
+        if (modeToggle) {
+            const isBalance = this.bettingMode === 'balance';
+            modeToggle.textContent = isBalance ? '🏦 Balance Mode' : '💳 Transaction Mode';
+            modeToggle.classList.toggle('balance-mode', isBalance);
+        }
+
+        const placeBetBtn = document.getElementById('placeBetBtn');
+        if (placeBetBtn) {
+            const isBalance = this.bettingMode === 'balance';
+            placeBetBtn.textContent = isBalance ? '🚀 Bet (Balance)' : '💳 Bet (Transaction)';
+        }
+    }
+
+    /**
+     * 🏗️ Create balance UI elements
+     */
+    createBalanceUI() {
+        // Check if balance section already exists
+        if (document.getElementById('balanceSection')) return;
+
+        const betInterface = document.querySelector('.bet-interface');
+        if (!betInterface) return;
+
+        const balanceHTML = `
+            <div id="balanceSection" class="balance-section">
+                <div class="balance-header">
+                    <h3>💰 Game Balance</h3>
+                    <div id="userBalance" class="balance-amount">${this.userBalance.toFixed(4)} ETH</div>
+                </div>
+                
+                <div class="balance-controls">
+                    <button id="bettingModeToggle" class="mode-toggle-btn">
+                        ${this.bettingMode === 'balance' ? '🏦 Balance Mode' : '💳 Transaction Mode'}
+                    </button>
+                    
+                    <div class="balance-actions">
+                        <button id="depositBtn" class="balance-btn deposit-btn">💳 Deposit</button>
+                        <button id="withdrawBtn" class="balance-btn withdraw-btn">💸 Withdraw</button>
+                    </div>
+                </div>
+                
+                <div class="balance-info">
+                    <div class="balance-mode-info">
+                        ${this.bettingMode === 'balance' 
+                            ? '⚡ Instant betting from balance' 
+                            : '🔗 Direct wallet transactions'}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Insert balance section before bet controls
+        const betControls = betInterface.querySelector('.bet-controls');
+        if (betControls) {
+            betControls.insertAdjacentHTML('beforebegin', balanceHTML);
+        } else {
+            betInterface.insertAdjacentHTML('afterbegin', balanceHTML);
+        }
+
+        // Add event listeners for new elements
+        this.setupBalanceEventListeners();
+    }
+
+    /**
+     * 🔌 Setup balance-specific event listeners
+     */
+    setupBalanceEventListeners() {
+        const modeToggleBtn = document.getElementById('bettingModeToggle');
+        if (modeToggleBtn) {
+            modeToggleBtn.addEventListener('click', () => {
+                this.toggleBettingMode();
+            });
+        }
+
+        const depositBtn = document.getElementById('depositBtn');
+        if (depositBtn) {
+            depositBtn.addEventListener('click', () => {
+                this.showDepositModal();
+            });
+        }
+
+        const withdrawBtn = document.getElementById('withdrawBtn');
+        if (withdrawBtn) {
+            withdrawBtn.addEventListener('click', () => {
+                this.showWithdrawModal();
+            });
+        }
+    }
+
+    /**
+     * 🏦 Show deposit modal
+     */
+    showDepositModal() {
+        const walletAddress = window.ethereum?.selectedAddress || window.realWeb3Modal?.address;
+        const houseWallet = '0x1f8B1c4D05eF17Ebaa1E572426110146691e6C5a';
+        const memo = walletAddress.slice(-8);
+
+        const modalHTML = `
+            <div id="depositModal" class="modal-overlay">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>🏦 Deposit to Game Balance</h3>
+                        <button class="modal-close">&times;</button>
+                    </div>
+                    
+                    <div class="deposit-instructions">
+                        <div class="instruction-step">
+                            <h4>1. Send ETH to House Wallet:</h4>
+                            <div class="address-box">
+                                <code>${houseWallet}</code>
+                                <button class="copy-btn" data-copy="${houseWallet}">📋 Copy</button>
+                            </div>
+                        </div>
+                        
+                        <div class="instruction-step">
+                            <h4>2. Include this memo for attribution:</h4>
+                            <div class="memo-box">
+                                <code>${memo}</code>
+                                <button class="copy-btn" data-copy="${memo}">📋 Copy</button>
+                            </div>
+                        </div>
+                        
+                        <div class="deposit-benefits">
+                            <h4>✨ Benefits:</h4>
+                            <ul>
+                                <li>⚡ Instant betting (no transaction delays)</li>
+                                <li>💸 Lower gas costs</li>
+                                <li>🚀 Seamless gaming experience</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="deposit-note">
+                            <p>💡 Funds will be credited automatically once confirmed on-chain</p>
+                            <p>⏱️ Usually takes 1-2 minutes</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        this.setupModalHandlers('depositModal');
+    }
+
+    /**
+     * 💸 Show withdraw modal
+     */
+    showWithdrawModal() {
+        const modalHTML = `
+            <div id="withdrawModal" class="modal-overlay">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>💸 Withdraw from Balance</h3>
+                        <button class="modal-close">&times;</button>
+                    </div>
+                    
+                    <div class="withdraw-form">
+                        <div class="current-balance">
+                            <p>Current Balance: <strong>${this.userBalance.toFixed(4)} ETH</strong></p>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Amount to Withdraw:</label>
+                            <input type="number" id="withdrawAmount" min="0.001" max="${this.userBalance}" step="0.001" placeholder="0.001">
+                            <div class="quick-amounts">
+                                <button class="quick-amount" data-percent="25">25%</button>
+                                <button class="quick-amount" data-percent="50">50%</button>
+                                <button class="quick-amount" data-percent="75">75%</button>
+                                <button class="quick-amount" data-percent="100">All</button>
+                            </div>
+                        </div>
+                        
+                        <div class="withdraw-note">
+                            <p>💡 Funds will be sent to your connected wallet</p>
+                            <p>⏱️ Usually processed within 1-2 minutes</p>
+                        </div>
+                        
+                        <button id="confirmWithdraw" class="confirm-btn">💸 Confirm Withdrawal</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        this.setupModalHandlers('withdrawModal');
+        this.setupWithdrawHandlers();
+    }
+
+    /**
+     * 🔧 Setup modal handlers
+     */
+    setupModalHandlers(modalId) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+
+        // Close button
+        const closeBtn = modal.querySelector('.modal-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                modal.remove();
+            });
+        }
+
+        // Close on overlay click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+
+        // Copy buttons
+        modal.querySelectorAll('.copy-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const textToCopy = btn.dataset.copy;
+                navigator.clipboard.writeText(textToCopy);
+                btn.textContent = '✅ Copied!';
+                setTimeout(() => {
+                    btn.textContent = '📋 Copy';
+                }, 2000);
+            });
+        });
+    }
+
+    /**
+     * 🔧 Setup withdraw-specific handlers
+     */
+    setupWithdrawHandlers() {
+        const withdrawInput = document.getElementById('withdrawAmount');
+        const confirmBtn = document.getElementById('confirmWithdraw');
+
+        // Quick amount buttons
+        document.querySelectorAll('.quick-amount').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const percent = parseFloat(btn.dataset.percent) / 100;
+                const amount = this.userBalance * percent;
+                withdrawInput.value = amount.toFixed(4);
+            });
+        });
+
+        // Confirm withdrawal
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', async () => {
+                const amount = parseFloat(withdrawInput.value);
+                if (!amount || amount <= 0 || amount > this.userBalance) {
+                    this.showNotification('Invalid withdrawal amount', 'error');
+                    return;
+                }
+
+                confirmBtn.disabled = true;
+                confirmBtn.textContent = '⏳ Processing...';
+
+                try {
+                    await this.processWithdrawal(amount);
+                    document.getElementById('withdrawModal').remove();
+                } catch (error) {
+                    this.showNotification(`Withdrawal failed: ${error.message}`, 'error');
+                } finally {
+                    confirmBtn.disabled = false;
+                    confirmBtn.textContent = '💸 Confirm Withdrawal';
+                }
+            });
+        }
+    }
+
+    /**
+     * 💸 Process withdrawal
+     */
+    async processWithdrawal(amount) {
+        const walletAddress = window.ethereum?.selectedAddress || window.realWeb3Modal?.address;
+
+        const response = await fetch('/api/withdraw', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                playerAddress: walletAddress,
+                amount: amount
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Withdrawal failed');
+        }
+
+        const result = await response.json();
+        this.userBalance -= amount;
+        this.updateBalanceDisplay();
+        
+        this.showNotification(`💸 Withdrawal of ${amount} ETH initiated! Tx: ${result.txHash}`, 'success');
+        return result;
+    }
+
+    /**
+     * 👀 Start monitoring for balance changes
+     */
+    startBalanceMonitoring() {
+        const walletAddress = window.ethereum?.selectedAddress || window.realWeb3Modal?.address;
+        if (!walletAddress) return;
+
+        // Check for deposits every 30 seconds
+        setInterval(async () => {
+            try {
+                const response = await fetch(`/api/deposits/check/${walletAddress}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.newDeposits && data.newDeposits.length > 0) {
+                        for (const deposit of data.newDeposits) {
+                            this.userBalance += parseFloat(deposit.amount);
+                            this.showNotification(`💰 Deposit confirmed: ${deposit.amount} ETH!`, 'success');
+                        }
+                        this.updateBalanceDisplay();
+                    }
+                }
+            } catch (error) {
+                console.warn('Could not check for deposits:', error);
+            }
+        }, 30000);
+    }
+
+    /**
+     * 🔄 Update balance when called from external systems
+     */
+    onBalanceUpdate(newBalance) {
+        this.userBalance = newBalance;
+        this.updateBalanceDisplay();
     }
 }
 

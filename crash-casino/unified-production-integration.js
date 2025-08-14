@@ -168,49 +168,74 @@ class UnifiedPacoRockoProduction {
             }
         });
 
-        // Handle successful cashouts and trigger payouts
-        this.crashEngine.on('playerCashedOut', async (data) => {
-            console.log(`💸 Player cashed out: ${data.playerId} @ ${data.multiplier}x`);
-            
-            // AUTOMATIC PAYOUT: Process blockchain transaction
-            if (this.walletIntegration && data.payout > 0) {
-                try {
-                    console.log(`💰 Processing automatic payout: ${data.payout.toFixed(4)} ETH to ${data.playerId}`);
-                    
-                    const payoutResult = await this.walletIntegration.processCashOut(
-                        data.playerId,        // Player address
-                        data.roundId,         // Round ID
-                        data.multiplier,      // Cashout multiplier
-                        data.betAmount        // Original bet amount
-                    );
-                    
-                    if (payoutResult.success) {
-                        console.log(`✅ Automatic payout successful: ${payoutResult.txHash}`);
+                    // Handle successful cashouts and trigger payouts
+            this.crashEngine.on('playerCashedOut', async (data) => {
+                console.log(`💸 Player cashed out: ${data.playerId} @ ${data.multiplier}x`);
+                
+                // Check if this was a balance bet (we'll add this tracking later)
+                const isBalanceBet = data.useBalance || false; // This will be passed from the bet system
+                
+                if (isBalanceBet) {
+                    // Add winnings to balance instead of blockchain payout
+                    try {
+                        const { BalanceAPI } = require('./backend/balance-api');
+                        const balanceAPI = new BalanceAPI(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
                         
-                        // Notify player of successful payout
-                        this.io.emit('payoutSuccess', {
+                        await balanceAPI.addWinnings(data.playerId, data.payout);
+                        console.log(`💰 Added ${data.payout.toFixed(4)} ETH to balance for ${data.playerId}`);
+                        
+                        // Notify player of balance update
+                        this.io.emit('balanceWinnings', {
                             roundId: data.roundId,
                             playerId: data.playerId,
-                            payout: data.payout,
-                            txHash: payoutResult.txHash,
+                            winnings: data.payout,
                             multiplier: data.multiplier
                         });
-                    } else {
-                        console.error(`❌ Automatic payout failed: ${payoutResult.error}`);
                         
-                        // Notify player of payout failure
-                        this.io.emit('payoutFailed', {
-                            roundId: data.roundId,
-                            playerId: data.playerId,
-                            error: payoutResult.error
-                        });
+                    } catch (error) {
+                        console.error('❌ Balance winnings error:', error);
                     }
-                    
-                } catch (error) {
-                    console.error('❌ Payout processing error:', error);
+                } else {
+                    // AUTOMATIC PAYOUT: Process blockchain transaction
+                    if (this.walletIntegration && data.payout > 0) {
+                        try {
+                            console.log(`💰 Processing automatic payout: ${data.payout.toFixed(4)} ETH to ${data.playerId}`);
+                            
+                            const payoutResult = await this.walletIntegration.processCashOut(
+                                data.playerId,        // Player address
+                                data.roundId,         // Round ID
+                                data.multiplier,      // Cashout multiplier
+                                data.betAmount        // Original bet amount
+                            );
+                            
+                            if (payoutResult.success) {
+                                console.log(`✅ Automatic payout successful: ${payoutResult.txHash}`);
+                                
+                                // Notify player of successful payout
+                                this.io.emit('payoutSuccess', {
+                                    roundId: data.roundId,
+                                    playerId: data.playerId,
+                                    payout: data.payout,
+                                    txHash: payoutResult.txHash,
+                                    multiplier: data.multiplier
+                                });
+                            } else {
+                                console.error(`❌ Automatic payout failed: ${payoutResult.error}`);
+                                
+                                // Notify player of payout failure
+                                this.io.emit('payoutFailed', {
+                                    roundId: data.roundId,
+                                    playerId: data.playerId,
+                                    error: payoutResult.error
+                                });
+                            }
+                            
+                        } catch (error) {
+                            console.error('❌ Payout processing error:', error);
+                        }
+                    }
                 }
-            }
-        });
+            });
         
         console.log('🎧 Crash engine event listeners configured');
     }
@@ -257,8 +282,16 @@ class UnifiedPacoRockoProduction {
                 }
             });
             
-            // Handle manual cashout
+            // Handle manual cashout (support both event types)
             socket.on('manual_cashout_early', async () => {
+                try {
+                    await this.handleCashout(socket);
+                } catch (error) {
+                    socket.emit('error', { message: error.message });
+                }
+            });
+            
+            socket.on('cash_out', async () => {
                 try {
                     await this.handleCashout(socket);
                 } catch (error) {

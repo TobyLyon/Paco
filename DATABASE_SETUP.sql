@@ -204,6 +204,49 @@ CREATE TABLE IF NOT EXISTS payouts (
     last_error TEXT
 );
 
+-- User Balances (for balance-based betting)
+CREATE TABLE IF NOT EXISTS user_balances (
+    address TEXT PRIMARY KEY,
+    balance DECIMAL(20,8) DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Balance deposits (separate from main deposits table)
+CREATE TABLE IF NOT EXISTS balance_deposits (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    tx_hash TEXT UNIQUE NOT NULL,
+    from_address TEXT NOT NULL,
+    amount DECIMAL(20,8) NOT NULL,
+    memo TEXT,
+    balance_before DECIMAL(20,8) NOT NULL,
+    balance_after DECIMAL(20,8) NOT NULL,
+    status TEXT DEFAULT 'confirmed',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Balance-based bets
+CREATE TABLE IF NOT EXISTS balance_bets (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    address TEXT NOT NULL,
+    amount DECIMAL(20,8) NOT NULL,
+    balance_before DECIMAL(20,8) NOT NULL,
+    balance_after DECIMAL(20,8) NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Balance withdrawals (separate from main withdrawals)
+CREATE TABLE IF NOT EXISTS balance_withdrawals (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    address TEXT NOT NULL,
+    amount DECIMAL(20,8) NOT NULL,
+    tx_hash TEXT,
+    balance_before DECIMAL(20,8) NOT NULL,
+    balance_after DECIMAL(20,8) NOT NULL,
+    status TEXT DEFAULT 'pending', -- pending, completed, failed
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS ledger_entries (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     created_at TIMESTAMPTZ DEFAULT NOW(),

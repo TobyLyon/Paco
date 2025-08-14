@@ -147,12 +147,12 @@ class AbstractWalletIntegration {
             // Store pending bet
             this.pendingBets.set(betId, bet);
             
-            // Store in database
-            if (this.supabase) {
-                await this.supabase
-                    .from('crash_bets')
-                    .insert(bet);
-            }
+            // Store in database (temporarily disabled - using balance system instead)
+            // if (this.supabase) {
+            //     await this.supabase
+            //         .from('crash_bets')
+            //         .insert(bet);
+            // }
             
             // Return bet details with payment instructions
             return {
@@ -199,17 +199,17 @@ class AbstractWalletIntegration {
             bet.txHash = txHash;
             bet.confirmationTime = Date.now();
             
-            // Update database
-            if (this.supabase) {
-                await this.supabase
-                    .from('crash_bets')
-                    .update({
-                        status: 'confirmed',
-                        tx_hash: txHash,
-                        confirmation_time: new Date().toISOString()
-                    })
-                    .eq('id', betId);
-            }
+            // Update database (temporarily disabled - using balance system instead)
+            // if (this.supabase) {
+            //     await this.supabase
+            //         .from('crash_bets')
+            //         .update({
+            //             status: 'confirmed',
+            //             tx_hash: txHash,
+            //             confirmation_time: new Date().toISOString()
+            //         })
+            //         .eq('id', betId);
+            // }
             
             console.log(`✅ Bet confirmed: ${betId}`);
             
@@ -394,12 +394,13 @@ class AbstractWalletIntegration {
                     // Expire old pending bets
                     this.pendingBets.delete(betId);
                     
-                    if (this.supabase) {
-                        await this.supabase
-                            .from('crash_bets')
-                            .update({ status: 'expired' })
-                            .eq('id', betId);
-                    }
+                    // Temporarily disabled - using balance system instead
+                    // if (this.supabase) {
+                    //     await this.supabase
+                    //         .from('crash_bets')
+                    //         .update({ status: 'expired' })
+                    //         .eq('id', betId);
+                    // }
                 }
             }
         }, 10000);

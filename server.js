@@ -167,6 +167,57 @@ app.post('/admin/transfer', requireAdmin, async (req, res) => {
     }
 })
 
+// Balance System API Routes
+const { BalanceAPI } = require('./crash-casino/backend/balance-api');
+const balanceAPI = new BalanceAPI(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+
+// Get user balance
+app.get('/api/balance/:address', async (req, res) => {
+    try {
+        const balance = await balanceAPI.getBalance(req.params.address);
+        res.json({ balance });
+    } catch (error) {
+        console.error('Balance check error:', error);
+        res.status(500).json({ error: 'Could not fetch balance' });
+    }
+});
+
+// Place bet with balance
+app.post('/api/bet/balance', async (req, res) => {
+    try {
+        const { playerAddress, amount } = req.body;
+        const result = await balanceAPI.placeBetWithBalance(playerAddress, amount);
+        res.json(result);
+    } catch (error) {
+        console.error('Balance bet error:', error);
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// Check for new deposits
+app.get('/api/deposits/check/:address', async (req, res) => {
+    try {
+        const newDeposits = await balanceAPI.checkNewDeposits(req.params.address);
+        res.json({ newDeposits });
+    } catch (error) {
+        console.error('Deposit check error:', error);
+        res.status(500).json({ error: 'Could not check deposits' });
+    }
+});
+
+// Process withdrawal
+app.post('/api/withdraw', async (req, res) => {
+    try {
+        const { playerAddress, amount } = req.body;
+        const walletIntegration = require('./crash-casino/backend/wallet-integration-abstract.js').getWalletIntegration();
+        const result = await balanceAPI.processWithdrawal(playerAddress, amount, walletIntegration);
+        res.json(result);
+    } catch (error) {
+        console.error('Withdrawal error:', error);
+        res.status(400).json({ error: error.message });
+    }
+});
+
 // Initialize crash casino backend
 console.log('🎰 Initializing PacoRocko crash casino backend...');
 

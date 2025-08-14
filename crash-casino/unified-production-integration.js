@@ -478,9 +478,15 @@ class UnifiedPacoRockoProduction {
         }
         
         // Process bet through crash engine
+        // For balance bets, use wallet address as player ID if not authenticated
+        const effectivePlayerId = player.playerId || player_address;
+        const effectiveUsername = player.username || `${player_address.slice(0,6)}...${player_address.slice(-4)}`;
+        
+        console.log(`🎯 BET DEBUG - Processing bet for effective player ID:`, effectivePlayerId);
+        
         const betResult = await this.crashEngine.placeBet(
-            player.playerId,
-            player.username || 'Anonymous',
+            effectivePlayerId,
+            effectiveUsername,
             bet_amount,
             payout_multiplier
         );
@@ -525,7 +531,13 @@ class UnifiedPacoRockoProduction {
             throw new Error('No active bet found for cashout');
         }
         
+        // Use playerId if authenticated, otherwise use lastBetAddress (wallet address) for balance bets
         const playerId = player.authenticated ? player.playerId : player.lastBetAddress;
+        
+        console.log(`🔍 CASHOUT DEBUG - Using player ID for cashout:`, playerId);
+        console.log(`🔍 CASHOUT DEBUG - Player authenticated:`, player.authenticated);
+        console.log(`🔍 CASHOUT DEBUG - Player.playerId:`, player.playerId);
+        console.log(`🔍 CASHOUT DEBUG - Player.lastBetAddress:`, player.lastBetAddress);
         
         // Get current multiplier from game state
         const gameState = this.crashEngine.getGameState();

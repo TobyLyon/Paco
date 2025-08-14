@@ -7,10 +7,18 @@
 const { ethers } = require('ethers');
 const { createWalletClient, http, parseEther } = require('viem');
 const { privateKeyToAccount } = require('viem/accounts');
-const { abstract } = require('../../src/lib/abstractChains'); // Assuming chain config is here
 const { getHouseWallet } = require('./house-wallet');
 const { config } = require('./config/abstract-config');
 const { createClient } = require('@supabase/supabase-js');
+
+// Abstract chain config
+const ABSTRACT_CHAIN = {
+    id: 2741,
+    name: 'Abstract',
+    rpcUrls: { 
+        default: { http: ['https://api.mainnet.abs.xyz'] } 
+    }
+};
 
 class AbstractWalletIntegration {
     constructor(supabaseUrl, supabaseKey) {

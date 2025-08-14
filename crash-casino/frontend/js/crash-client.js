@@ -322,19 +322,12 @@ class CrashGameClient {
             this.gameState = 'running';
             
             // CRITICAL: Show cashout button if player has active bet
-            if (this.playerBet && !this.playerBet.cashedOut) {
-                const cashOutBtn = document.getElementById('cashOutBtn');
-                if (cashOutBtn) {
-                    cashOutBtn.style.display = 'block';
-                    console.log('💰 Cash out button shown - round started with active bet');
-                    console.log('🎯 Player bet details:', this.playerBet);
-                } else {
-                    console.error('❌ Cash out button element not found in DOM');
-                }
-            } else {
-                console.log('🚫 No active bet for cash out button');
-                console.log('🔍 Current playerBet state:', this.playerBet);
-            }
+            this.checkAndShowCashoutButton();
+            
+            // RETRY: Check again after 500ms in case queuedBetProcessed event is still incoming
+            setTimeout(() => {
+                this.checkAndShowCashoutButton(true);
+            }, 500);
             this.roundStartTime = Date.now();
             this.currentMultiplier = 1.0;
             
@@ -637,10 +630,12 @@ class CrashGameClient {
         console.log('🎲 Betting phase started - waiting for server countdown');
         this.gameState = 'betting';
         
-        // CRITICAL: Reset bet state for new round
-        if (this.playerBet) {
+        // CRITICAL: Only clear old bet state, NOT queued bets that just got processed
+        if (this.playerBet && !this.playerBet.fromQueue) {
             console.log('🧹 Clearing previous round bet state for new betting phase');
             this.playerBet = null;
+        } else if (this.playerBet && this.playerBet.fromQueue) {
+            console.log('✅ Preserving queued bet that was just processed:', this.playerBet);
         }
         
         // Process any queued bets
@@ -1977,6 +1972,41 @@ class CrashGameClient {
     destroy() {
         if (this.socket) {
             this.socket.disconnect();
+        }
+    }
+
+    /**
+     * 💰 Check and show cashout button if player has active bet
+     */
+    checkAndShowCashoutButton(isRetry = false) {
+        const logPrefix = isRetry ? '🔄 RETRY: ' : '🔍 ';
+        
+        if (this.playerBet && !this.playerBet.cashedOut) {
+            // Clear fromQueue flag once round starts (no longer needed)
+            if (this.playerBet.fromQueue) {
+                console.log('🧹 Clearing fromQueue flag - bet is now active in round');
+                delete this.playerBet.fromQueue;
+            }
+            
+            const cashOutBtn = document.getElementById('cashOutBtn');
+            if (cashOutBtn) {
+                cashOutBtn.style.display = 'block';
+                console.log(`${logPrefix}💰 Cash out button shown - round started with active bet`);
+                console.log(`${logPrefix}🎯 Player bet details:`, this.playerBet);
+                
+                if (isRetry) {
+                    console.log('✅ RETRY SUCCESS: Cashout button now visible for queued bet');
+                }
+            } else {
+                console.error(`${logPrefix}❌ Cash out button element not found in DOM`);
+            }
+        } else {
+            console.log(`${logPrefix}🚫 No active bet for cash out button`);
+            console.log(`${logPrefix}🔍 Current playerBet state:`, this.playerBet);
+            
+            if (isRetry) {
+                console.log('❌ RETRY FAILED: Still no playerBet state for cashout button');
+            }
         }
     }
 }

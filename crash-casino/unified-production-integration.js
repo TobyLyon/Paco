@@ -382,7 +382,12 @@ class UnifiedPacoRockoProduction {
                         return res.status(503).json({ error: 'Balance API not initialized' });
                     }
                     const { playerAddress, amount } = req.body;
-                    const result = await this.balanceAPI.placeBetWithBalance(playerAddress, amount);
+                    
+                    // 🏠 CRITICAL FIX: Pass house wallet to ensure bet money is transferred
+                    const houseWallet = this.walletIntegration?.houseWallet || null;
+                    console.log(`🏠 Processing balance bet with house wallet: ${houseWallet ? 'PROVIDED' : 'MISSING'}`);
+                    
+                    const result = await this.balanceAPI.placeBetWithBalance(playerAddress, amount, houseWallet);
                     res.json(result);
                 } catch (error) {
                     console.error('Balance bet error:', error);

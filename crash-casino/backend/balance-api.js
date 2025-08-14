@@ -44,12 +44,25 @@ class BalanceAPI {
     /**
      * 💸 Place bet using balance
      */
-    async placeBetWithBalance(playerAddress, amount) {
+    async placeBetWithBalance(playerAddress, amount, houseWallet = null) {
         const address = playerAddress.toLowerCase();
         const currentBalance = await this.getBalance(address);
 
         if (currentBalance < amount) {
             throw new Error('Insufficient balance');
+        }
+
+        // 🏠 CRITICAL: Transfer bet amount from hot wallet to house wallet
+        if (houseWallet) {
+            try {
+                const transferResult = await this.transferBetToHouse(amount, houseWallet);
+                console.log(`🏠 Balance bet amount transferred to house wallet: ${amount} ETH (TX: ${transferResult.txHash})`);
+            } catch (transferError) {
+                console.error(`❌ Failed to transfer bet to house wallet:`, transferError);
+                throw new Error(`Bet transfer to house wallet failed: ${transferError.message}`);
+            }
+        } else {
+            console.warn(`⚠️ NO HOUSE WALLET PROVIDED - Bet amount not transferred to house (FINANCIAL RISK)`);
         }
 
         // Deduct from balance
@@ -82,6 +95,65 @@ class BalanceAPI {
 
         console.log(`💰 Balance bet: ${address} bet ${amount} ETH (balance: ${currentBalance} → ${newBalance})`);
         return { success: true, newBalance };
+    }
+
+    /**
+     * 🏠 Transfer bet amount from hot wallet to house wallet
+     */
+    async transferBetToHouse(amount, houseWallet) {
+        const { ethers } = require('ethers');
+        const { createWalletClient, http, parseEther } = require('viem');
+        const { privateKeyToAccount } = require('viem/accounts');
+        
+        // Abstract chain config
+        const ABSTRACT_CHAIN = {
+            id: 2741,
+            name: 'Abstract',
+            rpcUrls: { 
+                default: { http: ['https://api.mainnet.abs.xyz'] } 
+            }
+        };
+
+        const hotWalletKey = process.env.HOT_WALLET_PRIVATE_KEY;
+        if (!hotWalletKey) {
+            throw new Error('HOT_WALLET_PRIVATE_KEY environment variable not configured');
+        }
+
+        const houseWalletAddress = process.env.HOUSE_WALLET_ADDRESS || '0x1f8B1c4D05eF17Ebaa1E572426110146691e6C5a';
+
+        // Initialize hot wallet client
+        const hotAccount = privateKeyToAccount(hotWalletKey);
+        const walletClient = createWalletClient({
+            account: hotAccount,
+            chain: ABSTRACT_CHAIN,
+            transport: http(ABSTRACT_CHAIN.rpcUrls.default.http[0]),
+        });
+
+        const amountWei = parseEther(amount.toString());
+
+        // Check hot wallet balance
+        const hotBalance = await walletClient.getBalance({ address: hotAccount.address });
+        if (hotBalance < amountWei) {
+            throw new Error(`Insufficient hot wallet balance for bet transfer. Need: ${amount} ETH, Have: ${(Number(hotBalance) / 1e18).toFixed(6)} ETH`);
+        }
+
+        console.log(`🏠 Transferring bet amount: ${amount} ETH from hot wallet (${hotAccount.address}) to house wallet (${houseWalletAddress})`);
+
+        // Send transaction
+        const txHash = await walletClient.sendTransaction({
+            to: houseWalletAddress,
+            value: amountWei,
+        });
+
+        console.log(`✅ Bet transfer to house wallet successful: ${txHash}`);
+
+        return {
+            success: true,
+            txHash: txHash,
+            amount: amount,
+            from: hotAccount.address,
+            to: houseWalletAddress
+        };
     }
 
     /**

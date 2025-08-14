@@ -214,7 +214,7 @@ class BetInterface {
         });
 
         try {
-            const response = await fetch('/api/bet/balance', {
+            const response = await fetch('https://paco-x57j.onrender.com/api/bet/balance', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -841,7 +841,7 @@ class BetInterface {
     async processWithdrawal(amount) {
         const walletAddress = window.ethereum?.selectedAddress || window.realWeb3Modal?.address;
 
-        const response = await fetch('/api/withdraw', {
+        const response = await fetch('https://paco-x57j.onrender.com/api/withdraw', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

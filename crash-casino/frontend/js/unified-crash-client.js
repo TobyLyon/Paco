@@ -369,7 +369,8 @@ class UnifiedCrashClient {
         
         this.socket.emit('send_bet', {
             bet_amount: amount,
-            payout_multiplier: payoutMultiplier
+            payout_multiplier: payoutMultiplier,
+            player_address: window.realWeb3Modal?.address || window.ethereum?.selectedAddress
         });
     }
     

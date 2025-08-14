@@ -234,9 +234,24 @@ class UnifiedPacoRockoProduction {
             this.sendGameState(socket);
             
             // Handle betting
+            // Handle both bet event types from different clients
             socket.on('send_bet', async (data) => {
                 try {
                     await this.handleBet(socket, data);
+                } catch (error) {
+                    socket.emit('error', { message: error.message });
+                }
+            });
+            
+            socket.on('place_bet', async (data) => {
+                try {
+                    // Convert place_bet format to send_bet format
+                    const betData = {
+                        bet_amount: data.betAmount,
+                        payout_multiplier: data.autoPayoutMultiplier || 2.0, // Default 2x if not specified
+                        player_address: data.playerAddress
+                    };
+                    await this.handleBet(socket, betData);
                 } catch (error) {
                     socket.emit('error', { message: error.message });
                 }
@@ -295,11 +310,18 @@ class UnifiedPacoRockoProduction {
      */
     async handleBet(socket, data) {
         const player = this.connectedPlayers.get(socket.id);
-        if (!player || !player.authenticated) {
-            throw new Error('Not authenticated');
+        
+        const { bet_amount, payout_multiplier, player_address } = data;
+        
+        // For wallet-based bets, store the player address for cashouts
+        if (player_address) {
+            player.lastBetAddress = player_address;
         }
         
-        const { bet_amount, payout_multiplier } = data;
+        // Allow bets from wallet users even if not formally authenticated
+        if (!player || (!player.authenticated && !player_address)) {
+            throw new Error('Not authenticated or no player address provided');
+        }
         
         // Validate bet
         if (!bet_amount || !payout_multiplier || bet_amount <= 0 || payout_multiplier < 1) {
@@ -345,9 +367,13 @@ class UnifiedPacoRockoProduction {
      */
     async handleCashout(socket) {
         const player = this.connectedPlayers.get(socket.id);
-        if (!player || !player.authenticated) {
-            throw new Error('Not authenticated');
+        
+        // For wallet-based game, use the last bet address as player ID if not authenticated
+        if (!player || (!player.authenticated && !player.lastBetAddress)) {
+            throw new Error('No active player or bet found');
         }
+        
+        const playerId = player.authenticated ? player.playerId : player.lastBetAddress;
         
         // Get current multiplier from game state
         const gameState = this.crashEngine.getGameState();
@@ -361,56 +387,20 @@ class UnifiedPacoRockoProduction {
         
         // Process cashout through crash engine
         const cashoutResult = await this.crashEngine.processCashout(
-            player.playerId,
+            playerId,
             currentMultiplier
         );
         
-        // AUTOMATIC PAYOUT: Process wallet transaction if cashout successful
-        if (this.walletIntegration && cashoutResult && cashoutResult.payout > 0) {
-            try {
-                console.log(`💰 Processing automatic cashout payout: ${cashoutResult.payout.toFixed(4)} ETH to ${player.playerId}`);
-                
-                const payoutResult = await this.walletIntegration.processWinnerPayout(
-                    player.playerId,           // Player address
-                    cashoutResult.betAmount || 0.001, // Original bet amount
-                    currentMultiplier,         // Cashout multiplier
-                    gameState.roundId          // Round ID for tracking
-                );
-                
-                if (payoutResult.success) {
-                    console.log(`✅ Automatic cashout payout successful: ${payoutResult.txHash}`);
-                    
-                    // Include payout info in cashout response
-                    cashoutResult.payoutTxHash = payoutResult.txHash;
-                    cashoutResult.payoutSuccess = true;
-                    
-                    // Notify all clients of successful payout
-                    this.io.emit('payoutSuccess', {
-                        roundId: gameState.roundId,
-                        playerId: player.playerId,
-                        payout: cashoutResult.payout,
-                        txHash: payoutResult.txHash,
-                        multiplier: currentMultiplier
-                    });
-                } else {
-                    console.error(`❌ Automatic cashout payout failed: ${payoutResult.error}`);
-                    cashoutResult.payoutSuccess = false;
-                    cashoutResult.payoutError = payoutResult.error;
-                }
-                
-            } catch (error) {
-                console.error('❌ Cashout payout processing error:', error);
-                cashoutResult.payoutSuccess = false;
-                cashoutResult.payoutError = error.message;
-            }
-        }
+        // The crashEngine.processCashout now emits 'playerCashedOut' which triggers automatic payout
+        // So we don't need to manually call payout here anymore
         
         socket.emit('cashoutSuccess', {
             multiplier: currentMultiplier,
-            profit: cashoutResult ? cashoutResult.profit : 0
+            profit: cashoutResult ? cashoutResult.profit : 0,
+            payout: cashoutResult ? cashoutResult.payout : 0
         });
         
-        console.log(`🏃 Cashout processed: ${player.playerId} @ ${currentMultiplier.toFixed(2)}x`);
+        console.log(`🏃 Cashout processed: ${playerId} @ ${currentMultiplier.toFixed(2)}x`);
     }
     
     /**

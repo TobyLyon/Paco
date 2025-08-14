@@ -906,17 +906,11 @@ class CrashGameClient {
             }
             
             if (this.gameState === 'running') {
-                // More lenient: Allow betting in first few seconds of round
-                const timeSinceRoundStart = this.roundStartTime ? (Date.now() - this.roundStartTime) / 1000 : 999;
+                // Reject all bets during running phase - must wait for next round
                 const currentMultiplier = this.currentMultiplier || 1.0;
-                
-                if (timeSinceRoundStart < 2.0 && currentMultiplier < 1.1) {
-                    console.log(`✅ Late bet allowed - Round just started (${timeSinceRoundStart.toFixed(1)}s, ${currentMultiplier.toFixed(2)}x)`);
-                } else {
-                    this.showError(`Too late to bet - round is at ${currentMultiplier.toFixed(2)}x`);
-                    console.log(`🚫 Bet rejected - Round too advanced (${timeSinceRoundStart.toFixed(1)}s, ${currentMultiplier.toFixed(2)}x)`);
-                    return false;
-                }
+                this.showError(`Round in progress (${currentMultiplier.toFixed(2)}x) - wait for next round`);
+                console.log(`🚫 Bet rejected - Round already running at ${currentMultiplier.toFixed(2)}x`);
+                return false;
             }
             
             if (!['betting', 'waiting', 'pending', 'running', undefined].includes(this.gameState)) {

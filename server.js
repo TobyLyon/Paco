@@ -30,6 +30,19 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// 🔄 Trades API Routes (feature flagged)
+const TRADES_ENABLED = process.env.TRADES_ENABLED === 'true';
+if (TRADES_ENABLED) {
+  console.log('🔄 Trades feature enabled, loading API routes...');
+  const tradesOrdersRouter = require('./trades-api/routes/orders');
+  const tradesRiskRouter = require('./trades-api/routes/risk');
+  
+  app.use('/api/trades/orders', tradesOrdersRouter);
+  app.use('/api/trades/risk', tradesRiskRouter);
+  
+  console.log('✅ Trades API routes loaded');
+}
+
 // Serve static files from root directory for frontend
 app.use(express.static('.', {
     index: 'index.html',
@@ -41,7 +54,10 @@ app.get('/health', (req, res) => {
     res.json({ 
         status: 'OK', 
         service: 'PacoRocko Backend',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        features: {
+            trades: TRADES_ENABLED
+        }
     });
 });
 

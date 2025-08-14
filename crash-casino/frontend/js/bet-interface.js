@@ -32,11 +32,22 @@ class BetInterface {
         
         // Initialize balance system when wallet connects
         if (window.ethereum?.selectedAddress || window.realWeb3Modal?.address) {
+            console.log('🔗 Wallet detected, initializing balance system...');
             await this.initializeBalance();
+        } else {
+            console.log('⚠️ No wallet detected yet, waiting for connection...');
+            // Show balance UI anyway for testing
+            setTimeout(() => {
+                if (!this.balanceInitialized) {
+                    console.log('🧪 Creating balance UI for testing (no wallet)');
+                    this.createBalanceUI();
+                }
+            }, 2000);
         }
         
         // Listen for wallet connection events
         window.addEventListener('walletConnected', async () => {
+            console.log('🔗 Wallet connected event received!');
             await this.initializeBalance();
         });
 
@@ -1253,6 +1264,18 @@ class BetInterface {
 
 // Global instance
 window.BetInterface = BetInterface;
+
+// Debug function to manually show balance UI
+window.showBalanceUI = function() {
+    console.log('🧪 Manually showing balance UI...');
+    if (window.betInterface) {
+        window.betInterface.createBalanceUI();
+        window.betInterface.updateBalanceDisplay();
+        console.log('✅ Balance UI created!');
+    } else {
+        console.error('❌ betInterface not found');
+    }
+};
 
 // Initialize when DOM is ready
 if (document.readyState === 'loading') {

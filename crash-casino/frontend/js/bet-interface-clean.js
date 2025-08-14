@@ -51,19 +51,16 @@ class BetInterface {
 
         // Listen for socket events
         if (window.crashGameClient?.socket) {
+            // Handle both success events with comprehensive processing
             window.crashGameClient.socket.on('balanceWinnings', (data) => {
-                console.log('🎉 Balance winnings received:', data);
-                this.addWinnings(data.winnings);
-                this.handleCashoutEvent(data);
+                console.log('💰 Balance winnings received from server:', data);
+                console.log('🎊 Triggering celebration for balance winnings');
+                this.handleSuccessfulCashout(data);
             });
 
             window.crashGameClient.socket.on('cashoutSuccess', (data) => {
                 console.log('💰 Cashout success received:', data);
-                this.handleSuccessfulCashout(data);
-            });
-            
-            window.crashGameClient.socket.on('balanceWinnings', (data) => {
-                console.log('💰 Balance winnings received from server:', data);
+                console.log('🎊 Triggering celebration for cashout success');
                 this.handleSuccessfulCashout(data);
             });
 
@@ -73,8 +70,9 @@ class BetInterface {
             });
 
             window.crashGameClient.socket.on('start_betting_phase', () => {
-                console.log('🧹 New round started, cleaning up old orders');
-                this.cleanupOldOrders();
+                console.log('🧹 New round started, clearing active orders for fresh start');
+                this.clearActiveOrders();
+                this.updateOrdersDisplay();
             });
 
             // Listen for errors
@@ -1251,6 +1249,18 @@ class BetInterface {
                 });
             }
         }
+    }
+
+    /**
+     * 🧹 Clear active orders for new round
+     */
+    clearActiveOrders() {
+        console.log(`🧹 Clearing ${this.activeOrders.size} active orders for new round`);
+        
+        // Clear all active orders
+        this.activeOrders.clear();
+        
+        console.log('✅ Active orders cleared for fresh round');
     }
 
     /**

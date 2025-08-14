@@ -190,12 +190,22 @@ app.post('/admin/transfer', requireAdmin, async (req, res) => {
 })
 
 // Balance System API Routes
-const { BalanceAPI } = require('./crash-casino/backend/balance-api');
-const balanceAPI = new BalanceAPI(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+let balanceAPI;
+try {
+    const { BalanceAPI } = require('./crash-casino/backend/balance-api');
+    balanceAPI = new BalanceAPI(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+    console.log('✅ BalanceAPI initialized successfully');
+} catch (error) {
+    console.error('❌ Failed to initialize BalanceAPI:', error.message);
+    console.error('Stack:', error.stack);
+}
 
 // Get user balance
 app.get('/api/balance/:address', async (req, res) => {
     try {
+        if (!balanceAPI) {
+            return res.status(503).json({ error: 'Balance API not initialized' });
+        }
         const balance = await balanceAPI.getBalance(req.params.address);
         res.json({ balance });
     } catch (error) {
@@ -207,6 +217,9 @@ app.get('/api/balance/:address', async (req, res) => {
 // Place bet with balance
 app.post('/api/bet/balance', async (req, res) => {
     try {
+        if (!balanceAPI) {
+            return res.status(503).json({ error: 'Balance API not initialized' });
+        }
         const { playerAddress, amount } = req.body;
         const result = await balanceAPI.placeBetWithBalance(playerAddress, amount);
         res.json(result);
@@ -219,6 +232,9 @@ app.post('/api/bet/balance', async (req, res) => {
 // Check for new deposits
 app.get('/api/deposits/check/:address', async (req, res) => {
     try {
+        if (!balanceAPI) {
+            return res.status(503).json({ error: 'Balance API not initialized' });
+        }
         const newDeposits = await balanceAPI.checkNewDeposits(req.params.address);
         res.json({ newDeposits });
     } catch (error) {
@@ -230,6 +246,9 @@ app.get('/api/deposits/check/:address', async (req, res) => {
 // Process withdrawal
 app.post('/api/withdraw', async (req, res) => {
     try {
+        if (!balanceAPI) {
+            return res.status(503).json({ error: 'Balance API not initialized' });
+        }
         const { playerAddress, amount } = req.body;
         const walletIntegration = require('./crash-casino/backend/wallet-integration-abstract.js').getWalletIntegration();
         const result = await balanceAPI.processWithdrawal(playerAddress, amount, walletIntegration);

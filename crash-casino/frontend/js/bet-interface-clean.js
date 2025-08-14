@@ -531,10 +531,10 @@ class BetInterface {
                 
                 this.showNotification('📤 Transaction sent! Waiting for confirmation...', 'info');
                 
-                // Register deposit with backend for attribution
-                await this.registerDeposit(depositId, txHash, walletAddress, amount);
+                // Start monitoring the transaction
+                this.monitorPendingTransaction(txHash, depositId, walletAddress, amount);
                 
-                this.showNotification(`✅ Deposit successful! ${amount} ETH will be credited shortly.`, 'success');
+                this.showNotification(`🔄 Transaction submitted! Monitoring confirmation...`, 'info');
                 
             } else if (window.realWeb3Modal && window.realWeb3Modal.signer) {
                 // Fallback to direct signer method
@@ -550,10 +550,10 @@ class BetInterface {
                 const receipt = await tx.wait();
                 
                 if (receipt.status === 1) {
-                    // Register deposit with backend for attribution
-                    await this.registerDeposit(depositId, tx.hash, walletAddress, amount);
+                    // Start monitoring the transaction
+                    this.monitorPendingTransaction(tx.hash, depositId, walletAddress, amount);
                     
-                    this.showNotification(`✅ Deposit successful! ${amount} ETH will be credited shortly.`, 'success');
+                    this.showNotification(`🔄 Transaction confirmed! Processing deposit...`, 'info');
                 } else {
                     throw new Error('Transaction failed on blockchain');
                 }
@@ -573,6 +573,77 @@ class BetInterface {
     }
 
     /**
+     * 🔄 Monitor pending transaction and update balance when confirmed
+     */
+    async monitorPendingTransaction(txHash, depositId, walletAddress, amount) {
+        const startTime = Date.now();
+        const maxWaitTime = 5 * 60 * 1000; // 5 minutes max
+        let attempts = 0;
+        const maxAttempts = 60; // Check every 5 seconds for 5 minutes
+        
+        console.log(`🔄 Starting transaction monitoring for ${txHash}`);
+        
+        const checkTransaction = async () => {
+            attempts++;
+            const elapsed = Date.now() - startTime;
+            
+            try {
+                // Register with backend first (for attribution)
+                await this.registerDeposit(depositId, txHash, walletAddress, amount);
+                
+                // Check if deposit has been processed by indexer
+                const response = await fetch(`/api/deposits/check/${walletAddress}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // Look for our transaction in new deposits
+                    const ourDeposit = data.newDeposits?.find(dep => 
+                        dep.tx_hash?.toLowerCase() === txHash.toLowerCase()
+                    );
+                    
+                    if (ourDeposit) {
+                        console.log(`✅ Deposit confirmed by indexer:`, ourDeposit);
+                        this.showNotification(`✅ Deposit confirmed! ${amount} ETH credited to your balance.`, 'success');
+                        
+                        // Refresh balance
+                        await this.loadBalance();
+                        return true; // Stop monitoring
+                    }
+                }
+                
+                // Update status message periodically
+                if (attempts % 6 === 0) { // Every 30 seconds
+                    const minutes = Math.floor(elapsed / 60000);
+                    const seconds = Math.floor((elapsed % 60000) / 1000);
+                    this.showNotification(`⏳ Still processing... (${minutes}m ${seconds}s)`, 'info');
+                }
+                
+                // Continue monitoring if within time limit
+                if (elapsed < maxWaitTime && attempts < maxAttempts) {
+                    setTimeout(checkTransaction, 5000); // Check again in 5 seconds
+                } else {
+                    // Timeout - manual refresh needed
+                    this.showNotification(`⚠️ Deposit processing is taking longer than expected. Your transaction ${txHash.slice(0,10)}... is confirmed on-chain. Balance will update automatically.`, 'warning');
+                    console.warn(`🔄 Transaction monitoring timeout for ${txHash}`);
+                }
+                
+            } catch (error) {
+                console.error('Error monitoring transaction:', error);
+                
+                // Continue monitoring on error unless we've exceeded limits
+                if (elapsed < maxWaitTime && attempts < maxAttempts) {
+                    setTimeout(checkTransaction, 10000); // Retry in 10 seconds on error
+                } else {
+                    this.showNotification(`❌ Error monitoring deposit. Check your balance in a few minutes.`, 'error');
+                }
+            }
+        };
+        
+        // Start monitoring after a short delay
+        setTimeout(checkTransaction, 3000); // First check after 3 seconds
+    }
+
+    /**
      * 📝 Register deposit with backend for attribution
      */
     async registerDeposit(depositId, txHash, walletAddress, amount) {
@@ -589,10 +660,10 @@ class BetInterface {
             });
 
             if (!response.ok) {
-                console.warn('Failed to register deposit with backend');
+                console.warn('Failed to register deposit with backend - this is expected initially');
             }
         } catch (error) {
-            console.warn('Failed to register deposit:', error);
+            console.warn('Failed to register deposit (API may not be ready):', error.message);
         }
     }
 

@@ -5,6 +5,9 @@
  */
 
 const { ethers } = require('ethers');
+const { createWalletClient, http, parseEther } = require('viem');
+const { privateKeyToAccount } = require('viem/accounts');
+const { abstract } = require('../../src/lib/abstractChains'); // Assuming chain config is here
 const { getHouseWallet } = require('./house-wallet');
 const { config } = require('./config/abstract-config');
 const { createClient } = require('@supabase/supabase-js');
@@ -230,40 +233,54 @@ class AbstractWalletIntegration {
      */
     async processCashOut(playerId, roundId, multiplier, betAmount) {
         try {
-            const winAmount = ethers.parseEther((betAmount * multiplier).toString());
-            
-            // Find player address
-            const playerAddress = playerId; // In production, map from player ID
-            
-            // Process payout through house wallet
-            const receipt = await this.houseWallet.processPayout(
-                playerAddress,
-                winAmount,
-                roundId
-            );
-            
-            // Record payout
+            const winAmount = parseEther((betAmount * multiplier).toFixed(18)); // Convert to BigInt Wei
+            const playerAddress = playerId; // Assuming playerId is the actual wallet address
+
+            // Initialize Viem wallet client for sending transactions
+            const houseAccount = privateKeyToAccount(process.env.HOUSE_WALLET_PRIVATE_KEY);
+            const walletClient = createWalletClient({
+                account: houseAccount,
+                chain: abstract,
+                transport: http(abstract.rpcUrls.default.http[0]),
+            });
+
+            console.log(`💸 Processing payout: ${winAmount.toString()} wei (${(betAmount * multiplier).toFixed(4)} ETH) to ${playerAddress}`);
+
+            // Check house wallet balance (optional, but good practice)
+            const houseBalance = await walletClient.getBalance({ address: houseAccount.address });
+            if (houseBalance < winAmount) {
+                throw new Error('Insufficient house balance for payout');
+            }
+
+            // Send transaction using viem
+            const hash = await walletClient.sendTransaction({
+                to: playerAddress,
+                value: winAmount,
+            });
+
+            // Record payout in Supabase
             if (this.supabase) {
                 await this.supabase
-                    .from('crash_payouts')
+                    .from('payouts')
                     .insert({
                         round_id: roundId,
-                        player_address: playerAddress.toLowerCase(),
-                        bet_amount: ethers.parseEther(betAmount.toString()).toString(),
-                        multiplier,
-                        payout_amount: winAmount.toString(),
-                        tx_hash: receipt.hash,
-                        network: config.network,
-                        timestamp: new Date().toISOString()
+                        user_id: playerId,
+                        amount_wei: winAmount.toString(),
+                        dest_address: playerAddress.toLowerCase(),
+                        tx_hash: hash,
+                        status: 'sent',
+                        created_at: new Date().toISOString()
                     });
             }
-            
+
+            console.log(`📤 Payout transaction sent: ${hash}`);
+
             return {
                 success: true,
-                txHash: receipt.hash,
-                amount: ethers.formatEther(winAmount)
+                txHash: hash,
+                amount: (betAmount * multiplier).toFixed(4)
             };
-            
+
         } catch (error) {
             console.error('❌ Cash out failed:', error);
             return {

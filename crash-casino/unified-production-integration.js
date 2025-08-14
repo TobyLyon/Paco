@@ -172,6 +172,50 @@ class UnifiedPacoRockoProduction {
                 console.warn('RDS: failed to reveal round', e?.message)
             }
         });
+
+        // Handle successful cashouts and trigger payouts
+        this.crashEngine.on('playerCashedOut', async (data) => {
+            console.log(`💸 Player cashed out: ${data.playerId} @ ${data.multiplier}x`);
+            
+            // AUTOMATIC PAYOUT: Process blockchain transaction
+            if (this.walletIntegration && data.payout > 0) {
+                try {
+                    console.log(`💰 Processing automatic payout: ${data.payout.toFixed(4)} ETH to ${data.playerId}`);
+                    
+                    const payoutResult = await this.walletIntegration.processCashOut(
+                        data.playerId,        // Player address
+                        data.roundId,         // Round ID
+                        data.multiplier,      // Cashout multiplier
+                        data.betAmount        // Original bet amount
+                    );
+                    
+                    if (payoutResult.success) {
+                        console.log(`✅ Automatic payout successful: ${payoutResult.txHash}`);
+                        
+                        // Notify player of successful payout
+                        this.io.emit('payoutSuccess', {
+                            roundId: data.roundId,
+                            playerId: data.playerId,
+                            payout: data.payout,
+                            txHash: payoutResult.txHash,
+                            multiplier: data.multiplier
+                        });
+                    } else {
+                        console.error(`❌ Automatic payout failed: ${payoutResult.error}`);
+                        
+                        // Notify player of payout failure
+                        this.io.emit('payoutFailed', {
+                            roundId: data.roundId,
+                            playerId: data.playerId,
+                            error: payoutResult.error
+                        });
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ Payout processing error:', error);
+                }
+            }
+        });
         
         console.log('🎧 Crash engine event listeners configured');
     }

@@ -286,6 +286,27 @@ class UnifiedCrashEngine extends EventEmitter {
             bettor.b_bet_live = false;
             
             this.io.emit('receive_live_betting_table', JSON.stringify(this.live_bettors_table));
+            
+            // Emit cashout event for payout processing
+            const payout = bettor.bet_amount * currentMultiplier;
+            this.emit('playerCashedOut', {
+                roundId: this.current_round_id,
+                playerId: playerId,
+                username: bettor.the_username,
+                multiplier: currentMultiplier,
+                payout: payout,
+                betAmount: bettor.bet_amount
+            });
+            
+            console.log(`💰 Player ${bettor.the_username} cashed out at ${currentMultiplier}x for ${payout.toFixed(4)} ETH`);
+            
+            return {
+                success: true,
+                multiplier: currentMultiplier,
+                payout: payout,
+                profit: bettor.profit,
+                betAmount: bettor.bet_amount
+            };
         }
         
         console.log(`🏃 Manual cashout: ${playerId} @ ${currentMultiplier}x`);

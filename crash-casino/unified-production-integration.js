@@ -518,8 +518,38 @@ class UnifiedPacoRockoProduction {
             currentMultiplier
         );
         
-        // The crashEngine.processCashout now emits 'playerCashedOut' which triggers automatic payout
-        // So we don't need to manually call payout here anymore
+        // Handle payout based on bet type
+        if (cashoutResult && cashoutResult.payout > 0) {
+            // Check if this is a balance-based bet (no blockchain payout needed)
+            const isBalanceBet = true; // For now, assume all are balance bets
+            
+            if (isBalanceBet) {
+                // For balance bets, add winnings to user balance instead of blockchain payout
+                console.log(`💰 Processing balance-based cashout: ${cashoutResult.payout.toFixed(4)} ETH`);
+                
+                // Add winnings to balance via balance API
+                if (this.balanceAPI) {
+                    try {
+                        await this.balanceAPI.addWinnings(playerId, cashoutResult.payout);
+                        console.log(`✅ Balance updated with cashout winnings: ${cashoutResult.payout.toFixed(4)} ETH`);
+                        
+                        // Emit balance-specific event
+                        socket.emit('balanceWinnings', {
+                            playerId: playerId,
+                            multiplier: currentMultiplier,
+                            payout: cashoutResult.payout,
+                            winnings: cashoutResult.payout
+                        });
+                    } catch (error) {
+                        console.error('❌ Failed to update balance with winnings:', error);
+                        throw error;
+                    }
+                }
+            } else {
+                // For blockchain bets, the crashEngine.processCashout emits 'playerCashedOut' 
+                // which triggers automatic blockchain payout
+            }
+        }
         
         socket.emit('cashoutSuccess', {
             multiplier: currentMultiplier,

@@ -684,9 +684,11 @@ class CrashGameClient {
             if (cashOutBtn) {
                 cashOutBtn.style.display = 'block';
                 console.log('💰 Cash out button shown - round started with active bet');
+                console.log('🎯 Player bet details:', this.playerBet);
             }
         } else {
             console.log('🚫 No active bet for cash out button');
+            console.log('🔍 Current playerBet state:', this.playerBet);
         }
         
         // Hide countdown timer since round started

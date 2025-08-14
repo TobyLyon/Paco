@@ -1,0 +1,8 @@
+[33mcommit b05d592bea64124abc66b4d6cc98aa93023d285b[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: PacoDevTeam <dev@pacothechihen.com>
+Date:   Wed Aug 13 23:16:22 2025 -0700
+
+    full deposit fix
+
+deploy-fix.ps1
+hell -c git add .; git commit -m 'Fix balance API 404 errors - add routes to unified production'; git push

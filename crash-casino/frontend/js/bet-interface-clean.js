@@ -57,6 +57,31 @@ class BetInterface {
                 this.handleCashoutEvent(data);
             });
 
+            window.crashGameClient.socket.on('cashoutSuccess', (data) => {
+                console.log('💰 Cashout success received:', data);
+                
+                // Clear player bet state in crash client
+                if (window.crashGameClient.playerBet) {
+                    window.crashGameClient.playerBet.cashedOut = true;
+                    window.crashGameClient.playerBet.multiplier = data.multiplier;
+                    window.crashGameClient.playerBet.payout = data.payout;
+                    console.log('✅ Player bet marked as cashed out');
+                }
+                
+                // Add winnings to balance
+                const winnings = data.payout || (data.multiplier * (this.activeOrders.get('current')?.amount || 0));
+                this.addWinnings(winnings);
+                
+                // Update orders to show cashed out
+                this.handleCashoutEvent({
+                    playerId: window.ethereum?.selectedAddress || window.realWeb3Modal?.address,
+                    multiplier: data.multiplier,
+                    payout: winnings
+                });
+                
+                this.showNotification(`🎉 Cashed out at ${data.multiplier.toFixed(2)}x for ${winnings.toFixed(4)} ETH!`, 'success');
+            });
+
             window.crashGameClient.socket.on('stop_multiplier_count', (data) => {
                 console.log('💥 Round crashed:', data);
                 this.handleCrashEvent({ crashPoint: parseFloat(data) });
@@ -65,6 +90,12 @@ class BetInterface {
             window.crashGameClient.socket.on('start_betting_phase', () => {
                 console.log('🧹 New round started, cleaning up old orders');
                 this.cleanupOldOrders();
+            });
+
+            // Listen for errors
+            window.crashGameClient.socket.on('error', (data) => {
+                console.error('❌ Socket error:', data);
+                this.showNotification(`❌ Error: ${data.message}`, 'error');
             });
         }
     }
@@ -233,13 +264,43 @@ class BetInterface {
             // Update bet status in orders to active
             this.updateBetInOrders(betId, { status: 'active' });
             
-            // Emit bet event for crash client
-            if (window.crashGameClient && window.crashGameClient.socket) {
-                window.crashGameClient.socket.emit('place_bet', {
-                    betAmount: amount,
+            // CRITICAL: Set playerBet state in crash client for cashout functionality
+            if (window.crashGameClient) {
+                window.crashGameClient.playerBet = {
+                    amount: amount,
+                    cashedOut: false,
                     playerAddress: walletAddress,
-                    useBalance: true
-                });
+                    useBalance: true,
+                    timestamp: Date.now()
+                };
+                console.log('✅ Player bet state set in crash client for cashout functionality');
+                
+                // Show cashout button if round is running
+                if (window.crashGameClient.gameState === 'running') {
+                    const cashOutBtn = document.getElementById('cashOutBtn');
+                    if (cashOutBtn) {
+                        cashOutBtn.style.display = 'block';
+                        console.log('💰 Cash out button shown - balance bet placed during running round');
+                    }
+                }
+                
+                // Emit bet event for server tracking
+                if (window.crashGameClient.socket) {
+                    console.log('🎯 Emitting place_bet event to server for balance bet');
+                    window.crashGameClient.socket.emit('place_bet', {
+                        betAmount: amount,
+                        playerAddress: walletAddress,
+                        useBalance: true,
+                        autoPayoutMultiplier: 2.0 // Default auto-cashout at 2x
+                    });
+                    console.log('✅ place_bet event emitted with data:', {
+                        betAmount: amount,
+                        playerAddress: walletAddress,
+                        useBalance: true
+                    });
+                } else {
+                    console.error('❌ No socket connection available for bet registration');
+                }
             }
             
             return result;
@@ -261,7 +322,15 @@ class BetInterface {
      */
     cashOut() {
         if (window.crashGameClient) {
+            console.log('🏃 Initiating cashout via crash game client...');
             window.crashGameClient.cashOut();
+            
+            // Immediately hide the cashout button to prevent double-clicks
+            const cashOutBtn = document.getElementById('cashOutBtn');
+            if (cashOutBtn) {
+                cashOutBtn.style.display = 'none';
+                console.log('🚫 Cashout button hidden after click');
+            }
         } else {
             this.showNotification('❌ Cannot cash out - game not connected', 'error');
         }

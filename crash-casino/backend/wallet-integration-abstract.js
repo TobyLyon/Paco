@@ -251,7 +251,9 @@ class AbstractWalletIntegration {
         }
 
             // Initialize Viem wallet client for sending transactions
-            const hotAccount = privateKeyToAccount(hotWalletKey);
+            // Ensure private key has 0x prefix for viem compatibility
+            const formattedHotKey = hotWalletKey.startsWith('0x') ? hotWalletKey : `0x${hotWalletKey}`;
+            const hotAccount = privateKeyToAccount(formattedHotKey);
             const walletClient = createWalletClient({
                 account: hotAccount,
                 chain: abstract,

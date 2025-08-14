@@ -184,7 +184,9 @@ class BalanceAPI {
         }
 
         // Initialize house wallet client for sending payouts
-        const houseAccount = privateKeyToAccount(houseWalletKey);
+        // Ensure private key has 0x prefix for viem compatibility
+        const formattedPrivateKey = houseWalletKey.startsWith('0x') ? houseWalletKey : `0x${houseWalletKey}`;
+        const houseAccount = privateKeyToAccount(formattedPrivateKey);
         const walletClient = createWalletClient({
             account: houseAccount,
             chain: ABSTRACT_CHAIN,

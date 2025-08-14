@@ -954,8 +954,12 @@ class BetInterface {
         // Check if balance section already exists
         if (document.getElementById('balanceSection')) return;
 
-        const betInterface = document.querySelector('.bet-interface');
-        if (!betInterface) return;
+        const betInterface = document.querySelector('.betting-panel');
+        if (!betInterface) {
+            console.error('❌ .betting-panel not found! Available elements:', document.querySelectorAll('[class*="bet"]'));
+            return;
+        }
+        console.log('✅ Found betting panel:', betInterface);
 
         const balanceHTML = `
             <div id="balanceSection" class="balance-section">
@@ -985,11 +989,13 @@ class BetInterface {
             </div>
         `;
 
-        // Insert balance section before bet controls
-        const betControls = betInterface.querySelector('.bet-controls');
-        if (betControls) {
-            betControls.insertAdjacentHTML('beforebegin', balanceHTML);
+        // Insert balance section at the top of betting panel
+        const betInputSection = betInterface.querySelector('.bet-input-section');
+        if (betInputSection) {
+            console.log('✅ Inserting balance UI before bet input section');
+            betInputSection.insertAdjacentHTML('beforebegin', balanceHTML);
         } else {
+            console.log('⚠️ .bet-input-section not found, inserting at beginning of betting panel');
             betInterface.insertAdjacentHTML('afterbegin', balanceHTML);
         }
 

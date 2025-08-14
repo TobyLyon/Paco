@@ -61,6 +61,18 @@ app.get('/health', (req, res) => {
     });
 });
 
+// Configuration endpoint for frontend
+app.get('/config', (req, res) => {
+    res.json({
+        trades: TRADES_ENABLED,
+        features: {
+            trades_enabled: TRADES_ENABLED
+        },
+        environment: process.env.NODE_ENV || 'development',
+        timestamp: new Date().toISOString()
+    });
+});
+
 // Provably fair proof endpoint
 app.get('/proof/:roundId', async (req, res) => {
     try {

@@ -16,7 +16,6 @@ class BetInterface {
         
         // Balance system
         this.userBalance = 0;
-        this.bettingMode = 'transaction'; // 'transaction' or 'balance'
         this.balanceInitialized = false;
         
         this.init();
@@ -174,32 +173,13 @@ class BetInterface {
             return;
         }
 
-        // Check betting mode and use appropriate method
-        if (this.balanceInitialized && this.bettingMode === 'balance') {
-            return await this.placeBetWithBalance(this.betAmount);
-        }
-
-        // Check if crash client is available and connected for transaction betting
-        if (!window.crashGameClient) {
-            this.showNotification('❌ Betting system not initialized', 'error');
-            return;
-        }
-        
-        if (!window.crashGameClient.isConnected) {
-            this.showNotification('❌ Not connected to betting server - check connection status', 'error');
-            console.log('🔍 CrashGameClient status:', {
-                exists: !!window.crashGameClient,
-                isConnected: window.crashGameClient?.isConnected,
-                gameState: window.crashGameClient?.gameState
-            });
+        // Only use balance betting
+        if (!this.balanceInitialized) {
+            this.showNotification('❌ Please deposit funds to your game balance first', 'error');
             return;
         }
 
-        // Check wallet connection
-        if (window.realWeb3Modal && !window.realWeb3Modal.isWalletConnected()) {
-            this.showNotification('❌ Please connect your wallet first', 'error');
-            return;
-        }
+        return await this.placeBetWithBalance(this.betAmount);
 
         // Prevent multiple simultaneous transactions
         if (this.isPlacingBet || this.currentTxId) {

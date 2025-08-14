@@ -21,11 +21,17 @@ function TradesLayout({ children, chainGuard }) {
 
   return (
     <div className="trades-layout">
+      {/* Chicken Decorations */}
+      <div className="trades-chicken-decoration">🐔</div>
+      <div className="trades-chicken-decoration">🥚</div>
+      <div className="trades-chicken-decoration">🌽</div>
+      <div className="trades-chicken-decoration">🐣</div>
+
       {/* Header */}
       <header className="trades-header">
         <nav className="trades-nav">
           <Link to="/trades" className="trades-logo">
-            🔄 PacoTrades
+            PacoTrades
           </Link>
           
           <ul className="trades-nav-links">
@@ -47,7 +53,7 @@ function TradesLayout({ children, chainGuard }) {
             </span>
             <div className="trades-chain-indicator">
               <span className={`trades-chain-badge ${chainGuard.isOnAbstract ? 'connected' : 'wrong-chain'}`}>
-                Abstract {chainGuard.isOnAbstract ? '✅' : '❌'}
+                {chainGuard.isOnAbstract ? '🟢 Abstract' : '🔴 Wrong Chain'}
               </span>
             </div>
           </div>
@@ -59,13 +65,13 @@ function TradesLayout({ children, chainGuard }) {
         {/* Chain Guard Warning */}
         {chainGuard.needsSwitch && (
           <div className="trades-chain-warning">
-            <h3>⚠️ Wrong Network</h3>
-            <p>Please switch to Abstract Mainnet to use PacoTrades</p>
+            <h3>🚨 Wrong Network Detected</h3>
+            <p>PacoTrades operates exclusively on Abstract Mainnet for maximum security and chicken-powered performance!</p>
             <button
               onClick={chainGuard.addOrSwitch}
               className="trades-button"
             >
-              Switch to Abstract
+              🔗 Switch to Abstract Mainnet
             </button>
           </div>
         )}
@@ -74,7 +80,10 @@ function TradesLayout({ children, chainGuard }) {
         {chainGuard.isOnAbstract ? children : (
           <div className="trades-loading">
             <div className="trades-spinner"></div>
-            <p>Waiting for Abstract Mainnet connection...</p>
+            <p>🐔 Waiting for Abstract Mainnet connection...</p>
+            <p style={{ fontSize: '0.875rem', opacity: 0.7, marginTop: '8px' }}>
+              The chickens are preparing your trading experience!
+            </p>
           </div>
         )}
       </main>

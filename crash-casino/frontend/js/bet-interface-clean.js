@@ -343,7 +343,7 @@ class BetInterface {
             console.log('🏦 Initializing balance system for:', walletAddress);
             
             // Load current balance
-            const response = await fetch(`/api/balance/${walletAddress}`);
+            const response = await fetch(`https://paco-x57j.onrender.com/api/balance/${walletAddress}`);
             if (response.ok) {
                 const data = await response.json();
                 this.userBalance = parseFloat(data.balance || 0);
@@ -640,7 +640,7 @@ class BetInterface {
                 await this.registerDeposit(depositId, txHash, walletAddress, amount);
                 
                 // Check if deposit has been processed by indexer
-                const response = await fetch(`/api/deposits/check/${walletAddress}`);
+                const response = await fetch(`https://paco-x57j.onrender.com/api/deposits/check/${walletAddress}`);
                 if (response.ok) {
                     const data = await response.json();
                     
@@ -696,7 +696,7 @@ class BetInterface {
      */
     async registerDeposit(depositId, txHash, walletAddress, amount) {
         try {
-            const response = await fetch('/api/deposit/register', {
+            const response = await fetch('https://paco-x57j.onrender.com/api/deposit/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -875,7 +875,7 @@ class BetInterface {
         // Check for deposits every 15 seconds for faster updates
         setInterval(async () => {
             try {
-                const response = await fetch(`/api/deposits/check/${walletAddress}`);
+                const response = await fetch(`https://paco-x57j.onrender.com/api/deposits/check/${walletAddress}`);
                 if (response.ok) {
                     const data = await response.json();
                     if (data.newDeposits && data.newDeposits.length > 0) {
@@ -889,7 +889,7 @@ class BetInterface {
                 }
                 
                 // Also refresh the balance from server to ensure accuracy
-                const balanceResponse = await fetch(`/api/balance/${walletAddress}`);
+                const balanceResponse = await fetch(`https://paco-x57j.onrender.com/api/balance/${walletAddress}`);
                 if (balanceResponse.ok) {
                     const balanceData = await balanceResponse.json();
                     const serverBalance = parseFloat(balanceData.balance || 0);
@@ -932,7 +932,7 @@ class BetInterface {
 
         try {
             console.log('🔄 Manually refreshing balance...');
-            const response = await fetch(`/api/balance/${walletAddress}`);
+            const response = await fetch(`https://paco-x57j.onrender.com/api/balance/${walletAddress}`);
             if (response.ok) {
                 const data = await response.json();
                 const serverBalance = parseFloat(data.balance || 0);

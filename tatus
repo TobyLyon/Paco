@@ -119,3 +119,8 @@
 [33mbbf90cc[m  MAJOR CLEANUP: Consolidate documentation and SQL schemas
 [33m482c76d[m Connect frontend to live Render backend
 [33mb5c601c[m Add backend server entry point for Render deployment
+[33mb319ea9[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m Fix cashout functionality for balance-based bets - Enable cashout button visibility and proper bet state tracking - Add balance-based cashout processing with winnings credit - Improve socket event handling for cashout success - Add UI feedback and error handling for cashouts
+[33m303686e[m fixed up deposits
+[33me82c85d[m Fix betting and withdrawal API endpoints - point to Render backend
+[33mf96fd3e[m Fix balance API endpoints - point frontend to correct Render backend URL
+[33md6288cd[m[33m ([m[1;31morigin/main[m[33m)[m docs: Add Paco Trades deployment guide

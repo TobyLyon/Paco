@@ -228,8 +228,12 @@ class UnifiedCrashEngine extends EventEmitter {
      * 💸 Place a bet for a player
      */
     async placeBet(playerId, playerName, betAmount, payoutMultiplier) {
-        if (!this.betting_phase) {
-            throw new Error('Not in betting phase');
+        // Allow 2-second grace period for transaction delays
+        const time_elapsed = (Date.now() - this.phase_start_time) / 1000.0;
+        const graceWindow = this.betting_phase || (this.game_phase && time_elapsed < 2);
+        
+        if (!graceWindow) {
+            throw new Error('Betting window closed');
         }
         
         if (this.active_player_id_list.includes(playerId)) {

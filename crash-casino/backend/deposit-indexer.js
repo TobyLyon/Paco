@@ -48,42 +48,68 @@ async function indexDeposits({ supabase, hotWalletAddress, minConfirmations = 1,
       console.log(`💰 Processing hot wallet deposit: ${amountETH.toFixed(6)} ETH from ${fromAddress} to ${toLower}`)
 
       // Check if already processed
-      const { data: existingDeposit } = await supabase
+      const { data: existingDeposit, error: checkError } = await supabase
         .from('balance_deposits')
-        .select('id')
+        .select('id, from_address, amount, status, created_at')
         .eq('tx_hash', txHash)
         .single()
       
       if (existingDeposit) {
         console.log(`⚠️ Deposit ${txHash} already processed, skipping`)
+        console.log(`📊 Existing deposit details:`, {
+          id: existingDeposit.id,
+          from_address: existingDeposit.from_address,
+          amount: existingDeposit.amount,
+          status: existingDeposit.status,
+          created_at: existingDeposit.created_at
+        })
+        continue
+      }
+      
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error(`❌ Error checking existing deposit:`, checkError)
         continue
       }
 
       // Get current balance for this user
       let currentBalance = 0
-      const { data: balanceData } = await supabase
+      const { data: balanceData, error: balanceError } = await supabase
         .from('user_balances')
         .select('balance')
         .eq('address', fromAddress)
         .single()
       
+      if (balanceError && balanceError.code !== 'PGRST116') {
+        console.error(`❌ Error fetching balance for ${fromAddress}:`, balanceError)
+        continue
+      }
+      
       if (balanceData) {
         currentBalance = parseFloat(balanceData.balance)
+        console.log(`💰 Current balance for ${fromAddress}: ${currentBalance.toFixed(6)} ETH`)
+      } else {
+        console.log(`💰 New user ${fromAddress}, starting with 0 balance`)
       }
 
       const newBalance = currentBalance + amountETH
+      console.log(`💰 Crediting: ${amountETH.toFixed(6)} ETH → New balance: ${newBalance.toFixed(6)} ETH`)
 
       // Update user balance
-      await supabase
+      const { error: balanceUpdateError } = await supabase
         .from('user_balances')
         .upsert({
           address: fromAddress,
           balance: newBalance,
           updated_at: new Date().toISOString()
         })
+        
+      if (balanceUpdateError) {
+        console.error(`❌ Failed to update balance for ${fromAddress}:`, balanceUpdateError)
+        continue
+      }
 
       // Record deposit in balance_deposits table
-      await supabase
+      const { error: depositError } = await supabase
         .from('balance_deposits')
         .insert({
           tx_hash: txHash,
@@ -94,8 +120,13 @@ async function indexDeposits({ supabase, hotWalletAddress, minConfirmations = 1,
           status: 'confirmed',
           created_at: new Date().toISOString()
         })
+        
+      if (depositError) {
+        console.error(`❌ Failed to record deposit:`, depositError)
+        continue
+      }
 
-      console.log(`✅ Deposit credited: ${fromAddress} +${amountETH} ETH (balance: ${currentBalance} → ${newBalance})`)
+      console.log(`✅ Deposit credited: ${fromAddress} +${amountETH.toFixed(6)} ETH (balance: ${currentBalance.toFixed(6)} → ${newBalance.toFixed(6)})`)
     }
     scanned++
   }

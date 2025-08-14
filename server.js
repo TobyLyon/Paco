@@ -192,12 +192,24 @@ app.post('/admin/transfer', requireAdmin, async (req, res) => {
 // Balance System API Routes
 let balanceAPI;
 try {
+    console.log('🔄 Attempting to initialize BalanceAPI...');
+    console.log('📁 Current working directory:', process.cwd());
+    console.log('🔍 Looking for balance-api at: ./crash-casino/backend/balance-api');
+    
     const { BalanceAPI } = require('./crash-casino/backend/balance-api');
-    balanceAPI = new BalanceAPI(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+    console.log('✅ BalanceAPI class loaded successfully');
+    
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    console.log('🔑 Supabase URL:', supabaseUrl ? 'SET' : 'MISSING');
+    console.log('🔑 Supabase Key:', supabaseKey ? 'SET' : 'MISSING');
+    
+    balanceAPI = new BalanceAPI(supabaseUrl, supabaseKey);
     console.log('✅ BalanceAPI initialized successfully');
 } catch (error) {
     console.error('❌ Failed to initialize BalanceAPI:', error.message);
-    console.error('Stack:', error.stack);
+    console.error('📍 Error stack:', error.stack);
+    console.error('🚨 Balance API routes will return 404 until this is fixed!');
 }
 
 // Get user balance
@@ -287,6 +299,7 @@ app.post('/api/deposit/register', async (req, res) => {
         res.status(400).json({ error: error.message });
     }
 });
+
 
 // Three-wallet monitoring endpoint
 app.get('/admin/wallet-status', requireAdmin, async (req, res) => {

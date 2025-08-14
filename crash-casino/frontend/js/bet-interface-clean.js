@@ -14,6 +14,9 @@ class BetInterface {
         this.userBalance = 0;
         this.balanceInitialized = false;
         
+        // Orders tracking
+        this.activeOrders = new Map(); // Track active orders
+        
         this.init();
     }
 
@@ -46,11 +49,22 @@ class BetInterface {
             await this.initializeBalance();
         });
 
-        // Listen for balance winnings from socket
+        // Listen for socket events
         if (window.crashGameClient?.socket) {
             window.crashGameClient.socket.on('balanceWinnings', (data) => {
                 console.log('🎉 Balance winnings received:', data);
                 this.addWinnings(data.winnings);
+                this.handleCashoutEvent(data);
+            });
+
+            window.crashGameClient.socket.on('stop_multiplier_count', (data) => {
+                console.log('💥 Round crashed:', data);
+                this.handleCrashEvent({ crashPoint: parseFloat(data) });
+            });
+
+            window.crashGameClient.socket.on('start_betting_phase', () => {
+                console.log('🧹 New round started, cleaning up old orders');
+                this.cleanupOldOrders();
             });
         }
     }
@@ -185,6 +199,20 @@ class BetInterface {
         this.userBalance -= amount;
         this.updateBalanceDisplay();
 
+        // Add bet to orders display immediately
+        const betId = `bet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const playerName = walletAddress ? `${walletAddress.slice(0,6)}...${walletAddress.slice(-4)}` : 'You';
+        
+        this.addBetToOrders({
+            id: betId,
+            player: playerName,
+            playerAddress: walletAddress,
+            amount: amount,
+            status: 'placing',
+            timestamp: Date.now(),
+            isYou: true
+        });
+
         try {
             const response = await fetch('/api/bet/balance', {
                 method: 'POST',
@@ -202,6 +230,9 @@ class BetInterface {
             const result = await response.json();
             console.log(`💰 Balance bet placed: ${amount} ETH (remaining: ${this.userBalance.toFixed(4)} ETH)`);
             
+            // Update bet status in orders to active
+            this.updateBetInOrders(betId, { status: 'active' });
+            
             // Emit bet event for crash client
             if (window.crashGameClient && window.crashGameClient.socket) {
                 window.crashGameClient.socket.emit('place_bet', {
@@ -217,6 +248,10 @@ class BetInterface {
             // Revert balance on error
             this.userBalance = originalBalance;
             this.updateBalanceDisplay();
+            
+            // Update bet status to failed
+            this.updateBetInOrders(betId, { status: 'failed', error: error.message });
+            
             throw error;
         }
     }
@@ -848,6 +883,131 @@ class BetInterface {
     onBalanceUpdate(newBalance) {
         this.userBalance = newBalance;
         this.updateBalanceDisplay();
+    }
+
+    /**
+     * 🍗 Add bet to orders display
+     */
+    addBetToOrders(order) {
+        this.activeOrders.set(order.id, order);
+        this.updateOrdersDisplay();
+    }
+
+    /**
+     * 🔄 Update existing bet in orders
+     */
+    updateBetInOrders(betId, updates) {
+        const order = this.activeOrders.get(betId);
+        if (order) {
+            Object.assign(order, updates);
+            this.updateOrdersDisplay();
+        }
+    }
+
+    /**
+     * 📊 Update the orders display UI
+     */
+    updateOrdersDisplay() {
+        const ordersFeed = document.getElementById('ordersFeed');
+        if (!ordersFeed) return;
+
+        const orders = Array.from(this.activeOrders.values())
+            .sort((a, b) => b.timestamp - a.timestamp) // Most recent first
+            .slice(0, 10); // Show last 10 orders
+
+        if (orders.length === 0) {
+            ordersFeed.innerHTML = `
+                <div class="orders-empty-state">
+                    <div class="orders-empty-content">
+                        <span class="orders-empty-icon">🍗</span>
+                        <div class="orders-empty-message">No orders yet</div>
+                        <div class="orders-empty-hint">Waiting for players to place bets...</div>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        ordersFeed.innerHTML = orders.map(order => {
+            const statusDisplay = this.getOrderStatusDisplay(order);
+            const playerClass = order.isYou ? 'order-you' : '';
+            
+            return `
+                <div class="order-item ${order.status} ${playerClass}" data-order-id="${order.id}">
+                    <span class="order-player">${order.player}</span>
+                    <span class="order-amount">${order.amount.toFixed(4)} ETH</span>
+                    <span class="order-status">${statusDisplay}</span>
+                </div>
+            `;
+        }).join('');
+    }
+
+    /**
+     * 🎯 Get display text for order status
+     */
+    getOrderStatusDisplay(order) {
+        switch (order.status) {
+            case 'placing':
+                return '⏳ Placing...';
+            case 'active':
+                return '🎯 Active';
+            case 'cashed_out':
+                return `💰 ${order.multiplier?.toFixed(2)}x`;
+            case 'crashed':
+                return '💥 Crashed';
+            case 'failed':
+                return '❌ Failed';
+            default:
+                return '⏳ Pending';
+        }
+    }
+
+    /**
+     * 💰 Handle cashout events from socket
+     */
+    handleCashoutEvent(data) {
+        // Find order by player address and update
+        for (const [orderId, order] of this.activeOrders) {
+            if (order.playerAddress === data.playerId && order.status === 'active') {
+                this.updateBetInOrders(orderId, {
+                    status: 'cashed_out',
+                    multiplier: data.multiplier,
+                    payout: data.payout
+                });
+                break;
+            }
+        }
+    }
+
+    /**
+     * 💥 Handle crash events from socket
+     */
+    handleCrashEvent(data) {
+        // Mark all active orders as crashed
+        for (const [orderId, order] of this.activeOrders) {
+            if (order.status === 'active') {
+                this.updateBetInOrders(orderId, {
+                    status: 'crashed',
+                    crashPoint: data.crashPoint
+                });
+            }
+        }
+    }
+
+    /**
+     * 🧹 Clear old orders (keep last 50)
+     */
+    cleanupOldOrders() {
+        const orders = Array.from(this.activeOrders.entries())
+            .sort((a, b) => b[1].timestamp - a[1].timestamp);
+        
+        // Keep only the 50 most recent
+        if (orders.length > 50) {
+            const toRemove = orders.slice(50);
+            toRemove.forEach(([orderId]) => {
+                this.activeOrders.delete(orderId);
+            });
+        }
     }
 }
 

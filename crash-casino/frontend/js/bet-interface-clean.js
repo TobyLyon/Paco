@@ -419,7 +419,7 @@ class BetInterface {
      */
     showDepositModal() {
         const walletAddress = window.ethereum?.selectedAddress || window.realWeb3Modal?.address;
-        const houseWallet = '0x1f8B1c4D05eF17Ebaa1E572426110146691e6C5a';
+        const houseWallet = '0x1f8B1c4D05eF17Ebaa1E572426110146691e6C5a'; // Cold storage - deposits only
         const memo = walletAddress.slice(-8);
 
         const modalHTML = `

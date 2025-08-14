@@ -188,10 +188,10 @@ class BalanceAPI {
         this.balanceCache.set(address, newBalance);
 
         try {
-            // Send ETH using wallet integration
+            // Send ETH using hot wallet (not house wallet)
             const result = await walletIntegration.processCashOut(
                 address, 
-                Date.now(), // roundId
+                `withdrawal_${Date.now()}`, // roundId
                 1.0, // multiplier (1x for withdrawal)
                 amount // betAmount
             );

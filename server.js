@@ -149,7 +149,29 @@ app.post('/admin/limits', requireAdmin, async (req, res) => {
 app.get('/admin/hot', requireAdmin, async (req, res) => {
     try {
         const info = await crashCasino?.walletIntegration?.getHouseInfo()
-        res.json(info || {})
+        
+        // Add hot wallet balance check
+        const { createPublicClient, http } = require('viem');
+        const { abstract } = require('./src/lib/abstractChains');
+        
+        const publicClient = createPublicClient({
+            chain: abstract,
+            transport: http(abstract.rpcUrls.default.http[0]),
+        });
+        
+        const hotWalletAddress = process.env.HOT_WALLET_ADDRESS || process.env.HOUSE_WALLET_ADDRESS;
+        const hotBalance = await publicClient.getBalance({ address: hotWalletAddress });
+        
+        const response = {
+            ...info,
+            hotWallet: {
+                address: hotWalletAddress,
+                balance: hotBalance.toString(),
+                balanceETH: (Number(hotBalance) / 1e18).toFixed(6)
+            }
+        };
+        
+        res.json(response);
     } catch (e) {
         res.status(500).json({ error: e?.message })
     }

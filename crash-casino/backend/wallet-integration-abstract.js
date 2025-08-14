@@ -236,20 +236,27 @@ class AbstractWalletIntegration {
             const winAmount = parseEther((betAmount * multiplier).toFixed(18)); // Convert to BigInt Wei
             const playerAddress = playerId; // Assuming playerId is the actual wallet address
 
+            // Use HOT WALLET for payouts (not house wallet)
+            const hotWalletKey = process.env.HOT_WALLET_PRIVATE_KEY || process.env.HOUSE_WALLET_PRIVATE_KEY;
+            if (!hotWalletKey) {
+                throw new Error('Hot wallet private key not configured');
+            }
+
             // Initialize Viem wallet client for sending transactions
-            const houseAccount = privateKeyToAccount(process.env.HOUSE_WALLET_PRIVATE_KEY);
+            const hotAccount = privateKeyToAccount(hotWalletKey);
             const walletClient = createWalletClient({
-                account: houseAccount,
+                account: hotAccount,
                 chain: abstract,
                 transport: http(abstract.rpcUrls.default.http[0]),
             });
 
             console.log(`💸 Processing payout: ${winAmount.toString()} wei (${(betAmount * multiplier).toFixed(4)} ETH) to ${playerAddress}`);
 
-            // Check house wallet balance (optional, but good practice)
-            const houseBalance = await walletClient.getBalance({ address: houseAccount.address });
-            if (houseBalance < winAmount) {
-                throw new Error('Insufficient house balance for payout');
+            // Check hot wallet balance (critical for payouts)
+            const hotBalance = await walletClient.getBalance({ address: hotAccount.address });
+            if (hotBalance < winAmount) {
+                console.error(`🚨 Insufficient hot wallet balance! Need: ${winAmount.toString()}, Have: ${hotBalance.toString()}`);
+                throw new Error('Insufficient hot wallet balance for payout - please fund hot wallet');
             }
 
             // Send transaction using viem

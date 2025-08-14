@@ -347,16 +347,21 @@ class BetInterface {
             if (response.ok) {
                 const data = await response.json();
                 this.userBalance = parseFloat(data.balance || 0);
-                console.log(`💰 Loaded balance: ${this.userBalance} ETH`);
+                console.log(`💰 Loaded game balance: ${this.userBalance} ETH`);
             } else {
                 this.userBalance = 0;
-                console.log('💰 No existing balance found, starting with 0');
+                console.log('💰 No existing game balance found, starting with 0');
             }
 
             this.balanceInitialized = true;
             this.updateBalanceDisplay();
             this.createBalanceUI();
             this.startBalanceMonitoring();
+            
+            // Show notification if user has game balance
+            if (this.userBalance > 0) {
+                this.showNotification(`💰 Game balance loaded: ${this.userBalance.toFixed(4)} ETH`, 'success');
+            }
             
         } catch (error) {
             console.error('❌ Failed to initialize balance:', error);
@@ -401,6 +406,7 @@ class BetInterface {
                 <div class="balance-header">
                     <h3>💰 Game Balance</h3>
                     <div id="userBalance" class="balance-amount">${this.userBalance.toFixed(4)} ETH</div>
+                    <button id="refreshBalanceBtn" class="refresh-balance-btn" title="Refresh balance">🔄</button>
                 </div>
                 
                 <div class="balance-actions">
@@ -410,7 +416,7 @@ class BetInterface {
                 
                 <div class="balance-info">
                     <div class="balance-mode-info">
-                        ⚡ Instant betting from balance
+                        ⚡ Instant betting from balance (separate from wallet balance)
                     </div>
                 </div>
             </div>
@@ -445,6 +451,13 @@ class BetInterface {
         if (withdrawBtn) {
             withdrawBtn.addEventListener('click', () => {
                 this.showWithdrawModal();
+            });
+        }
+
+        const refreshBalanceBtn = document.getElementById('refreshBalanceBtn');
+        if (refreshBalanceBtn) {
+            refreshBalanceBtn.addEventListener('click', async () => {
+                await this.refreshBalance();
             });
         }
     }
@@ -857,24 +870,44 @@ class BetInterface {
         const walletAddress = window.ethereum?.selectedAddress || window.realWeb3Modal?.address;
         if (!walletAddress) return;
 
-        // Check for deposits every 30 seconds
+        console.log('📊 Starting balance monitoring for:', walletAddress);
+
+        // Check for deposits every 15 seconds for faster updates
         setInterval(async () => {
             try {
                 const response = await fetch(`/api/deposits/check/${walletAddress}`);
                 if (response.ok) {
                     const data = await response.json();
                     if (data.newDeposits && data.newDeposits.length > 0) {
+                        console.log(`💰 Found ${data.newDeposits.length} new deposits:`, data.newDeposits);
                         for (const deposit of data.newDeposits) {
                             this.userBalance += parseFloat(deposit.amount);
-                            this.showNotification(`💰 Deposit confirmed: ${deposit.amount} ETH!`, 'success');
+                            this.showNotification(`💰 Deposit confirmed: ${deposit.amount} ETH! New balance: ${this.userBalance.toFixed(4)} ETH`, 'success');
                         }
                         this.updateBalanceDisplay();
                     }
                 }
+                
+                // Also refresh the balance from server to ensure accuracy
+                const balanceResponse = await fetch(`/api/balance/${walletAddress}`);
+                if (balanceResponse.ok) {
+                    const balanceData = await balanceResponse.json();
+                    const serverBalance = parseFloat(balanceData.balance || 0);
+                    
+                    // If server balance differs from local, sync it
+                    if (Math.abs(serverBalance - this.userBalance) > 0.0001) {
+                        console.log(`🔄 Syncing balance: ${this.userBalance.toFixed(4)} → ${serverBalance.toFixed(4)} ETH`);
+                        this.userBalance = serverBalance;
+                        this.updateBalanceDisplay();
+                    }
+                }
+                
             } catch (error) {
                 console.warn('Could not check for deposits:', error);
             }
-        }, 30000);
+        }, 15000); // Check every 15 seconds
+        
+        console.log('📊 Balance monitoring started (15s interval)');
     }
 
     /**
@@ -883,6 +916,45 @@ class BetInterface {
     onBalanceUpdate(newBalance) {
         this.userBalance = newBalance;
         this.updateBalanceDisplay();
+    }
+
+    /**
+     * 🔄 Manually refresh balance from server
+     */
+    async refreshBalance() {
+        const walletAddress = window.ethereum?.selectedAddress || window.realWeb3Modal?.address;
+        if (!walletAddress) return;
+
+        const refreshBtn = document.getElementById('refreshBalanceBtn');
+        if (refreshBtn) {
+            refreshBtn.style.animation = 'spin 1s linear infinite';
+        }
+
+        try {
+            console.log('🔄 Manually refreshing balance...');
+            const response = await fetch(`/api/balance/${walletAddress}`);
+            if (response.ok) {
+                const data = await response.json();
+                const serverBalance = parseFloat(data.balance || 0);
+                
+                if (Math.abs(serverBalance - this.userBalance) > 0.0001) {
+                    this.showNotification(`🔄 Balance updated: ${this.userBalance.toFixed(4)} → ${serverBalance.toFixed(4)} ETH`, 'info');
+                }
+                
+                this.userBalance = serverBalance;
+                this.updateBalanceDisplay();
+                console.log(`🔄 Balance refreshed: ${this.userBalance.toFixed(4)} ETH`);
+            }
+        } catch (error) {
+            console.error('❌ Failed to refresh balance:', error);
+            this.showNotification('❌ Failed to refresh balance', 'error');
+        } finally {
+            if (refreshBtn) {
+                setTimeout(() => {
+                    refreshBtn.style.animation = '';
+                }, 500);
+            }
+        }
     }
 
     /**
@@ -1034,3 +1106,4 @@ if (document.readyState === 'loading') {
 } else {
     window.betInterface = new BetInterface();
 }
+

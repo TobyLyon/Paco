@@ -13,6 +13,7 @@ class CrashGameClient {
         this.currentMultiplier = 1.0;
         this.playerBet = null;
         this.roundHistory = [];
+        this.queuedBets = []; // Queue for bets placed during non-betting phases
         
         // PURE CLIENT MODE: Always disable server multiplier updates for smooth gameplay
         this.disableMultiplierUpdates = true; // Server only handles start/stop, client handles display
@@ -619,6 +620,11 @@ class CrashGameClient {
             this.playerBet = null;
         }
         
+        // Process any queued bets
+        setTimeout(() => {
+            this.processQueuedBets();
+        }, 1000); // Wait 1 second for UI to update
+        
         // Hide cash out button for new round
         const cashOutBtn = document.getElementById('cashOutBtn');
         if (cashOutBtn) {
@@ -874,7 +880,7 @@ class CrashGameClient {
             return false;
         }
 
-        // PRODUCTION FIX: Use local game state for betting validation
+        // QUEUE SYSTEM: Allow betting anytime, queue for next round if not in betting phase
         if (this.disableMultiplierUpdates && window.liveGameSystem) {
             const localGameState = window.liveGameSystem.gameState;
             const gameMultiplier = window.liveGameSystem.currentMultiplier || 1.0;
@@ -882,17 +888,12 @@ class CrashGameClient {
             
             if (localGameState === 'betting') {
                 console.log(`✅ Bet allowed - Local game in betting phase`);
-            } else if (localGameState === 'running' && gameMultiplier < 1.2) {
-                // Allow "late betting" if round just started (< 1.2x multiplier)
-                console.log(`✅ Late bet allowed - Round just started (${gameMultiplier}x)`);
-            } else if (localGameState === 'running' && gameMultiplier >= 1.2) {
-                this.showError(`Too late to bet - round is at ${gameMultiplier.toFixed(2)}x`);
-                console.log(`🚫 Bet rejected - Round too advanced (${gameMultiplier}x)`);
-                return false;
-            } else if (localGameState === 'crashed') {
-                this.showError(`Cannot bet now - round crashed`);
-                console.log(`🚫 Bet rejected - Local game crashed`);
-                return false;
+            } else if (localGameState === 'running' || localGameState === 'crashed') {
+                // Queue bet for next round instead of rejecting
+                this.showMessage(`🕐 Bet queued for next round (current: ${localGameState})`, 'info');
+                console.log(`🕐 Bet queued - Round ${localGameState}, will place on next betting phase`);
+                this.queueBet(amount);
+                return true; // Success but queued
             } else {
                 // If local state is unclear, allow betting as fallback
                 console.log(`⚠️ Local game state unclear (${localGameState}), allowing bet`);
@@ -1755,6 +1756,55 @@ class CrashGameClient {
      */
     showError(message) {
         this.showNotification(message, 'error');
+    }
+
+    showMessage(message, type = 'info') {
+        console.log(`💬 ${type.toUpperCase()}: ${message}`);
+        this.showNotification(message, type);
+    }
+
+    /**
+     * 🕐 Queue a bet for the next betting phase
+     */
+    queueBet(amount) {
+        this.queuedBets.push({
+            amount: amount,
+            timestamp: Date.now()
+        });
+        console.log(`🕐 Bet ${amount} ETH queued. Queue length: ${this.queuedBets.length}`);
+    }
+
+    /**
+     * 🚀 Process queued bets when betting phase starts
+     */
+    async processQueuedBets() {
+        if (this.queuedBets.length === 0) return;
+        
+        console.log(`🚀 Processing ${this.queuedBets.length} queued bets`);
+        
+        // Process the most recent bet (or you could process all of them)
+        const queuedBet = this.queuedBets.pop(); // Take the last bet
+        this.queuedBets = []; // Clear all queued bets
+        
+        this.showMessage(`🚀 Placing queued bet: ${queuedBet.amount} ETH`, 'info');
+        
+        // Place the bet immediately since we're now in betting phase
+        return await this.placeBetDirect(queuedBet.amount);
+    }
+
+    /**
+     * 💰 Place bet directly (used by queue processing)
+     */
+    async placeBetDirect(amount) {
+        // Bypass game state validation for queued bets
+        const originalDisableUpdates = this.disableMultiplierUpdates;
+        this.disableMultiplierUpdates = false;
+        
+        try {
+            return await this.placeBet(amount);
+        } finally {
+            this.disableMultiplierUpdates = originalDisableUpdates;
+        }
     }
 
     /**

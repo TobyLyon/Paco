@@ -244,13 +244,11 @@ class UnifiedCrashEngine extends EventEmitter {
             throw new Error('Player already has bet queued for next round');
         }
         
-        // SMART TIMING: Check current game phase
-        const time_elapsed = (Date.now() - this.phase_start_time) / 1000.0;
+        // STRICT TIMING: Only allow bets during betting phase
         const inBettingPhase = this.betting_phase;
-        const graceWindow = this.game_phase && time_elapsed < 5;
         
-        // If in betting phase or grace window, place bet immediately
-        if (inBettingPhase || graceWindow) {
+        // CRITICAL: No grace window - bets only allowed during betting phase
+        if (inBettingPhase) {
             return this.placeBetImmediate(playerId, playerName, betAmount, payoutMultiplier);
         }
         

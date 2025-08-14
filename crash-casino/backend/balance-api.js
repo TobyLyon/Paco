@@ -157,6 +157,68 @@ class BalanceAPI {
     }
 
     /**
+     * 🏦 Process balance payout - transfer ETH from house to hot wallet
+     */
+    async processBalancePayout(playerAddress, payoutAmount) {
+        const { createWalletClient, http, parseEther } = require('viem');
+        const { privateKeyToAccount } = require('viem/accounts');
+        
+        // Abstract chain config
+        const ABSTRACT_CHAIN = {
+            id: 2741,
+            name: 'Abstract',
+            rpcUrls: { 
+                default: { http: ['https://api.mainnet.abs.xyz'] } 
+            }
+        };
+
+        const houseWalletKey = process.env.HOUSE_WALLET_PRIVATE_KEY;
+        const hotWalletAddress = process.env.HOT_WALLET_ADDRESS;
+        
+        if (!houseWalletKey) {
+            throw new Error('HOUSE_WALLET_PRIVATE_KEY environment variable not configured');
+        }
+        
+        if (!hotWalletAddress) {
+            throw new Error('HOT_WALLET_ADDRESS environment variable not configured');
+        }
+
+        // Initialize house wallet client for sending payouts
+        const houseAccount = privateKeyToAccount(houseWalletKey);
+        const walletClient = createWalletClient({
+            account: houseAccount,
+            chain: ABSTRACT_CHAIN,
+            transport: http(ABSTRACT_CHAIN.rpcUrls.default.http[0]),
+        });
+
+        const payoutWei = parseEther(payoutAmount.toString());
+
+        // Check house wallet balance
+        const houseBalance = await walletClient.getBalance({ address: houseAccount.address });
+        if (houseBalance < payoutWei) {
+            throw new Error(`Insufficient house wallet balance for payout. Need: ${payoutAmount} ETH, Have: ${(Number(houseBalance) / 1e18).toFixed(6)} ETH`);
+        }
+
+        console.log(`🏦 Processing payout: ${payoutAmount} ETH from house wallet (${houseAccount.address}) to hot wallet (${hotWalletAddress})`);
+
+        // Send transaction from house wallet to hot wallet
+        const txHash = await walletClient.sendTransaction({
+            to: hotWalletAddress,
+            value: payoutWei,
+        });
+
+        console.log(`✅ Payout transfer successful: ${txHash}`);
+
+        return {
+            success: true,
+            txHash: txHash,
+            amount: payoutAmount,
+            from: houseAccount.address,
+            to: hotWalletAddress
+        };
+    }
+
+    /**
      * 🎉 Add winnings to balance
      */
     async addWinnings(playerAddress, amount) {

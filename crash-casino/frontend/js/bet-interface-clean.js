@@ -86,6 +86,19 @@ class BetInterface {
                 console.log('✅ Queued bet processed:', data);
                 this.showNotification(`✅ Queued bet placed: ${data.betInfo.bet_amount} ETH`, 'success', 2000);
                 this.updateQueuedOrderToActive(data.playerId, data.betInfo);
+                
+                // CRITICAL: Update crash client playerBet state for cashout functionality
+                if (window.crashGameClient && data.playerId === (window.ethereum?.selectedAddress || window.realWeb3Modal?.address)) {
+                    window.crashGameClient.playerBet = {
+                        amount: data.betInfo.bet_amount,
+                        cashedOut: false,
+                        playerAddress: data.playerId,
+                        useBalance: true,
+                        timestamp: Date.now(),
+                        fromQueue: true
+                    };
+                    console.log('✅ Updated crash client playerBet state from queued bet:', window.crashGameClient.playerBet);
+                }
             });
 
             window.crashGameClient.socket.on('queuedBetFailed', (data) => {

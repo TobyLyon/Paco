@@ -179,24 +179,32 @@ class UnifiedPacoRockoProduction {
                 const isBalanceBet = data.useBalance || false; // This will be passed from the bet system
                 
                 if (isBalanceBet) {
-                    // Add winnings to balance instead of blockchain payout
+                    // Add winnings to balance AND transfer actual ETH from house to hot wallet
                     try {
                         const { BalanceAPI } = require('./backend/balance-api');
                         const balanceAPI = new BalanceAPI(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
                         
+                        // CRITICAL: Transfer actual ETH from house wallet to hot wallet
+                        console.log(`🏦 Processing balance payout: transferring ${data.payout.toFixed(4)} ETH from house to hot wallet`);
+                        const payoutResult = await balanceAPI.processBalancePayout(data.playerId, data.payout);
+                        
+                        // Add winnings to database balance
                         await balanceAPI.addWinnings(data.playerId, data.payout);
                         console.log(`💰 Added ${data.payout.toFixed(4)} ETH to balance for ${data.playerId}`);
+                        console.log(`🏦 ETH transfer completed: ${payoutResult.txHash}`);
                         
                         // Notify player of balance update
                         this.io.emit('balanceWinnings', {
                             roundId: data.roundId,
                             playerId: data.playerId,
                             winnings: data.payout,
-                            multiplier: data.multiplier
+                            multiplier: data.multiplier,
+                            txHash: payoutResult.txHash
                         });
                         
                     } catch (error) {
-                        console.error('❌ Balance winnings error:', error);
+                        console.error('❌ Balance payout error:', error);
+                        console.error('❌ This means ETH was not transferred from house to hot wallet!');
                     }
                 } else {
                     // AUTOMATIC PAYOUT: Process blockchain transaction

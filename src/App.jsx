@@ -16,16 +16,37 @@ import useWallet from './hooks/useWallet'
 import useNFTOwnership from './hooks/useNFTOwnership'
 import useGameState from './hooks/useGameState'
 
-// Feature flags
-const TRADES_ENABLED = import.meta.env.VITE_TRADES_ENABLED === 'true'
-
 function App() {
   const [isGameReady, setIsGameReady] = useState(false)
   const [showGame, setShowGame] = useState(false)
+  const [tradesEnabled, setTradesEnabled] = useState(false)
+  const [configLoaded, setConfigLoaded] = useState(false)
   
   const { isConnected, address } = useWallet()
   const { hasAccess, isLoading: nftLoading } = useNFTOwnership(address)
   const { gameState, initializeGame } = useGameState()
+
+  // Load configuration from backend
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const response = await fetch('/config')
+        if (response.ok) {
+          const config = await response.json()
+          setTradesEnabled(config.trades === true)
+        } else {
+          // Fallback to environment variable if config endpoint fails
+          setTradesEnabled(import.meta.env.VITE_TRADES_ENABLED === 'true')
+        }
+      } catch (error) {
+        console.log('Config endpoint not available, using environment variable')
+        setTradesEnabled(import.meta.env.VITE_TRADES_ENABLED === 'true')
+      } finally {
+        setConfigLoaded(true)
+      }
+    }
+    loadConfig()
+  }, [])
 
   // Initialize game when wallet connects and has access
   useEffect(() => {
@@ -58,7 +79,7 @@ function App() {
           } />
 
           {/* Trades feature route (feature flagged) */}
-          {TRADES_ENABLED && (
+          {tradesEnabled && (
             <Route path="/trades/*" element={<TradesApp />} />
           )}
 

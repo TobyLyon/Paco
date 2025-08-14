@@ -5,7 +5,7 @@ class RiskScorer {
   constructor() {
     this.supabase = createClient(
       process.env.TRADES_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.TRADES_SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_KEY
+      process.env.TRADES_SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
     this.rpcUrl = process.env.TRADES_RPC_URL || 'https://api.mainnet.abs.xyz';

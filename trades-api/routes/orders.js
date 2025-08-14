@@ -6,7 +6,7 @@ const { ethers } = require('ethers');
 // Initialize Supabase client with service role key for server operations
 const supabase = createClient(
   process.env.TRADES_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.TRADES_SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_KEY
+  process.env.TRADES_SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
 // Risk scoring service

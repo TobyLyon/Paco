@@ -320,6 +320,21 @@ class CrashGameClient {
             console.log('🚀 SERVER: MULTIPLIER COUNT STARTED - STARTING VISUALS');
             console.log('🔄 TRANSITION: Betting countdown finished, game phase starting');
             this.gameState = 'running';
+            
+            // CRITICAL: Show cashout button if player has active bet
+            if (this.playerBet && !this.playerBet.cashedOut) {
+                const cashOutBtn = document.getElementById('cashOutBtn');
+                if (cashOutBtn) {
+                    cashOutBtn.style.display = 'block';
+                    console.log('💰 Cash out button shown - round started with active bet');
+                    console.log('🎯 Player bet details:', this.playerBet);
+                } else {
+                    console.error('❌ Cash out button element not found in DOM');
+                }
+            } else {
+                console.log('🚫 No active bet for cash out button');
+                console.log('🔍 Current playerBet state:', this.playerBet);
+            }
             this.roundStartTime = Date.now();
             this.currentMultiplier = 1.0;
             

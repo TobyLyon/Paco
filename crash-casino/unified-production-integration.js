@@ -443,6 +443,12 @@ class UnifiedPacoRockoProduction {
         // For wallet-based bets, store the player address for cashouts
         if (player_address) {
             player.lastBetAddress = player_address;
+            console.log(`🎯 BET DEBUG - Set lastBetAddress for socket ${socket.id}:`, player_address);
+            console.log(`🎯 BET DEBUG - Player state:`, {
+                authenticated: player.authenticated,
+                playerId: player.playerId,
+                lastBetAddress: player.lastBetAddress
+            });
         }
         
         // Allow bets from wallet users even if not formally authenticated
@@ -495,9 +501,28 @@ class UnifiedPacoRockoProduction {
     async handleCashout(socket) {
         const player = this.connectedPlayers.get(socket.id);
         
+        console.log('🔍 CASHOUT DEBUG - Player state:', {
+            socketId: socket.id,
+            hasPlayer: !!player,
+            playerData: player ? {
+                authenticated: player.authenticated,
+                playerId: player.playerId,
+                lastBetAddress: player.lastBetAddress
+            } : null,
+            connectedPlayersSize: this.connectedPlayers.size
+        });
+        
         // For wallet-based game, use the last bet address as player ID if not authenticated
-        if (!player || (!player.authenticated && !player.lastBetAddress)) {
-            throw new Error('No active player or bet found');
+        if (!player) {
+            console.error('❌ CASHOUT FAILED - No player found for socket');
+            console.error('💡 Available players:', Array.from(this.connectedPlayers.keys()));
+            throw new Error('Player not found - please refresh and try again');
+        }
+        
+        if (!player.authenticated && !player.lastBetAddress) {
+            console.error('❌ CASHOUT FAILED - Player has no active bet');
+            console.error('💡 Player state:', player);
+            throw new Error('No active bet found for cashout');
         }
         
         const playerId = player.authenticated ? player.playerId : player.lastBetAddress;

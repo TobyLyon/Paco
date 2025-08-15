@@ -36,21 +36,12 @@ class CrashGameClient {
         this.onCashOut = null;
         this.onError = null;
         
-        // Betting status manager
-        this.bettingStatusManager = null;
+
         
         this.init();
-        
-        // Initialize betting status manager
-        this.initBettingStatusManager();
     }
 
-    /**
-     * 🎯 Initialize betting status manager
-     */
-    initBettingStatusManager() {
-        this.bettingStatusManager = new BettingStatusManager();
-    }
+
 
     /**
      * 🚀 Start smooth interpolation using server data as anchor points
@@ -143,10 +134,7 @@ class CrashGameClient {
      * 🎨 Update gameplay UI components
      */
     updateGameplayUI(multiplier) {
-        // Update betting status panel multiplier
-        if (this.bettingStatusManager && this.gameState === 'running') {
-            this.bettingStatusManager.updateMultiplier(multiplier);
-        }
+
         
         // Update multiplier display
         if (window.multiplierDisplay) {
@@ -339,10 +327,7 @@ class CrashGameClient {
             console.log('🔄 TRANSITION: Betting countdown finished, game phase starting');
             this.gameState = 'running';
             
-            // Update betting status panel
-            if (this.bettingStatusManager) {
-                this.bettingStatusManager.setRunningPhase(1.0);
-            }
+
             
             // CRITICAL: Show cashout button if player has active bet
             this.checkAndShowCashoutButton();
@@ -420,10 +405,7 @@ class CrashGameClient {
             const crash = parseFloat(crashValue);
             this.currentMultiplier = crash;
             
-            // Update betting status panel
-            if (this.bettingStatusManager) {
-                this.bettingStatusManager.setCrashedPhase(crash);
-            }
+
             
             // Update multiplier display immediately with crash styling
             const multiplierElement = document.getElementById('multiplierValue');
@@ -670,10 +652,7 @@ class CrashGameClient {
         console.log('🎲 Betting phase started - waiting for server countdown');
         this.gameState = 'betting';
         
-        // Update betting status panel
-        if (this.bettingStatusManager) {
-            this.bettingStatusManager.setBettingPhase();
-        }
+
         
         // CRITICAL: Only clear old bet state, NOT queued bets that just got processed
         if (this.playerBet && !this.playerBet.fromQueue) {
@@ -969,9 +948,7 @@ class CrashGameClient {
                 // Queue bet for next round instead of rejecting
                 this.showMessage(`🕐 Round crashed - bet queued for next round`, 'info');
                 console.log(`🕐 Bet queued - Round crashed, will place on next betting phase`);
-                if (this.bettingStatusManager) {
-                    this.bettingStatusManager.setBetQueuedPhase();
-                }
+
                 this.queueBet(amount);
                 return true; // Success but queued
             }
@@ -981,9 +958,7 @@ class CrashGameClient {
                 const currentMultiplier = this.currentMultiplier || 1.0;
                 this.showMessage(`🕐 Round in progress (${currentMultiplier.toFixed(2)}x) - bet queued for next round`, 'info');
                 console.log(`🕐 Bet queued - Round already running at ${currentMultiplier.toFixed(2)}x`);
-                if (this.bettingStatusManager) {
-                    this.bettingStatusManager.setBetQueuedPhase();
-                }
+
                 this.queueBet(amount);
                 return true; // Success but queued
             }
@@ -1417,10 +1392,7 @@ class CrashGameClient {
         const countdownValue = document.getElementById('countdownValue');
         const gameMessage = document.getElementById('gameStateMessage');
         
-        // Update betting status panel with countdown
-        if (this.bettingStatusManager && this.gameState === 'betting') {
-            this.bettingStatusManager.setBettingPhase(remaining);
-        }
+
         
         // Update countdown display
         if (countdownValue) countdownValue.textContent = remaining;
@@ -2070,167 +2042,7 @@ class CrashGameClient {
     }
 }
 
-/**
- * 🎯 Betting Status Manager - Provides clear visual feedback for betting phases
- */
-class BettingStatusManager {
-    constructor() {
-        this.statusPanel = null;
-        this.phaseIcon = null;
-        this.phaseText = null;
-        this.phaseSubtext = null;
-        this.countdown = null;
-        this.countdownValue = null;
-        
-        this.currentPhase = 'waiting';
-        this.countdownInterval = null;
-        
-        this.initElements();
-    }
 
-    initElements() {
-        this.statusPanel = document.getElementById('bettingStatusPanel');
-        this.phaseIcon = document.getElementById('bettingPhaseIcon');
-        this.phaseText = document.getElementById('bettingPhaseText');
-        this.phaseSubtext = document.getElementById('bettingPhaseSubtext');
-        this.countdown = document.getElementById('bettingCountdown');
-        this.countdownValue = document.getElementById('countdownValue');
-        
-        if (!this.statusPanel) {
-            console.warn('⚠️ Betting status panel not found in DOM');
-            return;
-        }
-        
-        console.log('✅ Betting status manager initialized');
-        this.updateStatus('waiting', 'Waiting for Round', 'Game starting soon...');
-    }
-
-    updateStatus(phase, mainText, subText, icon = null, showCountdown = false, countdownSeconds = 0) {
-        if (!this.statusPanel) return;
-        
-        this.currentPhase = phase;
-        
-        // Update CSS classes
-        this.statusPanel.className = 'betting-status-panel';
-        this.statusPanel.classList.add(`${phase}-phase`);
-        
-        // Update text content
-        if (this.phaseText) this.phaseText.textContent = mainText;
-        if (this.phaseSubtext) this.phaseSubtext.textContent = subText;
-        
-        // Update icon
-        if (this.phaseIcon && icon) {
-            this.phaseIcon.textContent = icon;
-        }
-        
-        // Handle countdown
-        if (showCountdown && this.countdown && countdownSeconds > 0) {
-            this.startCountdown(countdownSeconds);
-        } else {
-            this.hideCountdown();
-        }
-        
-        console.log(`🎯 Betting status updated: ${phase} - ${mainText}`);
-    }
-
-    startCountdown(seconds) {
-        if (!this.countdown || !this.countdownValue) return;
-        
-        this.countdown.style.display = 'flex';
-        
-        let remaining = seconds;
-        this.countdownValue.textContent = remaining;
-        
-        // Clear existing interval
-        if (this.countdownInterval) {
-            clearInterval(this.countdownInterval);
-        }
-        
-        this.countdownInterval = setInterval(() => {
-            remaining--;
-            if (this.countdownValue) {
-                this.countdownValue.textContent = Math.max(0, remaining);
-            }
-            
-            if (remaining <= 0) {
-                this.hideCountdown();
-            }
-        }, 1000);
-    }
-
-    hideCountdown() {
-        if (this.countdown) {
-            this.countdown.style.display = 'none';
-        }
-        if (this.countdownInterval) {
-            clearInterval(this.countdownInterval);
-            this.countdownInterval = null;
-        }
-    }
-
-    // Phase-specific update methods
-    setBettingPhase(timeRemaining = 0) {
-        this.updateStatus(
-            'betting',
-            'Betting Open',
-            'Place your bets now!',
-            '🎰',
-            timeRemaining > 0,
-            timeRemaining
-        );
-    }
-
-    setRunningPhase(multiplier = 1.0) {
-        this.updateStatus(
-            'running',
-            'Round Running',
-            `Multiplier: ${multiplier.toFixed(2)}x - Cash out anytime!`,
-            '🚀',
-            false
-        );
-    }
-
-    setCrashedPhase(crashPoint = 1.0) {
-        this.updateStatus(
-            'crashed',
-            'Round Crashed',
-            `Crashed at ${crashPoint.toFixed(2)}x - Next round starting soon...`,
-            '💥',
-            false
-        );
-    }
-
-    setWaitingPhase() {
-        this.updateStatus(
-            'waiting',
-            'Waiting for Round',
-            'Game starting soon...',
-            '⏳',
-            false
-        );
-    }
-
-    setBetQueuedPhase() {
-        this.updateStatus(
-            'betting',
-            'Bet Queued',
-            'Your bet is queued for the next round',
-            '🕐',
-            false
-        );
-    }
-
-    // Update multiplier during running phase
-    updateMultiplier(multiplier) {
-        if (this.currentPhase === 'running' && this.phaseSubtext) {
-            this.phaseSubtext.textContent = `Multiplier: ${multiplier.toFixed(2)}x - Cash out anytime!`;
-        }
-    }
-
-    destroy() {
-        this.hideCountdown();
-    }
-}
 
 // Global instance
 window.CrashGameClient = CrashGameClient;

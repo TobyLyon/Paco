@@ -2209,6 +2209,19 @@
                     return;
                 }
                 
+                // NEW: Validate provider is still functional
+                try {
+                    if (this.provider && typeof this.provider.getBalance !== 'function') {
+                        console.log('🔌 Provider invalid, triggering disconnect');
+                        this.onWalletDisconnected();
+                        return;
+                    }
+                } catch (validationError) {
+                    console.log('🔌 Provider validation failed, triggering disconnect');
+                    this.onWalletDisconnected();
+                    return;
+                }
+                
                 const balanceAmount = document.getElementById('ethBalanceAmount');
                 const refreshBtn = document.getElementById('balanceRefresh');
                 
@@ -2254,6 +2267,16 @@
                     balanceAmount.textContent = 'Error';
                     balanceAmount.classList.remove('updating');
                     balanceAmount.classList.add('error');
+                    
+                    // NEW: Check if this is a provider disconnection
+                    if (error.code === 'NETWORK_ERROR' || 
+                        error.message?.includes('provider') ||
+                        error.message?.includes('disconnected') ||
+                        error.code === 'CALL_EXCEPTION' ||
+                        !this.provider) {
+                        console.log('🔌 Provider disconnection detected during balance refresh, triggering wallet disconnect');
+                        this.onWalletDisconnected();
+                    }
                 } finally {
                     // Remove loading state
                     if (manual) {

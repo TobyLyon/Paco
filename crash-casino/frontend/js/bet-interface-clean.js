@@ -6,7 +6,7 @@
 
 class BetInterface {
     constructor() {
-        this.betAmount = 0.005; // Default bet amount
+        this.betAmount = 0.001; // Default bet amount (reduced to accommodate low balances)
         this.isPlacingBet = false;
         this.currentBet = null;
         
@@ -212,7 +212,14 @@ class BetInterface {
         }
 
         if (this.userBalance < this.betAmount) {
-            this.showNotification(`❌ Insufficient balance. You have ${this.userBalance.toFixed(4)} ETH`, 'error');
+            this.showNotification(`❌ Insufficient balance. You have ${this.userBalance.toFixed(4)} ETH, need ${this.betAmount.toFixed(4)} ETH`, 'error');
+            
+            // Auto-adjust bet amount to maximum possible
+            if (this.userBalance >= 0.001) {
+                const maxBet = Math.floor(this.userBalance * 1000) / 1000; // Round down to 3 decimals
+                this.setBetAmount(maxBet);
+                this.showNotification(`💡 Bet amount adjusted to ${maxBet.toFixed(4)} ETH (your max)`, 'info');
+            }
             return;
         }
 
@@ -263,6 +270,13 @@ class BetInterface {
         });
 
         try {
+            console.log(`🎯 Attempting balance bet: ${amount} ETH (have: ${this.userBalance.toFixed(6)} ETH)`);
+            
+            // Pre-validate balance locally
+            if (this.userBalance < amount) {
+                throw new Error(`Insufficient balance. You have ${this.userBalance.toFixed(4)} ETH, need ${amount.toFixed(4)} ETH`);
+            }
+            
             const response = await fetch('https://paco-x57j.onrender.com/api/bet/balance', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -273,7 +287,9 @@ class BetInterface {
             });
 
             if (!response.ok) {
-                throw new Error('Balance bet failed');
+                const errorText = await response.text();
+                console.error('❌ Server response:', response.status, errorText);
+                throw new Error(`Balance bet failed: ${errorText || 'Server error'}`);
             }
 
             const result = await response.json();

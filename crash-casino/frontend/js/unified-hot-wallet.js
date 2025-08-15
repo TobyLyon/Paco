@@ -304,7 +304,7 @@ class UnifiedHotWallet {
                     gap: 6px;
                     margin-top: 8px;
                 ">
-                    <button id="depositBtn" style="
+                    <button id="hotWalletDepositBtn" style="
                         background: linear-gradient(135deg, #4CAF50, #45a049);
                         border: none;
                         color: white;
@@ -315,7 +315,7 @@ class UnifiedHotWallet {
                         font-size: 10px;
                     ">💰 Deposit</button>
                     
-                    <button id="withdrawBtn" style="
+                    <button id="hotWalletWithdrawBtn" style="
                         background: linear-gradient(135deg, #ff6b6b, #ee5a52);
                         border: none;
                         color: white;
@@ -401,52 +401,52 @@ class UnifiedHotWallet {
         
         // Set up deposit/withdraw button listeners with retry logic
         setTimeout(() => {
-            const depositBtn = document.getElementById('depositBtn');
-            const withdrawBtn = document.getElementById('withdrawBtn');
+            const depositBtn = document.getElementById('hotWalletDepositBtn');
+            const withdrawBtn = document.getElementById('hotWalletWithdrawBtn');
             
-            console.log('🔍 Setting up deposit/withdraw button listeners:', {
-                depositBtn: !!depositBtn,
-                withdrawBtn: !!withdrawBtn
+            console.log('🔍 Setting up hot wallet deposit/withdraw button listeners:', {
+                hotWalletDepositBtn: !!depositBtn,
+                hotWalletWithdrawBtn: !!withdrawBtn
             });
             
             if (depositBtn) {
                 depositBtn.addEventListener('click', () => {
-                    console.log('💰 Deposit button clicked');
+                    console.log('💰 Hot wallet deposit button clicked');
                     this.showDepositModal();
                 });
-                console.log('✅ Deposit button listener added');
+                console.log('✅ Hot wallet deposit button listener added');
             } else {
-                console.warn('⚠️ Deposit button not found - will retry');
+                console.warn('⚠️ Hot wallet deposit button not found - will retry');
                 // Retry after a short delay
                 setTimeout(() => {
-                    const retryDepositBtn = document.getElementById('depositBtn');
+                    const retryDepositBtn = document.getElementById('hotWalletDepositBtn');
                     if (retryDepositBtn) {
                         retryDepositBtn.addEventListener('click', () => {
-                            console.log('💰 Deposit button clicked (retry)');
+                            console.log('💰 Hot wallet deposit button clicked (retry)');
                             this.showDepositModal();
                         });
-                        console.log('✅ Deposit button listener added (retry)');
+                        console.log('✅ Hot wallet deposit button listener added (retry)');
                     }
                 }, 500);
             }
             
             if (withdrawBtn) {
                 withdrawBtn.addEventListener('click', () => {
-                    console.log('🏧 Withdraw button clicked');
+                    console.log('🏧 Hot wallet withdraw button clicked');
                     this.showWithdrawModal();
                 });
-                console.log('✅ Withdraw button listener added');
+                console.log('✅ Hot wallet withdraw button listener added');
             } else {
-                console.warn('⚠️ Withdraw button not found - will retry');
+                console.warn('⚠️ Hot wallet withdraw button not found - will retry');
                 // Retry after a short delay
                 setTimeout(() => {
-                    const retryWithdrawBtn = document.getElementById('withdrawBtn');
+                    const retryWithdrawBtn = document.getElementById('hotWalletWithdrawBtn');
                     if (retryWithdrawBtn) {
                         retryWithdrawBtn.addEventListener('click', () => {
-                            console.log('🏧 Withdraw button clicked (retry)');
+                            console.log('🏧 Hot wallet withdraw button clicked (retry)');
                             this.showWithdrawModal();
                         });
-                        console.log('✅ Withdraw button listener added (retry)');
+                        console.log('✅ Hot wallet withdraw button listener added (retry)');
                     }
                 }, 500);
             }

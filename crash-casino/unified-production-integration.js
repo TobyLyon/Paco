@@ -847,11 +847,14 @@ class UnifiedPacoRockoProduction {
                         console.log(`📤 Payout transaction: ${result.payoutTxHash}`);
                         
                         // Emit balance-specific event
-                        socket.emit('balanceWinnings', {
+                        // 🎊 CRITICAL: Emit balanceWinnings to ALL clients for celebration module
+                        console.log(`🎊 Emitting balanceWinnings event for celebration`);
+                        this.io.emit('balanceWinnings', {
                             playerId: playerId,
                             multiplier: currentMultiplier,
                             payout: cashoutResult.payout,
-                            winnings: cashoutResult.payout
+                            winnings: cashoutResult.payout,
+                            txHash: result.payoutTxHash || 'none'
                         });
                     } catch (error) {
                         console.error('❌ Failed to update balance with winnings:', error);

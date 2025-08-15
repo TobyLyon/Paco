@@ -455,6 +455,7 @@ class UnifiedCrashEngine extends EventEmitter {
             phase,
             timeRemaining,
             phaseStartTime: this.phase_start_time,
+            crashPoint: this.game_crash_value, // Add crash point for cashout validation
             roundId: this.current_round_id,
             previousCrashes: this.previous_crashes,
             roundIdList: this.round_id_list,

@@ -211,6 +211,15 @@ class BetInterface {
             return;
         }
 
+        // CRITICAL: Force balance refresh before betting to ensure accuracy
+        console.log('🔄 Force refreshing balance before bet to ensure accuracy...');
+        await this.refreshBalance();
+        
+        // CRITICAL: Log current balance state before validation
+        console.log(`🔍 BALANCE DEBUG - Current userBalance: ${this.userBalance.toFixed(6)} ETH`);
+        console.log(`🔍 BALANCE DEBUG - Requested bet amount: ${this.betAmount.toFixed(6)} ETH`);
+        console.log(`🔍 BALANCE DEBUG - Balance sufficient: ${this.userBalance >= this.betAmount}`);
+        
         if (this.userBalance < this.betAmount) {
             this.showNotification(`❌ Insufficient balance. You have ${this.userBalance.toFixed(4)} ETH, need ${this.betAmount.toFixed(4)} ETH`, 'error');
             
@@ -269,6 +278,9 @@ class BetInterface {
             isYou: true
         });
 
+        // Store original balance for error recovery
+        const originalBalance = this.userBalance;
+        
         try {
             console.log(`🎯 Attempting balance bet: ${amount} ETH (have: ${this.userBalance.toFixed(6)} ETH)`);
             
@@ -293,6 +305,10 @@ class BetInterface {
             }
 
             const result = await response.json();
+            
+            // CRITICAL: Update userBalance after successful bet
+            this.userBalance -= amount;
+            this.updateBalanceDisplay();
             console.log(`💰 Balance bet placed: ${amount} ETH (remaining: ${this.userBalance.toFixed(4)} ETH)`);
             
             // Update bet status in orders to active
@@ -1177,6 +1193,9 @@ class BetInterface {
                 this.userBalance = serverBalance;
                 this.updateBalanceDisplay();
                 console.log(`🔄 Balance refreshed: ${this.userBalance.toFixed(4)} ETH`);
+                
+                // CRITICAL: Update bet amount validation after balance refresh
+                this.validateBetAmount();
             }
         } catch (error) {
             console.error('❌ Failed to refresh balance:', error);

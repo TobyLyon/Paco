@@ -1,0 +1,5 @@
+[33m62b1da2[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m 🔒 MAJOR: Enhanced Security Implementation - Production Ready Enterprise Security
+[33mb325fe8[m new overhaul changes
+[33m966c3fd[m FINAL FIX: Private key format for viem compatibility
+[33me7aaac9[m many updates
+[33m389b75a[m CRITICAL DOUBLE FIX: 1) Transfer bet money to house wallet 2) Fix queued bet cashout button

@@ -44,8 +44,22 @@ class BetInterface {
         }
         
         // Listen for wallet connection events
-        window.addEventListener('walletConnected', async () => {
+        window.addEventListener('walletConnected', async (event) => {
             console.log('🔗 Wallet connected event received!');
+            
+            // Initialize unified hot wallet if available
+            if (window.unifiedHotWallet && event.detail?.address) {
+                const success = await window.unifiedHotWallet.init(event.detail.address);
+                if (success) {
+                    console.log('✅ Unified hot wallet initialized on wallet connect');
+                    // Sync our balance with the hot wallet
+                    this.userBalance = window.unifiedHotWallet.getBalance();
+                    this.balanceInitialized = true;
+                    return; // Skip legacy balance initialization
+                }
+            }
+            
+            // Fallback to legacy balance system
             await this.initializeBalance();
         });
 
@@ -253,6 +267,15 @@ class BetInterface {
      * 💸 Place bet using balance
      */
     async placeBetWithBalance(amount) {
+        // Use unified hot wallet if available
+        if (window.unifiedHotWallet && window.unifiedHotWallet.isReady()) {
+            console.log('🏦 Using unified hot wallet for bet placement');
+            return await window.unifiedHotWallet.placeBet(amount);
+        }
+        
+        // Fallback to legacy system
+        console.log('🔄 Using legacy balance system for bet placement');
+        
         // CRITICAL: Always refresh balance before attempting to bet
         try {
             await this.refreshBalance();
@@ -520,8 +543,15 @@ class BetInterface {
      * 💰 Add winnings to balance
      */
     addWinnings(amount) {
-        this.userBalance += amount;
-        this.updateBalanceDisplay();
+        // Use unified hot wallet if available
+        if (window.unifiedHotWallet && window.unifiedHotWallet.isReady()) {
+            window.unifiedHotWallet.addWinnings(amount);
+            this.userBalance = window.unifiedHotWallet.getBalance();
+        } else {
+            // Fallback to legacy system
+            this.userBalance += amount;
+            this.updateBalanceDisplay();
+        }
         this.showNotification(`🎉 +${amount.toFixed(4)} ETH added to balance!`, 'success');
     }
 

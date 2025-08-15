@@ -813,11 +813,7 @@ class UnifiedPacoRockoProduction {
         console.log(`🔍 CASHOUT DEBUG - Multiplier validation: ${isValidMultiplier}`);
         
         if (!isValidMultiplier) {
-            if (currentMultiplier < 2.0) {
-                throw new Error(`Cashout not profitable - current: ${currentMultiplier}x (minimum 2.0x required for profit)`);
-            } else {
-                throw new Error(`Cashout too close to crash point - current: ${currentMultiplier}x, crash: ${gameState.crashPoint}x`);
-            }
+            throw new Error(`Cashout too close to crash point - current: ${currentMultiplier}x, crash: ${gameState.crashPoint}x`);
         }
         
         // Process cashout through crash engine

@@ -24,12 +24,7 @@ class MultiplierCalculator {
      * @returns {boolean} True if safe to cashout
      */
     static validateMultiplier(multiplier, crashPoint) {
-        // Check if multiplier is profitable (minimum 2.0x as per user requirement)
-        if (multiplier < 2.0) {
-            return false; // Unprofitable cashout
-        }
-        
-        // Add small buffer to prevent timing attacks
+        // Only check timing safety, allow any multiplier (even losses)
         const buffer = 0.01;
         return multiplier < (crashPoint - buffer);
     }
@@ -41,6 +36,27 @@ class MultiplierCalculator {
      */
     static isProfitable(multiplier) {
         return multiplier >= 2.0;
+    }
+    
+    /**
+     * Calculate loss/gain from cashout
+     * @param {number} betAmount - Original bet amount
+     * @param {number} multiplier - Cashout multiplier
+     * @returns {object} {isProfit: boolean, amount: number, percentage: number}
+     */
+    static calculateCashoutResult(betAmount, multiplier) {
+        const payout = betAmount * multiplier;
+        const netResult = payout - betAmount;
+        const isProfit = netResult > 0;
+        const percentage = ((payout - betAmount) / betAmount) * 100;
+        
+        return {
+            isProfit,
+            netResult: Math.abs(netResult), // Always positive for display
+            percentage: Math.abs(percentage), // Always positive for display
+            payout,
+            originalBet: betAmount
+        };
     }
     
     /**

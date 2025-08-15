@@ -2054,20 +2054,27 @@ class CrashGameClient {
         if (!cashOutBtn || !this.playerBet || this.playerBet.cashedOut) return;
 
         const multiplier = this.currentMultiplier || 1.0;
-        const isProfitable = multiplier >= 2.0;
+        const betAmount = this.playerBet.amount || 0;
+        const payout = betAmount * multiplier;
+        const netResult = payout - betAmount;
+        const isProfit = netResult > 0;
 
-        if (isProfitable) {
-            cashOutBtn.disabled = false;
+        // Always enable the button - let users decide
+        cashOutBtn.disabled = false;
+        cashOutBtn.style.cursor = 'pointer';
+
+        if (isProfit) {
+            // Profitable cashout - green
             cashOutBtn.textContent = `💰 CASH OUT ${multiplier.toFixed(2)}x`;
             cashOutBtn.style.backgroundColor = '#10b981'; // Green
-            cashOutBtn.style.cursor = 'pointer';
-            cashOutBtn.title = `Cash out for ${(this.playerBet.amount * multiplier).toFixed(4)} ETH profit`;
+            cashOutBtn.title = `Cash out for +${netResult.toFixed(4)} ETH profit (${payout.toFixed(4)} ETH total)`;
         } else {
-            cashOutBtn.disabled = true;
-            cashOutBtn.textContent = `⏳ WAIT FOR 2.0x (${multiplier.toFixed(2)}x)`;
-            cashOutBtn.style.backgroundColor = '#6b7280'; // Gray
-            cashOutBtn.style.cursor = 'not-allowed';
-            cashOutBtn.title = 'Cashout not profitable yet - wait for 2.0x minimum';
+            // Loss cashout - red/orange but still enabled
+            const lossAmount = Math.abs(netResult);
+            const lossPercentage = (lossAmount / betAmount) * 100;
+            cashOutBtn.textContent = `⚠️ CASH OUT ${multiplier.toFixed(2)}x (LOSS)`;
+            cashOutBtn.style.backgroundColor = '#dc2626'; // Red
+            cashOutBtn.title = `Cash out with -${lossAmount.toFixed(4)} ETH loss (${lossPercentage.toFixed(1)}% of bet)`;
         }
     }
 }

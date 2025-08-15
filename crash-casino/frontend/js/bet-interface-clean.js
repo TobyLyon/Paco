@@ -440,52 +440,100 @@ class BetInterface {
      * 🎊 Show animated cashout success notification
      */
     showCashoutSuccess(multiplier, winnings) {
-        // Show main notification
-        this.showNotification(
-            `🎉 CASHED OUT! ${multiplier.toFixed(2)}x → +${winnings.toFixed(4)} ETH`, 
-            'success', 
-            5000
-        );
+        const betAmount = this.activeOrders.get('current')?.amount || 0.001;
+        const netResult = winnings - betAmount;
+        const isProfit = netResult > 0;
         
-        // Create animated success overlay
-        this.createCashoutCelebration(multiplier, winnings);
+        if (isProfit) {
+            // Profitable cashout
+            this.showNotification(
+                `🎉 CASHED OUT! ${multiplier.toFixed(2)}x → +${netResult.toFixed(4)} ETH profit`, 
+                'success', 
+                5000
+            );
+        } else {
+            // Loss cashout
+            const lossAmount = Math.abs(netResult);
+            const lossPercentage = (lossAmount / betAmount) * 100;
+            this.showNotification(
+                `⚠️ CASHED OUT! ${multiplier.toFixed(2)}x → -${lossAmount.toFixed(4)} ETH loss (${lossPercentage.toFixed(1)}%)`, 
+                'warning', 
+                5000
+            );
+        }
         
-        console.log(`🎊 Cashout celebration: ${multiplier.toFixed(2)}x for ${winnings.toFixed(4)} ETH`);
+        // Create animated overlay (modified for losses)
+        this.createCashoutCelebration(multiplier, winnings, isProfit);
+        
+        console.log(`🎊 Cashout: ${multiplier.toFixed(2)}x for ${winnings.toFixed(4)} ETH (${isProfit ? 'profit' : 'loss'})`);
     }
 
     /**
      * ✨ Create visual celebration for cashout
      */
-    createCashoutCelebration(multiplier, winnings) {
+    createCashoutCelebration(multiplier, winnings, isProfit = true) {
+        const betAmount = this.activeOrders.get('current')?.amount || 0.001;
+        const netResult = winnings - betAmount;
+        
         // Create celebration overlay
         const celebration = document.createElement('div');
         celebration.className = 'cashout-celebration';
-        celebration.innerHTML = `
-            <div class="celebration-content">
-                <div class="celebration-icon">💰</div>
-                <div class="celebration-title">CASHED OUT!</div>
-                <div class="celebration-multiplier">${multiplier.toFixed(2)}x</div>
-                <div class="celebration-winnings">+${winnings.toFixed(4)} ETH</div>
-            </div>
-        `;
         
-        // Add celebration styles
-        celebration.style.cssText = `
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 10000;
-            background: linear-gradient(45deg, #10b981, #fbbf24);
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 20px 60px rgba(16, 185, 129, 0.4);
-            animation: cashoutPop 3s ease-out forwards;
-            pointer-events: none;
-            text-align: center;
-            color: white;
-            font-family: var(--font-display, sans-serif);
-        `;
+        if (isProfit) {
+            celebration.innerHTML = `
+                <div class="celebration-content">
+                    <div class="celebration-icon">💰</div>
+                    <div class="celebration-title">CASHED OUT!</div>
+                    <div class="celebration-multiplier">${multiplier.toFixed(2)}x</div>
+                    <div class="celebration-winnings">+${netResult.toFixed(4)} ETH profit</div>
+                </div>
+            `;
+            // Profit colors - green gradient
+            celebration.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                z-index: 10000;
+                background: linear-gradient(45deg, #10b981, #fbbf24);
+                border-radius: 20px;
+                padding: 30px;
+                box-shadow: 0 20px 60px rgba(16, 185, 129, 0.4);
+                animation: cashoutPop 3s ease-out forwards;
+                pointer-events: none;
+                text-align: center;
+                color: white;
+                font-family: var(--font-display, sans-serif);
+            `;
+        } else {
+            const lossAmount = Math.abs(netResult);
+            const lossPercentage = (lossAmount / betAmount) * 100;
+            celebration.innerHTML = `
+                <div class="celebration-content">
+                    <div class="celebration-icon">⚠️</div>
+                    <div class="celebration-title">CASHED OUT</div>
+                    <div class="celebration-multiplier">${multiplier.toFixed(2)}x</div>
+                    <div class="celebration-winnings">-${lossAmount.toFixed(4)} ETH loss (${lossPercentage.toFixed(1)}%)</div>
+                </div>
+            `;
+            // Loss colors - red gradient
+            celebration.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                z-index: 10000;
+                background: linear-gradient(45deg, #dc2626, #f59e0b);
+                border-radius: 20px;
+                padding: 30px;
+                box-shadow: 0 20px 60px rgba(220, 38, 38, 0.4);
+                animation: cashoutPop 3s ease-out forwards;
+                pointer-events: none;
+                text-align: center;
+                color: white;
+                font-family: var(--font-display, sans-serif);
+            `;
+        }
         
         // Add CSS animation
         if (!document.querySelector('#cashout-celebration-styles')) {

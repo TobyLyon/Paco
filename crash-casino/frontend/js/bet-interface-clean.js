@@ -253,8 +253,15 @@ class BetInterface {
      * 💸 Place bet using balance
      */
     async placeBetWithBalance(amount) {
+        // CRITICAL: Always refresh balance before attempting to bet
+        try {
+            await this.refreshBalance();
+        } catch (error) {
+            console.warn('⚠️ Balance refresh failed, using cached balance:', error);
+        }
+        
         if (this.userBalance < amount) {
-            throw new Error(`Insufficient balance. You have ${this.userBalance.toFixed(4)} ETH, need ${amount} ETH`);
+            throw new Error(`Insufficient balance. You have ${this.userBalance.toFixed(4)} ETH, need ${amount.toFixed(4)} ETH`);
         }
 
         const walletAddress = window.ethereum?.selectedAddress || window.realWeb3Modal?.address;
@@ -278,9 +285,6 @@ class BetInterface {
             isYou: true
         });
 
-        // Store original balance for error recovery
-        const originalBalance = this.userBalance;
-        
         try {
             console.log(`🎯 Attempting balance bet: ${amount} ETH (have: ${this.userBalance.toFixed(6)} ETH)`);
             
@@ -305,10 +309,6 @@ class BetInterface {
             }
 
             const result = await response.json();
-            
-            // CRITICAL: Update userBalance after successful bet
-            this.userBalance -= amount;
-            this.updateBalanceDisplay();
             console.log(`💰 Balance bet placed: ${amount} ETH (remaining: ${this.userBalance.toFixed(4)} ETH)`);
             
             // Update bet status in orders to active
@@ -1172,7 +1172,10 @@ class BetInterface {
      */
     async refreshBalance() {
         const walletAddress = window.ethereum?.selectedAddress || window.realWeb3Modal?.address;
-        if (!walletAddress) return;
+        if (!walletAddress) {
+            console.warn('⚠️ Cannot refresh balance - no wallet address');
+            return;
+        }
 
         const refreshBtn = document.getElementById('refreshBalanceBtn');
         if (refreshBtn) {
@@ -1180,14 +1183,20 @@ class BetInterface {
         }
 
         try {
-            console.log('🔄 Manually refreshing balance...');
-            const response = await fetch(`https://paco-x57j.onrender.com/api/balance/${walletAddress}`);
+            console.log('🔄 Refreshing balance...');
+            const response = await fetch(`https://paco-x57j.onrender.com/api/balance/${walletAddress}`, {
+                method: 'GET',
+                headers: {
+                    'Cache-Control': 'no-cache'
+                }
+            });
+            
             if (response.ok) {
                 const data = await response.json();
                 const serverBalance = parseFloat(data.balance || 0);
                 
                 if (Math.abs(serverBalance - this.userBalance) > 0.0001) {
-                    this.showNotification(`🔄 Balance updated: ${this.userBalance.toFixed(4)} → ${serverBalance.toFixed(4)} ETH`, 'info');
+                    console.log(`🔄 Balance updated: ${this.userBalance.toFixed(4)} → ${serverBalance.toFixed(4)} ETH`);
                 }
                 
                 this.userBalance = serverBalance;
@@ -1196,10 +1205,13 @@ class BetInterface {
                 
                 // CRITICAL: Update bet amount validation after balance refresh
                 this.validateBetAmount();
+                return true;
+            } else {
+                throw new Error(`Server returned ${response.status}`);
             }
         } catch (error) {
             console.error('❌ Failed to refresh balance:', error);
-            this.showNotification('❌ Failed to refresh balance', 'error');
+            throw error; // Re-throw so caller can handle
         } finally {
             if (refreshBtn) {
                 setTimeout(() => {

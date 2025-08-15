@@ -202,84 +202,85 @@ class UnifiedHotWallet {
             console.log('🏦 Hidden legacy balance UI in favor of unified hot wallet');
         }
         
-        // Create hot wallet UI
+        // Create hot wallet UI (compact version)
         const hotWalletHTML = `
             <div id="hotWalletContainer" class="hot-wallet-section" style="
                 background: linear-gradient(135deg, #1a1a2e, #16213e);
-                border: 2px solid #ffd700;
-                border-radius: 12px;
-                padding: 16px;
-                margin: 12px 0;
-                box-shadow: 0 4px 20px rgba(255, 215, 0, 0.1);
+                border: 1px solid #ffd700;
+                border-radius: 8px;
+                padding: 10px;
+                margin: 8px 0;
+                box-shadow: 0 2px 12px rgba(255, 215, 0, 0.1);
             ">
                 <div class="hot-wallet-header" style="
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    margin-bottom: 12px;
+                    margin-bottom: 8px;
                 ">
-                    <h3 style="color: #ffd700; margin: 0; font-size: 16px; font-weight: 600;">
-                        🏦 Hot Wallet Balance
+                    <h3 style="color: #ffd700; margin: 0; font-size: 14px; font-weight: 600;">
+                        🏦 Hot Wallet
                     </h3>
                     <button id="refreshHotWalletBtn" style="
                         background: transparent;
                         border: 1px solid #ffd700;
                         color: #ffd700;
-                        padding: 4px 8px;
-                        border-radius: 6px;
+                        padding: 2px 6px;
+                        border-radius: 4px;
                         cursor: pointer;
-                        font-size: 12px;
-                    ">🔄 Refresh</button>
+                        font-size: 10px;
+                    ">🔄</button>
                 </div>
                 
                 <div class="balance-display" style="
                     text-align: center;
-                    margin: 12px 0;
+                    margin: 6px 0;
                 ">
                     <div id="hotWalletBalance" style="
-                        font-size: 24px;
+                        font-size: 20px;
                         font-weight: bold;
                         color: #ffffff;
-                        text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+                        text-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+                        line-height: 1;
                     ">${this.balance.toFixed(4)} ETH</div>
-                    <div style="color: #888; font-size: 12px;">Available for betting</div>
+                    <div style="color: #888; font-size: 10px; margin-top: 2px;">Available for betting</div>
                 </div>
                 
                 <div class="wallet-actions" style="
                     display: grid;
                     grid-template-columns: 1fr 1fr;
-                    gap: 8px;
-                    margin-top: 12px;
+                    gap: 6px;
+                    margin-top: 8px;
                 ">
                     <button id="depositBtn" style="
                         background: linear-gradient(135deg, #4CAF50, #45a049);
                         border: none;
                         color: white;
-                        padding: 8px 12px;
-                        border-radius: 6px;
+                        padding: 6px 8px;
+                        border-radius: 4px;
                         cursor: pointer;
                         font-weight: 500;
-                        font-size: 12px;
+                        font-size: 10px;
                     ">💰 Deposit</button>
                     
                     <button id="withdrawBtn" style="
                         background: linear-gradient(135deg, #ff6b6b, #ee5a52);
                         border: none;
                         color: white;
-                        padding: 8px 12px;
-                        border-radius: 6px;
+                        padding: 6px 8px;
+                        border-radius: 4px;
                         cursor: pointer;
                         font-weight: 500;
-                        font-size: 12px;
+                        font-size: 10px;
                     ">🏧 Withdraw</button>
                 </div>
                 
                 <div id="hotWalletStatus" style="
-                    margin-top: 8px;
-                    font-size: 11px;
-                    color: #888;
+                    margin-top: 6px;
+                    font-size: 9px;
+                    color: #666;
                     text-align: center;
-                ">Connected to ${this.walletAddress.substring(0, 6)}...${this.walletAddress.substring(38)}</div>
+                ">Connected ${this.walletAddress.substring(0, 4)}...${this.walletAddress.substring(38)}</div>
             </div>
         `;
         

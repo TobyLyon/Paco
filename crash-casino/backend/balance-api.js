@@ -46,55 +46,47 @@ class BalanceAPI {
      */
     async placeBetWithBalance(playerAddress, amount, houseWallet = null) {
         const address = playerAddress.toLowerCase();
-        const currentBalance = await this.getBalance(address);
 
-        if (currentBalance < amount) {
-            throw new Error('Insufficient balance');
-        }
+        try {
+            // Use atomic database function to prevent race conditions
+            const { data, error } = await this.supabase.rpc('place_bet_atomic', {
+                player_address: address,
+                bet_amount: amount
+            });
 
-        // 🏠 CRITICAL: Transfer bet amount from hot wallet to house wallet
-        if (houseWallet) {
-            try {
-                const transferResult = await this.transferBetToHouse(amount, houseWallet);
-                console.log(`🏠 Balance bet amount transferred to house wallet: ${amount} ETH (TX: ${transferResult.txHash})`);
-            } catch (transferError) {
-                console.error(`❌ Failed to transfer bet to house wallet:`, transferError);
-                throw new Error(`Bet transfer to house wallet failed: ${transferError.message}`);
+            if (error) {
+                console.error('❌ Atomic bet placement failed:', error);
+                throw new Error(`Database error: ${error.message}`);
             }
-        } else {
-            console.warn(`⚠️ NO HOUSE WALLET PROVIDED - Bet amount not transferred to house (FINANCIAL RISK)`);
+
+            if (!data.success) {
+                throw new Error(data.error || 'Bet placement failed');
+            }
+
+            // 🏠 CRITICAL: Transfer bet amount from hot wallet to house wallet
+            if (houseWallet) {
+                try {
+                    const transferResult = await this.transferBetToHouse(amount, houseWallet);
+                    console.log(`🏠 Balance bet amount transferred to house wallet: ${amount} ETH (TX: ${transferResult.txHash})`);
+                } catch (transferError) {
+                    console.error(`❌ Failed to transfer bet to house wallet:`, transferError);
+                    // Note: We should implement rollback logic here in production
+                    throw new Error(`Bet transfer to house wallet failed: ${transferError.message}`);
+                }
+            } else {
+                console.warn(`⚠️ NO HOUSE WALLET PROVIDED - Bet amount not transferred to house (FINANCIAL RISK)`);
+            }
+
+            // Update cache with new balance
+            this.balanceCache.set(address, data.balance_after);
+
+            console.log(`💰 ATOMIC Balance bet: ${address} bet ${amount} ETH (${data.balance_before.toFixed(6)} → ${data.balance_after.toFixed(6)})`);
+            return data.balance_after;
+
+        } catch (error) {
+            console.error('❌ placeBetWithBalance failed:', error);
+            throw error;
         }
-
-        // Deduct from balance
-        const newBalance = currentBalance - amount;
-        
-        // Update database
-        const { error } = await this.supabase
-            .from('user_balances')
-            .upsert({
-                address: address,
-                balance: newBalance,
-                updated_at: new Date().toISOString()
-            });
-
-        if (error) throw error;
-
-        // Update cache
-        this.balanceCache.set(address, newBalance);
-
-        // Log the bet
-        await this.supabase
-            .from('balance_bets')
-            .insert({
-                address: address,
-                amount: amount,
-                balance_before: currentBalance,
-                balance_after: newBalance,
-                created_at: new Date().toISOString()
-            });
-
-        console.log(`💰 Balance bet: ${address} bet ${amount} ETH (balance: ${currentBalance} → ${newBalance})`);
-        return { success: true, newBalance };
     }
 
     /**
@@ -221,29 +213,37 @@ class BalanceAPI {
     }
 
     /**
-     * 🎉 Add winnings to balance
+     * 🎉 Add winnings to balance - ATOMIC VERSION
      */
     async addWinnings(playerAddress, amount) {
         const address = playerAddress.toLowerCase();
-        const currentBalance = await this.getBalance(address);
-        const newBalance = currentBalance + amount;
 
-        // Update database
-        const { error } = await this.supabase
-            .from('user_balances')
-            .upsert({
-                address: address,
-                balance: newBalance,
-                updated_at: new Date().toISOString()
+        try {
+            // Use atomic database function to prevent race conditions
+            const { data, error } = await this.supabase.rpc('add_winnings_atomic', {
+                player_address: address,
+                winnings_amount: amount
             });
 
-        if (error) throw error;
+            if (error) {
+                console.error('❌ Atomic winnings addition failed:', error);
+                throw new Error(`Database error: ${error.message}`);
+            }
 
-        // Update cache
-        this.balanceCache.set(address, newBalance);
+            if (!data.success) {
+                throw new Error(data.error || 'Winnings addition failed');
+            }
 
-        console.log(`🎉 Winnings added: ${address} won ${amount} ETH (balance: ${currentBalance} → ${newBalance})`);
-        return { success: true, newBalance };
+            // Update cache with new balance
+            this.balanceCache.set(address, data.balance_after);
+
+            console.log(`🎉 ATOMIC Winnings added: ${address} won ${amount} ETH (${data.balance_before.toFixed(6)} → ${data.balance_after.toFixed(6)})`);
+            return { success: true, newBalance: data.balance_after };
+
+        } catch (error) {
+            console.error('❌ addWinnings failed:', error);
+            throw error;
+        }
     }
 
     /**

@@ -1,0 +1,51 @@
+# 🔒 Paco Rocko Enhanced Security Environment Variables
+# Copy these to your .env file and fill in the values
+
+# === EXISTING VARIABLES (Required) ===
+SUPABASE_URL=your_supabase_url_here
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_key_here
+HOUSE_WALLET_PRIVATE_KEY=your_house_wallet_private_key_here
+HOT_WALLET_ADDRESS=your_hot_wallet_address_here
+
+# === NEW SECURITY VARIABLES ===
+
+# Solvency Management
+MAX_LIABILITY_FACTOR=0.8        # Max 80% of house funds at risk
+MIN_RESERVE_ETH=1.0            # Always keep 1 ETH minimum
+EMERGENCY_THRESHOLD=0.9         # Trigger emergency at 90% utilization
+
+# Bet Validation Limits
+MIN_BET_AMOUNT=0.001           # Minimum bet: 0.001 ETH
+MAX_BET_AMOUNT=100.0           # Maximum bet: 100 ETH
+BET_COOLDOWN_MS=1000           # 1 second between bets per player
+MAX_BETS_PER_ROUND=1000        # Max bets allowed per round
+
+# RNG Configuration
+HOUSE_EDGE=0.01                # 1% house edge (0.01)
+
+# Performance Settings
+BALANCE_CHECK_INTERVAL=30000    # Check balances every 30 seconds
+CLEANUP_INTERVAL=300000        # Memory cleanup every 5 minutes
+
+# === OPTIONAL MONITORING ===
+
+# Admin API Security (recommended for production)
+ADMIN_API_KEY=your_admin_api_key_here  # For securing admin endpoints
+
+# Logging Level
+LOG_LEVEL=info                 # debug, info, warn, error
+
+# === PRODUCTION OVERRIDES ===
+
+# For production, consider these more conservative values:
+# MAX_LIABILITY_FACTOR=0.6     # 60% max liability
+# MAX_BET_AMOUNT=50.0          # 50 ETH max bet
+# EMERGENCY_THRESHOLD=0.8      # Emergency at 80%
+# BET_COOLDOWN_MS=2000         # 2 second cooldown
+
+# === DEVELOPMENT/TESTING ===
+
+# For testing, you might want:
+# MIN_BET_AMOUNT=0.0001        # Smaller minimum for testing
+# BET_COOLDOWN_MS=100          # Faster testing
+# LOG_LEVEL=debug              # Verbose logging

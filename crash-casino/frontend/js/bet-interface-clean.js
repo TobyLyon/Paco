@@ -305,17 +305,17 @@ class BetInterface {
                 // Emit bet event for server tracking
                 if (window.crashGameClient.socket) {
                     console.log('🎯 Emitting place_bet event to server for balance bet');
-                    window.crashGameClient.socket.emit('place_bet', {
+                window.crashGameClient.socket.emit('place_bet', {
                         betAmount: amount,
                         playerAddress: walletAddress,
                         useBalance: true,
                         autoPayoutMultiplier: 2.0 // Default auto-cashout at 2x
                     });
                     console.log('✅ place_bet event emitted with data:', {
-                        betAmount: amount,
-                        playerAddress: walletAddress,
-                        useBalance: true
-                    });
+                    betAmount: amount,
+                    playerAddress: walletAddress,
+                    useBalance: true
+                });
                 } else {
                     console.error('❌ No socket connection available for bet registration');
                 }

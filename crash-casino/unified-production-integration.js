@@ -12,6 +12,10 @@ const { Server } = require('socket.io');
 // Use the unified crash engine (clean implementation)
 const UnifiedCrashEngine = require('./backend/unified-crash-engine');
 
+// Import security utilities
+const MultiplierCalculator = require('./shared/multiplier-calculator');
+const InputValidator = require('./utils/input-validator');
+
 // Keep existing wallet and database integrations
 let WalletIntegration = null;
 try {
@@ -65,6 +69,10 @@ class UnifiedPacoRockoProduction {
         this.walletIntegration = null;
         this.connectedPlayers = new Map();
         
+        // Bet type tracking to prevent double payouts
+        this.playerBetTypes = new Map(); // socketId -> 'balance' | 'blockchain'
+        this.playerBetData = new Map();  // socketId -> { amount, type, timestamp }
+        
         // Game statistics
         this.gameStats = {
             totalRounds: 0,
@@ -92,11 +100,39 @@ class UnifiedPacoRockoProduction {
                 console.log('✅ Wallet integration initialized');
             }
             
-            // Initialize unified crash engine (SERVER AUTHORITY)
-            console.log('🎮 Starting unified crash engine...');
+            // Initialize Balance API for atomic transactions
+            const { BalanceAPI } = require('./backend/balance-api');
+            this.balanceAPI = new BalanceAPI(
+                process.env.SUPABASE_URL,
+                process.env.SUPABASE_SERVICE_ROLE_KEY
+            );
+            console.log('✅ Balance API initialized with atomic transactions');
+            
+            // Initialize Solvency Manager
+            const SolvencyManager = require('./backend/solvency-manager');
+            this.solvencyManager = new SolvencyManager(this.walletIntegration, this.balanceAPI, {
+                maxLiabilityRatio: parseFloat(process.env.MAX_LIABILITY_FACTOR) || 0.8,
+                minReserveETH: parseFloat(process.env.MIN_RESERVE_ETH) || 1.0,
+                emergencyThreshold: parseFloat(process.env.EMERGENCY_THRESHOLD) || 0.9
+            });
+            console.log('✅ Solvency Manager initialized');
+
+            // Initialize unified crash engine (SERVER AUTHORITY) with enhanced security
+            console.log('🎮 Starting unified crash engine with security enhancements...');
             this.crashEngine = new UnifiedCrashEngine(this.io, {
                 bettingPhaseDuration: 15000, // 15 seconds (user requested)
-                cashoutPhaseDuration: 3000   // 3 seconds (proven timing)
+                cashoutPhaseDuration: 3000,  // 3 seconds (proven timing)
+                betValidation: {
+                    minBet: parseFloat(process.env.MIN_BET_AMOUNT) || 0.001,
+                    maxBet: parseFloat(process.env.MAX_BET_AMOUNT) || 100.0,
+                    betCooldownMs: parseInt(process.env.BET_COOLDOWN_MS) || 1000,
+                    maxBetsPerRound: parseInt(process.env.MAX_BETS_PER_ROUND) || 1000
+                },
+                rng: {
+                    houseEdge: parseFloat(process.env.HOUSE_EDGE) || 0.01,
+                    minCrashPoint: 1.00,
+                    maxCrashPoint: 1000.0
+                }
             });
             
             // Setup engine event listeners
@@ -150,10 +186,18 @@ class UnifiedPacoRockoProduction {
         this.crashEngine.on('roundCrashed', async (data) => {
             this.gameStats.totalVolume += data.totalPayout || 0;
             console.log(`💥 Round ${data.roundId} crashed at ${data.crashPoint}x - Perfect sync maintained`);
+            
+            // Clean up liability for all players who didn't cash out
+            const activePlayerIds = this.crashEngine.active_player_id_list || [];
+            for (const playerId of activePlayerIds) {
+                this.solvencyManager.removeBetLiability(playerId, 0); // 0 payout = lost bet
+            }
+            console.log(`🧹 Cleaned up liability for ${activePlayerIds.length} players who lost`);
+            
             // Reveal serverSeed and persist
             try {
-                const serverSeed = this.crashEngine.currentServerSeed
-                const commit = this.crashEngine.currentCommit
+                const serverSeed = this.crashEngine.rng?.getCurrentRoundData?.()?.serverSeed;
+                const commit = data.commitHash;
                 if (this.walletIntegration?.supabase) {
                     await this.walletIntegration.supabase
                         .from('rounds')
@@ -175,21 +219,20 @@ class UnifiedPacoRockoProduction {
             this.crashEngine.on('playerCashedOut', async (data) => {
                 console.log(`💸 Player cashed out: ${data.playerId} @ ${data.multiplier}x`);
                 
-                // Check if this was a balance bet (we'll add this tracking later)
-                const isBalanceBet = data.useBalance || false; // This will be passed from the bet system
+                // Use the actual bet type from the enhanced cashout data
+                const isBalanceBet = data.betType === 'balance';
                 
                 if (isBalanceBet) {
                     // Add winnings to balance AND transfer actual ETH from house to hot wallet
                     try {
-                        const { BalanceAPI } = require('./backend/balance-api');
-                        const balanceAPI = new BalanceAPI(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+                        // Use the already initialized balance API
                         
                         // CRITICAL: Transfer actual ETH from house wallet to hot wallet
                         console.log(`🏦 Processing balance payout: transferring ${data.payout.toFixed(4)} ETH from house to hot wallet`);
-                        const payoutResult = await balanceAPI.processBalancePayout(data.playerId, data.payout);
+                        const payoutResult = await this.balanceAPI.processBalancePayout(data.playerId, data.payout);
                         
                         // Add winnings to database balance
-                        await balanceAPI.addWinnings(data.playerId, data.payout);
+                        await this.balanceAPI.addWinnings(data.playerId, data.payout);
                         console.log(`💰 Added ${data.payout.toFixed(4)} ETH to balance for ${data.playerId}`);
                         console.log(`🏦 ETH transfer completed: ${payoutResult.txHash}`);
                         
@@ -320,10 +363,69 @@ class UnifiedPacoRockoProduction {
                 this.handleAuthentication(socket, data);
             });
             
+            // Handle provably fair verification requests
+            socket.on('verify_round', (data) => {
+                try {
+                    if (this.crashEngine.rng) {
+                        const verification = this.crashEngine.rng.verifyRound(
+                            data.serverSeed,
+                            data.clientSeed,
+                            data.nonce,
+                            data.expectedCrashPoint
+                        );
+                        socket.emit('verification_result', verification);
+                    } else {
+                        socket.emit('verification_error', { message: 'RNG not available' });
+                    }
+                } catch (error) {
+                    socket.emit('verification_error', { message: error.message });
+                }
+            });
+            
+            // Handle solvency status requests
+            socket.on('get_solvency_status', async () => {
+                try {
+                    const status = await this.solvencyManager.getStatus();
+                    socket.emit('solvency_status', {
+                        canAcceptBets: status.canAcceptBets,
+                        utilizationPercent: status.utilizationPercent,
+                        emergencyMode: status.emergencyMode
+                    });
+                } catch (error) {
+                    socket.emit('solvency_error', { message: error.message });
+                }
+            });
+            
+            // Handle RNG statistics requests
+            socket.on('get_rng_stats', () => {
+                try {
+                    if (this.crashEngine.rng) {
+                        const stats = this.crashEngine.rng.getDistributionStats();
+                        const config = this.crashEngine.rng.getConfig();
+                        socket.emit('rng_stats', { stats, config });
+                    } else {
+                        socket.emit('rng_error', { message: 'RNG not available' });
+                    }
+                } catch (error) {
+                    socket.emit('rng_error', { message: error.message });
+                }
+            });
+
             // Handle disconnection
             socket.on('disconnect', () => {
                 console.log(`🔌 Client disconnected: ${socket.id}`);
+                
+                // Clean up player data
+                const player = this.connectedPlayers.get(socket.id);
+                if (player && player.playerId) {
+                    // Remove any liability tracking for disconnected player
+                    // (This is a safety measure - normally handled during cashout/crash)
+                    this.solvencyManager.removeBetLiability(player.playerId, 0);
+                }
+                
                 this.connectedPlayers.delete(socket.id);
+                this.playerBetTypes.delete(socket.id);
+                this.playerBetData.delete(socket.id);
             });
         });
         
@@ -418,7 +520,74 @@ class UnifiedPacoRockoProduction {
                 }
             });
             
-            console.log('✅ Balance API routes configured');
+            // Admin monitoring endpoints
+            this.app.get('/api/admin/solvency', async (req, res) => {
+                try {
+                    const status = await this.solvencyManager.getStatus();
+                    res.json(status);
+                } catch (error) {
+                    res.status(500).json({ error: error.message });
+                }
+            });
+            
+            this.app.get('/api/admin/security', async (req, res) => {
+                try {
+                    const betValidatorStats = this.crashEngine.betValidator.getStats();
+                    const rngStats = this.crashEngine.rng.getDistributionStats();
+                    const rngConfig = this.crashEngine.rng.getConfig();
+                    
+                    res.json({
+                        betValidator: betValidatorStats,
+                        rng: { stats: rngStats, config: rngConfig },
+                        server: {
+                            uptime: Date.now() - this.gameStats.uptime,
+                            totalRounds: this.gameStats.totalRounds,
+                            connectedPlayers: this.connectedPlayers.size,
+                            activeBets: this.playerBetTypes.size
+                        }
+                    });
+                } catch (error) {
+                    res.status(500).json({ error: error.message });
+                }
+            });
+            
+            this.app.get('/api/admin/health', async (req, res) => {
+                try {
+                    const health = {
+                        status: 'healthy',
+                        timestamp: new Date().toISOString(),
+                        systems: {
+                            crashEngine: !!this.crashEngine,
+                            balanceAPI: !!this.balanceAPI,
+                            solvencyManager: !!this.solvencyManager,
+                            walletIntegration: !!this.walletIntegration
+                        },
+                        database: false, // Will be updated below
+                        emergency: this.solvencyManager.emergencyMode
+                    };
+                    
+                    // Test database connection
+                    if (this.balanceAPI) {
+                        try {
+                            await this.balanceAPI.supabase.from('user_balances').select('count').limit(1);
+                            health.systems.database = true;
+                        } catch (dbError) {
+                            health.status = 'degraded';
+                            health.systems.database = false;
+                        }
+                    }
+                    
+                    res.json(health);
+                } catch (error) {
+                    res.status(500).json({ 
+                        status: 'error',
+                        error: error.message,
+                        timestamp: new Date().toISOString()
+                    });
+                }
+            });
+
+            console.log('✅ Balance API routes configured with admin monitoring');
             
         } catch (error) {
             console.error('❌ Failed to setup Balance API routes:', error.message);
@@ -449,13 +618,33 @@ class UnifiedPacoRockoProduction {
      * 💰 Handle betting request
      */
     async handleBet(socket, data) {
-        const player = this.connectedPlayers.get(socket.id);
-        
-        const { bet_amount, payout_multiplier, player_address } = data;
+        try {
+            const player = this.connectedPlayers.get(socket.id);
+            
+            const { bet_amount, payout_multiplier, player_address, txHash } = data;
+            
+            // Validate inputs first
+            const validatedAmount = InputValidator.validateAmount(bet_amount);
+            const validatedMultiplier = InputValidator.validateMultiplier(payout_multiplier);
+            const validatedAddress = player_address ? InputValidator.sanitizeAddress(player_address) : null;
+            
+            // Determine bet type: blockchain (has txHash) or balance (no txHash)
+            const betType = txHash ? 'blockchain' : 'balance';
+            
+            // Store bet type and data for cashout processing
+            this.playerBetTypes.set(socket.id, betType);
+            this.playerBetData.set(socket.id, {
+                amount: validatedAmount,
+                multiplier: validatedMultiplier,
+                type: betType,
+                timestamp: Date.now(),
+                address: validatedAddress,
+                txHash: txHash
+            });
         
         // For wallet-based bets, store the player address for cashouts
-        if (player_address) {
-            player.lastBetAddress = player_address;
+        if (validatedAddress) {
+            player.lastBetAddress = validatedAddress;
             console.log(`🎯 BET DEBUG - Set lastBetAddress for socket ${socket.id}:`, player_address);
             console.log(`🎯 BET DEBUG - Player state:`, {
                 authenticated: player.authenticated,
@@ -464,67 +653,77 @@ class UnifiedPacoRockoProduction {
             });
         }
         
-        // Allow bets from wallet users even if not formally authenticated
-        if (!player || (!player.authenticated && !player_address)) {
-            throw new Error('Not authenticated or no player address provided');
-        }
-        
-        // Validate bet
-        if (!bet_amount || !payout_multiplier || bet_amount <= 0 || payout_multiplier < 1) {
-            throw new Error('Invalid bet parameters');
-        }
-
-        // Pre-bet solvency check
-        try {
-            if (this.walletIntegration?.getHouseInfo) {
-                const info = await this.walletIntegration.getHouseInfo()
-                const balanceEth = parseFloat(info.balance || '0')
-                const maxLiabilityFactor = parseFloat(process.env.MAX_LIABILITY_FACTOR || '0.25')
-                const potentialPayout = Number(bet_amount) * Number(payout_multiplier)
-                const maxLiability = balanceEth * maxLiabilityFactor
-                if (potentialPayout > maxLiability) {
-                    throw new Error('Bet exceeds solvency limit')
-                }
+            // Allow bets from wallet users even if not formally authenticated
+            if (!player || (!player.authenticated && !validatedAddress)) {
+                throw new Error('Not authenticated or no player address provided');
             }
-        } catch (e) {
-            throw new Error(e?.message || 'Solvency check failed')
-        }
         
-        // Process bet through crash engine
-        // For balance bets, use wallet address as player ID if not authenticated
-        const effectivePlayerId = player.playerId || player_address;
-        const effectiveUsername = player.username || `${player_address.slice(0,6)}...${player_address.slice(-4)}`;
+            // Use validated amounts instead of raw inputs
+            console.log(`🎯 BET PROCESSED - ${betType} bet: ${validatedAmount} ETH @ ${validatedMultiplier}x`);
+
+            // Enhanced solvency check using SolvencyManager
+            try {
+                const effectivePlayerId = player.playerId || validatedAddress;
+                await this.solvencyManager.canAcceptBet(effectivePlayerId, validatedAmount, validatedMultiplier);
+                console.log('✅ Solvency check passed');
+            } catch (solvencyError) {
+                console.error('❌ Solvency check failed:', solvencyError.message);
+                throw new Error(`Bet rejected: ${solvencyError.message}`);
+            }
         
-        console.log(`🎯 BET DEBUG - Processing bet for effective player ID:`, effectivePlayerId);
+            // Process bet through crash engine
+            // For balance bets, use wallet address as player ID if not authenticated
+            const effectivePlayerId = player.playerId || validatedAddress;
+            const effectiveUsername = player.username || (validatedAddress ? `${validatedAddress.slice(0,6)}...${validatedAddress.slice(-4)}` : 'Anonymous');
+            
+            console.log(`🎯 BET DEBUG - Processing bet for effective player ID:`, effectivePlayerId);
+            
+            const betResult = await this.crashEngine.placeBet(
+                effectivePlayerId,
+                effectiveUsername,
+                validatedAmount,
+                validatedMultiplier,
+                betType  // Pass bet type to engine
+            );
         
-        const betResult = await this.crashEngine.placeBet(
-            effectivePlayerId,
-            effectiveUsername,
-            bet_amount,
-            payout_multiplier
-        );
-        
-        // Handle different bet result types
-        if (betResult.type === 'immediate') {
-            console.log(`💰 Bet placed immediately: ${effectiveUsername} - ${bet_amount} @ ${payout_multiplier}x`);
-            socket.emit('betSuccess', {
-                type: 'immediate',
-                message: 'Bet placed successfully',
-                betInfo: betResult.betInfo
+            // Handle different bet result types
+            if (betResult.type === 'immediate') {
+                // Add liability tracking for immediate bets
+                await this.solvencyManager.addBetLiability(effectivePlayerId, validatedAmount, validatedMultiplier, betType);
+                
+                console.log(`💰 Bet placed immediately: ${effectiveUsername} - ${validatedAmount} @ ${validatedMultiplier}x (${betType})`);
+                socket.emit('betSuccess', {
+                    type: 'immediate',
+                    message: 'Bet placed successfully',
+                    betInfo: betResult.betInfo,
+                    betType: betType
+                });
+            } else if (betResult.type === 'queued') {
+                console.log(`🕐 Bet queued: ${effectiveUsername} - ${validatedAmount} @ ${validatedMultiplier}x (${betType})`);
+                socket.emit('betQueued', {
+                    type: 'queued',
+                    message: 'Bet queued for next round',
+                    queuedBet: betResult.queuedBet,
+                    betType: betType
+                });
+                // Note: Liability for queued bets will be added when they're processed
+            }
+            
+            // Process wallet transaction if wallet integration available
+            if (this.walletIntegration) {
+                // Handle wallet deduction
+                console.log(`💳 Processing wallet transaction for ${effectivePlayerId}`);
+            }
+            
+        } catch (error) {
+            console.error('❌ Bet handling failed:', error);
+            socket.emit('betError', {
+                message: error.message || 'Failed to process bet'
             });
-        } else if (betResult.type === 'queued') {
-            console.log(`🕐 Bet queued: ${effectiveUsername} - ${bet_amount} @ ${payout_multiplier}x`);
-            socket.emit('betQueued', {
-                type: 'queued',
-                message: 'Bet queued for next round',
-                queuedBet: betResult.queuedBet
-            });
-        }
-        
-        // Process wallet transaction if wallet integration available
-        if (this.walletIntegration) {
-            // Handle wallet deduction
-            console.log(`💳 Processing wallet transaction for ${effectivePlayerId}`);
+            
+            // Clean up stored bet data on error
+            this.playerBetTypes.delete(socket.id);
+            this.playerBetData.delete(socket.id);
         }
     }
     
@@ -532,7 +731,8 @@ class UnifiedPacoRockoProduction {
      * 🏃 Handle cashout request
      */
     async handleCashout(socket) {
-        const player = this.connectedPlayers.get(socket.id);
+        try {
+            const player = this.connectedPlayers.get(socket.id);
         
         console.log('🔍 CASHOUT DEBUG - Player state:', {
             socketId: socket.id,
@@ -572,9 +772,13 @@ class UnifiedPacoRockoProduction {
             throw new Error('Not in game phase');
         }
         
-        // Calculate current multiplier (same formula as client and server)
-        const elapsed = (Date.now() - gameState.phaseStartTime) / 1000;
-        const currentMultiplier = parseFloat((1.0024 * Math.pow(1.0718, elapsed)).toFixed(2));
+        // Calculate current multiplier using centralized calculator
+        const currentMultiplier = MultiplierCalculator.calculateMultiplier(gameState.phaseStartTime);
+        
+        // Validate multiplier is safe for cashout (prevents timing attacks)
+        if (!MultiplierCalculator.validateMultiplier(currentMultiplier, gameState.crashPoint)) {
+            throw new Error('Cashout too close to crash point');
+        }
         
         // Process cashout through crash engine
         const cashoutResult = await this.crashEngine.processCashout(
@@ -582,10 +786,14 @@ class UnifiedPacoRockoProduction {
             currentMultiplier
         );
         
-        // Handle payout based on bet type
+        // Handle payout based on bet type - FIXED: Get actual bet type instead of hardcoding
         if (cashoutResult && cashoutResult.payout > 0) {
-            // Check if this is a balance-based bet (no blockchain payout needed)
-            const isBalanceBet = true; // For now, assume all are balance bets
+            // Get actual bet type from stored data
+            const betType = this.playerBetTypes.get(socket.id) || 'balance';
+            const betData = this.playerBetData.get(socket.id);
+            const isBalanceBet = betType === 'balance';
+            
+            console.log(`💰 CASHOUT PAYOUT - Type: ${betType}, Amount: ${cashoutResult.payout.toFixed(4)} ETH`);
             
             if (isBalanceBet) {
                 // For balance bets, add winnings to user balance instead of blockchain payout
@@ -612,16 +820,39 @@ class UnifiedPacoRockoProduction {
             } else {
                 // For blockchain bets, the crashEngine.processCashout emits 'playerCashedOut' 
                 // which triggers automatic blockchain payout
+                console.log(`🔗 Processing blockchain-based cashout: ${cashoutResult.payout.toFixed(4)} ETH`);
+                console.log(`📤 Blockchain payout will be handled by 'playerCashedOut' event listener`);
             }
         }
+        
+        // Remove liability tracking after cashout
+        if (cashoutResult && cashoutResult.payout > 0) {
+            this.solvencyManager.removeBetLiability(playerId, cashoutResult.payout);
+        }
+        
+        // Clean up bet tracking data after successful cashout
+        this.playerBetTypes.delete(socket.id);
+        this.playerBetData.delete(socket.id);
         
         socket.emit('cashoutSuccess', {
             multiplier: currentMultiplier,
             profit: cashoutResult ? cashoutResult.profit : 0,
-            payout: cashoutResult ? cashoutResult.payout : 0
+            payout: cashoutResult ? cashoutResult.payout : 0,
+            betType: betType
         });
         
         console.log(`🏃 Cashout processed: ${playerId} @ ${currentMultiplier.toFixed(2)}x`);
+        
+        } catch (error) {
+            console.error('❌ Cashout handling failed:', error);
+            socket.emit('cashoutError', {
+                message: error.message || 'Failed to process cashout'
+            });
+            
+            // Clean up on error
+            this.playerBetTypes.delete(socket.id);
+            this.playerBetData.delete(socket.id);
+        }
     }
     
     /**

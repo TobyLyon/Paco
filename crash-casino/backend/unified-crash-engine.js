@@ -6,6 +6,9 @@
  */
 
 const EventEmitter = require('events');
+const MultiplierCalculator = require('../shared/multiplier-calculator');
+const BetValidator = require('./bet-validator');
+const ProvablyFairRNG = require('./provably-fair-rng');
 
 class UnifiedCrashEngine extends EventEmitter {
     constructor(io, config = {}) {
@@ -47,10 +50,9 @@ class UnifiedCrashEngine extends EventEmitter {
         // Countdown synchronization
         this.lastCountdownSecond = -1;
         
-        // Commit-reveal RNG
-        this.currentCommit = null;
-        this.currentServerSeed = null;
-        this.currentNonce = 0;
+        // Enhanced security systems
+        this.betValidator = new BetValidator(config.betValidation || {});
+        this.rng = new ProvablyFairRNG(config.rng || {});
 
         // Pause control
         this.paused = false;
@@ -113,11 +115,11 @@ class UnifiedCrashEngine extends EventEmitter {
             }
         }
         else if (this.game_phase) {
-            // GAME PHASE: Multiplier counting up until crash
-            const current_multiplier = parseFloat((1.0024 * Math.pow(1.0718, time_elapsed)).toFixed(2));
+            // GAME PHASE: Multiplier counting up until crash - Use centralized calculator
+            const current_multiplier = MultiplierCalculator.calculateMultiplier(this.phase_start_time);
             
-            // Check if we've reached the crash point
-            if (current_multiplier >= this.game_crash_value) {
+            // Check if we've reached the crash point with buffer for timing attacks
+            if (current_multiplier + MultiplierCalculator.getCashoutBuffer() / 1000 >= this.game_crash_value) {
                 // STOP the multiplier count (CLIENT LISTENS TO THIS)
                 this.io.emit('stop_multiplier_count', this.game_crash_value.toFixed(2));
                 this.emit('roundCrashed', {
@@ -129,6 +131,18 @@ class UnifiedCrashEngine extends EventEmitter {
                 this.game_phase = false;
                 this.cashout_phase = true;
                 this.phase_start_time = Date.now();
+                
+                // Reveal server seed for provably fair verification
+                const revealData = this.rng.revealServerSeed();
+                this.io.emit('round_reveal', {
+                    roundId: this.current_round_id,
+                    crashPoint: this.game_crash_value,
+                    ...revealData
+                });
+                
+                // Reset bet validator counters for new round
+                this.betValidator.resetRoundCounters();
+                
                 console.log(`💥 Round crashed at ${current_multiplier.toFixed(2)}x (target: ${this.game_crash_value.toFixed(2)}x)`);
             }
         }
@@ -186,29 +200,30 @@ class UnifiedCrashEngine extends EventEmitter {
     }
     
     /**
-     * 🎲 Generate crash value - CORRECTED Bustabit algorithm with 1% house edge
+     * 🎲 Generate crash value using provably fair RNG
      */
     prepareCommitForNextRound() {
-        const crypto = require('crypto');
-        this.currentServerSeed = crypto.randomBytes(32).toString('hex');
-        this.currentNonce += 1;
-        const preimage = `${this.currentServerSeed}|${this.current_round_id}|${this.currentNonce}`;
-        this.currentCommit = crypto.createHash('sha256').update(preimage).digest('hex');
-        // Set hidden crash value now from serverSeed
-        this.game_crash_value = this.calculateCrashFromSeed(this.currentServerSeed);
-    }
-
-    calculateCrashFromSeed(serverSeed) {
-        const { keccak256 } = require('ethers');
-        const hash = keccak256(`0x${serverSeed}`);
-        // Map hash -> multiplier with house edge and bounds
-        // Use first 52 bits to avoid modulo bias
-        const bigint = BigInt(hash);
-        const r = Number(bigint % (2n ** 52n)) / Number(2n ** 52n);
-        const houseEdge = 0.01;
-        const raw = Math.floor((100 * (1 - houseEdge)) / Math.max(r, 1e-12)) / 100;
-        const capped = Math.max(this.config.minCrashValue, Math.min(raw, this.config.maxCrashValue));
-        return Math.round(capped * 100) / 100;
+        // Generate server seed and get hash for reveal
+        const hashedServerSeed = this.rng.generateServerSeed();
+        
+        // Set client seed (could be user-provided or default)
+        this.rng.setClientSeed();
+        
+        // Calculate crash point using provably fair algorithm
+        this.game_crash_value = this.rng.calculateCrashPoint();
+        
+        // Increment nonce for next round
+        this.rng.incrementNonce();
+        
+        console.log(`🎲 Round ${this.current_round_id} prepared - Crash: ${this.game_crash_value}x, Hash: ${hashedServerSeed}`);
+        
+        // Emit provably fair data to clients
+        this.io.emit('round_commit', {
+            roundId: this.current_round_id,
+            hashedServerSeed: hashedServerSeed,
+            clientSeed: this.rng.getCurrentRoundData().clientSeed,
+            nonce: this.rng.getCurrentRoundData().nonce
+        });
     }
     
     /**
@@ -233,33 +248,45 @@ class UnifiedCrashEngine extends EventEmitter {
     /**
      * 💸 Place a bet for a player (with intelligent queueing)
      */
-    async placeBet(playerId, playerName, betAmount, payoutMultiplier) {
-        // Check if player already has active bet
-        if (this.active_player_id_list.includes(playerId)) {
-            throw new Error('Player already has active bet');
-        }
-        
-        // Check if player already has queued bet
-        if (this.queuedBets.has(playerId)) {
-            throw new Error('Player already has bet queued for next round');
-        }
+    async placeBet(playerId, playerName, betAmount, payoutMultiplier, betType = 'balance') {
+        // Use comprehensive bet validator
+        const validatedBet = this.betValidator.validateBet(
+            playerId,
+            betAmount,
+            payoutMultiplier,
+            this.active_player_id_list,
+            this.queuedBets,
+            betType
+        );
         
         // STRICT TIMING: Only allow bets during betting phase
         const inBettingPhase = this.betting_phase;
         
         // CRITICAL: No grace window - bets only allowed during betting phase
         if (inBettingPhase) {
-            return this.placeBetImmediate(playerId, playerName, betAmount, payoutMultiplier);
+            return this.placeBetImmediate(
+                validatedBet.playerId,
+                playerName,
+                validatedBet.amount,
+                validatedBet.multiplier,
+                validatedBet.type
+            );
         }
         
         // If not in betting phase, queue bet for next round
-        return this.queueBetForNextRound(playerId, playerName, betAmount, payoutMultiplier);
+        return this.queueBetForNextRound(
+            validatedBet.playerId,
+            playerName,
+            validatedBet.amount,
+            validatedBet.multiplier,
+            validatedBet.type
+        );
     }
     
     /**
      * 💰 Place bet immediately (during betting phase)
      */
-    placeBetImmediate(playerId, playerName, betAmount, payoutMultiplier) {
+    placeBetImmediate(playerId, playerName, betAmount, payoutMultiplier, betType = 'balance') {
         // Add player to active list
         this.active_player_id_list.push(playerId);
         
@@ -271,7 +298,8 @@ class UnifiedCrashEngine extends EventEmitter {
             payout_multiplier: payoutMultiplier,
             cashout_multiplier: null,
             profit: null,
-            b_bet_live: true
+            b_bet_live: true,
+            bet_type: betType  // Track bet type for payout processing
         };
         
         this.live_bettors_table.push(betInfo);
@@ -286,12 +314,13 @@ class UnifiedCrashEngine extends EventEmitter {
     /**
      * 🕐 Queue bet for next round
      */
-    queueBetForNextRound(playerId, playerName, betAmount, payoutMultiplier) {
+    queueBetForNextRound(playerId, playerName, betAmount, payoutMultiplier, betType = 'balance') {
         const queuedBet = {
             playerId,
             playerName,
             betAmount,
             payoutMultiplier,
+            betType,
             timestamp: Date.now()
         };
         
@@ -318,12 +347,13 @@ class UnifiedCrashEngine extends EventEmitter {
         
         for (const [playerId, queuedBet] of this.queuedBets) {
             try {
-                // Place the queued bet immediately
+                // Place the queued bet immediately with original bet type
                 const result = this.placeBetImmediate(
                     queuedBet.playerId,
                     queuedBet.playerName,
                     queuedBet.betAmount,
-                    queuedBet.payoutMultiplier
+                    queuedBet.payoutMultiplier,
+                    queuedBet.betType || 'balance'  // Use stored bet type
                 );
                 
                 console.log(`✅ Queued bet processed: ${queuedBet.playerName}`);
@@ -382,7 +412,8 @@ class UnifiedCrashEngine extends EventEmitter {
                 username: bettor.the_username,
                 multiplier: currentMultiplier,
                 payout: payout,
-                betAmount: bettor.bet_amount
+                betAmount: bettor.bet_amount,
+                betType: bettor.bet_type || 'balance'  // Include bet type for proper payout routing
             });
             
             console.log(`💰 Player ${bettor.the_username} cashed out at ${currentMultiplier}x for ${payout.toFixed(4)} ETH`);

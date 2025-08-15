@@ -256,8 +256,8 @@ class AbstractWalletIntegration {
             const hotAccount = privateKeyToAccount(formattedHotKey);
             const walletClient = createWalletClient({
                 account: hotAccount,
-                chain: abstract,
-                transport: http(abstract.rpcUrls.default.http[0]),
+                chain: ABSTRACT_CHAIN,
+                transport: http(ABSTRACT_CHAIN.rpcUrls.default.http[0]),
             });
 
             console.log(`💸 Processing payout: ${winAmount.toString()} wei (${(betAmount * multiplier).toFixed(4)} ETH) to ${playerAddress}`);

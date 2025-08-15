@@ -3696,18 +3696,21 @@ body {
     }
 
     body {
-        overflow-y: auto;
-        height: auto;
+        overflow-y: auto !important;
+        height: auto !important;
         padding: 0;
         margin: 0;
+        -webkit-overflow-scrolling: touch; /* Smooth iOS scrolling */
+        min-height: 100vh; /* Ensure full height but allow overflow */
     }
     
     .restaurant-container {
         padding: var(--space-sm);
-        height: auto;
+        height: auto !important;
         min-height: calc(100vh - 55px);
         width: 100%;
         box-sizing: border-box;
+        overflow-y: visible;
     }
     
     /* ===== MOBILE TAB PANELS ===== */

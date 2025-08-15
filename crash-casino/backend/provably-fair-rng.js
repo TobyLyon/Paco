@@ -91,28 +91,47 @@ class ProvablyFairRNG {
     }
     
     /**
-     * Convert hash to crash point using industry-standard algorithm
+     * Convert hash to crash point using OFFICIAL REFERENCE ALGORITHM
+     * Matches the exact algorithm from the reference crash casino implementation
      */
     hashToCrashPoint(hash) {
-        // Use first 13 hex characters (52 bits) to avoid modulo bias
-        const hexSubstring = hash.substring(0, 13);
-        const intValue = parseInt(hexSubstring, 16);
+        // Convert hash to large integer for random generation (use first 10 chars for 32-bit range)
+        const hexSubstring = hash.substring(0, 10);
+        const randomInt = parseInt(hexSubstring, 16);
         
-        // Convert to float between 0 and 1
-        const float = intValue / Math.pow(2, 52);
-        
-        // Apply house edge and calculate crash point
-        const houseEdgeMultiplier = 1 - this.config.houseEdge;
-        const rawCrashPoint = Math.floor((100 * houseEdgeMultiplier) / Math.max(float, 1e-12)) / 100;
-        
-        // Apply bounds
-        const boundedCrashPoint = Math.max(
-            this.config.minCrashPoint,
-            Math.min(rawCrashPoint, this.config.maxCrashPoint)
-        );
-        
-        // Round to 2 decimal places
-        return Math.round(boundedCrashPoint * 100) / 100;
+        // EXACT REFERENCE ALGORITHM: 3% house edge (1/33 instant crashes)
+        if (randomInt % 33 === 0) {
+            // 3% chance of instant crash at 1.00x (house edge)
+            console.log(`🎲 Hash: ${hash.substring(0, 10)} → Instant crash (1/33) → 1.00x`);
+            return 1.00;
+        } else {
+            // Generate random float for crash calculation
+            // Use a different part of hash to avoid correlation
+            const hexSubstring2 = hash.substring(10, 18);
+            const randomInt2 = parseInt(hexSubstring2, 16);
+            let random_float = randomInt2 / 0xFFFFFFFF; // Convert to [0,1]
+            
+            // Ensure we never get exactly 0 (would cause division by zero)
+            while (random_float === 0) {
+                // Use next part of hash if we get 0
+                const fallbackHex = hash.substring(18, 26);
+                const fallbackInt = parseInt(fallbackHex, 16);
+                random_float = fallbackInt / 0xFFFFFFFF;
+                if (random_float === 0) random_float = 0.0001; // Ultimate fallback
+            }
+            
+            // EXACT REFERENCE FORMULA: 0.01 + (0.99 / random_float)
+            let game_crash_value = 0.01 + (0.99 / random_float);
+            
+            // Round to 2 decimal places (exact reference implementation)
+            game_crash_value = Math.round(game_crash_value * 100) / 100;
+            
+            // Apply max cap for safety
+            game_crash_value = Math.min(game_crash_value, this.config.maxCrashPoint);
+            
+            console.log(`🎲 Hash: ${hash.substring(0, 10)} → Float: ${random_float.toFixed(6)} → Crash: ${game_crash_value}x`);
+            return game_crash_value;
+        }
     }
     
     /**

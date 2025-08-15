@@ -503,6 +503,18 @@ class CrashGameClient {
             console.error('🚨 Error message:', error?.message || 'No message');
             console.error('🚨 Error stack:', error?.stack || 'No stack');
         });
+        
+        // Add specific cashout error handler
+        this.socket.on('cashoutError', (error) => {
+            console.error('❌ CASHOUT ERROR from server:', error);
+            this.showError(`Cashout failed: ${error.message || 'Unknown error'}`);
+            
+            // Re-enable cashout button
+            const cashOutBtn = document.getElementById('cashOutBtn');
+            if (cashOutBtn && this.playerBet && !this.playerBet.cashedOut) {
+                cashOutBtn.style.display = 'block';
+            }
+        });
 
         // Setup heartbeat
         setInterval(() => {

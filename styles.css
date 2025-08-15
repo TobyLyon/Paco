@@ -4173,4 +4173,27 @@ button:focus,
         align-items: center;
         gap: 10px;
     }
+}
+
+/* CRITICAL MOBILE SCROLLING FIX - MUST BE LAST */
+@media (max-width: 768px) {
+    html, body {
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        height: auto !important;
+        min-height: 100vh !important;
+        -webkit-overflow-scrolling: touch !important;
+        position: relative !important;
+    }
+    
+    .restaurant-container {
+        height: auto !important;
+        min-height: 100vh !important;
+        overflow: visible !important;
+    }
+    
+    .tab-panel {
+        height: auto !important;
+        overflow: visible !important;
+    }
 } 

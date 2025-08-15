@@ -299,6 +299,53 @@ app.post('/api/withdraw', async (req, res) => {
     }
 });
 
+// Manual deposit processing (for debugging)
+app.post('/api/deposits/force-process', async (req, res) => {
+    try {
+        if (!balanceAPI) {
+            return res.status(503).json({ error: 'Balance API not initialized' });
+        }
+        
+        const { txHash, fromAddress, amount } = req.body;
+        console.log(`🔧 Manual deposit processing requested: ${txHash} from ${fromAddress} amount ${amount}`);
+        
+        const result = await balanceAPI.processDeposit(txHash, fromAddress, amount, 'manual_trigger');
+        res.json(result);
+    } catch (error) {
+        console.error('Manual deposit processing error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Trigger deposit indexer manually (for debugging)
+app.post('/api/deposits/trigger-indexer', async (req, res) => {
+    try {
+        if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+            return res.status(503).json({ error: 'Supabase not configured' });
+        }
+        
+        const { createClient } = require('@supabase/supabase-js');
+        const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+        const hotWalletAddress = process.env.HOT_WALLET_ADDRESS || '0x02B4bFbA6D16308F5B40A5DF1f136C9472da52FF';
+        
+        console.log('🔧 Manual indexer trigger requested');
+        const result = await indexDeposits({ 
+            supabase, 
+            hotWalletAddress,
+            minConfirmations: 0  // Force immediate processing
+        });
+        
+        res.json({ 
+            message: 'Indexer run completed', 
+            blocksScanned: result.scanned,
+            hotWalletAddress 
+        });
+    } catch (error) {
+        console.error('Manual indexer trigger error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Register deposit for attribution
 app.post('/api/deposit/register', async (req, res) => {
     try {

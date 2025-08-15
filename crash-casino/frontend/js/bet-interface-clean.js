@@ -521,6 +521,61 @@ class BetInterface {
     }
 
     /**
+     * 🔧 Manually trigger deposit processing (debug)
+     */
+    async manualTriggerDeposit(txHash, fromAddress, amount) {
+        try {
+            console.log(`🔧 Manually triggering deposit processing: ${txHash}`);
+            
+            const response = await fetch('https://paco-x57j.onrender.com/api/deposits/force-process', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ txHash, fromAddress, amount })
+            });
+            
+            const result = await response.json();
+            console.log('🔧 Manual deposit result:', result);
+            
+            if (result.success) {
+                this.showNotification(`✅ Deposit manually processed! Balance updated.`, 'success');
+                await this.refreshBalance();
+            } else {
+                this.showNotification(`⚠️ Manual processing: ${result.reason}`, 'warning');
+            }
+            
+            return result;
+        } catch (error) {
+            console.error('Manual deposit trigger error:', error);
+            this.showNotification(`❌ Manual processing failed: ${error.message}`, 'error');
+        }
+    }
+
+    /**
+     * 🔧 Manually trigger indexer (debug)
+     */
+    async manualTriggerIndexer() {
+        try {
+            console.log(`🔧 Manually triggering deposit indexer...`);
+            
+            const response = await fetch('https://paco-x57j.onrender.com/api/deposits/trigger-indexer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            
+            const result = await response.json();
+            console.log('🔧 Manual indexer result:', result);
+            
+            this.showNotification(`✅ Indexer triggered: ${result.blocksScanned} blocks scanned`, 'success');
+            await this.refreshBalance();
+            
+            return result;
+        } catch (error) {
+            console.error('Manual indexer trigger error:', error);
+            this.showNotification(`❌ Indexer trigger failed: ${error.message}`, 'error');
+        }
+    }
+
+    /**
      * 💰 Add winnings to balance
      */
     addWinnings(amount) {
@@ -1649,8 +1704,39 @@ window.showBalanceUI = function() {
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         window.betInterface = new BetInterface();
+        setupDebugCommands();
     });
 } else {
     window.betInterface = new BetInterface();
+    setupDebugCommands();
+}
+
+// Global debug functions
+function setupDebugCommands() {
+    window.debugDeposit = {
+        // Manually process your deposit
+        processYourDeposit: () => {
+            return window.betInterface.manualTriggerDeposit(
+                '0xaf14e82f668f53c677c38bad483abaf892c73e84e75a47ae1f112f577c977ad2', 
+                '0x2e215a36c9fa606e9408b7e7094e687f9d8b06a6', 
+                0.01
+            );
+        },
+        
+        // Trigger indexer to scan for deposits
+        triggerIndexer: () => {
+            return window.betInterface.manualTriggerIndexer();
+        },
+        
+        // Process any deposit manually
+        processDeposit: (txHash, fromAddress, amount) => {
+            return window.betInterface.manualTriggerDeposit(txHash, fromAddress, amount);
+        }
+    };
+
+    console.log('🔧 Debug commands available:');
+    console.log('debugDeposit.processYourDeposit() - Process your 0.01 ETH deposit');
+    console.log('debugDeposit.triggerIndexer() - Trigger deposit indexer');
+    console.log('debugDeposit.processDeposit(txHash, address, amount) - Process any deposit');
 }
 

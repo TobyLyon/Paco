@@ -5,7 +5,7 @@
  */
 
 const { ethers } = require('ethers');
-const { createWalletClient, http, parseEther } = require('viem');
+const { createWalletClient, createPublicClient, http, parseEther } = require('viem');
 const { privateKeyToAccount } = require('viem/accounts');
 const { getHouseWallet } = require('./house-wallet');
 const { config } = require('./config/abstract-config');
@@ -260,11 +260,17 @@ class AbstractWalletIntegration {
                 transport: http(ABSTRACT_CHAIN.rpcUrls.default.http[0]),
             });
 
+            // Initialize public client for reading blockchain data (balance, etc.)
+            const publicClient = createPublicClient({
+                chain: ABSTRACT_CHAIN,
+                transport: http(ABSTRACT_CHAIN.rpcUrls.default.http[0]),
+            });
+
             console.log(`💸 Processing payout: ${winAmount.toString()} wei (${(betAmount * multiplier).toFixed(4)} ETH) to ${playerAddress}`);
             console.log(`🔥 Using hot wallet: ${hotAccount.address}`);
 
             // Check hot wallet balance (critical for payouts)
-            const hotBalance = await walletClient.getBalance({ address: hotAccount.address });
+            const hotBalance = await publicClient.getBalance({ address: hotAccount.address });
             if (hotBalance < winAmount) {
                 console.error(`🚨 Insufficient hot wallet balance! Need: ${winAmount.toString()}, Have: ${hotBalance.toString()}`);
                 console.error(`💡 Fund hot wallet from house wallet: 0x1f8B1c4D05eF17Ebaa1E572426110146691e6C5a`);

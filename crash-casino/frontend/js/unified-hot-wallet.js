@@ -35,6 +35,16 @@ class UnifiedHotWallet {
             return false;
         }
         
+        // Validate that we have a real wallet connection
+        const hasActiveConnection = window.ethereum?.isConnected?.() || 
+                                   window.ethereum?.selectedAddress === walletAddress ||
+                                   window.realWeb3Modal?.address === walletAddress;
+        
+        if (!hasActiveConnection) {
+            console.warn('⚠️ No active wallet connection detected, skipping hot wallet init');
+            return false;
+        }
+        
         this.walletAddress = walletAddress.toLowerCase();
         console.log(`🏦 Initializing hot wallet for: ${this.walletAddress}`);
         
@@ -54,6 +64,8 @@ class UnifiedHotWallet {
             return true;
         } catch (error) {
             console.error('❌ Failed to initialize hot wallet:', error);
+            this.isInitialized = false;
+            this.walletAddress = null;
             return false;
         }
     }
@@ -387,21 +399,58 @@ class UnifiedHotWallet {
             });
         }
         
-        // Deposit button
-        const depositBtn = document.getElementById('depositBtn');
-        if (depositBtn) {
-            depositBtn.addEventListener('click', () => {
-                this.showDepositModal();
+        // Set up deposit/withdraw button listeners with retry logic
+        setTimeout(() => {
+            const depositBtn = document.getElementById('depositBtn');
+            const withdrawBtn = document.getElementById('withdrawBtn');
+            
+            console.log('🔍 Setting up deposit/withdraw button listeners:', {
+                depositBtn: !!depositBtn,
+                withdrawBtn: !!withdrawBtn
             });
-        }
-        
-        // Withdraw button
-        const withdrawBtn = document.getElementById('withdrawBtn');
-        if (withdrawBtn) {
-            withdrawBtn.addEventListener('click', () => {
-                this.showWithdrawModal();
-            });
-        }
+            
+            if (depositBtn) {
+                depositBtn.addEventListener('click', () => {
+                    console.log('💰 Deposit button clicked');
+                    this.showDepositModal();
+                });
+                console.log('✅ Deposit button listener added');
+            } else {
+                console.warn('⚠️ Deposit button not found - will retry');
+                // Retry after a short delay
+                setTimeout(() => {
+                    const retryDepositBtn = document.getElementById('depositBtn');
+                    if (retryDepositBtn) {
+                        retryDepositBtn.addEventListener('click', () => {
+                            console.log('💰 Deposit button clicked (retry)');
+                            this.showDepositModal();
+                        });
+                        console.log('✅ Deposit button listener added (retry)');
+                    }
+                }, 500);
+            }
+            
+            if (withdrawBtn) {
+                withdrawBtn.addEventListener('click', () => {
+                    console.log('🏧 Withdraw button clicked');
+                    this.showWithdrawModal();
+                });
+                console.log('✅ Withdraw button listener added');
+            } else {
+                console.warn('⚠️ Withdraw button not found - will retry');
+                // Retry after a short delay
+                setTimeout(() => {
+                    const retryWithdrawBtn = document.getElementById('withdrawBtn');
+                    if (retryWithdrawBtn) {
+                        retryWithdrawBtn.addEventListener('click', () => {
+                            console.log('🏧 Withdraw button clicked (retry)');
+                            this.showWithdrawModal();
+                        });
+                        console.log('✅ Withdraw button listener added (retry)');
+                    }
+                }, 500);
+            }
+        }, 100); // Small delay to ensure DOM is ready
     }
     
     /**
@@ -695,10 +744,26 @@ window.unifiedHotWallet = new UnifiedHotWallet();
 
 // Auto-initialize if wallet is already connected
 setTimeout(() => {
+    // More strict wallet detection - only init if we have clear indicators of active connection
+    const hasMetaMask = window.ethereum?.selectedAddress && window.ethereum?.isConnected?.();
+    const hasWeb3Modal = window.realWeb3Modal?.address;
     const walletAddress = window.ethereum?.selectedAddress || window.realWeb3Modal?.address;
-    if (walletAddress && !window.unifiedHotWallet.isInitialized) {
+    
+    // Also check if wallet bridge indicates we're connected
+    const walletBridgeConnected = document.body.classList.contains('wallet-connected') || 
+                                  localStorage.getItem('wallet-connected') === 'true';
+    
+    if (walletAddress && !window.unifiedHotWallet.isInitialized && (hasMetaMask || hasWeb3Modal || walletBridgeConnected)) {
         console.log('🏦 Wallet already connected, auto-initializing unified hot wallet:', walletAddress);
         window.unifiedHotWallet.init(walletAddress);
+    } else {
+        console.log('🔍 Wallet auto-init check:', {
+            walletAddress: !!walletAddress,
+            hasMetaMask,
+            hasWeb3Modal,
+            walletBridgeConnected,
+            alreadyInitialized: window.unifiedHotWallet.isInitialized
+        });
     }
 }, 1000); // Small delay to ensure other systems are loaded
 

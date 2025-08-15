@@ -28,41 +28,26 @@ class BetInterface {
         this.setupEventListeners();
         this.updateBetDisplay();
         
-        // Only initialize balance system if wallet is actually connected (not just cached)
-        const hasActiveConnection = window.ethereum?.isConnected?.() && window.ethereum?.selectedAddress;
-        if (hasActiveConnection) {
-            console.log('🔗 Active wallet connection detected, initializing balance system...');
+        // Initialize balance system when wallet is detected
+        if (window.ethereum?.selectedAddress || window.realWeb3Modal?.address) {
+            console.log('🔗 Wallet detected, initializing balance system...');
             await this.initializeBalance();
         } else {
-            console.log('⚠️ No active wallet connection, waiting for user to connect...');
-            // Don't auto-initialize - wait for actual wallet connection
-            /*
+            console.log('⚠️ No wallet detected yet, waiting for connection...');
+            // Show balance UI anyway for when wallet connects
             setTimeout(() => {
                 if (!this.balanceInitialized) {
-                    console.log('🧪 Creating balance UI for testing (no wallet)');
+                    console.log('🧪 Creating balance UI for when wallet connects');
                     this.createBalanceUI();
                 }
             }, 2000);
-            */
         }
         
         // Listen for wallet connection events
         document.addEventListener('walletConnected', async (event) => {
             console.log('🔗 Wallet connected event received!');
             
-            // Initialize unified hot wallet if available
-            if (window.unifiedHotWallet && event.detail?.address) {
-                const success = await window.unifiedHotWallet.init(event.detail.address);
-                if (success) {
-                    console.log('✅ Unified hot wallet initialized on wallet connect');
-                    // Sync our balance with the hot wallet
-                    this.userBalance = window.unifiedHotWallet.getBalance();
-                    this.balanceInitialized = true;
-                    return; // Skip legacy balance initialization
-                }
-            }
-            
-            // Fallback to legacy balance system
+            // Initialize balance system
             await this.initializeBalance();
         });
 
@@ -270,21 +255,7 @@ class BetInterface {
      * 💸 Place bet using balance
      */
     async placeBetWithBalance(amount) {
-        // Use unified hot wallet if available
-        console.log('🔍 Checking unified hot wallet availability:', {
-            hotWalletExists: !!window.unifiedHotWallet,
-            isReady: window.unifiedHotWallet?.isReady(),
-            walletAddress: window.unifiedHotWallet?.walletAddress,
-            isInitialized: window.unifiedHotWallet?.isInitialized
-        });
-        
-        if (window.unifiedHotWallet && window.unifiedHotWallet.isReady()) {
-            console.log('🏦 Using unified hot wallet for bet placement');
-            return await window.unifiedHotWallet.placeBet(amount);
-        }
-        
-        // Fallback to legacy system
-        console.log('🔄 Using legacy balance system for bet placement');
+        console.log('🔍 Using original balance system for bet placement');
         
         // CRITICAL: Always refresh balance before attempting to bet
         try {
@@ -553,15 +524,8 @@ class BetInterface {
      * 💰 Add winnings to balance
      */
     addWinnings(amount) {
-        // Use unified hot wallet if available
-        if (window.unifiedHotWallet && window.unifiedHotWallet.isReady()) {
-            window.unifiedHotWallet.addWinnings(amount);
-            this.userBalance = window.unifiedHotWallet.getBalance();
-        } else {
-            // Fallback to legacy system
-            this.userBalance += amount;
-            this.updateBalanceDisplay();
-        }
+        this.userBalance += amount;
+        this.updateBalanceDisplay();
         this.showNotification(`🎉 +${amount.toFixed(4)} ETH added to balance!`, 'success');
     }
 

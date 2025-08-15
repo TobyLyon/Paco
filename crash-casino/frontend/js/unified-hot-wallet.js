@@ -195,6 +195,13 @@ class UnifiedHotWallet {
             existingUI.remove();
         }
         
+        // Hide legacy balance UI if it exists
+        const legacyBalanceUI = document.getElementById('balanceSection');
+        if (legacyBalanceUI) {
+            legacyBalanceUI.style.display = 'none';
+            console.log('🏦 Hidden legacy balance UI in favor of unified hot wallet');
+        }
+        
         // Create hot wallet UI
         const hotWalletHTML = `
             <div id="hotWalletContainer" class="hot-wallet-section" style="
@@ -582,6 +589,14 @@ class UnifiedHotWallet {
     disconnect() {
         this.stopAutoSync();
         this.hideHotWalletUI();
+        
+        // Show legacy balance UI back
+        const legacyBalanceUI = document.getElementById('balanceSection');
+        if (legacyBalanceUI) {
+            legacyBalanceUI.style.display = 'block';
+            console.log('🏦 Restored legacy balance UI after disconnect');
+        }
+        
         this.walletAddress = null;
         this.balance = 0;
         this.isInitialized = false;
@@ -636,15 +651,26 @@ class UnifiedHotWallet {
 // Create global instance
 window.unifiedHotWallet = new UnifiedHotWallet();
 
+// Auto-initialize if wallet is already connected
+setTimeout(() => {
+    const walletAddress = window.ethereum?.selectedAddress || window.realWeb3Modal?.address;
+    if (walletAddress && !window.unifiedHotWallet.isInitialized) {
+        console.log('🏦 Wallet already connected, auto-initializing unified hot wallet:', walletAddress);
+        window.unifiedHotWallet.init(walletAddress);
+    }
+}, 1000); // Small delay to ensure other systems are loaded
+
 // Auto-initialize when wallet connects
-window.addEventListener('walletConnected', (event) => {
+document.addEventListener('walletConnected', (event) => {
+    console.log('🏦 Unified hot wallet received wallet connected event:', event.detail);
     if (event.detail && event.detail.address) {
         window.unifiedHotWallet.init(event.detail.address);
     }
 });
 
 // Auto-disconnect when wallet disconnects
-window.addEventListener('walletDisconnected', () => {
+document.addEventListener('walletDisconnected', () => {
+    console.log('🏦 Unified hot wallet received wallet disconnected event');
     window.unifiedHotWallet.disconnect();
 });
 

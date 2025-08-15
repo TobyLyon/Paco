@@ -44,7 +44,7 @@ class BetInterface {
         }
         
         // Listen for wallet connection events
-        window.addEventListener('walletConnected', async (event) => {
+        document.addEventListener('walletConnected', async (event) => {
             console.log('🔗 Wallet connected event received!');
             
             // Initialize unified hot wallet if available
@@ -268,6 +268,13 @@ class BetInterface {
      */
     async placeBetWithBalance(amount) {
         // Use unified hot wallet if available
+        console.log('🔍 Checking unified hot wallet availability:', {
+            hotWalletExists: !!window.unifiedHotWallet,
+            isReady: window.unifiedHotWallet?.isReady(),
+            walletAddress: window.unifiedHotWallet?.walletAddress,
+            isInitialized: window.unifiedHotWallet?.isInitialized
+        });
+        
         if (window.unifiedHotWallet && window.unifiedHotWallet.isReady()) {
             console.log('🏦 Using unified hot wallet for bet placement');
             return await window.unifiedHotWallet.placeBet(amount);

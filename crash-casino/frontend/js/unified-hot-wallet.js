@@ -15,6 +15,7 @@ class UnifiedHotWallet {
         this.isInitialized = false;
         this.isUIVisible = false;
         this.syncInterval = null;
+        this.lastBetTime = 0; // Track when last bet was placed
         
         // Bind methods
         this.init = this.init.bind(this);
@@ -82,11 +83,31 @@ class UnifiedHotWallet {
                 const data = await response.json();
                 const serverBalance = parseFloat(data.balance || 0);
                 
-                // Update if different
+                // Update if different, but avoid overwriting recent bet optimistic updates
+                const timeSinceLastBet = Date.now() - this.lastBetTime;
                 if (Math.abs(serverBalance - this.balance) > 0.0001) {
-                    console.log(`💰 Balance updated: ${this.balance.toFixed(4)} → ${serverBalance.toFixed(4)} ETH`);
-                    this.balance = serverBalance;
-                    this.updateBalanceDisplay();
+                    // If we just placed a bet (within 3 seconds), be more careful about updates
+                    if (timeSinceLastBet < 3000) {
+                        // Only update if server balance is significantly different from expected
+                        // (Expected would be original balance minus bet amount)
+                        console.log(`⚠️ Potential sync conflict detected - recent bet ${timeSinceLastBet}ms ago`);
+                        console.log(`Server: ${serverBalance.toFixed(4)} ETH, Local: ${this.balance.toFixed(4)} ETH`);
+                        
+                        // Only update if server balance is higher (indicating a credit/deposit)
+                        // or if the difference is very large (indicating a real discrepancy)
+                        if (serverBalance > this.balance || Math.abs(serverBalance - this.balance) > 0.01) {
+                            console.log(`💰 Balance updated: ${this.balance.toFixed(4)} → ${serverBalance.toFixed(4)} ETH`);
+                            this.balance = serverBalance;
+                            this.updateBalanceDisplay();
+                        } else {
+                            console.log(`⏳ Keeping optimistic balance, server will catch up`);
+                        }
+                    } else {
+                        // Normal update - no recent bet to worry about
+                        console.log(`💰 Balance updated: ${this.balance.toFixed(4)} → ${serverBalance.toFixed(4)} ETH`);
+                        this.balance = serverBalance;
+                        this.updateBalanceDisplay();
+                    }
                 }
                 
                 return this.balance;
@@ -115,6 +136,14 @@ class UnifiedHotWallet {
         try {
             console.log(`🎯 Placing bet: ${amount} ETH (balance: ${this.balance.toFixed(4)} ETH)`);
             
+            // Store original balance for rollback
+            const originalBalance = this.balance;
+            
+            // Optimistically update balance BEFORE request
+            this.balance -= amount;
+            this.updateBalanceDisplay();
+            this.lastBetTime = Date.now(); // Track bet timing
+            
             // Make the bet request
             const response = await fetch('https://paco-x57j.onrender.com/api/bet/balance', {
                 method: 'POST',
@@ -126,17 +155,28 @@ class UnifiedHotWallet {
             });
             
             if (!response.ok) {
+                // Rollback optimistic update on failure
+                this.balance = originalBalance;
+                this.updateBalanceDisplay();
+                
                 const errorText = await response.text();
                 throw new Error(`Bet failed: ${errorText || 'Server error'}`);
             }
             
             const result = await response.json();
             
-            // Optimistically update balance
-            this.balance -= amount;
-            this.updateBalanceDisplay();
+            // Don't update balance here - the optimistic update already happened
+            // And we'll refresh from server shortly anyway
             
-            console.log(`✅ Bet placed successfully: ${amount} ETH`);
+            console.log(`✅ Bet placed successfully: ${amount} ETH (new balance: ${this.balance.toFixed(4)} ETH)`);
+            
+            // Refresh balance from server after a short delay to sync with backend
+            setTimeout(() => {
+                this.refreshBalance().catch(err => 
+                    console.warn('⚠️ Failed to sync balance after bet:', err)
+                );
+            }, 1000);
+            
             return result;
             
         } catch (error) {
@@ -601,6 +641,7 @@ class UnifiedHotWallet {
         this.walletAddress = null;
         this.balance = 0;
         this.isInitialized = false;
+        this.lastBetTime = 0;
         console.log('🔌 Hot wallet disconnected');
     }
     
@@ -645,7 +686,7 @@ class UnifiedHotWallet {
      * ✅ Check if initialized
      */
     isReady() {
-        return this.isInitialized && this.walletAddress;
+        return this.isInitialized && !!this.walletAddress;
     }
 }
 

@@ -1742,8 +1742,8 @@ function setupDebugCommands() {
             console.log('💰 Fund Flow Summary:');
             console.log('  1. Deposits: Players → Hot Wallet');
             console.log('  2. Bets: Hot Wallet → House Wallet');
-            console.log('  3. Wins: Hot Wallet → Players');
-            console.log('  4. Losses: Already in House Wallet');
+            console.log('  3. Wins: House Wallet → Hot Wallet → Players');
+            console.log('  4. Losses: Funds remain in House Wallet');
             return result;
         } catch (error) {
             console.error('Fund flow verification error:', error);

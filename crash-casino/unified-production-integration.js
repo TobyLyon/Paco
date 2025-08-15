@@ -837,12 +837,14 @@ class UnifiedPacoRockoProduction {
                 // For balance bets, add winnings to user balance instead of blockchain payout
                 console.log(`💰 Processing balance-based cashout: ${cashoutResult.payout.toFixed(4)} ETH`);
                 
-                // Add winnings to balance via balance API
+                // Add winnings to balance via balance API (includes house → hot wallet transfer)
                 if (this.balanceAPI) {
                     try {
-                        console.log(`🔍 CASHOUT DEBUG - Adding winnings via balanceAPI for ${playerId}: ${cashoutResult.payout} ETH`);
-                        await this.balanceAPI.addWinnings(playerId, cashoutResult.payout);
-                        console.log(`✅ Balance updated with cashout winnings: ${cashoutResult.payout.toFixed(4)} ETH`);
+                        console.log(`🔍 CASHOUT DEBUG - Processing complete payout for ${playerId}: ${cashoutResult.payout} ETH`);
+                        console.log(`🏦 This will: 1) Transfer ETH from house wallet to hot wallet 2) Update player balance`);
+                        const result = await this.balanceAPI.addWinnings(playerId, cashoutResult.payout);
+                        console.log(`✅ Complete cashout processed: ${cashoutResult.payout.toFixed(4)} ETH`);
+                        console.log(`📤 Payout transaction: ${result.payoutTxHash}`);
                         
                         // Emit balance-specific event
                         socket.emit('balanceWinnings', {

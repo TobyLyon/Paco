@@ -219,7 +219,15 @@ class BalanceAPI {
         const address = playerAddress.toLowerCase();
 
         try {
-            // Use atomic database function to prevent race conditions
+            // 🏦 CRITICAL FIX: Transfer funds from house wallet to hot wallet for payout
+            console.log(`🏦 Processing cashout: ${amount} ETH for ${address}`);
+            console.log(`🔄 Step 1: Transferring ${amount} ETH from house wallet to hot wallet`);
+            
+            const payoutTransfer = await this.processBalancePayout(address, amount);
+            console.log(`✅ Payout transfer successful: ${payoutTransfer.txHash}`);
+            
+            // Step 2: Update player balance in database
+            console.log(`🔄 Step 2: Updating player balance in database`);
             const { data, error } = await this.supabase.rpc('add_winnings_atomic', {
                 player_address: address,
                 winnings_amount: amount
@@ -237,8 +245,14 @@ class BalanceAPI {
             // Update cache with new balance
             this.balanceCache.set(address, data.balance_after);
 
-            console.log(`🎉 ATOMIC Winnings added: ${address} won ${amount} ETH (${data.balance_before.toFixed(6)} → ${data.balance_after.toFixed(6)})`);
-            return { success: true, newBalance: data.balance_after };
+            console.log(`🎉 COMPLETE CASHOUT: ${address} won ${amount} ETH (${data.balance_before.toFixed(6)} → ${data.balance_after.toFixed(6)})`);
+            console.log(`🏦 Funds transferred: House Wallet → Hot Wallet (TX: ${payoutTransfer.txHash})`);
+            
+            return { 
+                success: true, 
+                newBalance: data.balance_after,
+                payoutTxHash: payoutTransfer.txHash 
+            };
 
         } catch (error) {
             console.error('❌ addWinnings failed:', error);

@@ -309,8 +309,8 @@ app.get('/api/fund-flow/verify', async (req, res) => {
             fundFlow: {
                 deposits: `Players deposit → Hot Wallet (${hotWalletAddress})`,
                 bets: `Player bets → Funds transferred from Hot Wallet to House Wallet (${houseWalletAddress})`,
-                wins: `Player wins → Paid from Hot Wallet (${hotWalletAddress})`,
-                losses: `Player losses → Funds already in House Wallet (${houseWalletAddress})`
+                wins: `Player wins → House Wallet transfers to Hot Wallet → Player receives payout`,
+                losses: `Player losses → Funds remain in House Wallet (${houseWalletAddress})`
             },
             wallets: {
                 hotWallet: hotWalletAddress,

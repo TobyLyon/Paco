@@ -28,19 +28,22 @@ class BetInterface {
         this.setupEventListeners();
         this.updateBetDisplay();
         
-        // Initialize balance system when wallet connects
-        if (window.ethereum?.selectedAddress || window.realWeb3Modal?.address) {
-            console.log('🔗 Wallet detected, initializing balance system...');
+        // Only initialize balance system if wallet is actually connected (not just cached)
+        const hasActiveConnection = window.ethereum?.isConnected?.() && window.ethereum?.selectedAddress;
+        if (hasActiveConnection) {
+            console.log('🔗 Active wallet connection detected, initializing balance system...');
             await this.initializeBalance();
         } else {
-            console.log('⚠️ No wallet detected yet, waiting for connection...');
-            // Show balance UI anyway for testing
+            console.log('⚠️ No active wallet connection, waiting for user to connect...');
+            // Don't auto-initialize - wait for actual wallet connection
+            /*
             setTimeout(() => {
                 if (!this.balanceInitialized) {
                     console.log('🧪 Creating balance UI for testing (no wallet)');
                     this.createBalanceUI();
                 }
             }, 2000);
+            */
         }
         
         // Listen for wallet connection events

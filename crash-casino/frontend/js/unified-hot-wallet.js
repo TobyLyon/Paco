@@ -36,8 +36,7 @@ class UnifiedHotWallet {
         }
         
         // Validate that we have a real wallet connection
-        const hasActiveConnection = window.ethereum?.isConnected?.() || 
-                                   window.ethereum?.selectedAddress === walletAddress ||
+        const hasActiveConnection = (window.ethereum?.isConnected?.() && window.ethereum?.selectedAddress === walletAddress) || 
                                    window.realWeb3Modal?.address === walletAddress;
         
         if (!hasActiveConnection) {
@@ -744,16 +743,16 @@ window.unifiedHotWallet = new UnifiedHotWallet();
 
 // Auto-initialize if wallet is already connected
 setTimeout(() => {
-    // More strict wallet detection - only init if we have clear indicators of active connection
+    // Very strict wallet detection - only init if we have ACTIVE connection indicators
     const hasMetaMask = window.ethereum?.selectedAddress && window.ethereum?.isConnected?.();
     const hasWeb3Modal = window.realWeb3Modal?.address;
     const walletAddress = window.ethereum?.selectedAddress || window.realWeb3Modal?.address;
     
-    // Also check if wallet bridge indicates we're connected
-    const walletBridgeConnected = document.body.classList.contains('wallet-connected') || 
-                                  localStorage.getItem('wallet-connected') === 'true';
+    // Check if wallet bridge indicates CURRENT session is connected (not cached)
+    const walletBridgeConnected = document.body.classList.contains('wallet-connected');
     
-    if (walletAddress && !window.unifiedHotWallet.isInitialized && (hasMetaMask || hasWeb3Modal || walletBridgeConnected)) {
+    // Only initialize if we have BOTH an address AND active connection indicators
+    if (walletAddress && !window.unifiedHotWallet.isInitialized && (hasMetaMask || hasWeb3Modal) && walletBridgeConnected) {
         console.log('🏦 Wallet already connected, auto-initializing unified hot wallet:', walletAddress);
         window.unifiedHotWallet.init(walletAddress);
     } else {

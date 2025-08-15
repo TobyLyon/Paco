@@ -768,23 +768,35 @@ class UnifiedPacoRockoProduction {
         
         // Get current multiplier from game state
         const gameState = this.crashEngine.getGameState();
+        console.log('🔍 CASHOUT DEBUG - Game state:', {
+            phase: gameState.phase,
+            phaseStartTime: gameState.phaseStartTime,
+            crashPoint: gameState.crashPoint
+        });
+        
         if (gameState.phase !== 'game_phase') {
-            throw new Error('Not in game phase');
+            throw new Error(`Not in game phase - current phase: ${gameState.phase}`);
         }
         
         // Calculate current multiplier using centralized calculator
         const currentMultiplier = MultiplierCalculator.calculateMultiplier(gameState.phaseStartTime);
+        console.log(`🔍 CASHOUT DEBUG - Current multiplier: ${currentMultiplier}x, Crash point: ${gameState.crashPoint}x`);
         
         // Validate multiplier is safe for cashout (prevents timing attacks)
-        if (!MultiplierCalculator.validateMultiplier(currentMultiplier, gameState.crashPoint)) {
-            throw new Error('Cashout too close to crash point');
+        const isValidMultiplier = MultiplierCalculator.validateMultiplier(currentMultiplier, gameState.crashPoint);
+        console.log(`🔍 CASHOUT DEBUG - Multiplier validation: ${isValidMultiplier}`);
+        
+        if (!isValidMultiplier) {
+            throw new Error(`Cashout too close to crash point - current: ${currentMultiplier}x, crash: ${gameState.crashPoint}x`);
         }
         
         // Process cashout through crash engine
+        console.log(`🔍 CASHOUT DEBUG - Processing cashout for player: ${playerId}`);
         const cashoutResult = await this.crashEngine.processCashout(
             playerId,
             currentMultiplier
         );
+        console.log(`🔍 CASHOUT DEBUG - Cashout result:`, cashoutResult);
         
         // Handle payout based on bet type - FIXED: Get actual bet type instead of hardcoding
         if (cashoutResult && cashoutResult.payout > 0) {
@@ -802,6 +814,7 @@ class UnifiedPacoRockoProduction {
                 // Add winnings to balance via balance API
                 if (this.balanceAPI) {
                     try {
+                        console.log(`🔍 CASHOUT DEBUG - Adding winnings via balanceAPI for ${playerId}: ${cashoutResult.payout} ETH`);
                         await this.balanceAPI.addWinnings(playerId, cashoutResult.payout);
                         console.log(`✅ Balance updated with cashout winnings: ${cashoutResult.payout.toFixed(4)} ETH`);
                         
@@ -816,6 +829,9 @@ class UnifiedPacoRockoProduction {
                         console.error('❌ Failed to update balance with winnings:', error);
                         throw error;
                     }
+                } else {
+                    console.error('❌ CASHOUT DEBUG - No balanceAPI available for balance bet payout');
+                    throw new Error('Balance API not available for payout processing');
                 }
             } else {
                 // For blockchain bets, the crashEngine.processCashout emits 'playerCashedOut' 

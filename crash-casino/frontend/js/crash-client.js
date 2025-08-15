@@ -134,7 +134,11 @@ class CrashGameClient {
      * 🎨 Update gameplay UI components
      */
     updateGameplayUI(multiplier) {
+        // Store current multiplier for cashout validation
+        this.currentMultiplier = multiplier;
 
+        // Update cashout button state based on new multiplier
+        this.updateCashoutButtonState();
         
         // Update multiplier display
         if (window.multiplierDisplay) {
@@ -2022,6 +2026,7 @@ class CrashGameClient {
             const cashOutBtn = document.getElementById('cashOutBtn');
             if (cashOutBtn) {
                 cashOutBtn.style.display = 'block';
+                this.updateCashoutButtonState(); // Update button state based on current multiplier
                 console.log(`${logPrefix}💰 Cash out button shown - round started with active bet`);
                 console.log(`${logPrefix}🎯 Player bet details:`, this.playerBet);
                 
@@ -2038,6 +2043,31 @@ class CrashGameClient {
             if (isRetry) {
                 console.log('❌ RETRY FAILED: Still no playerBet state for cashout button');
             }
+        }
+    }
+
+    /**
+     * 🎯 Update cashout button state based on current multiplier
+     */
+    updateCashoutButtonState() {
+        const cashOutBtn = document.getElementById('cashOutBtn');
+        if (!cashOutBtn || !this.playerBet || this.playerBet.cashedOut) return;
+
+        const multiplier = this.currentMultiplier || 1.0;
+        const isProfitable = multiplier >= 2.0;
+
+        if (isProfitable) {
+            cashOutBtn.disabled = false;
+            cashOutBtn.textContent = `💰 CASH OUT ${multiplier.toFixed(2)}x`;
+            cashOutBtn.style.backgroundColor = '#10b981'; // Green
+            cashOutBtn.style.cursor = 'pointer';
+            cashOutBtn.title = `Cash out for ${(this.playerBet.amount * multiplier).toFixed(4)} ETH profit`;
+        } else {
+            cashOutBtn.disabled = true;
+            cashOutBtn.textContent = `⏳ WAIT FOR 2.0x (${multiplier.toFixed(2)}x)`;
+            cashOutBtn.style.backgroundColor = '#6b7280'; // Gray
+            cashOutBtn.style.cursor = 'not-allowed';
+            cashOutBtn.title = 'Cashout not profitable yet - wait for 2.0x minimum';
         }
     }
 }

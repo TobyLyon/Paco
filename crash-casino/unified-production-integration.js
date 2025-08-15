@@ -813,7 +813,11 @@ class UnifiedPacoRockoProduction {
         console.log(`🔍 CASHOUT DEBUG - Multiplier validation: ${isValidMultiplier}`);
         
         if (!isValidMultiplier) {
-            throw new Error(`Cashout too close to crash point - current: ${currentMultiplier}x, crash: ${gameState.crashPoint}x`);
+            if (currentMultiplier < 2.0) {
+                throw new Error(`Cashout not profitable - current: ${currentMultiplier}x (minimum 2.0x required for profit)`);
+            } else {
+                throw new Error(`Cashout too close to crash point - current: ${currentMultiplier}x, crash: ${gameState.crashPoint}x`);
+            }
         }
         
         // Process cashout through crash engine
@@ -847,14 +851,11 @@ class UnifiedPacoRockoProduction {
                         console.log(`📤 Payout transaction: ${result.payoutTxHash}`);
                         
                         // Emit balance-specific event
-                        // 🎊 CRITICAL: Emit balanceWinnings to ALL clients for celebration module
-                        console.log(`🎊 Emitting balanceWinnings event for celebration`);
-                        this.io.emit('balanceWinnings', {
+                        socket.emit('balanceWinnings', {
                             playerId: playerId,
                             multiplier: currentMultiplier,
                             payout: cashoutResult.payout,
-                            winnings: cashoutResult.payout,
-                            txHash: result.payoutTxHash || 'none'
+                            winnings: cashoutResult.payout
                         });
                     } catch (error) {
                         console.error('❌ Failed to update balance with winnings:', error);

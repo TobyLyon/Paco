@@ -24,9 +24,23 @@ class MultiplierCalculator {
      * @returns {boolean} True if safe to cashout
      */
     static validateMultiplier(multiplier, crashPoint) {
+        // Check if multiplier is profitable (minimum 2.0x as per user requirement)
+        if (multiplier < 2.0) {
+            return false; // Unprofitable cashout
+        }
+        
         // Add small buffer to prevent timing attacks
         const buffer = 0.01;
         return multiplier < (crashPoint - buffer);
+    }
+    
+    /**
+     * Check if multiplier represents a profitable cashout
+     * @param {number} multiplier - Current calculated multiplier  
+     * @returns {boolean} True if multiplier is profitable (2.0x or higher)
+     */
+    static isProfitable(multiplier) {
+        return multiplier >= 2.0;
     }
     
     /**

@@ -391,6 +391,14 @@ class BetInterface {
     }
 
     /**
+     * 🎉 Handle cashout event from crash client (called by window.betInterface.onCashOut)
+     */
+    onCashOut(data) {
+        console.log('🎉 onCashOut called from crash client:', data);
+        this.handleSuccessfulCashout(data);
+    }
+
+    /**
      * 🎉 Handle successful cashout with visual feedback
      */
     handleSuccessfulCashout(data) {

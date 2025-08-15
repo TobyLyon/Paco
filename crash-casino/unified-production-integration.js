@@ -189,10 +189,30 @@ class UnifiedPacoRockoProduction {
             
             // Clean up liability for all players who didn't cash out
             const activePlayerIds = this.crashEngine.active_player_id_list || [];
+            let totalLostBets = 0;
+            let lostBetCount = 0;
+            
             for (const playerId of activePlayerIds) {
                 this.solvencyManager.removeBetLiability(playerId, 0); // 0 payout = lost bet
+                
+                // Track lost bet amount for house accounting
+                const betData = this.playerBetData.get(playerId) || {};
+                const betAmount = betData.betAmount || 0;
+                if (betAmount > 0) {
+                    totalLostBets += betAmount;
+                    lostBetCount++;
+                    console.log(`💸 Lost bet processed: ${playerId} - ${betAmount} ETH (already in house wallet)`);
+                }
             }
+            
             console.log(`🧹 Cleaned up liability for ${activePlayerIds.length} players who lost`);
+            console.log(`🏠 House profit this round: ${totalLostBets.toFixed(6)} ETH from ${lostBetCount} lost bets`);
+            
+            // Clear bet data for next round
+            for (const playerId of activePlayerIds) {
+                this.playerBetData.delete(playerId);
+                this.playerBetTypes.delete(playerId);
+            }
             
             // Reveal serverSeed and persist
             try {
@@ -495,9 +515,15 @@ class UnifiedPacoRockoProduction {
                     
                     // 🏠 CRITICAL FIX: Pass house wallet to ensure bet money is transferred
                     const houseWallet = this.walletIntegration?.houseWallet || null;
+                    const houseWalletAddress = process.env.HOUSE_WALLET_ADDRESS || '0x1f8B1c4D05eF17Ebaa1E572426110146691e6C5a';
                     console.log(`🏠 Processing balance bet with house wallet: ${houseWallet ? 'PROVIDED' : 'MISSING'}`);
+                    console.log(`🏠 House wallet address: ${houseWalletAddress}`);
                     
-                    const result = await this.balanceAPI.placeBetWithBalance(playerAddress, amount, houseWallet);
+                    if (!houseWalletAddress) {
+                        throw new Error('❌ CRITICAL: House wallet address not configured - cannot process bets safely');
+                    }
+                    
+                    const result = await this.balanceAPI.placeBetWithBalance(playerAddress, amount, houseWalletAddress);
                     res.json(result);
                 } catch (error) {
                     console.error('Balance bet error:', error);

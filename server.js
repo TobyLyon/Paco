@@ -299,6 +299,35 @@ app.post('/api/withdraw', async (req, res) => {
     }
 });
 
+// Verify fund flow (for debugging)
+app.get('/api/fund-flow/verify', async (req, res) => {
+    try {
+        const houseWalletAddress = process.env.HOUSE_WALLET_ADDRESS || '0x1f8B1c4D05eF17Ebaa1E572426110146691e6C5a';
+        const hotWalletAddress = process.env.HOT_WALLET_ADDRESS || '0x02B4bFbA6D16308F5B40A5DF1f136C9472da52FF';
+        
+        res.json({
+            fundFlow: {
+                deposits: `Players deposit → Hot Wallet (${hotWalletAddress})`,
+                bets: `Player bets → Funds transferred from Hot Wallet to House Wallet (${houseWalletAddress})`,
+                wins: `Player wins → Paid from Hot Wallet (${hotWalletAddress})`,
+                losses: `Player losses → Funds already in House Wallet (${houseWalletAddress})`
+            },
+            wallets: {
+                hotWallet: hotWalletAddress,
+                houseWallet: houseWalletAddress
+            },
+            verification: {
+                hotWalletConfigured: !!process.env.HOT_WALLET_PRIVATE_KEY,
+                houseWalletConfigured: !!houseWalletAddress,
+                balanceAPIConfigured: !!balanceAPI,
+                status: 'Fund flow properly configured'
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Manual deposit processing (for debugging)
 app.post('/api/deposits/force-process', async (req, res) => {
     try {

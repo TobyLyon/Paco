@@ -1728,15 +1728,33 @@ function setupDebugCommands() {
             return window.betInterface.manualTriggerIndexer();
         },
         
-        // Process any deposit manually
-        processDeposit: (txHash, fromAddress, amount) => {
-            return window.betInterface.manualTriggerDeposit(txHash, fromAddress, amount);
+            // Process any deposit manually
+    processDeposit: (txHash, fromAddress, amount) => {
+        return window.betInterface.manualTriggerDeposit(txHash, fromAddress, amount);
+    },
+    
+    // Verify fund flow
+    verifyFundFlow: async () => {
+        try {
+            const response = await fetch('https://paco-x57j.onrender.com/api/fund-flow/verify');
+            const result = await response.json();
+            console.log('🏦 Fund Flow Verification:', result);
+            console.log('💰 Fund Flow Summary:');
+            console.log('  1. Deposits: Players → Hot Wallet');
+            console.log('  2. Bets: Hot Wallet → House Wallet');
+            console.log('  3. Wins: Hot Wallet → Players');
+            console.log('  4. Losses: Already in House Wallet');
+            return result;
+        } catch (error) {
+            console.error('Fund flow verification error:', error);
         }
+    }
     };
 
     console.log('🔧 Debug commands available:');
     console.log('debugDeposit.processYourDeposit() - Process your 0.01 ETH deposit');
     console.log('debugDeposit.triggerIndexer() - Trigger deposit indexer');
     console.log('debugDeposit.processDeposit(txHash, address, amount) - Process any deposit');
+    console.log('debugDeposit.verifyFundFlow() - Verify fund flow between wallets');
 }
 

@@ -829,6 +829,182 @@ class BetInterface {
     }
 
     /**
+     * 📊 Show transaction processing modal
+     */
+    showTransactionModal(type, txHash, amount, targetAddress) {
+        const modalHTML = `
+            <div id="transactionModal" class="modal-overlay transaction-modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>${type === 'deposit' ? '💳' : '💸'} Processing ${type.charAt(0).toUpperCase() + type.slice(1)}</h3>
+                        <button class="modal-close">&times;</button>
+                    </div>
+                    
+                    <div class="transaction-info">
+                        <div class="transaction-status">
+                            <div class="status-indicator pending">
+                                <div class="spinner"></div>
+                                <span id="statusText">Broadcasting transaction...</span>
+                            </div>
+                        </div>
+                        
+                        <div class="transaction-details">
+                            <div class="detail-row">
+                                <span class="label">Amount:</span>
+                                <span class="value">${amount} ETH</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="label">${type === 'deposit' ? 'To' : 'From'}:</span>
+                                <span class="value address">${targetAddress}</span>
+                            </div>
+                            <div class="detail-row" id="txHashRow" style="display: none;">
+                                <span class="label">Transaction Hash:</span>
+                                <span class="value">
+                                    <a id="txHashLink" href="#" target="_blank" class="tx-link">
+                                        <span id="txHashText">-</span>
+                                        <span class="external-icon">🔗</span>
+                                    </a>
+                                </span>
+                            </div>
+                            <div class="detail-row" id="blockRow" style="display: none;">
+                                <span class="label">Block:</span>
+                                <span class="value" id="blockNumber">-</span>
+                            </div>
+                            <div class="detail-row" id="confirmationsRow" style="display: none;">
+                                <span class="label">Confirmations:</span>
+                                <span class="value" id="confirmationCount">0</span>
+                            </div>
+                        </div>
+                        
+                        <div class="progress-steps">
+                            <div class="step active" id="step1">
+                                <div class="step-number">1</div>
+                                <div class="step-text">Broadcasting</div>
+                            </div>
+                            <div class="step" id="step2">
+                                <div class="step-number">2</div>
+                                <div class="step-text">Confirming</div>
+                            </div>
+                            <div class="step" id="step3">
+                                <div class="step-number">3</div>
+                                <div class="step-text">Updating Balance</div>
+                            </div>
+                        </div>
+                        
+                        <div class="estimated-time">
+                            <p>⏱️ Estimated time: 1-2 minutes on Abstract Network</p>
+                        </div>
+                        
+                        <div class="transaction-actions">
+                            <button id="closeTransactionModal" class="secondary-btn" disabled>Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        this.setupTransactionModalHandlers();
+        
+        // If we have a transaction hash, show it immediately
+        if (txHash) {
+            this.updateTransactionModal(txHash, 'submitted');
+        }
+        
+        return document.getElementById('transactionModal');
+    }
+
+    /**
+     * 🔄 Update transaction modal with new status
+     */
+    updateTransactionModal(txHash, status, blockNumber = null, confirmations = 0) {
+        const modal = document.getElementById('transactionModal');
+        if (!modal) return;
+
+        const statusText = document.getElementById('statusText');
+        const statusIndicator = modal.querySelector('.status-indicator');
+        const txHashRow = document.getElementById('txHashRow');
+        const txHashLink = document.getElementById('txHashLink');
+        const txHashText = document.getElementById('txHashText');
+        const blockRow = document.getElementById('blockRow');
+        const blockNumber_elem = document.getElementById('blockNumber');
+        const confirmationsRow = document.getElementById('confirmationsRow');
+        const confirmationCount = document.getElementById('confirmationCount');
+        const closeBtn = document.getElementById('closeTransactionModal');
+
+        // Abstract Network block explorer URL
+        const explorerUrl = `https://explorer.abs.xyz/tx/${txHash}`;
+
+        switch (status) {
+            case 'submitted':
+                statusText.textContent = 'Transaction submitted to network...';
+                txHashRow.style.display = 'flex';
+                txHashLink.href = explorerUrl;
+                txHashText.textContent = `${txHash.substring(0, 10)}...${txHash.substring(txHash.length - 8)}`;
+                modal.querySelector('#step1').classList.add('completed');
+                modal.querySelector('#step2').classList.add('active');
+                break;
+                
+            case 'confirmed':
+                statusText.textContent = 'Transaction confirmed! Updating balance...';
+                statusIndicator.className = 'status-indicator confirmed';
+                statusIndicator.innerHTML = '<span class="check-mark">✅</span><span id="statusText">Transaction confirmed! Updating balance...</span>';
+                
+                if (blockNumber) {
+                    blockRow.style.display = 'flex';
+                    blockNumber_elem.textContent = blockNumber;
+                }
+                
+                confirmationsRow.style.display = 'flex';
+                confirmationCount.textContent = confirmations;
+                
+                modal.querySelector('#step2').classList.add('completed');
+                modal.querySelector('#step3').classList.add('active');
+                break;
+                
+            case 'completed':
+                statusText.textContent = 'Transaction complete! Balance updated.';
+                statusIndicator.className = 'status-indicator completed';
+                statusIndicator.innerHTML = '<span class="check-mark">🎉</span><span id="statusText">Transaction complete! Balance updated.</span>';
+                modal.querySelector('#step3').classList.add('completed');
+                closeBtn.disabled = false;
+                closeBtn.textContent = 'Done';
+                break;
+                
+            case 'failed':
+                statusText.textContent = 'Transaction failed or was rejected.';
+                statusIndicator.className = 'status-indicator failed';
+                statusIndicator.innerHTML = '<span class="error-mark">❌</span><span id="statusText">Transaction failed or was rejected.</span>';
+                closeBtn.disabled = false;
+                closeBtn.textContent = 'Close';
+                break;
+        }
+    }
+
+    /**
+     * ⚙️ Setup transaction modal event handlers
+     */
+    setupTransactionModalHandlers() {
+        const modal = document.getElementById('transactionModal');
+        const closeBtn = document.getElementById('closeTransactionModal');
+        const modalCloseBtn = modal.querySelector('.modal-close');
+
+        const closeModal = () => {
+            modal.remove();
+        };
+
+        closeBtn.addEventListener('click', closeModal);
+        modalCloseBtn.addEventListener('click', closeModal);
+
+        // Close on outside click (only when transaction is complete)
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal && !closeBtn.disabled) {
+                closeModal();
+            }
+        });
+    }
+
+    /**
      * 💳 Process deposit transaction
      */
     async processDeposit(amount) {
@@ -843,6 +1019,9 @@ class BetInterface {
             // Create unique transaction identifier for attribution
             const depositId = Date.now().toString();
             
+            // Show transaction processing modal
+            const modal = this.showTransactionModal('deposit', null, amount, hotWallet);
+            
             // Send transaction through wallet bridge
             console.log(`💳 Sending deposit: ${amount} ETH to hot wallet ${hotWallet}`);
             
@@ -850,12 +1029,11 @@ class BetInterface {
                 // Use the wallet bridge's sendTransaction method
                 const txHash = await window.realWeb3Modal.sendTransaction(hotWallet, amount);
                 
-                this.showNotification('📤 Transaction sent! Waiting for confirmation...', 'info');
+                // Update modal with transaction hash
+                this.updateTransactionModal(txHash, 'submitted');
                 
-                // Start monitoring the transaction
+                // Start monitoring the transaction with modal updates
                 this.monitorPendingTransaction(txHash, depositId, walletAddress, amount);
-                
-                this.showNotification(`🔄 Transaction submitted! Monitoring confirmation...`, 'info');
                 
             } else if (window.realWeb3Modal && window.realWeb3Modal.signer) {
                 // Fallback to direct signer method
@@ -865,10 +1043,14 @@ class BetInterface {
                     data: '0x' + Buffer.from(depositId).toString('hex') // Encode depositId for attribution
                 });
 
-                this.showNotification('📤 Transaction sent! Waiting for confirmation...', 'info');
+                // Update modal with transaction hash
+                this.updateTransactionModal(tx.hash, 'submitted');
                 
                 // Wait for confirmation
                 const receipt = await tx.wait();
+                
+                // Update modal with confirmation
+                this.updateTransactionModal(tx.hash, 'confirmed', receipt.blockNumber, 1);
                 
                 if (receipt.status === 1) {
                     // Start monitoring the transaction
@@ -885,6 +1067,10 @@ class BetInterface {
             
         } catch (error) {
             console.error('Deposit error:', error);
+            
+            // Update transaction modal with failure
+            this.updateTransactionModal(null, 'failed');
+            
             if (error.code === 4001) {
                 throw new Error('Transaction cancelled by user');
             } else {
@@ -924,10 +1110,20 @@ class BetInterface {
                     
                     if (ourDeposit) {
                         console.log(`✅ Deposit confirmed by indexer:`, ourDeposit);
-                        this.showNotification(`✅ Deposit confirmed! ${amount} ETH credited to your balance.`, 'success');
+                        
+                        // Update transaction modal
+                        this.updateTransactionModal(txHash, 'confirmed', ourDeposit.block_number, 1);
                         
                         // Refresh balance
                         await this.loadBalance();
+                        
+                        // Complete the transaction modal
+                        setTimeout(() => {
+                            this.updateTransactionModal(txHash, 'completed');
+                        }, 1000);
+                        
+                        this.showNotification(`✅ Deposit confirmed! ${amount} ETH credited to your balance.`, 'success');
+                        
                         return true; // Stop monitoring
                     }
                 }

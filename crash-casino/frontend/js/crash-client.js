@@ -521,13 +521,28 @@ class CrashGameClient {
         this.socket.on('cashoutError', (error) => {
             console.error('❌ CASHOUT ERROR from server:', error);
             
-            // Filter and translate technical errors for users
-            const userMessage = this.translateErrorMessage(error.message || 'Unknown error');
+            // Filter blockchain duplicate transaction warnings (these are harmless)
+            const errorMessage = error.message || 'Unknown error';
             
-            // Only show meaningful errors to users
-            if (userMessage) {
-                this.showError(userMessage);
+            if (errorMessage.includes('known transaction') || 
+                errorMessage.includes('already in the system') ||
+                errorMessage.includes('nonce too low')) {
+                // This is a harmless duplicate transaction warning - cashout likely succeeded
+                console.log('ℹ️ Duplicate transaction warning (harmless) - cashout likely processed');
+                return; // Don't show any notification for this
             }
+            
+            // Only show user-friendly errors for real issues
+            let userMessage = 'Cashout failed';
+            if (errorMessage.includes('Player has no active bet')) {
+                userMessage = 'No active bet to cash out';
+            } else if (errorMessage.includes('too close to crash')) {
+                userMessage = 'Cashout too late - round crashed';
+            } else if (errorMessage.includes('insufficient')) {
+                userMessage = 'Insufficient funds for cashout';
+            }
+            
+            this.showError(userMessage);
             
             // Re-enable cashout button
             const cashOutBtn = document.getElementById('cashOutBtn');
@@ -2065,59 +2080,6 @@ class CrashGameClient {
         cashOutBtn.textContent = '💰 CASH OUT';
         cashOutBtn.style.backgroundColor = '#10b981'; // Green
         cashOutBtn.title = 'Click to cash out at current multiplier';
-    }
-
-    /**
-     * 🧹 Translate technical error messages into user-friendly ones
-     */
-    translateErrorMessage(errorMessage) {
-        if (!errorMessage) return null;
-        
-        const message = errorMessage.toLowerCase();
-        
-        // Suppress successful transaction "errors" (these aren't real errors)
-        if (message.includes('known transaction') || 
-            message.includes('already in the system') ||
-            message.includes('duplicate transaction')) {
-            console.log('🔇 Suppressing duplicate transaction warning (cashout was successful)');
-            return null; // Don't show this to users
-        }
-        
-        // Translate common technical errors
-        if (message.includes('insufficient balance')) {
-            return 'Insufficient balance to cash out';
-        }
-        
-        if (message.includes('no active bet')) {
-            return 'No active bet to cash out';
-        }
-        
-        if (message.includes('too close to crash')) {
-            return 'Cashout too late - round ended';
-        }
-        
-        if (message.includes('round not active') || message.includes('betting phase')) {
-            return 'Cannot cash out during betting phase';
-        }
-        
-        if (message.includes('network error') || message.includes('connection')) {
-            return 'Network error - please try again';
-        }
-        
-        // For other technical errors, show a generic message
-        if (message.includes('execution reverted') || 
-            message.includes('transaction failed') ||
-            message.includes('revert')) {
-            return 'Transaction failed - please try again';
-        }
-        
-        // If it's a simple, user-friendly message already, keep it
-        if (errorMessage.length < 50 && !message.includes('0x')) {
-            return errorMessage;
-        }
-        
-        // Default for unknown technical errors
-        return 'Cashout failed - please try again';
     }
 }
 

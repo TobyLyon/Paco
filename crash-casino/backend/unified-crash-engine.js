@@ -287,28 +287,48 @@ class UnifiedCrashEngine extends EventEmitter {
      * 💰 Place bet immediately (during betting phase)
      */
     placeBetImmediate(playerId, playerName, betAmount, payoutMultiplier, betType = 'balance') {
-        // Add player to active list
-        this.active_player_id_list.push(playerId);
+        console.log(`🔍 CRASH ENGINE DEBUG - placeBetImmediate called with:`, {
+            playerId, 
+            playerName, 
+            betAmount, 
+            betAmountType: typeof betAmount,
+            payoutMultiplier, 
+            payoutMultiplierType: typeof payoutMultiplier,
+            betType
+        });
         
-        // Add to live bettors table
-        const betInfo = {
-            the_user_id: playerId,
-            the_username: playerName,
-            bet_amount: betAmount,
-            payout_multiplier: payoutMultiplier,
-            cashout_multiplier: null,
-            profit: null,
-            b_bet_live: true,
-            bet_type: betType  // Track bet type for payout processing
-        };
-        
-        this.live_bettors_table.push(betInfo);
-        
-        // Emit to all clients
-        this.io.emit('receive_live_betting_table', JSON.stringify(this.live_bettors_table));
-        
-        console.log(`💰 Bet placed immediately: ${playerName} - ${betAmount} @ ${payoutMultiplier}x`);
-        return { success: true, type: 'immediate', betInfo };
+        try {
+            // Add player to active list
+            this.active_player_id_list.push(playerId);
+            
+            // Add to live bettors table
+            const betInfo = {
+                the_user_id: playerId,
+                the_username: playerName,
+                bet_amount: betAmount,
+                payout_multiplier: payoutMultiplier,
+                cashout_multiplier: null,
+                profit: null,
+                b_bet_live: true,
+                bet_type: betType  // Track bet type for payout processing
+            };
+            
+            console.log(`🔍 CRASH ENGINE DEBUG - betInfo created:`, betInfo);
+            
+            this.live_bettors_table.push(betInfo);
+            
+            console.log(`🔍 CRASH ENGINE DEBUG - About to emit live betting table...`);
+            // Emit to all clients
+            this.io.emit('receive_live_betting_table', JSON.stringify(this.live_bettors_table));
+            console.log(`🔍 CRASH ENGINE DEBUG - Live betting table emitted successfully`);
+            
+            console.log(`💰 Bet placed immediately: ${playerName} - ${betAmount} @ ${payoutMultiplier}x`);
+            return { success: true, type: 'immediate', betInfo };
+            
+        } catch (error) {
+            console.error(`❌ CRASH ENGINE ERROR in placeBetImmediate:`, error);
+            throw error;
+        }
     }
     
     /**

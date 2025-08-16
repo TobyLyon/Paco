@@ -137,7 +137,8 @@ class CrashGameClient {
         // Store current multiplier for cashout validation
         this.currentMultiplier = multiplier;
 
-        // Don't update cashout button during gameplay - keep it simple
+        // Update cashout button state based on new multiplier
+        this.updateCashoutButtonState();
         
         // Update multiplier display
         if (window.multiplierDisplay) {
@@ -520,29 +521,7 @@ class CrashGameClient {
         // Add specific cashout error handler
         this.socket.on('cashoutError', (error) => {
             console.error('❌ CASHOUT ERROR from server:', error);
-            
-            // Filter blockchain duplicate transaction warnings (these are harmless)
-            const errorMessage = error.message || 'Unknown error';
-            
-            if (errorMessage.includes('known transaction') || 
-                errorMessage.includes('already in the system') ||
-                errorMessage.includes('nonce too low')) {
-                // This is a harmless duplicate transaction warning - cashout likely succeeded
-                console.log('ℹ️ Duplicate transaction warning (harmless) - cashout likely processed');
-                return; // Don't show any notification for this
-            }
-            
-            // Only show user-friendly errors for real issues
-            let userMessage = 'Cashout failed';
-            if (errorMessage.includes('Player has no active bet')) {
-                userMessage = 'No active bet to cash out';
-            } else if (errorMessage.includes('too close to crash')) {
-                userMessage = 'Cashout too late - round crashed';
-            } else if (errorMessage.includes('insufficient')) {
-                userMessage = 'Insufficient funds for cashout';
-            }
-            
-            this.showError(userMessage);
+            this.showError(`Cashout failed: ${error.message || 'Unknown error'}`);
             
             // Re-enable cashout button
             const cashOutBtn = document.getElementById('cashOutBtn');
@@ -2068,18 +2047,18 @@ class CrashGameClient {
     }
 
     /**
-     * 🎯 Update cashout button state - SIMPLIFIED VERSION 
+     * 🎯 Update cashout button state - SIMPLIFIED AND CLEAN
      */
     updateCashoutButtonState() {
         const cashOutBtn = document.getElementById('cashOutBtn');
         if (!cashOutBtn || !this.playerBet || this.playerBet.cashedOut) return;
 
-        // SIMPLE: Just show "CASH OUT" - no complex real-time tracking
+        // SIMPLE: Just show CASH OUT without trying to track live multiplier
         cashOutBtn.disabled = false;
         cashOutBtn.style.cursor = 'pointer';
         cashOutBtn.textContent = '💰 CASH OUT';
         cashOutBtn.style.backgroundColor = '#10b981'; // Green
-        cashOutBtn.title = 'Click to cash out at current multiplier';
+        cashOutBtn.title = 'Cash out at current multiplier';
     }
 }
 

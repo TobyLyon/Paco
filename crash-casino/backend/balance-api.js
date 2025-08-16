@@ -121,7 +121,7 @@ class BalanceAPI {
             transport: http(ABSTRACT_CHAIN.rpcUrls.default.http[0]),
         });
 
-        // Create public client for reading blockchain data
+        // Initialize public client for reading blockchain data (balance, etc.)
         const publicClient = createPublicClient({
             chain: ABSTRACT_CHAIN,
             transport: http(ABSTRACT_CHAIN.rpcUrls.default.http[0]),
@@ -129,7 +129,7 @@ class BalanceAPI {
 
         const amountWei = parseEther(amount.toString());
 
-        // Check hot wallet balance using public client
+        // Check hot wallet balance
         const hotBalance = await publicClient.getBalance({ address: hotAccount.address });
         if (hotBalance < amountWei) {
             throw new Error(`Insufficient hot wallet balance for bet transfer. Need: ${amount} ETH, Have: ${(Number(hotBalance) / 1e18).toFixed(6)} ETH`);
@@ -138,33 +138,12 @@ class BalanceAPI {
         console.log(`🏠 Transferring bet amount: ${amount} ETH from hot wallet (${hotAccount.address}) to house wallet (${houseWalletAddress})`);
 
         // Send transaction
-        let txHash;
-        try {
-            txHash = await walletClient.sendTransaction({
-                to: houseWalletAddress,
-                value: amountWei,
-            });
-            console.log(`✅ Bet transfer to house wallet successful: ${txHash}`);
-        } catch (error) {
-            // Handle "known transaction" errors as successful (transaction was already processed)
-            if (error.message && 
-                (error.message.includes('known transaction') || 
-                 error.message.includes('already in the system') ||
-                 error.message.includes('duplicate transaction'))) {
-                
-                console.log(`🔄 Bet transaction already processed (duplicate): ${error.message}`);
-                
-                // Extract txHash from error message if possible
-                const txHashMatch = error.message.match(/0x[a-fA-F0-9]{64}/);
-                txHash = txHashMatch ? txHashMatch[0] : 'duplicate-bet-transaction';
-                
-                console.log(`✅ Using existing bet transaction: ${txHash}`);
-            } else {
-                // Re-throw actual errors
-                console.error(`❌ Bet transfer failed:`, error);
-                throw error;
-            }
-        }
+        const txHash = await walletClient.sendTransaction({
+            to: houseWalletAddress,
+            value: amountWei,
+        });
+
+        console.log(`✅ Bet transfer to house wallet successful: ${txHash}`);
 
         return {
             success: true,
@@ -212,7 +191,7 @@ class BalanceAPI {
             transport: http(ABSTRACT_CHAIN.rpcUrls.default.http[0]),
         });
 
-        // Create public client for reading blockchain data
+        // Initialize public client for reading blockchain data (balance, etc.)
         const publicClient = createPublicClient({
             chain: ABSTRACT_CHAIN,
             transport: http(ABSTRACT_CHAIN.rpcUrls.default.http[0]),
@@ -220,7 +199,7 @@ class BalanceAPI {
 
         const payoutWei = parseEther(payoutAmount.toString());
 
-        // Check house wallet balance using public client
+        // Check house wallet balance
         const houseBalance = await publicClient.getBalance({ address: houseAccount.address });
         if (houseBalance < payoutWei) {
             throw new Error(`Insufficient house wallet balance for payout. Need: ${payoutAmount} ETH, Have: ${(Number(houseBalance) / 1e18).toFixed(6)} ETH`);
@@ -229,33 +208,12 @@ class BalanceAPI {
         console.log(`🏦 Processing payout: ${payoutAmount} ETH from house wallet (${houseAccount.address}) to hot wallet (${hotWalletAddress})`);
 
         // Send transaction from house wallet to hot wallet
-        let txHash;
-        try {
-            txHash = await walletClient.sendTransaction({
-                to: hotWalletAddress,
-                value: payoutWei,
-            });
-            console.log(`✅ Payout transfer successful: ${txHash}`);
-        } catch (error) {
-            // Handle "known transaction" errors as successful (transaction was already processed)
-            if (error.message && 
-                (error.message.includes('known transaction') || 
-                 error.message.includes('already in the system') ||
-                 error.message.includes('duplicate transaction'))) {
-                
-                console.log(`🔄 Transaction already processed (duplicate): ${error.message}`);
-                
-                // Extract txHash from error message if possible
-                const txHashMatch = error.message.match(/0x[a-fA-F0-9]{64}/);
-                txHash = txHashMatch ? txHashMatch[0] : 'duplicate-transaction';
-                
-                console.log(`✅ Using existing transaction: ${txHash}`);
-            } else {
-                // Re-throw actual errors
-                console.error(`❌ Payout transfer failed:`, error);
-                throw error;
-            }
-        }
+        const txHash = await walletClient.sendTransaction({
+            to: hotWalletAddress,
+            value: payoutWei,
+        });
+
+        console.log(`✅ Payout transfer successful: ${txHash}`);
 
         return {
             success: true,

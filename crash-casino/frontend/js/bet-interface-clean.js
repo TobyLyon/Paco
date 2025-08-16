@@ -52,29 +52,46 @@ class BetInterface {
         this.setupEventListeners();
         this.updateBetDisplay();
         
-        // Always show balance UI immediately for consistency
+        // SECURITY: Only show balance UI if wallet is properly connected
         setTimeout(() => {
-            console.log('🏦 Always showing balance UI for consistency');
-            this.createBalanceUI();
+            const isConnected = this.verifyWalletConnection();
+            if (isConnected) {
+                console.log('🏦 Wallet verified, showing balance UI');
+                this.createBalanceUI();
+                this.initializeBalance();
+            } else {
+                console.log('🔒 No verified wallet connection, hiding balance UI');
+                this.createDisconnectedUI();
+            }
         }, 500);
-        
-        // Initialize balance system when wallet is detected
-        if (window.ethereum?.selectedAddress || window.realWeb3Modal?.address) {
-            console.log('🔗 Wallet detected, initializing balance system...');
-            await this.initializeBalance();
-        } else {
-            console.log('⚠️ No wallet detected yet, waiting for connection...');
-        }
         
         // Listen for wallet connection events
         document.addEventListener('walletConnected', async (event) => {
             console.log('🔗 Wallet connected event received!');
             
-            // Initialize balance system but keep same UI
-            await this.initializeBalance();
+            // SECURITY: Clear any stale data and re-verify connection
+            this.balanceInitialized = false;
+            this.userBalance = 0;
             
-            // Refresh UI content but keep same design
-            this.updateBalanceDisplay();
+            // Verify new connection and initialize
+            if (this.verifyWalletConnection()) {
+                await this.initializeBalance();
+                this.createBalanceUI();
+                this.updateBalanceDisplay();
+            } else {
+                console.warn('🔒 SECURITY: Wallet connection event but verification failed');
+                this.createDisconnectedUI();
+            }
+        });
+        
+        // Listen for wallet disconnection events
+        document.addEventListener('walletDisconnected', () => {
+            console.log('🔌 Wallet disconnected event received!');
+            
+            // SECURITY: Clear all data and show disconnected UI
+            this.balanceInitialized = false;
+            this.userBalance = 0;
+            this.createDisconnectedUI();
         });
 
         // Listen for socket events
@@ -230,6 +247,14 @@ class BetInterface {
      * 🎯 Place bet (balance only)
      */
     async placeBet() {
+        // SECURITY: Verify wallet connection before placing bet
+        if (!this.verifyWalletConnection()) {
+            console.error('🔒 SECURITY: Cannot place bet - wallet not connected');
+            this.showNotification('🔒 Connect wallet to place bets', 'error');
+            this.createDisconnectedUI();
+            return;
+        }
+        
         if (!this.validateBetAmount() || this.isPlacingBet) {
             return;
         }
@@ -719,6 +744,97 @@ class BetInterface {
     }
 
     // ===========================================
+    // WALLET VERIFICATION METHODS (SECURITY)
+    // ===========================================
+    
+    /**
+     * 🔒 Verify wallet connection is legitimate and current
+     */
+    verifyWalletConnection() {
+        // Check if wallet is actually connected (not just cached)
+        const hasMetaMask = window.ethereum?.isConnected?.() && window.ethereum?.selectedAddress;
+        const hasWeb3Modal = window.realWeb3Modal?.address;
+        const walletBridgeConnected = document.body.classList.contains('wallet-connected');
+        
+        const isConnected = (hasMetaMask || hasWeb3Modal) && walletBridgeConnected;
+        
+        console.log('🔒 Wallet connection verification:', {
+            hasMetaMask,
+            hasWeb3Modal,
+            walletBridgeConnected,
+            isConnected
+        });
+        
+        return isConnected;
+    }
+    
+    /**
+     * 🚫 Create UI for disconnected state
+     */
+    createDisconnectedUI() {
+        // Check if balance section already exists and remove it
+        const existingSection = document.getElementById('balanceSection');
+        if (existingSection) {
+            existingSection.remove();
+        }
+
+        const betInterface = document.querySelector('.betting-panel');
+        if (!betInterface) {
+            console.error('❌ .betting-panel not found!');
+            return;
+        }
+        
+        const disconnectedHTML = `
+            <div id="balanceSection" class="balance-section" style="
+                background: linear-gradient(135deg, #2a1a1a, #1a1a1a);
+                border: 1px solid #666;
+                border-radius: 8px;
+                padding: 15px;
+                margin: 10px 0;
+                box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+                text-align: center;
+            ">
+                <div style="color: #888; font-size: 16px; margin-bottom: 10px;">
+                    🔒 Wallet Not Connected
+                </div>
+                <div style="color: #666; font-size: 12px; margin-bottom: 15px;">
+                    Connect your wallet to view balance and place bets
+                </div>
+                <button id="connectWalletBtn" style="
+                    background: linear-gradient(135deg, #ffd700, #ffed4e);
+                    border: none;
+                    color: #000;
+                    padding: 10px 20px;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-weight: 600;
+                    font-size: 14px;
+                ">🔗 Connect Wallet</button>
+            </div>
+        `;
+
+        // Insert at the beginning of betting panel
+        const betInputSection = betInterface.querySelector('.bet-input-section');
+        if (betInputSection) {
+            betInputSection.insertAdjacentHTML('beforebegin', disconnectedHTML);
+        } else {
+            betInterface.insertAdjacentHTML('afterbegin', disconnectedHTML);
+        }
+        
+        // Add click handler for connect button
+        const connectBtn = document.getElementById('connectWalletBtn');
+        if (connectBtn) {
+            connectBtn.addEventListener('click', () => {
+                if (window.walletBridge?.showWalletModal) {
+                    window.walletBridge.showWalletModal();
+                } else {
+                    console.log('🔗 Wallet connection not available');
+                }
+            });
+        }
+    }
+
+    // ===========================================
     // BALANCE SYSTEM METHODS
     // ===========================================
 
@@ -728,9 +844,17 @@ class BetInterface {
     async initializeBalance() {
         if (this.balanceInitialized) return;
         
+        // SECURITY: Verify wallet connection before accessing balance
+        if (!this.verifyWalletConnection()) {
+            console.warn('🔒 SECURITY: Wallet connection not verified, blocking balance access');
+            this.userBalance = 0;
+            this.createDisconnectedUI();
+            return;
+        }
+        
         const walletAddress = window.ethereum?.selectedAddress || window.realWeb3Modal?.address;
         if (!walletAddress) {
-            console.warn('No wallet connected for balance initialization');
+            console.warn('🔒 SECURITY: No wallet address available after verification');
             return;
         }
 
@@ -1544,6 +1668,14 @@ class BetInterface {
      * 🔄 Manually refresh balance from server
      */
     async refreshBalance() {
+        // SECURITY: Verify wallet connection before refreshing balance
+        if (!this.verifyWalletConnection()) {
+            console.warn('🔒 SECURITY: Cannot refresh balance - wallet not connected');
+            this.userBalance = 0;
+            this.updateBalanceDisplay();
+            return;
+        }
+        
         const walletAddress = window.ethereum?.selectedAddress || window.realWeb3Modal?.address;
         if (!walletAddress) {
             console.warn('⚠️ Cannot refresh balance - no wallet address');

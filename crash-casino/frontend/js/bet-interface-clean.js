@@ -1666,8 +1666,18 @@ class BetInterface {
                         // Update transaction modal
                         this.updateTransactionModal(txHash, 'confirmed', ourDeposit.block_number, 1);
                         
-                        // Refresh balance
-                        await this.loadBalance();
+                        // Refresh balance and ensure UI is updated
+                        console.log(`💰 DEPOSIT COMPLETION: Refreshing balance after deposit confirmation`);
+                        await this.refreshBalance();
+                        
+                        // Additional safety: Force update balance display
+                        this.updateBalanceDisplay();
+                        
+                        // Also notify other balance systems if they exist
+                        if (window.unifiedHotWallet && typeof window.unifiedHotWallet.refreshBalance === 'function') {
+                            console.log(`🔄 Also refreshing unified hot wallet balance`);
+                            await window.unifiedHotWallet.refreshBalance();
+                        }
                         
                         // Complete the transaction modal
                         setTimeout(() => {
@@ -1926,9 +1936,16 @@ class BetInterface {
                     
                     // If server balance differs from local, sync it
                     if (Math.abs(serverBalance - this.userBalance) > 0.0001) {
-                        console.log(`🔄 Syncing balance: ${this.userBalance.toFixed(4)} → ${serverBalance.toFixed(4)} ETH`);
+                        const oldBalance = this.userBalance;
+                        console.log(`🔄 BACKGROUND SYNC: Balance update ${oldBalance.toFixed(4)} → ${serverBalance.toFixed(4)} ETH`);
                         this.userBalance = serverBalance;
                         this.updateBalanceDisplay();
+                        
+                        // Show notification for significant balance increases (likely deposits)
+                        if (serverBalance > oldBalance + 0.001) {
+                            const increase = serverBalance - oldBalance;
+                            this.showNotification(`💰 Balance increased: +${increase.toFixed(4)} ETH (background sync)`, 'success');
+                        }
                     }
                 }
                 
@@ -1946,6 +1963,22 @@ class BetInterface {
     onBalanceUpdate(newBalance) {
         this.userBalance = newBalance;
         this.updateBalanceDisplay();
+    }
+
+    /**
+     * 🔄 Force refresh balance and UI (can be called externally)
+     */
+    async forceRefreshBalance() {
+        console.log(`🔄 FORCE REFRESH: External request to refresh balance`);
+        try {
+            await this.refreshBalance();
+            this.updateBalanceDisplay();
+            console.log(`✅ FORCE REFRESH: Balance updated to ${this.userBalance.toFixed(4)} ETH`);
+            return true;
+        } catch (error) {
+            console.error(`❌ FORCE REFRESH: Failed to refresh balance:`, error);
+            return false;
+        }
     }
 
     /**

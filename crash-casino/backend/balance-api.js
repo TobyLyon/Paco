@@ -138,12 +138,33 @@ class BalanceAPI {
         console.log(`🏠 Transferring bet amount: ${amount} ETH from hot wallet (${hotAccount.address}) to house wallet (${houseWalletAddress})`);
 
         // Send transaction
-        const txHash = await walletClient.sendTransaction({
-            to: houseWalletAddress,
-            value: amountWei,
-        });
-
-        console.log(`✅ Bet transfer to house wallet successful: ${txHash}`);
+        let txHash;
+        try {
+            txHash = await walletClient.sendTransaction({
+                to: houseWalletAddress,
+                value: amountWei,
+            });
+            console.log(`✅ Bet transfer to house wallet successful: ${txHash}`);
+        } catch (error) {
+            // Handle "known transaction" errors as successful (transaction was already processed)
+            if (error.message && 
+                (error.message.includes('known transaction') || 
+                 error.message.includes('already in the system') ||
+                 error.message.includes('duplicate transaction'))) {
+                
+                console.log(`🔄 Bet transaction already processed (duplicate): ${error.message}`);
+                
+                // Extract txHash from error message if possible
+                const txHashMatch = error.message.match(/0x[a-fA-F0-9]{64}/);
+                txHash = txHashMatch ? txHashMatch[0] : 'duplicate-bet-transaction';
+                
+                console.log(`✅ Using existing bet transaction: ${txHash}`);
+            } else {
+                // Re-throw actual errors
+                console.error(`❌ Bet transfer failed:`, error);
+                throw error;
+            }
+        }
 
         return {
             success: true,
@@ -208,12 +229,33 @@ class BalanceAPI {
         console.log(`🏦 Processing payout: ${payoutAmount} ETH from house wallet (${houseAccount.address}) to hot wallet (${hotWalletAddress})`);
 
         // Send transaction from house wallet to hot wallet
-        const txHash = await walletClient.sendTransaction({
-            to: hotWalletAddress,
-            value: payoutWei,
-        });
-
-        console.log(`✅ Payout transfer successful: ${txHash}`);
+        let txHash;
+        try {
+            txHash = await walletClient.sendTransaction({
+                to: hotWalletAddress,
+                value: payoutWei,
+            });
+            console.log(`✅ Payout transfer successful: ${txHash}`);
+        } catch (error) {
+            // Handle "known transaction" errors as successful (transaction was already processed)
+            if (error.message && 
+                (error.message.includes('known transaction') || 
+                 error.message.includes('already in the system') ||
+                 error.message.includes('duplicate transaction'))) {
+                
+                console.log(`🔄 Transaction already processed (duplicate): ${error.message}`);
+                
+                // Extract txHash from error message if possible
+                const txHashMatch = error.message.match(/0x[a-fA-F0-9]{64}/);
+                txHash = txHashMatch ? txHashMatch[0] : 'duplicate-transaction';
+                
+                console.log(`✅ Using existing transaction: ${txHash}`);
+            } else {
+                // Re-throw actual errors
+                console.error(`❌ Payout transfer failed:`, error);
+                throw error;
+            }
+        }
 
         return {
             success: true,

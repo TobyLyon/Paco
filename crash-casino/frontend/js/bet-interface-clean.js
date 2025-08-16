@@ -1030,15 +1030,7 @@ class BetInterface {
                             <p>💡 Funds are credited automatically after blockchain confirmation</p>
                             <p>⏱️ Usually takes 1-2 minutes on Abstract Network</p>
                         </div>
-                        
-                        <div class="manual-deposit-section">
-                            <h4>📋 Or send ETH directly to our hot wallet:</h4>
-                            <div class="hot-wallet-address">
-                                <input type="text" id="hotWalletAddr" value="0x02B4bFbA6D16308F5B40A5DF1f136C9472da52FF" readonly>
-                                <button id="copyHotWallet" class="copy-btn">📋 Copy</button>
-                            </div>
-                            <p class="manual-note">⚠️ Only send ETH on Abstract Network to this address</p>
-                        </div>
+
                         
                         <button id="confirmDeposit" class="confirm-btn">💳 Deposit via Wallet</button>
                     </div>
@@ -1067,16 +1059,7 @@ class BetInterface {
             });
         });
 
-        // Copy hot wallet address
-        const copyBtn = document.getElementById('copyHotWallet');
-        if (copyBtn) {
-            copyBtn.addEventListener('click', () => {
-                const addressInput = document.getElementById('hotWalletAddr');
-                addressInput.select();
-                document.execCommand('copy');
-                this.showNotification('📋 Hot wallet address copied to clipboard!', 'success');
-            });
-        }
+
 
         // Confirm deposit
         if (confirmBtn) {

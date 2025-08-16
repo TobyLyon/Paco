@@ -67,21 +67,30 @@ class BetInterface {
         
         // Listen for wallet connection events
         document.addEventListener('walletConnected', async (event) => {
-            console.log('🔗 Wallet connected event received!');
+            console.log('🔗 Wallet connected event received!', event.detail);
             
             // SECURITY: Clear any stale data and re-verify connection
             this.balanceInitialized = false;
             this.userBalance = 0;
             
-            // Verify new connection and initialize
-            if (this.verifyWalletConnection()) {
-                await this.initializeBalance();
-                this.createBalanceUI();
-                this.updateBalanceDisplay();
-            } else {
-                console.warn('🔒 SECURITY: Wallet connection event but verification failed');
-                this.createDisconnectedUI();
-            }
+            // Small delay to ensure CSS classes and state are updated
+            setTimeout(async () => {
+                // Verify new connection and initialize
+                if (this.verifyWalletConnection()) {
+                    console.log('✅ Hot wallet: Connection verified, initializing balance system');
+                    await this.initializeBalance();
+                    this.createBalanceUI();
+                    this.updateBalanceDisplay();
+                } else {
+                    console.warn('🔒 SECURITY: Wallet connection event but verification failed');
+                    console.log('🔍 Debug - Connection state:', {
+                        hasMetaMask: window.ethereum?.isConnected?.() && window.ethereum?.selectedAddress,
+                        hasWeb3Modal: window.realWeb3Modal?.address,
+                        walletBridgeConnected: document.body.classList.contains('wallet-connected')
+                    });
+                    this.createDisconnectedUI();
+                }
+            }, 100); // Small delay to ensure state is updated
         });
         
         // Listen for wallet disconnection events
@@ -92,6 +101,31 @@ class BetInterface {
             this.balanceInitialized = false;
             this.userBalance = 0;
             this.createDisconnectedUI();
+        });
+        
+        // Listen for general wallet state changes
+        window.addEventListener('walletStateChanged', (event) => {
+            console.log('🔄 Wallet state changed event received:', event.detail);
+            
+            if (event.detail?.isConnected && event.detail?.address) {
+                // Wallet connected
+                if (!this.balanceInitialized) {
+                    console.log('🔗 Hot wallet: Wallet state changed to connected, initializing...');
+                    setTimeout(async () => {
+                        if (this.verifyWalletConnection()) {
+                            await this.initializeBalance();
+                            this.createBalanceUI();
+                            this.updateBalanceDisplay();
+                        }
+                    }, 100);
+                }
+            } else {
+                // Wallet disconnected
+                console.log('🔌 Hot wallet: Wallet state changed to disconnected');
+                this.balanceInitialized = false;
+                this.userBalance = 0;
+                this.createDisconnectedUI();
+            }
         });
 
         // Listen for socket events

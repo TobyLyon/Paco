@@ -121,10 +121,20 @@ class WalletBridge {
         this.address = state.address;
         this.chainId = state.chainId;
         
+        // Update body CSS class for wallet connection state
+        if (this.isConnected && this.address) {
+            document.body.classList.add('wallet-connected');
+            console.log('✅ Added wallet-connected class to body');
+        } else {
+            document.body.classList.remove('wallet-connected');
+            console.log('❌ Removed wallet-connected class from body');
+        }
+        
         console.log('🔄 Wallet state updated:', {
             isConnected: this.isConnected,
             address: this.address,
-            chainId: this.chainId
+            chainId: this.chainId,
+            cssClassSet: document.body.classList.contains('wallet-connected')
         });
 
         this.notifyStateChange();

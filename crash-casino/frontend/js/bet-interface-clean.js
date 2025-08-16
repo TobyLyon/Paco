@@ -390,13 +390,11 @@ class BetInterface {
                 throw new Error(`Insufficient balance. You have ${this.userBalance.toFixed(4)} ETH, need ${amount.toFixed(4)} ETH`);
             }
         }
-        
-        // Optimistically update balance
-        const originalBalance = this.userBalance;
-        this.userBalance -= amount;
-        this.updateBalanceDisplay();
 
-        // Add bet to orders display immediately
+        // Store original balance for rollback on error
+        const originalBalance = this.userBalance;
+        
+        // Add bet to orders display immediately (but don't update balance yet)
         const betId = `bet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         const playerName = walletAddress ? `${walletAddress.slice(0,6)}...${walletAddress.slice(-4)}` : 'You';
         
@@ -413,10 +411,15 @@ class BetInterface {
         try {
             console.log(`🎯 Attempting balance bet: ${amount} ETH (have: ${this.userBalance.toFixed(6)} ETH)`);
             
-            // Pre-validate balance locally
+            // Pre-validate balance locally BEFORE any optimistic updates
             if (this.userBalance < amount) {
                 throw new Error(`Insufficient balance. You have ${this.userBalance.toFixed(4)} ETH, need ${amount.toFixed(4)} ETH`);
             }
+            
+            // NOW do the optimistic update AFTER validation passes
+            this.userBalance -= amount;
+            this.updateBalanceDisplay();
+            console.log(`✅ Optimistic balance update: ${originalBalance.toFixed(6)} → ${this.userBalance.toFixed(6)} ETH`);
             
             const response = await fetch('https://paco-x57j.onrender.com/api/bet/balance', {
                 method: 'POST',

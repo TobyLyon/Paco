@@ -800,7 +800,7 @@ class BetInterface {
                 <div style="color: #666; font-size: 12px; margin-bottom: 15px;">
                     Connect your wallet to view balance and place bets
                 </div>
-                <button id="connectWalletBtn" style="
+                <button id="hotWalletConnectBtn" style="
                     background: linear-gradient(135deg, #ffd700, #ffed4e);
                     border: none;
                     color: #000;
@@ -821,14 +821,25 @@ class BetInterface {
             betInterface.insertAdjacentHTML('afterbegin', disconnectedHTML);
         }
         
-        // Add click handler for connect button
-        const connectBtn = document.getElementById('connectWalletBtn');
-        if (connectBtn) {
-            connectBtn.addEventListener('click', () => {
+        // Add click handler for hot wallet connect button
+        const hotWalletConnectBtn = document.getElementById('hotWalletConnectBtn');
+        if (hotWalletConnectBtn) {
+            hotWalletConnectBtn.addEventListener('click', () => {
+                console.log('🔗 Hot wallet connect button clicked - triggering main wallet connection');
+                
+                // Try multiple connection methods to ensure compatibility
                 if (window.walletBridge?.showWalletModal) {
+                    // Use the same wallet bridge as main connect button
                     window.walletBridge.showWalletModal();
                 } else {
-                    console.log('🔗 Wallet connection not available');
+                    // Fallback: trigger the main connect button click
+                    const mainConnectBtn = document.getElementById('connectWalletBtn');
+                    if (mainConnectBtn) {
+                        console.log('🔗 Triggering main connect button');
+                        mainConnectBtn.click();
+                    } else {
+                        console.log('❌ No wallet connection method available');
+                    }
                 }
             });
         }

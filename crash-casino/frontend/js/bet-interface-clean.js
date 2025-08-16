@@ -115,7 +115,12 @@ class BetInterface {
                 console.error('❌ Error details:', JSON.stringify(data, null, 2));
                 console.error('❌ Error message:', data?.message);
                 console.error('❌ Full error object:', data);
-                this.showNotification(`❌ Cashout Error: ${data?.message || 'Unknown error'}`, 'error');
+                
+                // Use the same error translation logic as crash client
+                const userMessage = this.translateErrorMessage(data?.message || 'Unknown error');
+                if (userMessage) {
+                    this.showNotification(`❌ ${userMessage}`, 'error');
+                }
             });
         }
     }
@@ -1753,6 +1758,59 @@ window.showBalanceUI = function() {
         console.log('✅ Balance UI created!');
     } else {
         console.error('❌ betInterface not found');
+    }
+
+    /**
+     * 🧹 Translate technical error messages into user-friendly ones
+     */
+    translateErrorMessage(errorMessage) {
+        if (!errorMessage) return null;
+        
+        const message = errorMessage.toLowerCase();
+        
+        // Suppress successful transaction "errors" (these aren't real errors)
+        if (message.includes('known transaction') || 
+            message.includes('already in the system') ||
+            message.includes('duplicate transaction')) {
+            console.log('🔇 Suppressing duplicate transaction warning (operation was successful)');
+            return null; // Don't show this to users
+        }
+        
+        // Translate common technical errors
+        if (message.includes('insufficient balance')) {
+            return 'Insufficient balance';
+        }
+        
+        if (message.includes('no active bet')) {
+            return 'No active bet found';
+        }
+        
+        if (message.includes('too close to crash')) {
+            return 'Too late - round ended';
+        }
+        
+        if (message.includes('round not active') || message.includes('betting phase')) {
+            return 'Cannot perform action during this phase';
+        }
+        
+        if (message.includes('network error') || message.includes('connection')) {
+            return 'Network error - please try again';
+        }
+        
+        // For other technical errors, show a generic message
+        if (message.includes('execution reverted') || 
+            message.includes('transaction failed') ||
+            message.includes('revert')) {
+            return 'Operation failed - please try again';
+        }
+        
+        // If it's a simple, user-friendly message already, keep it
+        if (errorMessage.length < 50 && !message.includes('0x')) {
+            return errorMessage;
+        }
+        
+        // Default for unknown technical errors
+        return 'Operation failed - please try again';
     }
 };
 

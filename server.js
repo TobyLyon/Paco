@@ -123,6 +123,56 @@ app.get('/config', (req, res) => {
     });
 });
 
+// RPC Health endpoint for blockchain connectivity
+app.get('/api/rpc-health', async (req, res) => {
+    try {
+        const { createPublicClient, http } = require('viem');
+        const { abstractTestnet } = require('viem/chains');
+        
+        // Test primary RPC
+        const primaryRpc = process.env.RPC_PRIMARY || 'https://api.mainnet.abs.xyz';
+        const client = createPublicClient({
+            chain: abstractTestnet,
+            transport: http(primaryRpc)
+        });
+        
+        const startTime = Date.now();
+        
+        // Test basic connectivity
+        const blockNumber = await client.getBlockNumber();
+        const latency = Date.now() - startTime;
+        
+        res.json({
+            status: 'healthy',
+            rpc_endpoints: {
+                primary: {
+                    url: primaryRpc,
+                    status: 'connected',
+                    latency_ms: latency,
+                    latest_block: Number(blockNumber)
+                }
+            },
+            network: 'Abstract',
+            timestamp: new Date().toISOString()
+        });
+        
+    } catch (error) {
+        console.error('❌ RPC Health check failed:', error);
+        res.status(503).json({
+            status: 'unhealthy',
+            error: error.message,
+            rpc_endpoints: {
+                primary: {
+                    url: process.env.RPC_PRIMARY || 'https://api.mainnet.abs.xyz',
+                    status: 'failed',
+                    error: error.message
+                }
+            },
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+
 // Provably fair proof endpoint
 app.get('/proof/:roundId', async (req, res) => {
     try {

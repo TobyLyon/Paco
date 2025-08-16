@@ -1723,12 +1723,23 @@
                 }
                 
                 // Initialize crash game client - USE THE WORKING SYSTEM
+                console.log('🔍 Checking available crash client classes:', {
+                    'CrashGameClient': typeof CrashGameClient,
+                    'UnifiedCrashClient': typeof UnifiedCrashClient,
+                    'SimpleSyncClient': typeof SimpleSyncClient
+                });
+                
                 if (typeof CrashGameClient !== 'undefined') {
                     console.log('🎰 Initializing crash game client...');
-                    window.crashGameClient = new CrashGameClient();
-                    
-                    // FIXED: Enable server multiplier updates
-                    window.crashGameClient.disableMultiplierUpdates = false;
+                    try {
+                        window.crashGameClient = new CrashGameClient();
+                        
+                        // FIXED: Enable server multiplier updates
+                        window.crashGameClient.disableMultiplierUpdates = false;
+                        console.log('✅ CrashGameClient initialized successfully');
+                    } catch (error) {
+                        console.error('❌ Failed to initialize CrashGameClient:', error);
+                    }
                 } else if (typeof UnifiedCrashClient !== 'undefined') {
                     console.log('🎯 Initializing UNIFIED crash game client for perfect sync...');
                     window.crashGameClient = new UnifiedCrashClient();
@@ -1902,7 +1913,18 @@
                             }
                         }, 3000);
                     } else {
-                        console.log('❌ No crash client available at all - major issue');
+                        console.log('❌ No crash client available at all - proceeding with basic functionality');
+                        console.log('🎮 Game will work in basic mode without real-time multiplier updates');
+                        
+                        // Create a minimal fallback client to prevent endless waiting
+                        window.crashGameClient = {
+                            socket: null,
+                            gameState: 'waiting',
+                            connect: () => console.log('🔄 Fallback client - no real connection'),
+                            disconnect: () => console.log('🔌 Fallback client - no real disconnection')
+                        };
+                        
+                        console.log('✅ Fallback crash client created - page will continue loading');
                     }
                 }
             }, 1000);

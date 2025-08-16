@@ -4,9 +4,18 @@
  */
 
 // Wait for the crash game client to be ready
+let celebrationRetryCount = 0;
+const MAX_CELEBRATION_RETRIES = 30; // 30 seconds max wait
+
 function addCelebrationHandlers() {
+    celebrationRetryCount++;
+    
     if (!window.crashGameClient?.socket) {
-        console.log('⏳ Waiting for crash game client...');
+        if (celebrationRetryCount >= MAX_CELEBRATION_RETRIES) {
+            console.warn('⏰ HOTFIX: Timeout waiting for crash game client, proceeding without celebration handlers');
+            return;
+        }
+        console.log(`⏳ Waiting for crash game client... (${celebrationRetryCount}/${MAX_CELEBRATION_RETRIES})`);
         setTimeout(addCelebrationHandlers, 1000);
         return;
     }

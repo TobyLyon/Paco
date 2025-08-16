@@ -787,14 +787,22 @@ class BetInterface {
      */
     createBalanceUI() {
         // Check if balance section already exists
-        if (document.getElementById('balanceSection')) return;
+        if (document.getElementById('balanceSection')) {
+            console.log('✅ Balance UI already exists');
+            return;
+        }
 
         const betInterface = document.querySelector('.betting-panel');
         if (!betInterface) {
             console.error('❌ .betting-panel not found! Available elements:', document.querySelectorAll('[class*="bet"]'));
+            console.log('🔍 Will retry creating balance UI when betting panel is available...');
+            // Retry after a short delay
+            setTimeout(() => {
+                this.createBalanceUI();
+            }, 1000);
             return;
         }
-        console.log('✅ Found betting panel:', betInterface);
+        console.log('✅ Found betting panel, creating balance UI:', betInterface);
 
         const balanceHTML = `
             <div id="balanceSection" class="balance-section">
@@ -1818,6 +1826,36 @@ class BetInterface {
 // Global instance
 window.BetInterface = BetInterface;
 
+// Initialize bet interface immediately
+console.log('🎯 Creating global bet interface instance...');
+window.betInterface = new BetInterface();
+
+// Force show balance UI after page loads (aggressive approach)
+window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        console.log('🔧 DOM loaded - force ensuring balance UI exists...');
+        if (!document.getElementById('balanceSection')) {
+            console.log('🏗️ Creating balance UI on DOM load...');
+            if (window.betInterface) {
+                window.betInterface.createBalanceUI();
+                window.betInterface.updateBalanceDisplay();
+            }
+        }
+    }, 500);
+});
+
+// Also try after a longer delay for slow loading
+setTimeout(() => {
+    console.log('🔧 Delayed check - ensuring balance UI exists...');
+    if (!document.getElementById('balanceSection')) {
+        console.log('🏗️ Creating balance UI on delayed check...');
+        if (window.betInterface) {
+            window.betInterface.createBalanceUI();
+            window.betInterface.updateBalanceDisplay();
+        }
+    }
+}, 3000);
+
 // Debug function to manually show balance UI
 window.showBalanceUI = function() {
     console.log('🧪 Manually showing balance UI...');
@@ -1842,6 +1880,18 @@ window.showBalanceUI = function() {
     } else {
         console.error('❌ betInterface not found');
     }
+}
+
+// Debug function to check betting panel availability
+window.checkBettingPanel = function() {
+    const bettingPanel = document.querySelector('.betting-panel');
+    console.log('🔍 Betting panel check:', {
+        exists: !!bettingPanel,
+        element: bettingPanel,
+        allBetElements: document.querySelectorAll('[class*="bet"]'),
+        documentReady: document.readyState
+    });
+    return bettingPanel;
 }
 
     /**

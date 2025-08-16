@@ -982,11 +982,11 @@ class BetInterface {
         const balanceHTML = `
             <div id="balanceSection" class="balance-section" style="
                 background: rgba(31, 41, 55, 0.8);
-                border: 2px solid #fbbf24;
-                border-radius: 12px;
-                padding: 15px;
-                margin: 10px 0;
-                box-shadow: 0 4px 20px rgba(251, 191, 36, 0.2);
+                border: 1px solid #fbbf24;
+                border-radius: 6px;
+                padding: 8px;
+                margin: 6px 0;
+                box-shadow: 0 2px 8px rgba(251, 191, 36, 0.15);
                 backdrop-filter: blur(10px);
                 transition: all 0.3s ease;
             ">
@@ -994,72 +994,75 @@ class BetInterface {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    margin-bottom: 15px;
+                    margin-bottom: 6px;
                 ">
-                    <h3 style="color: #fbbf24; margin: 0; font-size: 16px; font-weight: 600;">💰 Game Balance</h3>
+                    <h3 style="color: #fbbf24; margin: 0; font-size: 13px; font-weight: 600;">💰 Balance</h3>
                     <button id="refreshBalanceBtn" style="
                         background: transparent;
                         border: 1px solid #fbbf24;
                         color: #fbbf24;
-                        padding: 6px 8px;
-                        border-radius: 6px;
+                        padding: 3px 6px;
+                        border-radius: 4px;
                         cursor: pointer;
-                        font-size: 12px;
+                        font-size: 10px;
                         transition: all 0.3s ease;
                     " title="Refresh balance">🔄</button>
                 </div>
                 
-                <div style="text-align: center; margin: 15px 0;">
+                <div style="text-align: center; margin: 8px 0;">
                     <div id="userBalance" style="
-                        font-size: 24px;
+                        font-size: 18px;
                         font-weight: bold;
                         color: #10b981;
-                        text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
-                        margin-bottom: 5px;
+                        text-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
+                        margin-bottom: 2px;
+                        line-height: 1;
                     ">${displayEth(toWei(displayBalance.toString()), 4)} ETH</div>
-                    <div style="color: #9ca3af; font-size: 12px;">Available for betting</div>
+                    <div style="color: #9ca3af; font-size: 10px;">Available for betting</div>
                 </div>
                 
                 <div class="balance-actions" style="
                     display: grid;
                     grid-template-columns: 1fr 1fr;
-                    gap: 10px;
-                    margin: 15px 0;
+                    gap: 6px;
+                    margin: 8px 0 6px 0;
                 ">
                     <button id="depositBtn" style="
                         background: linear-gradient(135deg, #10b981, #059669);
                         border: none;
                         color: white;
-                        padding: 12px 16px;
-                        border-radius: 8px;
+                        padding: 8px 12px;
+                        border-radius: 4px;
                         cursor: pointer;
-                        font-weight: 600;
-                        font-size: 14px;
+                        font-weight: 500;
+                        font-size: 11px;
                         transition: all 0.3s ease;
-                        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);
+                        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
                     " ${!isConnected ? 'disabled' : ''}>💳 Deposit</button>
                     
                     <button id="withdrawBtn" style="
                         background: linear-gradient(135deg, #f97316, #ea580c);
                         border: none;
                         color: white;
-                        padding: 12px 16px;
-                        border-radius: 8px;
+                        padding: 8px 12px;
+                        border-radius: 4px;
                         cursor: pointer;
-                        font-weight: 600;
-                        font-size: 14px;
+                        font-weight: 500;
+                        font-size: 11px;
                         transition: all 0.3s ease;
-                        box-shadow: 0 4px 15px rgba(249, 115, 22, 0.2);
+                        box-shadow: 0 2px 8px rgba(249, 115, 22, 0.2);
                     " ${!isConnected ? 'disabled' : ''}>💸 Withdraw</button>
                 </div>
                 
                 <div class="balance-info" style="
                     text-align: center;
-                    font-size: 11px;
+                    font-size: 9px;
                     color: #9ca3af;
+                    margin-top: 4px;
+                    line-height: 1.2;
                 ">
                     ${isConnected 
-                        ? `⚡ Instant betting from balance (${walletAddress.substring(0,4)}...${walletAddress.substring(38)})`
+                        ? `⚡ ${walletAddress.substring(0,4)}...${walletAddress.substring(38)}`
                         : `⚠️ Connect wallet to deposit/withdraw`
                     }
                 </div>

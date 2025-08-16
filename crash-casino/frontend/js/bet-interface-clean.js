@@ -421,14 +421,20 @@ class BetInterface {
             this.updateBalanceDisplay();
             console.log(`✅ Optimistic balance update: ${originalBalance.toFixed(6)} → ${this.userBalance.toFixed(6)} ETH`);
             
+            const requestBody = {
+                playerAddress: walletAddress,
+                amount: amount
+            };
+            
+            console.log(`🌐 Sending bet request to server:`, requestBody);
+            
             const response = await fetch('https://paco-x57j.onrender.com/api/bet/balance', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    playerAddress: walletAddress,
-                    amount: amount
-                })
+                body: JSON.stringify(requestBody)
             });
+            
+            console.log(`🌐 Server response status: ${response.status} ${response.statusText}`);
 
             if (!response.ok) {
                 const errorText = await response.text();
@@ -437,6 +443,7 @@ class BetInterface {
             }
 
             const result = await response.json();
+            console.log(`🌐 Server response data:`, result);
             console.log(`💰 Balance bet placed: ${amount} ETH (remaining: ${this.userBalance.toFixed(4)} ETH)`);
             
             // Update bet status in orders to active
@@ -762,6 +769,37 @@ class BetInterface {
         this.userBalance += amount;
         this.updateBalanceDisplay();
         this.showNotification(`🎉 +${amount.toFixed(4)} ETH added to balance!`, 'success');
+    }
+
+    /**
+     * ❌ Handle bet error from server
+     */
+    handleBetError(error) {
+        console.error('🚨 BET INTERFACE: Server bet error received:', error);
+        
+        // Find the most recent bet and mark it as failed
+        const mostRecentBet = Array.from(this.activeOrders.values())
+            .filter(bet => bet.status === 'placing')
+            .sort((a, b) => b.timestamp - a.timestamp)[0];
+            
+        if (mostRecentBet) {
+            console.log('🔄 Reverting failed bet:', mostRecentBet);
+            
+            // Restore the balance
+            this.userBalance += mostRecentBet.amount;
+            this.updateBalanceDisplay();
+            
+            // Update bet status
+            this.updateBetInOrders(mostRecentBet.id, { 
+                status: 'failed', 
+                error: error.message || 'Server rejected bet' 
+            });
+            
+            console.log(`💰 Balance restored: +${mostRecentBet.amount.toFixed(4)} ETH`);
+        }
+        
+        // Show error notification
+        this.showNotification(`❌ Bet failed: ${error.message || 'Server rejected the bet'}`, 'error');
     }
 
     /**

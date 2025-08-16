@@ -530,6 +530,28 @@ class CrashGameClient {
             }
         });
 
+        // Handle bet errors from server
+        this.socket.on('betError', (error) => {
+            console.error('❌ BET ERROR from server:', error);
+            console.error('🔍 Bet error details:', JSON.stringify(error, null, 2));
+            
+            // Clear the playerBet state since bet failed
+            this.playerBet = null;
+            
+            // Hide cash out button
+            const cashOutBtn = document.getElementById('cashOutBtn');
+            if (cashOutBtn) {
+                cashOutBtn.style.display = 'none';
+            }
+            
+            // Notify bet interface about the bet failure
+            if (window.betInterface && window.betInterface.handleBetError) {
+                window.betInterface.handleBetError(error);
+            }
+            
+            this.showError(`Bet failed: ${error.message || 'Server rejected the bet'}`);
+        });
+
         // Setup heartbeat
         setInterval(() => {
             if (this.socket && this.isConnected) {

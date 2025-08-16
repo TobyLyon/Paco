@@ -1,5 +1,27 @@
-import { toWei, fromWei, wadMul, percentMul, weiToString, stringToWei } from '../../src/lib/money';
-import { parseEthInputOrThrow, displayEth, toJsonWei, fromJsonWei } from '../../src/lib/money-ui';
+// Note: This file is loaded as a regular script, not a module
+// Money utilities are available globally or through require() in Node.js context
+// For browser usage, we'll need to load money utilities differently
+
+/**
+ * 💰 Simplified Money Utilities for Browser Usage
+ * (Fallback implementations for display purposes only)
+ */
+function toWei(ethString) {
+    // Simple conversion for display purposes - UI only, not money arithmetic
+    return BigInt(Math.floor(parseFloat(ethString) * 1e18));
+}
+
+function fromWei(wei) {
+    // Simple conversion for display purposes - UI only, not money arithmetic
+    return (Number(wei) / 1e18).toString();
+}
+
+function displayEth(wei, decimals = 4) {
+    // UI display only - safe conversion to number for .toFixed
+    const ethString = fromWei(wei);
+    return parseFloat(ethString).toFixed(decimals);
+}
+
 /**
  * 🎯 Bet Interface for PacoRocko Crash Casino - Balance Only
  * 

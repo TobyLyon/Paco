@@ -49,6 +49,15 @@ class BetInterface {
             
             // Initialize balance system
             await this.initializeBalance();
+            
+            // Force ensure balance UI is created (fallback)
+            setTimeout(() => {
+                if (!document.getElementById('balanceSection')) {
+                    console.log('🔧 Force creating missing balance UI after wallet connection...');
+                    this.createBalanceUI();
+                    this.updateBalanceDisplay();
+                }
+            }, 1000);
         });
 
         // Listen for socket events
@@ -1753,12 +1762,27 @@ window.BetInterface = BetInterface;
 window.showBalanceUI = function() {
     console.log('🧪 Manually showing balance UI...');
     if (window.betInterface) {
+        // Force remove existing UI first
+        const existing = document.getElementById('balanceSection');
+        if (existing) {
+            existing.remove();
+            console.log('🗑️ Removed existing balance UI');
+        }
+        
         window.betInterface.createBalanceUI();
         window.betInterface.updateBalanceDisplay();
         console.log('✅ Balance UI created!');
+        
+        // Also ensure it's visible
+        const balanceSection = document.getElementById('balanceSection');
+        if (balanceSection) {
+            balanceSection.style.display = 'block';
+            console.log('👁️ Balance UI made visible');
+        }
     } else {
         console.error('❌ betInterface not found');
     }
+}
 
     /**
      * 🧹 Translate technical error messages into user-friendly ones

@@ -17,6 +17,11 @@ class BetInterface {
         // Orders tracking
         this.activeOrders = new Map(); // Track active orders
         
+        // Enhanced features from unified system
+        this.syncInterval = null; // Auto-sync balance
+        this.lastBetTime = 0; // Track when last bet was placed
+        this.walletAddress = null; // Current wallet address
+        
         this.init();
     }
 
@@ -58,6 +63,14 @@ class BetInterface {
                     this.updateBalanceDisplay();
                 }
             }, 1000);
+        });
+
+        // Listen for wallet disconnection events
+        document.addEventListener('walletDisconnected', () => {
+            console.log('🔗 Wallet disconnected - stopping auto-sync');
+            this.stopAutoSync();
+            this.balanceInitialized = false;
+            this.walletAddress = null;
         });
 
         // Listen for socket events
@@ -287,6 +300,7 @@ class BetInterface {
         // Optimistically update balance
         const originalBalance = this.userBalance;
         this.userBalance -= amount;
+        this.lastBetTime = Date.now(); // 🕒 Track bet time for optimistic protection
         this.updateBalanceDisplay();
 
         // Add bet to orders display immediately
@@ -717,8 +731,10 @@ class BetInterface {
             return;
         }
 
+        this.walletAddress = walletAddress.toLowerCase();
+
         try {
-            console.log('🏦 Initializing balance system for:', walletAddress);
+            console.log('🏦 Initializing enhanced balance system for:', this.walletAddress);
             
             // Load current balance
             const response = await fetch(`https://paco-x57j.onrender.com/api/balance/${walletAddress}`);
@@ -735,6 +751,7 @@ class BetInterface {
             this.updateBalanceDisplay();
             this.createBalanceUI();
             this.startBalanceMonitoring();
+            this.startAutoSync(); // 🔄 Start automatic balance sync (unified feature)
             
             // Show notification if user has game balance
             if (this.userBalance > 0) {
@@ -1540,6 +1557,15 @@ class BetInterface {
                 const data = await response.json();
                 const serverBalance = parseFloat(data.balance || 0);
                 
+                // 🛡️ Optimistic update protection (unified feature)
+                const timeSinceLastBet = Date.now() - this.lastBetTime;
+                const graceTimePeriod = 3000; // 3 seconds
+                
+                if (timeSinceLastBet < graceTimePeriod && serverBalance < this.userBalance) {
+                    console.log(`🛡️ Protecting optimistic balance during grace period (${Math.round((graceTimePeriod - timeSinceLastBet)/1000)}s remaining)`);
+                    return true; // Don't update if server balance is lower and we recently bet
+                }
+                
                 if (Math.abs(serverBalance - this.userBalance) > 0.0001) {
                     console.log(`🔄 Balance updated: ${this.userBalance.toFixed(4)} → ${serverBalance.toFixed(4)} ETH`);
                 }
@@ -1563,6 +1589,40 @@ class BetInterface {
                     refreshBtn.style.animation = '';
                 }, 500);
             }
+        }
+    }
+
+    /**
+     * 🔄 Start automatic balance sync (unified feature)
+     */
+    startAutoSync() {
+        // Clear any existing sync interval
+        if (this.syncInterval) {
+            clearInterval(this.syncInterval);
+        }
+        
+        // Auto-sync balance every 10 seconds
+        this.syncInterval = setInterval(async () => {
+            if (this.balanceInitialized && this.walletAddress) {
+                try {
+                    await this.refreshBalance();
+                } catch (error) {
+                    console.warn('🔄 Auto-sync failed:', error.message);
+                }
+            }
+        }, 10000); // 10 seconds
+        
+        console.log('🔄 Auto-sync started (every 10 seconds)');
+    }
+
+    /**
+     * 🛑 Stop automatic balance sync
+     */
+    stopAutoSync() {
+        if (this.syncInterval) {
+            clearInterval(this.syncInterval);
+            this.syncInterval = null;
+            console.log('🛑 Auto-sync stopped');
         }
     }
 

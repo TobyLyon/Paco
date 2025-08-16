@@ -1316,67 +1316,83 @@ class BetInterface {
                 <div class="modal-content">
                     <div class="modal-header">
                         <h3>${type === 'deposit' ? '💳' : '💸'} Processing ${type.charAt(0).toUpperCase() + type.slice(1)}</h3>
-                        <button class="modal-close">&times;</button>
+                        <button class="modal-close" id="modalCloseBtn">&times;</button>
                     </div>
                     
                     <div class="transaction-info">
-                        <div class="transaction-status">
-                            <div class="status-indicator pending">
-                                <div class="spinner"></div>
-                                <span id="statusText">Broadcasting transaction...</span>
+                        <div class="transaction-progress">
+                            <div id="step1" class="progress-step active">
+                                <div class="step-icon">1</div>
+                                <div class="step-content">
+                                    <div class="step-title">Preparing Transaction</div>
+                                    <div class="step-description">Setting up your ${type} request</div>
+                                </div>
+                                <div class="step-spinner"></div>
+                            </div>
+                            
+                            <div id="step2" class="progress-step">
+                                <div class="step-icon">2</div>
+                                <div class="step-content">
+                                    <div class="step-title">Wallet Signature</div>
+                                    <div class="step-description">Please confirm in your wallet</div>
+                                </div>
+                                <div class="step-spinner" style="display: none;"></div>
+                            </div>
+                            
+                            <div id="step3" class="progress-step">
+                                <div class="step-icon">3</div>
+                                <div class="step-content">
+                                    <div class="step-title">Network Confirmation</div>
+                                    <div class="step-description">Waiting for blockchain confirmation</div>
+                                </div>
+                                <div class="step-spinner" style="display: none;"></div>
+                            </div>
+                            
+                            <div id="step4" class="progress-step">
+                                <div class="step-icon">✓</div>
+                                <div class="step-content">
+                                    <div class="step-title">Complete</div>
+                                    <div class="step-description">Your balance will be updated</div>
+                                </div>
+                                <div class="step-spinner" style="display: none;"></div>
                             </div>
                         </div>
                         
                         <div class="transaction-details">
                             <div class="detail-row">
-                                <span class="label">Amount:</span>
-                                <span class="value">${amount} ETH</span>
+                                <div class="detail-label">Amount</div>
+                                <div class="detail-value amount">${amount} ETH</div>
                             </div>
                             <div class="detail-row">
-                                <span class="label">${type === 'deposit' ? 'To' : 'From'}:</span>
-                                <span class="value address">${targetAddress}</span>
+                                <div class="detail-label">Destination</div>
+                                <div class="detail-value address">${targetAddress.substring(0,6)}...${targetAddress.substring(38)}</div>
                             </div>
                             <div class="detail-row" id="txHashRow" style="display: none;">
-                                <span class="label">Transaction Hash:</span>
-                                <span class="value">
-                                    <a id="txHashLink" href="#" target="_blank" class="tx-link">
-                                        <span id="txHashText">-</span>
-                                        <span class="external-icon">🔗</span>
-                                    </a>
-                                </span>
+                                <div class="detail-label">Transaction Hash</div>
+                                <a id="txHashLink" target="_blank" rel="noopener noreferrer" class="detail-value hash">
+                                    <span id="txHashText"></span>
+                                </a>
                             </div>
                             <div class="detail-row" id="blockRow" style="display: none;">
-                                <span class="label">Block:</span>
-                                <span class="value" id="blockNumber">-</span>
+                                <div class="detail-label">Block Number</div>
+                                <div id="blockNumber" class="detail-value">#0</div>
                             </div>
                             <div class="detail-row" id="confirmationsRow" style="display: none;">
-                                <span class="label">Confirmations:</span>
-                                <span class="value" id="confirmationCount">0</span>
+                                <div class="detail-label">Confirmations</div>
+                                <div id="confirmationCount" class="detail-value">0/1</div>
                             </div>
                         </div>
                         
-                        <div class="progress-steps">
-                            <div class="step active" id="step1">
-                                <div class="step-number">1</div>
-                                <div class="step-text">Broadcasting</div>
-                            </div>
-                            <div class="step" id="step2">
-                                <div class="step-number">2</div>
-                                <div class="step-text">Confirming</div>
-                            </div>
-                            <div class="step" id="step3">
-                                <div class="step-number">3</div>
-                                <div class="step-text">Updating Balance</div>
-                            </div>
+                        <div class="status-indicator pending" id="overallStatus">
+                            <div id="statusText">Preparing transaction...</div>
                         </div>
-                        
-                        <div class="estimated-time">
-                            <p>⏱️ Estimated time: 1-2 minutes on Abstract Network</p>
-                        </div>
-                        
-                        <div class="transaction-actions">
-                            <button id="closeTransactionModal" class="secondary-btn" disabled>Close</button>
-                        </div>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button id="closeTransactionModal" class="modal-btn secondary">Close</button>
+                        <a id="explorerLink" target="_blank" rel="noopener noreferrer" class="modal-btn primary" style="display: none;">
+                            View on Explorer
+                        </a>
                     </div>
                 </div>
             </div>
@@ -1400,8 +1416,11 @@ class BetInterface {
         const modal = document.getElementById('transactionModal');
         if (!modal) return;
 
+        // Handle case where txHash might be an object with hash property or a string
+        const hashString = typeof txHash === 'string' ? txHash : (txHash?.hash || txHash?.transactionHash || '');
+
         const statusText = document.getElementById('statusText');
-        const statusIndicator = modal.querySelector('.status-indicator');
+        const overallStatus = document.getElementById('overallStatus');
         const txHashRow = document.getElementById('txHashRow');
         const txHashLink = document.getElementById('txHashLink');
         const txHashText = document.getElementById('txHashText');
@@ -1410,52 +1429,106 @@ class BetInterface {
         const confirmationsRow = document.getElementById('confirmationsRow');
         const confirmationCount = document.getElementById('confirmationCount');
         const closeBtn = document.getElementById('closeTransactionModal');
+        const explorerLink = document.getElementById('explorerLink');
 
         // Abstract Network block explorer URL
-        const explorerUrl = `https://explorer.abs.xyz/tx/${txHash}`;
+        const explorerUrl = `https://explorer.abs.xyz/tx/${hashString}`;
+
+        // Helper function to update progress steps
+        const updateStep = (stepId, state) => {
+            const step = document.getElementById(stepId);
+            if (!step) return;
+            
+            step.className = `progress-step ${state}`;
+            const spinner = step.querySelector('.step-spinner');
+            const icon = step.querySelector('.step-icon');
+            
+            if (state === 'active') {
+                spinner.style.display = 'block';
+                icon.style.animation = 'iconPulse 2s ease-in-out infinite';
+            } else if (state === 'completed') {
+                spinner.style.display = 'none';
+                icon.style.animation = 'none';
+                icon.textContent = '✓';
+            } else if (state === 'failed') {
+                spinner.style.display = 'none';
+                icon.style.animation = 'none';
+                icon.textContent = '✗';
+            } else {
+                spinner.style.display = 'none';
+                icon.style.animation = 'none';
+            }
+        };
 
         switch (status) {
             case 'submitted':
-                statusText.textContent = 'Transaction submitted to network...';
-                txHashRow.style.display = 'flex';
-                txHashLink.href = explorerUrl;
-                txHashText.textContent = `${txHash.substring(0, 10)}...${txHash.substring(txHash.length - 8)}`;
-                modal.querySelector('#step1').classList.add('completed');
-                modal.querySelector('#step2').classList.add('active');
+                statusText.textContent = 'Transaction submitted to blockchain...';
+                if (overallStatus) overallStatus.className = 'status-indicator pending';
+                
+                // Show transaction hash
+                if (hashString) {
+                    txHashRow.style.display = 'flex';
+                    txHashLink.href = explorerUrl;
+                    txHashText.textContent = `${hashString.substring(0, 10)}...${hashString.substring(hashString.length - 8)}`;
+                    
+                    // Show explorer link
+                    if (explorerLink) {
+                        explorerLink.href = explorerUrl;
+                        explorerLink.style.display = 'inline-flex';
+                    }
+                }
+                
+                // Update progress steps
+                updateStep('step1', 'completed');
+                updateStep('step2', 'completed');
+                updateStep('step3', 'active');
                 break;
                 
             case 'confirmed':
-                statusText.textContent = 'Transaction confirmed! Updating balance...';
-                statusIndicator.className = 'status-indicator confirmed';
-                statusIndicator.innerHTML = '<span class="check-mark">✅</span><span id="statusText">Transaction confirmed! Updating balance...</span>';
+                statusText.textContent = 'Transaction confirmed on blockchain!';
+                if (overallStatus) overallStatus.className = 'status-indicator confirmed';
                 
+                // Show block and confirmation info
                 if (blockNumber) {
                     blockRow.style.display = 'flex';
-                    blockNumber_elem.textContent = blockNumber;
+                    blockNumber_elem.textContent = `#${blockNumber}`;
                 }
                 
                 confirmationsRow.style.display = 'flex';
-                confirmationCount.textContent = confirmations;
+                confirmationCount.textContent = `${confirmations}/1`;
                 
-                modal.querySelector('#step2').classList.add('completed');
-                modal.querySelector('#step3').classList.add('active');
+                // Update progress steps
+                updateStep('step3', 'completed');
+                updateStep('step4', 'active');
                 break;
                 
             case 'completed':
                 statusText.textContent = 'Transaction complete! Balance updated.';
-                statusIndicator.className = 'status-indicator completed';
-                statusIndicator.innerHTML = '<span class="check-mark">🎉</span><span id="statusText">Transaction complete! Balance updated.</span>';
-                modal.querySelector('#step3').classList.add('completed');
+                if (overallStatus) overallStatus.className = 'status-indicator confirmed';
+                
+                // Complete all steps
+                updateStep('step4', 'completed');
+                
+                // Enable close button
                 closeBtn.disabled = false;
                 closeBtn.textContent = 'Done';
+                closeBtn.className = 'modal-btn primary';
                 break;
                 
             case 'failed':
-                statusText.textContent = 'Transaction failed or was rejected.';
-                statusIndicator.className = 'status-indicator failed';
-                statusIndicator.innerHTML = '<span class="error-mark">❌</span><span id="statusText">Transaction failed or was rejected.</span>';
+                statusText.textContent = 'Transaction failed or was rejected';
+                if (overallStatus) overallStatus.className = 'status-indicator failed';
+                
+                // Mark current active step as failed
+                const activeStep = modal.querySelector('.progress-step.active');
+                if (activeStep) {
+                    updateStep(activeStep.id, 'failed');
+                }
+                
+                // Enable close button
                 closeBtn.disabled = false;
                 closeBtn.textContent = 'Close';
+                closeBtn.className = 'modal-btn secondary';
                 break;
         }
     }

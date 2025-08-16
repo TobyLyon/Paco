@@ -37,6 +37,7 @@ class BetInterface {
         // Balance system only
         this.userBalance = 0;
         this.balanceInitialized = false;
+        this.isRefreshingBalance = false;
         
         // Orders tracking
         this.activeOrders = new Map(); // Track active orders
@@ -348,17 +349,47 @@ class BetInterface {
         console.log('🔍 Using original balance system for bet placement');
         
         // CRITICAL: Always refresh balance before attempting to bet
+        console.log(`🔍 BALANCE SYNC - Before refresh: UI shows ${this.userBalance.toFixed(6)} ETH`);
         try {
             await this.refreshBalance();
+            console.log(`🔍 BALANCE SYNC - After refresh: Server says ${this.userBalance.toFixed(6)} ETH`);
+            
+            // Small delay to ensure all balance systems are synchronized
+            await new Promise(resolve => setTimeout(resolve, 100));
+            console.log(`🔍 BALANCE SYNC - Final validation balance: ${this.userBalance.toFixed(6)} ETH`);
         } catch (error) {
             console.warn('⚠️ Balance refresh failed, using cached balance:', error);
         }
         
-        if (this.userBalance < amount) {
-            throw new Error(`Insufficient balance. You have ${this.userBalance.toFixed(4)} ETH, need ${amount.toFixed(4)} ETH`);
-        }
-
+        // FINAL CHECK: Query server balance directly one more time to avoid any race conditions
         const walletAddress = window.ethereum?.selectedAddress || window.realWeb3Modal?.address;
+        try {
+            const finalCheckResponse = await fetch(`https://paco-x57j.onrender.com/api/balance/${walletAddress}`, {
+                method: 'GET',
+                headers: { 'Cache-Control': 'no-cache' }
+            });
+            
+            if (finalCheckResponse.ok) {
+                const finalData = await finalCheckResponse.json();
+                const finalBalance = parseFloat(finalData.balance || 0);
+                console.log(`🔍 FINAL BALANCE CHECK - Server confirms: ${finalBalance.toFixed(6)} ETH`);
+                
+                // Use the most up-to-date balance for validation
+                if (finalBalance < amount) {
+                    throw new Error(`Insufficient balance. Server confirms you have ${finalBalance.toFixed(4)} ETH, need ${amount.toFixed(4)} ETH`);
+                }
+                
+                // Update our local balance to match server
+                this.userBalance = finalBalance;
+            }
+        } catch (checkError) {
+            console.warn('⚠️ Final balance check failed, proceeding with cached balance:', checkError);
+            
+            // Fallback to cached balance validation
+            if (this.userBalance < amount) {
+                throw new Error(`Insufficient balance. You have ${this.userBalance.toFixed(4)} ETH, need ${amount.toFixed(4)} ETH`);
+            }
+        }
         
         // Optimistically update balance
         const originalBalance = this.userBalance;
@@ -892,7 +923,12 @@ class BetInterface {
      * 🏦 Initialize balance system
      */
     async initializeBalance() {
-        if (this.balanceInitialized) return;
+        if (this.balanceInitialized) {
+            console.log('🏦 Balance already initialized, skipping...');
+            return;
+        }
+        
+        console.log('🏦 Initializing balance system for:', window.ethereum?.selectedAddress || window.realWeb3Modal?.address);
         
         // SECURITY: Verify wallet connection before accessing balance
         if (!this.verifyWalletConnection()) {
@@ -1771,17 +1807,27 @@ class BetInterface {
      * 🔄 Manually refresh balance from server
      */
     async refreshBalance() {
+        // Prevent concurrent refresh calls
+        if (this.isRefreshingBalance) {
+            console.log('🔄 Balance refresh already in progress, skipping...');
+            return;
+        }
+        
+        this.isRefreshingBalance = true;
+        
         // SECURITY: Verify wallet connection before refreshing balance
         if (!this.verifyWalletConnection()) {
             console.warn('🔒 SECURITY: Cannot refresh balance - wallet not connected');
             this.userBalance = 0;
             this.updateBalanceDisplay();
+            this.isRefreshingBalance = false;
             return;
         }
         
         const walletAddress = window.ethereum?.selectedAddress || window.realWeb3Modal?.address;
         if (!walletAddress) {
             console.warn('⚠️ Cannot refresh balance - no wallet address');
+            this.isRefreshingBalance = false;
             return;
         }
 
@@ -1810,6 +1856,7 @@ class BetInterface {
                 this.userBalance = serverBalance;
                 this.updateBalanceDisplay();
                 console.log(`🔄 Balance refreshed: ${this.userBalance.toFixed(4)} ETH`);
+                console.log(`🔍 BALANCE SYNC - UI updated to match server: ${this.userBalance.toFixed(6)} ETH`);
                 
                 // CRITICAL: Update bet amount validation after balance refresh
                 this.validateBetAmount();
@@ -1821,6 +1868,7 @@ class BetInterface {
             console.error('❌ Failed to refresh balance:', error);
             throw error; // Re-throw so caller can handle
         } finally {
+            this.isRefreshingBalance = false;
             if (refreshBtn) {
                 setTimeout(() => {
                     refreshBtn.style.animation = '';

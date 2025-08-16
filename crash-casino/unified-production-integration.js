@@ -693,6 +693,13 @@ class UnifiedPacoRockoProduction {
             // Enhanced solvency check using SolvencyManager
             try {
                 const effectivePlayerId = player.playerId || validatedAddress;
+                console.log(`🔍 DEBUG - About to call canAcceptBet with:`, {
+                    playerId: effectivePlayerId,
+                    betAmount: validatedAmount,
+                    betAmountType: typeof validatedAmount,
+                    maxMultiplier: validatedMultiplier,
+                    maxMultiplierType: typeof validatedMultiplier
+                });
                 await this.solvencyManager.canAcceptBet(effectivePlayerId, validatedAmount, validatedMultiplier);
                 console.log('✅ Solvency check passed');
             } catch (solvencyError) {

@@ -90,7 +90,7 @@ class BetInterface {
                     });
                     this.createDisconnectedUI();
                 }
-            }, 100); // Small delay to ensure state is updated
+            }, 200); // Small delay to ensure state is updated
         });
         
         // Listen for wallet disconnection events
@@ -117,7 +117,7 @@ class BetInterface {
                             this.createBalanceUI();
                             this.updateBalanceDisplay();
                         }
-                    }, 100);
+                    }, 200);
                 }
             } else {
                 // Wallet disconnected

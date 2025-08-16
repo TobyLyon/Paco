@@ -281,7 +281,8 @@ class AbstractWalletIntegration {
             const balanceAfterPayout = hotBalance - winAmount;
             const lowThreshold = parseEther('0.5'); // 0.5 ETH threshold
             if (balanceAfterPayout < lowThreshold) {
-                console.warn(`⚠️ Hot wallet will be low after payout: ${(Number(balanceAfterPayout) / 1e18).toFixed(4)} ETH remaining`);
+                const { fromWei } = require('../../src/lib/money');
+                console.warn(`⚠️ Hot wallet will be low after payout: ${fromWei(balanceAfterPayout)} ETH remaining`);
                 console.warn(`💡 Consider funding hot wallet from house wallet soon`);
             }
 
@@ -328,13 +329,13 @@ class AbstractWalletIntegration {
      */
     async processWinnerPayout(playerAddress, originalBetEth, multiplier, roundId) {
         try {
-            const { ethers } = require('ethers');
-            const bet = Number(originalBetEth)
+            const { computePayoutWei, toWei } = require('../../src/lib/money');
+            const betWei = toWei(originalBetEth.toString());
             const mult = Number(multiplier)
-            if (!Number.isFinite(bet) || bet <= 0 || !Number.isFinite(mult) || mult < 1) {
+            if (betWei <= 0n || !Number.isFinite(mult) || mult < 1) {
                 throw new Error('Invalid payout parameters')
             }
-            const payoutWei = ethers.parseEther((bet * mult).toString())
+            const payoutWei = computePayoutWei(betWei, mult)
             const receipt = await this.houseWallet.processPayout(
                 playerAddress,
                 payoutWei,

@@ -1711,7 +1711,7 @@ async function downloadPFP() {
             hatName: currentOrder.hatName,
             item: currentOrder.item,
             itemName: currentOrder.itemName,
-            total: parseFloat(document.querySelector('.total-amount').textContent.replace('$', ''))
+            total: parseUserAmount(document.querySelector('.total-amount'.toString()).textContent.replace('$', ''))
         });
         
         // Update local orders served count
@@ -1847,7 +1847,7 @@ async function recordOrderAndUpdateUI() {
         hatName: currentOrder.hatName,
         item: currentOrder.item,
         itemName: currentOrder.itemName,
-        total: parseFloat(document.querySelector('.total-amount').textContent.replace('$', ''))
+        total: parseUserAmount(document.querySelector('.total-amount'.toString()).textContent.replace('$', ''))
     });
     
     // Update local orders served count

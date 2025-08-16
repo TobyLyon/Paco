@@ -1,3 +1,5 @@
+import { toWei, fromWei, wadMul, percentMul, weiToString, stringToWei } from '../../src/lib/money';
+import { parseEthInputOrThrow, displayEth, toJsonWei, fromJsonWei } from '../../src/lib/money-ui';
 /**
  * 🏦 Unified Hot Wallet System
  * 
@@ -580,7 +582,7 @@ class UnifiedHotWallet {
         
         // Event listeners
         modal.querySelector('#confirmWithdraw').onclick = async () => {
-            const amount = parseFloat(modal.querySelector('#withdrawAmount').value);
+            const amount = parseEthInputOrThrow(modal.querySelector('#withdrawAmount').value);
             if (!amount || amount <= 0 || amount > this.balance) {
                 this.showNotification('❌ Invalid withdrawal amount', 'error');
                 return;

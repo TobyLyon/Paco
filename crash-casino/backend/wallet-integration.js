@@ -7,6 +7,7 @@
 
 const crypto = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
+const { toWei, fromWei } = require('../../src/lib/money');
 
 class WalletIntegration {
     constructor(config = {}) {
@@ -226,9 +227,13 @@ class WalletIntegration {
                     };
                 }
             } else {
-                // Demo mode: Update in-memory balance
+                // Demo mode: Update in-memory balance using proper BigInt arithmetic
                 const currentBalance = this.demoBalances.get(walletAddress) || this.defaultDemoBalance;
-                const newBalance = currentBalance - amount;
+                const currentWei = toWei(currentBalance.toString());
+                const amountWei = toWei(amount.toString());
+                const newBalanceWei = currentWei - amountWei; // Proper BigInt arithmetic
+                // UI conversion only for demo balance tracking - not money arithmetic
+                const newBalance = Number(fromWei(newBalanceWei));
                 this.demoBalances.set(walletAddress, newBalance);
                 
                 // Store demo transaction

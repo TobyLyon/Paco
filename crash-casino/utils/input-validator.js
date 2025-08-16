@@ -4,6 +4,9 @@
  * Prevents injection attacks and validates all user inputs
  */
 
+const { toWei, fromWei } = require('../src/lib/money');
+const { parseEthInputOrThrow } = require('../src/lib/money-ui');
+
 class InputValidator {
     /**
      * Sanitize and validate Ethereum address
@@ -43,30 +46,38 @@ class InputValidator {
      * @throws {Error} If amount is invalid
      */
     static validateAmount(amount) {
-        let num;
+        let amountStr;
         
         if (typeof amount === 'string') {
             // Remove any non-numeric characters except decimal point
-            const cleaned = amount.replace(/[^0-9.]/g, '');
-            num = parseFloat(cleaned);
+            amountStr = amount.replace(/[^0-9.]/g, '');
         } else {
-            num = parseFloat(amount);
+            amountStr = amount.toString();
         }
         
-        if (isNaN(num) || num <= 0) {
-            throw new Error('Amount must be a positive number');
+        // Use money library for proper validation and conversion
+        try {
+            const wei = parseEthInputOrThrow(amountStr);
+            // UI conversion only for validation checks - not money arithmetic
+            const ethValue = Number(fromWei(wei));
+            
+            if (ethValue <= 0) {
+                throw new Error('Amount must be a positive number');
+            }
+            
+            if (ethValue < 0.001) {
+                throw new Error('Minimum bet amount is 0.001 ETH');
+            }
+            
+            if (ethValue > 100) {
+                throw new Error('Maximum bet amount is 100 ETH');
+            }
+            
+            return ethValue;
+        } catch (error) {
+            throw new Error('Invalid amount format');
         }
-        
-        if (num < 0.001) {
-            throw new Error('Minimum bet amount is 0.001 ETH');
-        }
-        
-        if (num > 100) {
-            throw new Error('Maximum bet amount is 100 ETH');
-        }
-        
-        // Round to 6 decimal places to prevent precision issues
-        return Math.round(num * 1000000) / 1000000;
+
     }
     
     /**

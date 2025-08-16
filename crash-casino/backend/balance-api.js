@@ -2,9 +2,22 @@
  * 💰 Balance-Based Betting API
  * 
  * Backend endpoints for deposit/withdraw/balance system
+ * CRITICAL: All money calculations use BigInt/Wei for precision
  */
 
 const { createClient } = require('@supabase/supabase-js');
+const { 
+    toWei, 
+    fromWei, 
+    weiToString, 
+    stringToWei, 
+    add, 
+    sub, 
+    isNonNeg,
+    formatForDisplay,
+    dbStringToWei,
+    weiToDbString
+} = require('../../src/lib/money');
 
 class BalanceAPI {
     constructor(supabaseUrl, supabaseKey) {
@@ -132,7 +145,7 @@ class BalanceAPI {
         // Check hot wallet balance
         const hotBalance = await publicClient.getBalance({ address: hotAccount.address });
         if (hotBalance < amountWei) {
-            throw new Error(`Insufficient hot wallet balance for bet transfer. Need: ${amount} ETH, Have: ${(Number(hotBalance) / 1e18).toFixed(6)} ETH`);
+            throw new Error(`Insufficient hot wallet balance for bet transfer. Need: ${amount} ETH, Have: ${formatForDisplay(hotBalance, 6)} ETH`);
         }
 
         console.log(`🏠 Transferring bet amount: ${amount} ETH from hot wallet (${hotAccount.address}) to house wallet (${houseWalletAddress})`);
@@ -202,7 +215,7 @@ class BalanceAPI {
         // Check house wallet balance
         const houseBalance = await publicClient.getBalance({ address: houseAccount.address });
         if (houseBalance < payoutWei) {
-            throw new Error(`Insufficient house wallet balance for payout. Need: ${payoutAmount} ETH, Have: ${(Number(houseBalance) / 1e18).toFixed(6)} ETH`);
+            throw new Error(`Insufficient house wallet balance for payout. Need: ${payoutAmount} ETH, Have: ${formatForDisplay(houseBalance, 6)} ETH`);
         }
 
         console.log(`🏦 Processing payout: ${payoutAmount} ETH from house wallet (${houseAccount.address}) to hot wallet (${hotWalletAddress})`);
@@ -290,16 +303,17 @@ class BalanceAPI {
             return { success: false, reason: 'already_processed' };
         }
 
-        // Add to balance
-        const currentBalance = await this.getBalance(address);
-        const newBalance = currentBalance + amount;
+        // Add to balance using safe BigInt arithmetic
+        const currentBalanceWei = stringToWei((await this.getBalance(address)).toString());
+        const amountWei = typeof amount === 'string' ? stringToWei(amount) : BigInt(amount);
+        const newBalanceWei = add(currentBalanceWei, amountWei);
 
         // Update balance
         await this.supabase
             .from('user_balances')
             .upsert({
                 address: address,
-                balance: newBalance,
+                balance: weiToDbString(newBalanceWei),
                 updated_at: new Date().toISOString()
             });
 
@@ -335,19 +349,21 @@ class BalanceAPI {
             throw new Error('Insufficient balance');
         }
 
-        // Deduct from balance first
-        const newBalance = currentBalance - amount;
+        // Deduct from balance using safe BigInt arithmetic
+        const currentBalanceWei = stringToWei(currentBalance.toString());
+        const amountWei = typeof amount === 'string' ? stringToWei(amount) : BigInt(amount);
+        const newBalanceWei = sub(currentBalanceWei, amountWei);
         
         await this.supabase
             .from('user_balances')
             .upsert({
                 address: address,
-                balance: newBalance,
+                balance: weiToDbString(newBalanceWei),
                 updated_at: new Date().toISOString()
             });
 
         // Update cache
-        this.balanceCache.set(address, newBalance);
+        this.balanceCache.set(address, weiToDbString(newBalanceWei));
 
         try {
             // Send ETH using hot wallet for withdrawals

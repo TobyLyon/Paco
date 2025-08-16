@@ -328,7 +328,7 @@ class ProvenPacoRockoProduction {
                     const success = this.provenEngine.placeBet(
                         playerAddress,    // Use address as player ID
                         playerAddress.slice(0, 8) + '...', // Short username
-                        parseFloat(betAmount), 
+                        Number(betAmount), // Convert to number for game logic
                         payoutMultiplier,
                         playerAddress     // Pass player address for payouts
                     );

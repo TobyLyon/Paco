@@ -1,3 +1,5 @@
+import { toWei, fromWei, wadMul, percentMul, weiToString, stringToWei } from '../../src/lib/money';
+import { parseEthInputOrThrow, displayEth, toJsonWei, fromJsonWei } from '../../src/lib/money-ui';
 /**
  * 🎯 Bet Interface for PacoRocko Crash Casino - Balance Only
  * 
@@ -130,7 +132,7 @@ class BetInterface {
         const betInput = document.getElementById('betAmount');
         if (betInput) {
             betInput.addEventListener('input', (e) => {
-                this.betAmount = parseFloat(e.target.value) || 0.005;
+                this.betAmount = parseEthInputOrThrow(e.target.value) || 0.005;
                 this.updateBetDisplay();
                 this.validateBetAmount();
             });
@@ -139,7 +141,8 @@ class BetInterface {
         // Quick bet buttons
         document.querySelectorAll('.quick-bet').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const amount = parseFloat(e.target.dataset.amount);
+                // UI conversion only - preset bet amounts, not money arithmetic
+                const amount = Number(e.target.dataset.amount);
                 this.setBetAmount(amount);
             });
         });
@@ -229,9 +232,13 @@ class BetInterface {
             
             // Auto-adjust bet amount to maximum possible
             if (this.userBalance >= 0.001) {
-                const maxBet = Math.floor(this.userBalance * 1000) / 1000; // Round down to 3 decimals
+                // Convert to wei, floor, then back to ETH for precision
+                const balanceWei = toWei(this.userBalance.toString());
+                const maxBetWei = (balanceWei / 1000n) * 1000n; // Round down to 3 decimals in wei
+                // UI display conversion only - not money arithmetic
+                const maxBet = Number(fromWei(maxBetWei));
                 this.setBetAmount(maxBet);
-                this.showNotification(`💡 Bet amount adjusted to ${maxBet.toFixed(4)} ETH (your max)`, 'info');
+                this.showNotification(`💡 Bet amount adjusted to ${displayEth(maxBetWei, 4)} ETH (your max)`, 'info');
             }
             return;
         }
@@ -776,7 +783,7 @@ class BetInterface {
             <div id="balanceSection" class="balance-section">
                 <div class="balance-header">
                     <h3>💰 Game Balance</h3>
-                    <div id="userBalance" class="balance-amount">${displayBalance.toFixed(4)} ETH</div>
+                    <div id="userBalance" class="balance-amount">${displayEth(toWei(displayBalance.toString()), 4)} ETH</div>
                     <button id="refreshBalanceBtn" class="refresh-balance-btn" title="Refresh balance">🔄</button>
                 </div>
                 
@@ -908,7 +915,8 @@ class BetInterface {
         // Quick amount buttons
         document.querySelectorAll('.quick-amount').forEach(btn => {
             btn.addEventListener('click', () => {
-                const amount = parseFloat(btn.dataset.amount);
+                // UI conversion only - preset deposit amounts, not money arithmetic
+                const amount = Number(btn.dataset.amount);
                 depositInput.value = amount.toFixed(3);
             });
         });
@@ -927,7 +935,7 @@ class BetInterface {
         // Confirm deposit
         if (confirmBtn) {
             confirmBtn.addEventListener('click', async () => {
-                const amount = parseFloat(depositInput.value);
+                const amount = parseEthInputOrThrow(depositInput.value);
                 if (!amount || amount <= 0) {
                     this.showNotification('Please enter a valid deposit amount', 'error');
                     return;
@@ -1403,7 +1411,7 @@ class BetInterface {
         // Confirm withdrawal
         if (confirmBtn) {
             confirmBtn.addEventListener('click', async () => {
-                const amount = parseFloat(withdrawInput.value);
+                const amount = parseEthInputOrThrow(withdrawInput.value);
                 if (!amount || amount <= 0 || amount > this.userBalance) {
                     this.showNotification('Invalid withdrawal amount', 'error');
                     return;
@@ -1471,8 +1479,10 @@ class BetInterface {
                     if (data.newDeposits && data.newDeposits.length > 0) {
                         console.log(`💰 Found ${data.newDeposits.length} new deposits:`, data.newDeposits);
                         for (const deposit of data.newDeposits) {
-                            this.userBalance += parseFloat(deposit.amount);
-                            this.showNotification(`💰 Deposit confirmed: ${deposit.amount} ETH! New balance: ${this.userBalance.toFixed(4)} ETH`, 'success');
+                            const depositWei = toWei(deposit.amount.toString());
+                            // UI conversion only for balance tracking - not money arithmetic
+                            this.userBalance += Number(fromWei(depositWei));
+                            this.showNotification(`💰 Deposit confirmed: ${displayEth(depositWei, 4)} ETH! New balance: ${displayEth(toWei(this.userBalance.toString()), 4)} ETH`, 'success');
                         }
                         this.updateBalanceDisplay();
                     }

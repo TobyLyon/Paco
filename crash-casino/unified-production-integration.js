@@ -16,6 +16,9 @@ const UnifiedCrashEngine = require('./backend/unified-crash-engine');
 const MultiplierCalculator = require('./shared/multiplier-calculator');
 const InputValidator = require('./utils/input-validator');
 
+// Import money utilities for safe calculations
+const { parseUserAmount } = require('../src/lib/money');
+
 // Keep existing wallet and database integrations
 let WalletIntegration = null;
 try {
@@ -112,7 +115,7 @@ class UnifiedPacoRockoProduction {
             const SolvencyManager = require('./backend/solvency-manager');
             this.solvencyManager = new SolvencyManager(this.walletIntegration, this.balanceAPI, {
                 maxLiabilityRatio: parseFloat(process.env.MAX_LIABILITY_FACTOR) || 0.8,
-                minReserveETH: parseFloat(process.env.MIN_RESERVE_ETH) || 1.0,
+                minReserveETH: process.env.MIN_RESERVE_ETH ? parseUserAmount(process.env.MIN_RESERVE_ETH) : parseUserAmount('1.0'),
                 emergencyThreshold: parseFloat(process.env.EMERGENCY_THRESHOLD) || 0.9
             });
             console.log('✅ Solvency Manager initialized');
@@ -123,8 +126,8 @@ class UnifiedPacoRockoProduction {
                 bettingPhaseDuration: 15000, // 15 seconds (user requested)
                 cashoutPhaseDuration: 3000,  // 3 seconds (proven timing)
                 betValidation: {
-                    minBet: parseFloat(process.env.MIN_BET_AMOUNT) || 0.001,
-                    maxBet: parseFloat(process.env.MAX_BET_AMOUNT) || 100.0,
+                                minBet: process.env.MIN_BET_AMOUNT ? parseUserAmount(process.env.MIN_BET_AMOUNT) : parseUserAmount('0.001'),
+            maxBet: process.env.MAX_BET_AMOUNT ? parseUserAmount(process.env.MAX_BET_AMOUNT) : parseUserAmount('100.0'),
                     betCooldownMs: parseInt(process.env.BET_COOLDOWN_MS) || 1000,
                     maxBetsPerRound: parseInt(process.env.MAX_BETS_PER_ROUND) || 1000
                 },

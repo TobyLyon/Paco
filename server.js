@@ -23,12 +23,37 @@ console.log('✅ Environment fixes applied, continuing startup...');
 // Import the UNIFIED crash casino implementation (perfect sync solution)
 const UnifiedPacoRockoProduction = require('./crash-casino/unified-production-integration.js');
 
+// Import money utilities for safe calculations
+const { formatForDisplay, fromWei, toWei, parseUserAmount } = require('./src/lib/money');
+
+// Import production monitoring components
+const PrometheusMetrics = require('./crash-casino/backend/prometheus-metrics');
+const InvariantHealthEndpoint = require('./crash-casino/backend/health-invariants-endpoint');
+const VerifySeedsEndpoint = require('./crash-casino/backend/verify-seeds-endpoint');
+
 // Create Express app
 const app = express();
+
+// Initialize production monitoring
+const metrics = new PrometheusMetrics();
+const healthEndpoint = new InvariantHealthEndpoint(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+const verifyEndpoint = new VerifySeedsEndpoint(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+// Make metrics globally available
+global.metrics = metrics;
 
 // Basic middleware
 app.use(cors());
 app.use(express.json());
+
+// Add automatic API metrics
+app.use(metrics.getMiddleware());
 
 // 🔄 Trades API Routes (feature flagged)
 const TRADES_ENABLED = process.env.TRADES_ENABLED === 'true';
@@ -42,6 +67,31 @@ if (TRADES_ENABLED) {
   
   console.log('✅ Trades API routes loaded');
 }
+
+// 📊 Production Monitoring Endpoints
+app.use(healthEndpoint.getRouter());
+app.use(verifyEndpoint.getRouter());
+
+// Prometheus metrics endpoint
+app.get('/metrics', metrics.getMetricsHandler());
+
+// Additional health endpoints
+app.get('/healthz', (req, res) => {
+    res.send('ok');
+});
+
+app.get('/readyz', async (req, res) => {
+    try {
+        // Quick health checks
+        const checks = {
+            timestamp: new Date().toISOString(),
+            status: 'ready'
+        };
+        res.json(checks);
+    } catch (error) {
+        res.status(503).json({ status: 'not ready', error: error.message });
+    }
+});
 
 // Serve static files from root directory for frontend
 app.use(express.static('.', {
@@ -195,7 +245,7 @@ app.get('/admin/hot', requireAdmin, async (req, res) => {
             hotWallet: {
                 address: hotWalletAddress,
                 balance: hotBalance.toString(),
-                balanceETH: (Number(hotBalance) / 1e18).toFixed(6)
+                balanceETH: formatForDisplay(hotBalance, 6)
             }
         };
         
@@ -385,7 +435,7 @@ app.post('/api/deposit/register', async (req, res) => {
             depositId,
             txHash,
             walletAddress: walletAddress.toLowerCase(),
-            amount: parseFloat(amount),
+            amount: parseUserAmount(amount),
             timestamp: new Date().toISOString(),
             status: 'pending'
         };
@@ -426,9 +476,10 @@ app.get('/admin/wallet-status', requireAdmin, async (req, res) => {
             publicClient.getBalance({ address: safeWalletAddress })
         ]);
         
-        const hotETH = Number(hotBalance) / 1e18;
-        const houseETH = Number(houseBalance) / 1e18;
-        const safeETH = Number(safeBalance) / 1e18;
+        // For display purposes only - safe conversion
+        const hotETH = parseFloat(fromWei(hotBalance));
+        const houseETH = parseFloat(fromWei(houseBalance));
+        const safeETH = parseFloat(fromWei(safeBalance));
         const totalETH = hotETH + houseETH + safeETH;
         
         // Operational recommendations

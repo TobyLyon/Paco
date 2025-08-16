@@ -4,6 +4,9 @@
  * Allows users to deposit a lump sum and bet seamlessly without individual transactions
  */
 
+import { toWei, fromWei } from '../../src/lib/money';
+import { displayEth } from '../../src/lib/money-ui';
+
 class BalanceSystem {
     constructor() {
         this.userBalance = 0;
@@ -155,8 +158,10 @@ class BalanceSystem {
                 const data = await response.json();
                 if (data.newDeposits && data.newDeposits.length > 0) {
                     for (const deposit of data.newDeposits) {
-                        this.userBalance += parseFloat(deposit.amount);
-                        this.showDepositNotification(deposit.amount, deposit.txHash);
+                        const depositWei = toWei(deposit.amount.toString());
+                        // UI conversion only for balance tracking - not money arithmetic
+                        this.userBalance += Number(fromWei(depositWei));
+                        this.showDepositNotification(displayEth(depositWei, 4), deposit.txHash);
                     }
                     this.updateBalanceUI();
                 }

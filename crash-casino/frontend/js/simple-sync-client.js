@@ -120,7 +120,8 @@ class SimpleSyncClient {
         this.socket.on('stop_multiplier_count', (crashValue) => {
             console.log('💥 SIMPLE: Round crashed at', crashValue + 'x');
             this.gamePhase = 'crashed';
-            const crash = parseFloat(crashValue);
+            // UI display only - crashValue is multiplier, not money arithmetic
+            const crash = Number(crashValue);
             this.multiplier = crash;
             this.updateUI('Crashed', `Crashed at ${crash.toFixed(2)}x`);
             this.updateMultiplier(crash, true);

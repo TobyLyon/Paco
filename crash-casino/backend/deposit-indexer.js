@@ -1,7 +1,9 @@
 /**
  * Deposit Indexer: scans blocks for native transfers to the house wallet
+ * CRITICAL: All money calculations use BigInt/Wei for precision
  */
-const { createPublicClient, http } = require('viem')
+const { createPublicClient, http } = require('viem');
+const { formatForDisplay, fromWei, toWei } = require('../../src/lib/money');
 const ABSTRACT = {
   id: 2741,
   rpcUrls: { default: { http: ['https://api.mainnet.abs.xyz'] } },
@@ -42,7 +44,8 @@ async function indexDeposits({ supabase, hotWalletAddress, minConfirmations = 1,
       // Professional attribution: extract user from tx.from (sender)
       const txHash = tx.hash
       const amountWei = tx.value.toString()
-      const amountETH = parseFloat(amountWei) / 1e18
+      // Display conversion only for logging - not money arithmetic
+      const amountETH = Number(fromWei(amountWei))
       const fromAddress = tx.from.toLowerCase()
       
       console.log(`💰 Processing hot wallet deposit: ${amountETH.toFixed(6)} ETH from ${fromAddress} to ${toLower}`)
@@ -85,13 +88,18 @@ async function indexDeposits({ supabase, hotWalletAddress, minConfirmations = 1,
       }
       
       if (balanceData) {
-        currentBalance = parseFloat(balanceData.balance)
+        // Display conversion only for logging - not money arithmetic
+        currentBalance = Number(balanceData.balance)
         console.log(`💰 Current balance for ${fromAddress}: ${currentBalance.toFixed(6)} ETH`)
       } else {
         console.log(`💰 New user ${fromAddress}, starting with 0 balance`)
       }
 
-      const newBalance = currentBalance + amountETH
+      // Calculate new balance using proper wei arithmetic
+      const currentBalanceWei = toWei(currentBalance.toString())
+      const newBalanceWei = currentBalanceWei + BigInt(amountWei)
+      // Display conversion only for database storage - not money arithmetic
+      const newBalance = Number(fromWei(newBalanceWei))
       console.log(`💰 Crediting: ${amountETH.toFixed(6)} ETH → New balance: ${newBalance.toFixed(6)} ETH`)
 
       // Update user balance

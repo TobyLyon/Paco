@@ -1,0 +1,429 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "Crash Casino - Production Monitoring",
+    "tags": ["casino", "production", "monitoring"],
+    "timezone": "UTC",
+    "schemaVersion": 30,
+    "version": 1,
+    "refresh": "30s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "🚨 Critical Invariants",
+        "type": "stat",
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 0},
+        "targets": [
+          {
+            "expr": "casino_ledger_snapshot_drift_wei",
+            "legendFormat": "Ledger Drift (wei)",
+            "refId": "A"
+          },
+          {
+            "expr": "casino_indexer_confirmed_lag_blocks",
+            "legendFormat": "Indexer Lag (blocks)",
+            "refId": "B"
+          },
+          {
+            "expr": "casino_hot_wallet_eth_wei / 1e18",
+            "legendFormat": "Hot Wallet (ETH)",
+            "refId": "C"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 10},
+                {"color": "red", "value": 18}
+              ]
+            },
+            "unit": "short"
+          },
+          "overrides": [
+            {
+              "matcher": {"id": "byName", "options": "Ledger Drift (wei)"},
+              "properties": [
+                {
+                  "id": "thresholds",
+                  "value": {
+                    "steps": [
+                      {"color": "green", "value": 0},
+                      {"color": "red", "value": 1}
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {"id": "byName", "options": "Hot Wallet (ETH)"},
+              "properties": [
+                {
+                  "id": "unit",
+                  "value": "ETH"
+                },
+                {
+                  "id": "thresholds",
+                  "value": {
+                    "steps": [
+                      {"color": "red", "value": null},
+                      {"color": "yellow", "value": 0.5},
+                      {"color": "green", "value": 1.0}
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"]
+          },
+          "orientation": "horizontal",
+          "textMode": "value_and_name"
+        }
+      },
+      {
+        "id": 2,
+        "title": "🎰 Game Metrics",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+        "targets": [
+          {
+            "expr": "casino_round_active",
+            "legendFormat": "Round Active",
+            "refId": "A"
+          },
+          {
+            "expr": "casino_round_crash_value",
+            "legendFormat": "Last Crash Value",
+            "refId": "B"
+          },
+          {
+            "expr": "rate(casino_socket_events_total[1m])",
+            "legendFormat": "Events/sec",
+            "refId": "C"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "barAlignment": 0,
+              "lineWidth": 1,
+              "fillOpacity": 0,
+              "gradientMode": "none",
+              "spanNulls": false,
+              "insertNulls": false,
+              "showPoints": "auto",
+              "pointSize": 5
+            },
+            "color": {"mode": "palette-classic"},
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "🌐 Socket Connections",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+        "targets": [
+          {
+            "expr": "casino_socket_clients",
+            "legendFormat": "Connected Clients",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(casino_socket_reconnections_total[1m])",
+            "legendFormat": "Reconnections/min",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "fillOpacity": 10,
+              "gradientMode": "none"
+            },
+            "color": {"mode": "palette-classic"},
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "⚡ API Performance",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 16},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, rate(casino_rpc_place_bet_ms_bucket[5m]))",
+            "legendFormat": "Bet Placement p50",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(casino_rpc_place_bet_ms_bucket[5m]))",
+            "legendFormat": "Bet Placement p95",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(casino_rpc_cashout_ms_bucket[5m]))",
+            "legendFormat": "Cashout p50",
+            "refId": "C"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(casino_rpc_cashout_ms_bucket[5m]))",
+            "legendFormat": "Cashout p95",
+            "refId": "D"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "lineWidth": 2,
+              "fillOpacity": 0
+            },
+            "color": {"mode": "palette-classic"},
+            "unit": "ms",
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 100},
+                {"color": "red", "value": 200}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "💰 Financial Overview",
+        "type": "stat",
+        "gridPos": {"h": 6, "w": 24, "x": 0, "y": 24},
+        "targets": [
+          {
+            "expr": "casino_total_balance_eth_wei{balance_type=\"total\"} / 1e18",
+            "legendFormat": "Total Player Balance",
+            "refId": "A"
+          },
+          {
+            "expr": "casino_total_balance_eth_wei{balance_type=\"locked\"} / 1e18",
+            "legendFormat": "Locked in Bets",
+            "refId": "B"
+          },
+          {
+            "expr": "casino_withdrawals_pending",
+            "legendFormat": "Pending Withdrawals",
+            "refId": "C"
+          },
+          {
+            "expr": "rate(casino_deposits_processed_total[1h])",
+            "legendFormat": "Deposits/hour",
+            "refId": "D"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "unit": "ETH"
+          },
+          "overrides": [
+            {
+              "matcher": {"id": "byName", "options": "Pending Withdrawals"},
+              "properties": [
+                {"id": "unit", "value": "short"},
+                {
+                  "id": "thresholds",
+                  "value": {
+                    "steps": [
+                      {"color": "green", "value": null},
+                      {"color": "yellow", "value": 5},
+                      {"color": "red", "value": 20}
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {"id": "byName", "options": "Deposits/hour"},
+              "properties": [
+                {"id": "unit", "value": "short"}
+              ]
+            }
+          ]
+        },
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"]
+          },
+          "orientation": "horizontal"
+        }
+      },
+      {
+        "id": 6,
+        "title": "🎲 Game Fairness",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 30},
+        "targets": [
+          {
+            "expr": "casino_rtp_percentage{window=\"10k\"}",
+            "legendFormat": "RTP % (10k rounds)",
+            "refId": "A"
+          },
+          {
+            "expr": "casino_instant_crash_rate{window=\"10k\"}",
+            "legendFormat": "Instant Crash % (10k rounds)",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear"
+            },
+            "color": {"mode": "palette-classic"},
+            "unit": "percent",
+            "min": 95,
+            "max": 99
+          }
+        },
+        "annotations": [
+          {
+            "name": "Target RTP",
+            "datasource": "-- Dashboard --",
+            "enable": true,
+            "hide": false,
+            "iconColor": "green",
+            "type": "constant",
+            "value": 97
+          },
+          {
+            "name": "Target Instant Crash",
+            "datasource": "-- Dashboard --",
+            "enable": true,
+            "hide": false,
+            "iconColor": "blue",
+            "type": "constant",
+            "value": 3.03
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "❌ Error Rates",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 30},
+        "targets": [
+          {
+            "expr": "rate(casino_errors_total[5m])",
+            "legendFormat": "{{error_type}} - {{component}}",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(casino_invariant_violations_total[5m])",
+            "legendFormat": "{{violation_type}} ({{severity}})",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear"
+            },
+            "color": {"mode": "palette-classic"},
+            "unit": "reqps",
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 0.1},
+                {"color": "red", "value": 1}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 8,
+        "title": "🔍 Indexer Health",
+        "type": "timeseries",
+        "gridPos": {"h": 6, "w": 24, "x": 0, "y": 38},
+        "targets": [
+          {
+            "expr": "casino_indexer_last_block",
+            "legendFormat": "Last Processed Block",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(casino_deposits_processed_total{status=\"success\"}[1m])",
+            "legendFormat": "Successful Deposits/min",
+            "refId": "B"
+          },
+          {
+            "expr": "rate(casino_deposits_processed_total{status=\"failed\"}[1m])",
+            "legendFormat": "Failed Deposits/min",
+            "refId": "C"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear"
+            },
+            "color": {"mode": "palette-classic"},
+            "unit": "short"
+          }
+        }
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "env",
+          "type": "constant",
+          "current": {
+            "value": "prod",
+            "text": "prod"
+          },
+          "options": [
+            {
+              "value": "prod",
+              "text": "prod"
+            }
+          ]
+        }
+      ]
+    },
+    "annotations": {
+      "list": [
+        {
+          "name": "Deployments",
+          "datasource": "-- Grafana --",
+          "enable": true,
+          "hide": false,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "type": "tags",
+          "tags": ["deployment"]
+        }
+      ]
+    }
+  }
+}

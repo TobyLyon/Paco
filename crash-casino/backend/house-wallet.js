@@ -100,7 +100,9 @@ class HouseWallet {
             await this.updateBalance();
             
             // Check if we need to withdraw to cold storage
-            const balanceInEth = parseFloat(ethers.formatEther(this.balance));
+            const { fromWei } = require('../../src/lib/money');
+            // Display conversion only for threshold check - not money arithmetic
+            const balanceInEth = Number(fromWei(this.balance));
             if (balanceInEth > config.game.autoWithdrawThreshold) {
                 console.warn(`⚠️  House wallet balance (${balanceInEth} ETH) exceeds threshold`);
                 // In production, trigger cold wallet transfer here

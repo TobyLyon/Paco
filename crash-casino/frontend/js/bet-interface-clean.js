@@ -820,29 +820,34 @@ class BetInterface {
         
         const disconnectedHTML = `
             <div id="balanceSection" class="balance-section" style="
-                background: linear-gradient(135deg, #2a1a1a, #1a1a1a);
-                border: 1px solid #666;
-                border-radius: 8px;
+                background: rgba(31, 41, 55, 0.8);
+                border: 2px solid #fbbf24;
+                border-radius: 12px;
                 padding: 15px;
                 margin: 10px 0;
-                box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+                box-shadow: 0 4px 20px rgba(251, 191, 36, 0.2);
+                backdrop-filter: blur(10px);
                 text-align: center;
+                transition: all 0.3s ease;
             ">
-                <div style="color: #888; font-size: 16px; margin-bottom: 10px;">
+                <div style="color: #d1d5db; font-size: 16px; margin-bottom: 10px; font-weight: 500;">
                     🔒 Wallet Not Connected
                 </div>
-                <div style="color: #666; font-size: 12px; margin-bottom: 15px;">
+                <div style="color: #9ca3af; font-size: 12px; margin-bottom: 15px;">
                     Connect your wallet to view balance and place bets
                 </div>
                 <button id="hotWalletConnectBtn" style="
-                    background: linear-gradient(135deg, #ffd700, #ffed4e);
+                    background: linear-gradient(135deg, #fbbf24, #f97316);
                     border: none;
-                    color: #000;
-                    padding: 10px 20px;
-                    border-radius: 6px;
+                    color: #111827;
+                    padding: 12px 24px;
+                    border-radius: 8px;
                     cursor: pointer;
                     font-weight: 600;
                     font-size: 14px;
+                    transition: all 0.3s ease;
+                    box-shadow: 0 4px 20px rgba(251, 191, 36, 0.3);
+                    text-shadow: none;
                 ">🔗 Connect Wallet</button>
             </div>
         `;
@@ -955,8 +960,12 @@ class BetInterface {
      * 🏗️ Create balance UI elements
      */
     createBalanceUI() {
-        // Check if balance section already exists
-        if (document.getElementById('balanceSection')) return;
+        // FORCE REMOVE existing balance section to ensure clean recreation
+        const existingSection = document.getElementById('balanceSection');
+        if (existingSection) {
+            console.log('🔄 Removing existing balance section for clean recreation');
+            existingSection.remove();
+        }
 
         const betInterface = document.querySelector('.betting-panel');
         if (!betInterface) {
@@ -971,25 +980,88 @@ class BetInterface {
         const displayBalance = this.userBalance || 0;
         
         const balanceHTML = `
-            <div id="balanceSection" class="balance-section">
-                <div class="balance-header">
-                    <h3>💰 Game Balance</h3>
-                    <div id="userBalance" class="balance-amount">${displayEth(toWei(displayBalance.toString()), 4)} ETH</div>
-                    <button id="refreshBalanceBtn" class="refresh-balance-btn" title="Refresh balance">🔄</button>
+            <div id="balanceSection" class="balance-section" style="
+                background: rgba(31, 41, 55, 0.8);
+                border: 2px solid #fbbf24;
+                border-radius: 12px;
+                padding: 15px;
+                margin: 10px 0;
+                box-shadow: 0 4px 20px rgba(251, 191, 36, 0.2);
+                backdrop-filter: blur(10px);
+                transition: all 0.3s ease;
+            ">
+                <div class="balance-header" style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 15px;
+                ">
+                    <h3 style="color: #fbbf24; margin: 0; font-size: 16px; font-weight: 600;">💰 Game Balance</h3>
+                    <button id="refreshBalanceBtn" style="
+                        background: transparent;
+                        border: 1px solid #fbbf24;
+                        color: #fbbf24;
+                        padding: 6px 8px;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        font-size: 12px;
+                        transition: all 0.3s ease;
+                    " title="Refresh balance">🔄</button>
                 </div>
                 
-                <div class="balance-actions">
-                    <button id="depositBtn" class="balance-btn deposit-btn" ${!isConnected ? 'disabled' : ''}>💳 Deposit</button>
-                    <button id="withdrawBtn" class="balance-btn withdraw-btn" ${!isConnected ? 'disabled' : ''}>💸 Withdraw</button>
+                <div style="text-align: center; margin: 15px 0;">
+                    <div id="userBalance" style="
+                        font-size: 24px;
+                        font-weight: bold;
+                        color: #10b981;
+                        text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+                        margin-bottom: 5px;
+                    ">${displayEth(toWei(displayBalance.toString()), 4)} ETH</div>
+                    <div style="color: #9ca3af; font-size: 12px;">Available for betting</div>
                 </div>
                 
-                <div class="balance-info">
-                    <div class="balance-mode-info">
-                        ${isConnected 
-                            ? `⚡ Instant betting from balance (${walletAddress.substring(0,4)}...${walletAddress.substring(38)})`
-                            : `⚠️ Connect wallet to deposit/withdraw`
-                        }
-                    </div>
+                <div class="balance-actions" style="
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 10px;
+                    margin: 15px 0;
+                ">
+                    <button id="depositBtn" style="
+                        background: linear-gradient(135deg, #10b981, #059669);
+                        border: none;
+                        color: white;
+                        padding: 12px 16px;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-weight: 600;
+                        font-size: 14px;
+                        transition: all 0.3s ease;
+                        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);
+                    " ${!isConnected ? 'disabled' : ''}>💳 Deposit</button>
+                    
+                    <button id="withdrawBtn" style="
+                        background: linear-gradient(135deg, #f97316, #ea580c);
+                        border: none;
+                        color: white;
+                        padding: 12px 16px;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-weight: 600;
+                        font-size: 14px;
+                        transition: all 0.3s ease;
+                        box-shadow: 0 4px 15px rgba(249, 115, 22, 0.2);
+                    " ${!isConnected ? 'disabled' : ''}>💸 Withdraw</button>
+                </div>
+                
+                <div class="balance-info" style="
+                    text-align: center;
+                    font-size: 11px;
+                    color: #9ca3af;
+                ">
+                    ${isConnected 
+                        ? `⚡ Instant betting from balance (${walletAddress.substring(0,4)}...${walletAddress.substring(38)})`
+                        : `⚠️ Connect wallet to deposit/withdraw`
+                    }
                 </div>
             </div>
         `;

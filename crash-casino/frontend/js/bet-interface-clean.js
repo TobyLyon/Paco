@@ -17,11 +17,6 @@ class BetInterface {
         // Orders tracking
         this.activeOrders = new Map(); // Track active orders
         
-        // Enhanced features from unified system
-        this.syncInterval = null; // Auto-sync balance
-        this.lastBetTime = 0; // Track when last bet was placed
-        this.walletAddress = null; // Current wallet address
-        
         this.init();
     }
 
@@ -54,23 +49,6 @@ class BetInterface {
             
             // Initialize balance system
             await this.initializeBalance();
-            
-            // Force ensure balance UI is created (fallback)
-            setTimeout(() => {
-                if (!document.getElementById('balanceSection')) {
-                    console.log('🔧 Force creating missing balance UI after wallet connection...');
-                    this.createBalanceUI();
-                    this.updateBalanceDisplay();
-                }
-            }, 1000);
-        });
-
-        // Listen for wallet disconnection events
-        document.addEventListener('walletDisconnected', () => {
-            console.log('🔗 Wallet disconnected - stopping auto-sync');
-            this.stopAutoSync();
-            this.balanceInitialized = false;
-            this.walletAddress = null;
         });
 
         // Listen for socket events
@@ -137,12 +115,7 @@ class BetInterface {
                 console.error('❌ Error details:', JSON.stringify(data, null, 2));
                 console.error('❌ Error message:', data?.message);
                 console.error('❌ Full error object:', data);
-                
-                // Use the same error translation logic as crash client
-                const userMessage = this.translateErrorMessage(data?.message || 'Unknown error');
-                if (userMessage) {
-                    this.showNotification(`❌ ${userMessage}`, 'error');
-                }
+                this.showNotification(`❌ Cashout Error: ${data?.message || 'Unknown error'}`, 'error');
             });
         }
     }
@@ -300,7 +273,6 @@ class BetInterface {
         // Optimistically update balance
         const originalBalance = this.userBalance;
         this.userBalance -= amount;
-        this.lastBetTime = Date.now(); // 🕒 Track bet time for optimistic protection
         this.updateBalanceDisplay();
 
         // Add bet to orders display immediately
@@ -731,10 +703,8 @@ class BetInterface {
             return;
         }
 
-        this.walletAddress = walletAddress.toLowerCase();
-
         try {
-            console.log('🏦 Initializing enhanced balance system for:', this.walletAddress);
+            console.log('🏦 Initializing balance system for:', walletAddress);
             
             // Load current balance
             const response = await fetch(`https://paco-x57j.onrender.com/api/balance/${walletAddress}`);
@@ -751,7 +721,6 @@ class BetInterface {
             this.updateBalanceDisplay();
             this.createBalanceUI();
             this.startBalanceMonitoring();
-            this.startAutoSync(); // 🔄 Start automatic balance sync (unified feature)
             
             // Show notification if user has game balance
             if (this.userBalance > 0) {
@@ -787,22 +756,20 @@ class BetInterface {
      */
     createBalanceUI() {
         // Check if balance section already exists
-        if (document.getElementById('balanceSection')) {
-            console.log('✅ Balance UI already exists');
+        if (document.getElementById('balanceSection')) return;
+        
+        // Check if unified hot wallet is active and defer to it
+        if (window.unifiedHotWallet && window.unifiedHotWallet.isInitialized) {
+            console.log('🏦 Unified hot wallet is active, skipping original balance UI');
             return;
         }
 
         const betInterface = document.querySelector('.betting-panel');
         if (!betInterface) {
             console.error('❌ .betting-panel not found! Available elements:', document.querySelectorAll('[class*="bet"]'));
-            console.log('🔍 Will retry creating balance UI when betting panel is available...');
-            // Retry after a short delay
-            setTimeout(() => {
-                this.createBalanceUI();
-            }, 1000);
             return;
         }
-        console.log('✅ Found betting panel, creating balance UI:', betInterface);
+        console.log('✅ Found betting panel:', betInterface);
 
         const balanceHTML = `
             <div id="balanceSection" class="balance-section">
@@ -1565,15 +1532,6 @@ class BetInterface {
                 const data = await response.json();
                 const serverBalance = parseFloat(data.balance || 0);
                 
-                // 🛡️ Optimistic update protection (unified feature)
-                const timeSinceLastBet = Date.now() - this.lastBetTime;
-                const graceTimePeriod = 3000; // 3 seconds
-                
-                if (timeSinceLastBet < graceTimePeriod && serverBalance < this.userBalance) {
-                    console.log(`🛡️ Protecting optimistic balance during grace period (${Math.round((graceTimePeriod - timeSinceLastBet)/1000)}s remaining)`);
-                    return true; // Don't update if server balance is lower and we recently bet
-                }
-                
                 if (Math.abs(serverBalance - this.userBalance) > 0.0001) {
                     console.log(`🔄 Balance updated: ${this.userBalance.toFixed(4)} → ${serverBalance.toFixed(4)} ETH`);
                 }
@@ -1597,40 +1555,6 @@ class BetInterface {
                     refreshBtn.style.animation = '';
                 }, 500);
             }
-        }
-    }
-
-    /**
-     * 🔄 Start automatic balance sync (unified feature)
-     */
-    startAutoSync() {
-        // Clear any existing sync interval
-        if (this.syncInterval) {
-            clearInterval(this.syncInterval);
-        }
-        
-        // Auto-sync balance every 10 seconds
-        this.syncInterval = setInterval(async () => {
-            if (this.balanceInitialized && this.walletAddress) {
-                try {
-                    await this.refreshBalance();
-                } catch (error) {
-                    console.warn('🔄 Auto-sync failed:', error.message);
-                }
-            }
-        }, 10000); // 10 seconds
-        
-        console.log('🔄 Auto-sync started (every 10 seconds)');
-    }
-
-    /**
-     * 🛑 Stop automatic balance sync
-     */
-    stopAutoSync() {
-        if (this.syncInterval) {
-            clearInterval(this.syncInterval);
-            this.syncInterval = null;
-            console.log('🛑 Auto-sync stopped');
         }
     }
 
@@ -1826,125 +1750,15 @@ class BetInterface {
 // Global instance
 window.BetInterface = BetInterface;
 
-// Initialize bet interface immediately
-console.log('🎯 Creating global bet interface instance...');
-window.betInterface = new BetInterface();
-
-// Force show balance UI after page loads (aggressive approach)
-window.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
-        console.log('🔧 DOM loaded - force ensuring balance UI exists...');
-        if (!document.getElementById('balanceSection')) {
-            console.log('🏗️ Creating balance UI on DOM load...');
-            if (window.betInterface) {
-                window.betInterface.createBalanceUI();
-                window.betInterface.updateBalanceDisplay();
-            }
-        }
-    }, 500);
-});
-
-// Also try after a longer delay for slow loading
-setTimeout(() => {
-    console.log('🔧 Delayed check - ensuring balance UI exists...');
-    if (!document.getElementById('balanceSection')) {
-        console.log('🏗️ Creating balance UI on delayed check...');
-        if (window.betInterface) {
-            window.betInterface.createBalanceUI();
-            window.betInterface.updateBalanceDisplay();
-        }
-    }
-}, 3000);
-
 // Debug function to manually show balance UI
 window.showBalanceUI = function() {
     console.log('🧪 Manually showing balance UI...');
     if (window.betInterface) {
-        // Force remove existing UI first
-        const existing = document.getElementById('balanceSection');
-        if (existing) {
-            existing.remove();
-            console.log('🗑️ Removed existing balance UI');
-        }
-        
         window.betInterface.createBalanceUI();
         window.betInterface.updateBalanceDisplay();
         console.log('✅ Balance UI created!');
-        
-        // Also ensure it's visible
-        const balanceSection = document.getElementById('balanceSection');
-        if (balanceSection) {
-            balanceSection.style.display = 'block';
-            console.log('👁️ Balance UI made visible');
-        }
     } else {
         console.error('❌ betInterface not found');
-    }
-}
-
-// Debug function to check betting panel availability
-window.checkBettingPanel = function() {
-    const bettingPanel = document.querySelector('.betting-panel');
-    console.log('🔍 Betting panel check:', {
-        exists: !!bettingPanel,
-        element: bettingPanel,
-        allBetElements: document.querySelectorAll('[class*="bet"]'),
-        documentReady: document.readyState
-    });
-    return bettingPanel;
-}
-
-    /**
-     * 🧹 Translate technical error messages into user-friendly ones
-     */
-    translateErrorMessage(errorMessage) {
-        if (!errorMessage) return null;
-        
-        const message = errorMessage.toLowerCase();
-        
-        // Suppress successful transaction "errors" (these aren't real errors)
-        if (message.includes('known transaction') || 
-            message.includes('already in the system') ||
-            message.includes('duplicate transaction')) {
-            console.log('🔇 Suppressing duplicate transaction warning (operation was successful)');
-            return null; // Don't show this to users
-        }
-        
-        // Translate common technical errors
-        if (message.includes('insufficient balance')) {
-            return 'Insufficient balance';
-        }
-        
-        if (message.includes('no active bet')) {
-            return 'No active bet found';
-        }
-        
-        if (message.includes('too close to crash')) {
-            return 'Too late - round ended';
-        }
-        
-        if (message.includes('round not active') || message.includes('betting phase')) {
-            return 'Cannot perform action during this phase';
-        }
-        
-        if (message.includes('network error') || message.includes('connection')) {
-            return 'Network error - please try again';
-        }
-        
-        // For other technical errors, show a generic message
-        if (message.includes('execution reverted') || 
-            message.includes('transaction failed') ||
-            message.includes('revert')) {
-            return 'Operation failed - please try again';
-        }
-        
-        // If it's a simple, user-friendly message already, keep it
-        if (errorMessage.length < 50 && !message.includes('0x')) {
-            return errorMessage;
-        }
-        
-        // Default for unknown technical errors
-        return 'Operation failed - please try again';
     }
 };
 

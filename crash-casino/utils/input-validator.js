@@ -42,7 +42,7 @@ class InputValidator {
     /**
      * Validate and sanitize bet amount
      * @param {any} amount - Raw amount input
-     * @returns {number} Validated amount
+     * @returns {string} Validated amount as ETH string (to avoid BigInt mixing)
      * @throws {Error} If amount is invalid
      */
     static validateAmount(amount) {
@@ -58,8 +58,9 @@ class InputValidator {
         // Use money library for proper validation and conversion
         try {
             const wei = parseEthInputOrThrow(amountStr);
-            // UI conversion only for validation checks - not money arithmetic
-            const ethValue = Number(fromWei(wei));
+            // Convert back to ETH string for consistent handling
+            const ethString = fromWei(wei);
+            const ethValue = parseFloat(ethString);
             
             if (ethValue <= 0) {
                 throw new Error('Amount must be a positive number');
@@ -73,7 +74,7 @@ class InputValidator {
                 throw new Error('Maximum bet amount is 100 ETH');
             }
             
-            return ethValue;
+            return ethString; // Return as string to avoid BigInt mixing
         } catch (error) {
             throw new Error('Invalid amount format');
         }

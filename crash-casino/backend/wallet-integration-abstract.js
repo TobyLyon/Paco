@@ -241,7 +241,10 @@ class AbstractWalletIntegration {
      */
     async processCashOut(playerId, roundId, multiplier, betAmount) {
         try {
-            const winAmount = parseEther((betAmount * multiplier).toFixed(18)); // Convert to BigInt Wei
+            // Ensure proper type handling to avoid BigInt mixing
+            const betAmountStr = typeof betAmount === 'string' ? betAmount : betAmount.toString();
+            const winEthAmount = (parseFloat(betAmountStr) * multiplier).toFixed(18);
+            const winAmount = parseEther(winEthAmount); // Convert to BigInt Wei
             const playerAddress = playerId; // Assuming playerId is the actual wallet address
 
                     // Use HOT WALLET for payouts (not house wallet)
@@ -266,7 +269,7 @@ class AbstractWalletIntegration {
                 transport: http(ABSTRACT_CHAIN.rpcUrls.default.http[0]),
             });
 
-            console.log(`💸 Processing payout: ${winAmount.toString()} wei (${(betAmount * multiplier).toFixed(4)} ETH) to ${playerAddress}`);
+            console.log(`💸 Processing payout: ${winAmount.toString()} wei (${winEthAmount} ETH) to ${playerAddress}`);
             console.log(`🔥 Using hot wallet: ${hotAccount.address}`);
 
             // Check hot wallet balance (critical for payouts)
@@ -312,7 +315,7 @@ class AbstractWalletIntegration {
             return {
                 success: true,
                 txHash: hash,
-                amount: (betAmount * multiplier).toFixed(4)
+                amount: winEthAmount
             };
 
         } catch (error) {

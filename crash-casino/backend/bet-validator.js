@@ -29,12 +29,12 @@ class BetValidator {
     /**
      * Validate a bet comprehensively
      * @param {string} playerId - Player identifier
-     * @param {number} betAmount - Bet amount in ETH
+     * @param {string|number} betAmount - Bet amount in ETH
      * @param {number} payoutMultiplier - Target payout multiplier
      * @param {Array} activePlayersList - List of currently active players
      * @param {Map} queuedBets - Map of queued bets
      * @param {string} betType - Type of bet ('balance' or 'blockchain')
-     * @returns {boolean} True if valid
+     * @returns {object} Validated bet data
      * @throws {Error} If validation fails
      */
     validateBet(playerId, betAmount, payoutMultiplier, activePlayersList, queuedBets, betType = 'balance') {
@@ -85,15 +85,18 @@ class BetValidator {
      * Validate bet amount is within limits
      */
     validateBetAmount(amount) {
-        if (amount < this.config.minBet) {
+        // Convert string amount to number for validation
+        const amountNum = typeof amount === 'string' ? parseFloat(amount) : amount;
+        
+        if (amountNum < this.config.minBet) {
             throw new Error(`Minimum bet is ${this.config.minBet} ETH`);
         }
-        if (amount > this.config.maxBet) {
+        if (amountNum > this.config.maxBet) {
             throw new Error(`Maximum bet is ${this.config.maxBet} ETH`);
         }
         
         // Additional validation for unusual amounts
-        if (amount > 10 && amount % 0.001 !== 0) {
+        if (amountNum > 10 && amountNum % 0.001 !== 0) {
             throw new Error('Large bets must be in increments of 0.001 ETH');
         }
     }

@@ -273,12 +273,14 @@ class WalletIntegration {
      */
     async processCashOut(walletAddress, roundId, multiplier, betAmount) {
         try {
-            const payout = betAmount * multiplier;
-            const profit = payout - betAmount;
+            // Ensure proper type handling to avoid BigInt mixing
+            const betAmountNum = typeof betAmount === 'string' ? parseFloat(betAmount) : betAmount;
+            const payout = betAmountNum * multiplier;
+            const profit = payout - betAmountNum;
             const transactionId = crypto.randomUUID();
 
             // Calculate house profit/loss
-            const houseProfit = betAmount - payout;
+            const houseProfit = betAmountNum - payout;
 
             if (this.databaseEnabled && this.supabase) {
                 // Database mode: Use Supabase

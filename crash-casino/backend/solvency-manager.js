@@ -41,7 +41,9 @@ class SolvencyManager {
         try {
             await this.updateBalances();
             
-            const potentialPayout = betAmount * maxMultiplier;
+            // Ensure proper type handling to avoid BigInt mixing
+            const betAmountNum = typeof betAmount === 'string' ? parseFloat(betAmount) : betAmount;
+            const potentialPayout = betAmountNum * maxMultiplier;
             const newTotalLiability = this.currentLiability + potentialPayout;
             const maxAllowedLiability = await this.getMaxLiability();
             
@@ -75,7 +77,9 @@ class SolvencyManager {
      * Add a bet to liability tracking
      */
     async addBetLiability(playerId, betAmount, maxMultiplier, betType = 'balance') {
-        const potentialPayout = betAmount * maxMultiplier;
+        // Ensure proper type handling to avoid BigInt mixing
+        const betAmountNum = typeof betAmount === 'string' ? parseFloat(betAmount) : betAmount;
+        const potentialPayout = betAmountNum * maxMultiplier;
         
         // Validate the bet can be accepted
         await this.canAcceptBet(playerId, betAmount, maxMultiplier);

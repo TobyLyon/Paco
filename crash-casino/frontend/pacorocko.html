@@ -1119,7 +1119,7 @@
     <script src="/crash-casino/frontend/js/crash-client.js"></script>
     <script src="/crash-casino/frontend/js/unified-crash-client.js"></script>
     <script src="/crash-casino/frontend/js/simple-sync-client.js"></script>
-    <script src="/crash-casino/frontend/js/unified-hot-wallet.js"></script>
+    <!-- <script src="/crash-casino/frontend/js/unified-hot-wallet.js"></script> -->
     <script src="/crash-casino/frontend/js/bet-interface-clean.js?v=2025-01-13-live-orders"></script>
     
     <!-- 🔥 HOTFIX: Add missing celebration handlers -->
@@ -1520,6 +1520,122 @@
                     console.log('⏰ Timeout reached, hiding loading screen...');
                 document.getElementById('loadingScreen').style.display = 'none';
                 document.getElementById('gameContainer').style.display = 'block';
+                
+                // 🏦 CRITICAL: Initialize Balance UI (Hot Wallet)
+                setTimeout(() => {
+                    console.log('🏦 Initializing Balance UI...');
+                    try {
+                        // Check if balance section already exists
+                        if (document.getElementById('balanceSection')) {
+                            console.log('⚠️ Balance section already exists');
+                            return;
+                        }
+
+                        const betInterface = document.querySelector('.betting-panel');
+                        if (!betInterface) {
+                            console.error('❌ .betting-panel not found for balance UI!');
+                            return;
+                        }
+                        
+                        console.log('✅ Found betting panel for balance UI:', betInterface);
+
+                        const balanceHTML = \`
+                            <div id="balanceSection" class="balance-section" style="
+                                background: linear-gradient(135deg, #1a1a2e, #16213e);
+                                border: 1px solid #ffd700;
+                                border-radius: 8px;
+                                padding: 15px;
+                                margin: 10px 0;
+                                box-shadow: 0 2px 12px rgba(255, 215, 0, 0.1);
+                            ">
+                                <div class="balance-header" style="
+                                    display: flex;
+                                    justify-content: space-between;
+                                    align-items: center;
+                                    margin-bottom: 10px;
+                                ">
+                                    <h3 style="color: #ffd700; margin: 0; font-size: 16px; font-weight: 600;">💰 Game Balance</h3>
+                                    <button id="refreshBalanceBtn" style="
+                                        background: transparent;
+                                        border: 1px solid #ffd700;
+                                        color: #ffd700;
+                                        padding: 4px 8px;
+                                        border-radius: 4px;
+                                        cursor: pointer;
+                                        font-size: 12px;
+                                    ">🔄</button>
+                                </div>
+                                
+                                <div style="text-align: center; margin: 10px 0;">
+                                    <div id="userBalance" style="
+                                        font-size: 24px;
+                                        font-weight: bold;
+                                        color: #ffffff;
+                                        text-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+                                    ">0.0000 ETH</div>
+                                    <div style="color: #888; font-size: 12px;">Available for betting</div>
+                                </div>
+                                
+                                <div style="
+                                    display: grid;
+                                    grid-template-columns: 1fr 1fr;
+                                    gap: 10px;
+                                    margin-top: 10px;
+                                ">
+                                    <button id="depositBtn" style="
+                                        background: linear-gradient(135deg, #4CAF50, #45a049);
+                                        border: none;
+                                        color: white;
+                                        padding: 10px 12px;
+                                        border-radius: 6px;
+                                        cursor: pointer;
+                                        font-weight: 500;
+                                    ">💳 Deposit</button>
+                                    
+                                    <button id="withdrawBtn" style="
+                                        background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+                                        border: none;
+                                        color: white;
+                                        padding: 10px 12px;
+                                        border-radius: 6px;
+                                        cursor: pointer;
+                                        font-weight: 500;
+                                    ">💸 Withdraw</button>
+                                </div>
+                                
+                                <div style="
+                                    margin-top: 10px;
+                                    font-size: 11px;
+                                    color: #666;
+                                    text-align: center;
+                                ">⚡ Instant betting from balance</div>
+                            </div>
+                        \`;
+
+                        // Insert at the beginning of betting panel
+                        const betInputSection = betInterface.querySelector('.bet-input-section');
+                        if (betInputSection) {
+                            console.log('✅ Inserting balance UI before bet input section');
+                            betInputSection.insertAdjacentHTML('beforebegin', balanceHTML);
+                        } else {
+                            console.log('⚠️ .bet-input-section not found, inserting at beginning');
+                            betInterface.insertAdjacentHTML('afterbegin', balanceHTML);
+                        }
+                        
+                        console.log('✅ Balance UI initialized successfully!');
+                        
+                        // Try to setup balance functionality if BetInterface is available
+                        if (window.betInterface && typeof window.betInterface.setupBalanceEventListeners === 'function') {
+                            window.betInterface.setupBalanceEventListeners();
+                            console.log('✅ Balance event listeners setup complete');
+                        } else {
+                            console.log('⚠️ BetInterface not available for event listeners');
+                        }
+                        
+                    } catch (error) {
+                        console.error('❌ Failed to initialize balance UI:', error);
+                    }
+                }, 500); // Small delay to ensure everything is loaded
                 
                 // Initialize BOTH chart and visualizer systems properly
                 console.log('🎮 Initializing chart and visualizer systems...');

@@ -36,16 +36,19 @@ WITH active_bets AS (
 ),
 account_locked AS (
     SELECT user_id, locked FROM accounts WHERE locked > 0
+),
+drift_calculation AS (
+    SELECT 
+        COALESCE(a.user_id, b.user_id) as user_id,
+        COALESCE(a.calculated_locked, 0) as calculated_locked,
+        COALESCE(b.locked, 0) as account_locked,
+        COALESCE(b.locked, 0) - COALESCE(a.calculated_locked, 0) as drift,
+        'LOCKED_EXPOSURE_MISMATCH' as error_type
+    FROM active_bets a 
+    FULL JOIN account_locked b USING(user_id)
+    WHERE COALESCE(b.locked, 0) != COALESCE(a.calculated_locked, 0)
 )
-SELECT 
-    COALESCE(a.user_id, b.user_id) as user_id,
-    COALESCE(a.calculated_locked, 0) as calculated_locked,
-    COALESCE(b.locked, 0) as account_locked,
-    COALESCE(b.locked, 0) - COALESCE(a.calculated_locked, 0) as drift,
-    'LOCKED_EXPOSURE_MISMATCH' as error_type
-FROM active_bets a 
-FULL JOIN account_locked b USING(user_id)
-WHERE COALESCE(b.locked, 0) != COALESCE(a.calculated_locked, 0)
+SELECT * FROM drift_calculation
 ORDER BY ABS(drift) DESC;
 
 -- =============================================================================

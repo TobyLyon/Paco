@@ -4,8 +4,8 @@
  * Prevents injection attacks and validates all user inputs
  */
 
-const { toWei, fromWei } = require('../src/lib/money');
-const { parseEthInputOrThrow } = require('../src/lib/money-ui');
+const { toWei, fromWei } = require('../../src/lib/money');
+const { parseEthInputOrThrow } = require('../../src/lib/money-ui');
 
 class InputValidator {
     /**

@@ -21,12 +21,18 @@ class BetInterface {
     }
 
     /**
-     * 🚀 Initialize bet interface
+     * 🚀 Initialize bet interface (ENHANCED with persistent UI)
      */
     async init() {
         console.log('🎯 Initializing bet interface (balance-only)...');
         this.setupEventListeners();
         this.updateBetDisplay();
+        
+        // Always show balance UI immediately for consistency
+        setTimeout(() => {
+            console.log('🏦 Always showing balance UI for consistency');
+            this.createBalanceUI();
+        }, 500);
         
         // Initialize balance system when wallet is detected
         if (window.ethereum?.selectedAddress || window.realWeb3Modal?.address) {
@@ -34,21 +40,17 @@ class BetInterface {
             await this.initializeBalance();
         } else {
             console.log('⚠️ No wallet detected yet, waiting for connection...');
-            // Show balance UI anyway for when wallet connects
-            setTimeout(() => {
-                if (!this.balanceInitialized) {
-                    console.log('🧪 Creating balance UI for when wallet connects');
-                    this.createBalanceUI();
-                }
-            }, 2000);
         }
         
         // Listen for wallet connection events
         document.addEventListener('walletConnected', async (event) => {
             console.log('🔗 Wallet connected event received!');
             
-            // Initialize balance system
+            // Initialize balance system but keep same UI
             await this.initializeBalance();
+            
+            // Refresh UI content but keep same design
+            this.updateBalanceDisplay();
         });
 
         // Listen for socket events
@@ -757,12 +759,6 @@ class BetInterface {
     createBalanceUI() {
         // Check if balance section already exists
         if (document.getElementById('balanceSection')) return;
-        
-        // Check if unified hot wallet is active and defer to it
-        if (window.unifiedHotWallet && window.unifiedHotWallet.isInitialized) {
-            console.log('🏦 Unified hot wallet is active, skipping original balance UI');
-            return;
-        }
 
         const betInterface = document.querySelector('.betting-panel');
         if (!betInterface) {
@@ -771,22 +767,30 @@ class BetInterface {
         }
         console.log('✅ Found betting panel:', betInterface);
 
+        // Determine connection state for consistent UI
+        const walletAddress = window.ethereum?.selectedAddress || window.realWeb3Modal?.address;
+        const isConnected = !!walletAddress;
+        const displayBalance = this.userBalance || 0;
+        
         const balanceHTML = `
             <div id="balanceSection" class="balance-section">
                 <div class="balance-header">
                     <h3>💰 Game Balance</h3>
-                    <div id="userBalance" class="balance-amount">${this.userBalance.toFixed(4)} ETH</div>
+                    <div id="userBalance" class="balance-amount">${displayBalance.toFixed(4)} ETH</div>
                     <button id="refreshBalanceBtn" class="refresh-balance-btn" title="Refresh balance">🔄</button>
                 </div>
                 
                 <div class="balance-actions">
-                    <button id="depositBtn" class="balance-btn deposit-btn">💳 Deposit</button>
-                    <button id="withdrawBtn" class="balance-btn withdraw-btn">💸 Withdraw</button>
+                    <button id="depositBtn" class="balance-btn deposit-btn" ${!isConnected ? 'disabled' : ''}>💳 Deposit</button>
+                    <button id="withdrawBtn" class="balance-btn withdraw-btn" ${!isConnected ? 'disabled' : ''}>💸 Withdraw</button>
                 </div>
                 
                 <div class="balance-info">
                     <div class="balance-mode-info">
-                        ⚡ Instant betting from balance (separate from wallet balance)
+                        ${isConnected 
+                            ? `⚡ Instant betting from balance (${walletAddress.substring(0,4)}...${walletAddress.substring(38)})`
+                            : `⚠️ Connect wallet to deposit/withdraw`
+                        }
                     </div>
                 </div>
             </div>

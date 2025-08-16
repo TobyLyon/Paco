@@ -1,0 +1,10 @@
+[33mf21e5c7[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m Fix: Add betError handling and cashout state synchronization
+[33m3733e6a[m Critical Fix: Optimistic balance update happening before validation
+[33mbf09018[m Fix: Balance discrepancy between UI display and betting validation
+[33m6ae3d65[m Optimize: Make hot wallet betting UI more compact
+[33m70742b5[m Fix: Hot wallet UI not updating after login
+[33maf0ec08[m \ FIX: Hot wallet UI updates + match theme colors
+[33m514f15a[m \ FIX: Hot wallet auto-updates when connecting from any button
+[33m33be8f8[m \ FIX: Connect hot wallet button to main wallet connection system
+[33mf247f67[m \ REMOVE: Direct send option from deposit modal
+[33m0b73bc9[m \ CRITICAL SECURITY FIX: Prevent unauthorized hot wallet access

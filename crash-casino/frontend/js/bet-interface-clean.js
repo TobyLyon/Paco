@@ -22,6 +22,18 @@ function displayEth(wei, decimals = 4) {
     return parseFloat(ethString).toFixed(decimals);
 }
 
+function parseEthInputOrThrow(s) {
+    // Parse ETH input from user, throw on invalid
+    if (!s || typeof s !== 'string') {
+        throw new Error('Invalid input');
+    }
+    const trimmed = s.trim();
+    if (!trimmed) {
+        throw new Error('Empty input');
+    }
+    return toWei(trimmed);
+}
+
 /**
  * 🎯 Bet Interface for PacoRocko Crash Casino - Balance Only
  * 
@@ -206,7 +218,12 @@ class BetInterface {
         const betInput = document.getElementById('betAmount');
         if (betInput) {
             betInput.addEventListener('input', (e) => {
-                this.betAmount = parseEthInputOrThrow(e.target.value) || 0.005;
+                try {
+                    const weiAmount = parseEthInputOrThrow(e.target.value);
+                    this.betAmount = Number(fromWei(weiAmount));
+                } catch (error) {
+                    this.betAmount = 0.005; // Default fallback
+                }
                 this.updateBetDisplay();
                 this.validateBetAmount();
             });
@@ -1261,11 +1278,13 @@ class BetInterface {
         // Confirm deposit
         if (confirmBtn) {
             confirmBtn.addEventListener('click', async () => {
-                const amount = parseEthInputOrThrow(depositInput.value);
-                if (!amount || amount <= 0) {
-                    this.showNotification('Please enter a valid deposit amount', 'error');
-                    return;
-                }
+                try {
+                    const weiAmount = parseEthInputOrThrow(depositInput.value);
+                    const amount = Number(fromWei(weiAmount));
+                    if (amount <= 0) {
+                        this.showNotification('Please enter a valid deposit amount', 'error');
+                        return;
+                    }
 
                 confirmBtn.disabled = true;
                 confirmBtn.textContent = '⏳ Processing...';
@@ -1278,6 +1297,11 @@ class BetInterface {
                 } finally {
                     confirmBtn.disabled = false;
                     confirmBtn.textContent = '💳 Deposit Funds';
+                }
+                
+                } catch (parseError) {
+                    console.error('❌ Parse error:', parseError);
+                    this.showNotification('Please enter a valid deposit amount', 'error');
                 }
             });
         }
@@ -1737,11 +1761,13 @@ class BetInterface {
         // Confirm withdrawal
         if (confirmBtn) {
             confirmBtn.addEventListener('click', async () => {
-                const amount = parseEthInputOrThrow(withdrawInput.value);
-                if (!amount || amount <= 0 || amount > this.userBalance) {
-                    this.showNotification('Invalid withdrawal amount', 'error');
-                    return;
-                }
+                try {
+                    const weiAmount = parseEthInputOrThrow(withdrawInput.value);
+                    const amount = Number(fromWei(weiAmount));
+                    if (amount <= 0 || amount > this.userBalance) {
+                        this.showNotification('Invalid withdrawal amount', 'error');
+                        return;
+                    }
 
                 confirmBtn.disabled = true;
                 confirmBtn.textContent = '⏳ Processing...';
@@ -1754,6 +1780,11 @@ class BetInterface {
                 } finally {
                     confirmBtn.disabled = false;
                     confirmBtn.textContent = '💸 Confirm Withdrawal';
+                }
+                
+                } catch (parseError) {
+                    console.error('❌ Parse error:', parseError);
+                    this.showNotification('Please enter a valid withdrawal amount', 'error');
                 }
             });
         }

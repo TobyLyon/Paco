@@ -77,8 +77,9 @@ body {
     background-attachment: fixed, fixed;
     animation: gradientShift 12s ease infinite;
     color: var(--text-primary);
-    height: 100vh;
-    overflow: hidden;
+    min-height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
     position: relative;
     font-size: var(--font-size-base);
     line-height: 1.6;

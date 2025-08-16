@@ -94,7 +94,7 @@ class BalanceAPI {
      */
     async transferBetToHouse(amount, houseWallet) {
         const { ethers } = require('ethers');
-        const { createWalletClient, http, parseEther } = require('viem');
+        const { createWalletClient, createPublicClient, http, parseEther } = require('viem');
         const { privateKeyToAccount } = require('viem/accounts');
         
         // Abstract chain config
@@ -121,10 +121,16 @@ class BalanceAPI {
             transport: http(ABSTRACT_CHAIN.rpcUrls.default.http[0]),
         });
 
+        // Create public client for reading blockchain data
+        const publicClient = createPublicClient({
+            chain: ABSTRACT_CHAIN,
+            transport: http(ABSTRACT_CHAIN.rpcUrls.default.http[0]),
+        });
+
         const amountWei = parseEther(amount.toString());
 
-        // Check hot wallet balance
-        const hotBalance = await walletClient.getBalance({ address: hotAccount.address });
+        // Check hot wallet balance using public client
+        const hotBalance = await publicClient.getBalance({ address: hotAccount.address });
         if (hotBalance < amountWei) {
             throw new Error(`Insufficient hot wallet balance for bet transfer. Need: ${amount} ETH, Have: ${(Number(hotBalance) / 1e18).toFixed(6)} ETH`);
         }
@@ -152,7 +158,7 @@ class BalanceAPI {
      * 🏦 Process balance payout - transfer ETH from house to hot wallet
      */
     async processBalancePayout(playerAddress, payoutAmount) {
-        const { createWalletClient, http, parseEther } = require('viem');
+        const { createWalletClient, createPublicClient, http, parseEther } = require('viem');
         const { privateKeyToAccount } = require('viem/accounts');
         
         // Abstract chain config
@@ -185,10 +191,16 @@ class BalanceAPI {
             transport: http(ABSTRACT_CHAIN.rpcUrls.default.http[0]),
         });
 
+        // Create public client for reading blockchain data
+        const publicClient = createPublicClient({
+            chain: ABSTRACT_CHAIN,
+            transport: http(ABSTRACT_CHAIN.rpcUrls.default.http[0]),
+        });
+
         const payoutWei = parseEther(payoutAmount.toString());
 
-        // Check house wallet balance
-        const houseBalance = await walletClient.getBalance({ address: houseAccount.address });
+        // Check house wallet balance using public client
+        const houseBalance = await publicClient.getBalance({ address: houseAccount.address });
         if (houseBalance < payoutWei) {
             throw new Error(`Insufficient house wallet balance for payout. Need: ${payoutAmount} ETH, Have: ${(Number(houseBalance) / 1e18).toFixed(6)} ETH`);
         }

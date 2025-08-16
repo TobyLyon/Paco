@@ -137,8 +137,7 @@ class CrashGameClient {
         // Store current multiplier for cashout validation
         this.currentMultiplier = multiplier;
 
-        // Update cashout button state based on new multiplier
-        this.updateCashoutButtonState();
+        // Don't update cashout button during gameplay - keep it simple
         
         // Update multiplier display
         if (window.multiplierDisplay) {
@@ -2047,35 +2046,18 @@ class CrashGameClient {
     }
 
     /**
-     * 🎯 Update cashout button state based on current multiplier
+     * 🎯 Update cashout button state - SIMPLIFIED VERSION 
      */
     updateCashoutButtonState() {
         const cashOutBtn = document.getElementById('cashOutBtn');
         if (!cashOutBtn || !this.playerBet || this.playerBet.cashedOut) return;
 
-        const multiplier = this.currentMultiplier || 1.0;
-        const betAmount = this.playerBet.amount || 0;
-        const payout = betAmount * multiplier;
-        const netResult = payout - betAmount;
-        const isProfit = netResult > 0;
-
-        // Always enable the button - let users decide
+        // SIMPLE: Just show "CASH OUT" - no complex real-time tracking
         cashOutBtn.disabled = false;
         cashOutBtn.style.cursor = 'pointer';
-
-        if (isProfit) {
-            // Profitable cashout - green
-            cashOutBtn.textContent = `💰 CASH OUT ${multiplier.toFixed(2)}x`;
-            cashOutBtn.style.backgroundColor = '#10b981'; // Green
-            cashOutBtn.title = `Cash out for +${netResult.toFixed(4)} ETH profit (${payout.toFixed(4)} ETH total)`;
-        } else {
-            // Loss cashout - red/orange but still enabled
-            const lossAmount = Math.abs(netResult);
-            const lossPercentage = (lossAmount / betAmount) * 100;
-            cashOutBtn.textContent = `⚠️ CASH OUT ${multiplier.toFixed(2)}x (LOSS)`;
-            cashOutBtn.style.backgroundColor = '#dc2626'; // Red
-            cashOutBtn.title = `Cash out with -${lossAmount.toFixed(4)} ETH loss (${lossPercentage.toFixed(1)}% of bet)`;
-        }
+        cashOutBtn.textContent = '💰 CASH OUT';
+        cashOutBtn.style.backgroundColor = '#10b981'; // Green
+        cashOutBtn.title = 'Click to cash out at current multiplier';
     }
 }
 
